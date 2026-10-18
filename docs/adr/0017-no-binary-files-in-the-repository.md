@@ -1,6 +1,6 @@
 # 0017 – No binary files in the repository
 
-- Status: accepted
+- Status: accepted; where decision 9 links review screenshots is superseded by ADR 0019
 - Date: 2026-10-18
 
 ## Context

@@ -13,4 +13,3 @@ feature live in its spec, decisions in `docs/adr/`. Add items with `/todo`.
 - [ ] Implement `cargo xtask new-module` and `cargo xtask new-adapter` — named in CLAUDE.md "Adding things", architecture §4.5 (2026-10-18)
 - [ ] Implement `cargo xtask schemas` and the first JSON Schema in `schemas/` (ADR 0011) (2026-10-18)
 - [ ] Check the `Spec-Unchanged:` and `Spec-Only:` trailers against the base branch, and add `cargo xtask spec-report` (ADR 0010) (2026-10-18)
-- [ ] Create the `framehive-assets` repository for review screenshots (`pr-<n>/`) on GitHub, and require them for UI pull requests in the PR workflow (ADR 0017) (2026-10-18)

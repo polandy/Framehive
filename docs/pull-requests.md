@@ -41,17 +41,43 @@ description becomes the commit body, word for word. So:
 - When CI is red, `cargo xtask ci-failures [<pr>]` prints only the failed step of each
   failed job. Fix the cause on the branch and push again. Never re-run a red job in the
   hope that it passes (ADR 0006).
+- A pull request that changes the UI adds a comment with its screenshots (section 5)
+  before it is reviewed.
 - An agent reviews the pull request with the `pr-review` skill, or the
   `framehive-reviewer` agent, and posts the verdict as one comment.
 - Review threads must be resolved before the merge.
 
-## 5. Keep it up to date
+## 5. Screenshots for UI changes
+
+The images live in the separate, public repository `polandy/framehive-assets`, never
+in this one (ADR 0017, ADR 0019). They are disposable, so the repository may be pruned.
+
+1. Take 2–3 PNG screenshots of the changed screens, cropped to the change and at most
+   1200 px wide. Show the light and the dark theme when the change affects colours.
+2. Commit them to `framehive-assets` under `pr-<n>/`, in a checkout next to this one:
+
+   ```sh
+   git -C ../framehive-assets pull --ff-only
+   mkdir -p ../framehive-assets/pr-<n> && cp <files> ../framehive-assets/pr-<n>/
+   git -C ../framehive-assets add pr-<n>
+   git -C ../framehive-assets commit -m "add screenshots for Framehive#<n>"
+   git -C ../framehive-assets push
+   ```
+
+3. Comment on the pull request with a `## Screenshots` heading and one line per image:
+   `![<what it shows>](https://raw.githubusercontent.com/polandy/framehive-assets/main/pr-<n>/<file>.png)`.
+   Never link them from the description: it becomes the squash commit, and the links
+   would break in the history once the images are pruned.
+
+A new revision of the UI replaces the files and edits the same comment.
+
+## 6. Keep it up to date
 
 The ruleset requires the branch to contain the latest `main`. When it is behind, merge
 `origin/main` into it and push. Do not rebase a pushed branch: a merge needs no force push
 and keeps review comments anchored, and the squash merge removes the merge commit anyway.
 
-## 6. Merge
+## 7. Merge
 
 - Only the owner decides when a pull request is merged, every time. An agent merges only
   on an explicit go-ahead for that pull request.

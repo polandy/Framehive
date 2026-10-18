@@ -35,6 +35,8 @@ Decide from `gh pr diff <PR> --name-only`, and name the tier in the verdict.
 
 - `gh pr view <PR> --json title,body,headRefName,mergeStateStatus,statusCheckRollup`.
 - `gh pr diff <PR>`. Review the code against the intent the description states.
+- A UI change needs a `## Screenshots` comment with images from `framehive-assets`
+  (`docs/pull-requests.md` section 5). Missing screenshots block the review.
 - The title must be a Conventional Commit subject, and the description must be pure commit
   body text with the right trailer, because both become the squash commit.
 
