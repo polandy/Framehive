@@ -254,16 +254,21 @@ fn slash_path(path: &Path) -> String {
 
 /// Adds the new crates to `Cargo.lock` through Cargo, which keeps it reproducible;
 /// it is never edited by hand (CLAUDE.md rule 5).
+///
+/// `cargo fetch` resolves only what `Cargo.toml` is missing and leaves every already
+/// locked version untouched. `cargo update` must not be used here: with no package
+/// given it re-resolves the whole workspace and can silently bump unrelated
+/// dependencies to whatever newer, semver-compatible version happens to be cached.
 fn update_lock_file(root: &Path) -> Result<(), String> {
     let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".to_owned());
     let output = Command::new(cargo)
-        .args(["update", "--workspace", "--offline"])
+        .args(["fetch", "--offline"])
         .current_dir(root)
         .output()
-        .map_err(|error| format!("cannot run cargo update: {error}"))?;
+        .map_err(|error| format!("cannot run cargo fetch: {error}"))?;
     if !output.status.success() {
         return Err(format!(
-            "cargo update failed:\n{}",
+            "cargo fetch failed:\n{}",
             String::from_utf8_lossy(&output.stderr)
         ));
     }
