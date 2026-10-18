@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Framehive – Profile</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#111214}
+a{color:#7FB2FF;text-decoration:none}a:hover{color:#A9CBFF}
+.lbl{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#9A9DA3}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 12px;border-radius:6px;border:1px solid #3A3D43;background:#26282C;color:#E8E6E3;font:500 13px 'IBM Plex Sans',sans-serif;cursor:pointer;box-sizing:border-box}
+.btn:hover{background:#2E3035;color:#E8E6E3}
+.pf{display:flex;flex-direction:column;align-items:flex-start;gap:3px;width:100%;padding:10px 12px;border-radius:8px;border:1px solid transparent;background:transparent;color:#E8E6E3;cursor:pointer;text-align:left;font:400 13px 'IBM Plex Sans',sans-serif}
+.pf:hover{background:#26282C}
+.pf[aria-current="true"]{background:#1F2633;border-color:#3B5378}
+.sec{display:grid;grid-template-columns:200px 1fr;gap:24px;padding:20px 0;border-bottom:1px solid #2A2C30}
+.field{display:flex;flex-direction:column;gap:6px}
+.field span{font-size:12px;color:#9A9DA3}
+.in{height:34px;padding:0 10px;border-radius:6px;border:1px solid #3A3D43;background:#141517;color:#E8E6E3;font:400 13px 'IBM Plex Sans',sans-serif;box-sizing:border-box}
+.in.mono{font-family:'IBM Plex Mono',monospace;font-size:12px}
+.opt{display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer}
+.opt input{accent-color:#5B9DFF;width:16px;height:16px}
+.mono{font-family:'IBM Plex Mono',monospace}
+</style>
+</helmet>
+<div style="width:1440px;height:900px;display:flex;flex-direction:column;background:#17181A;color:#E8E6E3;font-family:'IBM Plex Sans',sans-serif;font-size:13px;overflow:hidden">
+
+  <header style="height:52px;flex-shrink:0;display:flex;align-items:center;gap:14px;padding:0 16px;border-bottom:1px solid #2A2C30;background:#1B1C1F">
+    <a class="btn" href="Main.dc.html">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+      Back
+    </a>
+    <h1 style="margin:0;font-size:15px;font-weight:600">Profiles</h1>
+    <div style="flex:1"></div>
+    <button class="btn">Import …</button>
+    <button class="btn">Export (YAML)</button>
+  </header>
+
+  <div style="flex:1;display:flex;min-height:0">
+    <aside style="width:280px;flex-shrink:0;display:flex;flex-direction:column;gap:6px;padding:16px;border-right:1px solid #2A2C30;background:#1B1C1F;box-sizing:border-box">
+      <sc-for list="{{profiles}}" as="p" hint-placeholder-count="3">
+        <button class="pf" aria-current="{{p.current}}" onClick="{{p.pick}}">
+          <span style="font-weight:600">{{p.name}}</span>
+          <span style="font-size:12px;color:#9A9DA3">{{p.sub}}</span>
+        </button>
+      </sc-for>
+      <button class="btn" style="margin-top:8px;width:100%">+ New profile</button>
+    </aside>
+
+    <main style="flex:1;min-width:0;padding:4px 32px 24px;overflow:auto">
+      <div class="sec">
+        <div style="display:flex;flex-direction:column;gap:4px"><span style="font-weight:600">General</span><span style="font-size:12px;color:#9A9DA3">Name and automatic assignment</span></div>
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px">
+          <label class="field"><span>Name</span><input class="in" value="{{cur.name}}"></label>
+          <label class="field"><span>Use automatically for</span>
+            <select class="in"><option>{{cur.device}}</option><option>Pixel 9</option><option>any device</option><option>never (choose manually)</option></select>
+          </label>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div style="display:flex;flex-direction:column;gap:4px"><span style="font-weight:600">Destinations</span><span style="font-size:12px;color:#9A9DA3">Photos and videos can be separate</span></div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px">
+            <label class="field"><span>Photos</span><input class="in mono" value="{{cur.photos}}"></label>
+            <label class="field"><span>Videos</span><input class="in mono" value="{{cur.videos}}"></label>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px">
+            <div class="field"><span>Subfolder</span><a class="in mono" href="Template.dc.html" style="display:flex;align-items:center;justify-content:space-between;color:#DCE8FF">{{cur.dir}}<span style="font-family:'IBM Plex Sans',sans-serif;color:#7FB2FF">Edit</span></a></div>
+            <div class="field"><span>Filename</span><a class="in mono" href="Template.dc.html" style="display:flex;align-items:center;justify-content:space-between;color:#DCE8FF">{{cur.file}}<span style="font-family:'IBM Plex Sans',sans-serif;color:#7FB2FF">Edit</span></a></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div style="display:flex;flex-direction:column;gap:4px"><span style="font-weight:600">Backup &amp; Safety</span><span style="font-size:12px;color:#9A9DA3">When a card is considered safe</span></div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <sc-for list="{{cur.backups}}" as="b" hint-placeholder-count="2">
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:6px;background:#1E1F22;border:1px solid #2C2E33">
+              <span style="width:8px;height:8px;border-radius:50%;background:{{b.dot}}"></span>
+              <span style="flex:1">{{b.name}}</span>
+              <span class="mono" style="font-size:12px;color:#9A9DA3">{{b.path}}</span>
+            </div>
+          </sc-for>
+          <div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap">
+            <label class="opt">Card can be formatted after
+              <select class="in" style="width:90px"><option>{{cur.copies}}</option><option>1</option><option>3</option></select>
+              verified copies
+            </label>
+            <label class="opt"><input type="checkbox" checked="checked">BLAKE3 checksum</label>
+            <label class="opt"><input type="checkbox">Delete source files afterwards</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div style="display:flex;flex-direction:column;gap:4px"><span style="font-weight:600">Metadata</span><span style="font-size:12px;color:#9A9DA3">Written as an XMP sidecar</span></div>
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px">
+          <label class="field"><span>Copyright</span><input class="in" value="© {year} Andy Pollari"></label>
+          <label class="field"><span>Keywords</span><input class="in" value="{{cur.keywords}}"></label>
+        </div>
+      </div>
+
+      <div class="sec" style="border-bottom:0">
+        <div style="display:flex;flex-direction:column;gap:4px"><span style="font-weight:600">Automation</span><span style="font-size:12px;color:#9A9DA3">Also usable from the command line</span></div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <label class="opt"><input type="checkbox" checked="{{cur.auto}}">Start import when connected</label>
+          <label class="opt"><input type="checkbox" checked="checked">Eject device after safe import</label>
+          <label class="field"><span>Run after import</span><input class="in mono" value="{{cur.hook}}"></label>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <span style="font-size:12px;color:#9A9DA3">Command line</span>
+            <code class="mono" style="padding:10px 12px;border-radius:6px;background:#0E0F10;border:1px solid #2C2E33;font-size:12px;color:#C9CCD1">$ framehive import --profile {{cur.slug}} /run/media/andy/EOS_DIGITAL</code>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.profiles = [
+      { name: 'Vacation', slug: 'urlaub', sub: 'Fujifilm X-T5 · Destination + NAS', device: 'Fujifilm X-T5', photos: '~/Pictures/Archive', videos: '~/Videos/Archive',
+        dir: '{date:%Y}/{date:%Y-%m-%d}_{job}', file: '{date:%Y%m%d}-{time:%H%M}_{job}_{seq:4}', copies: '2', keywords: 'Vacation, Mountains', auto: false,
+        hook: 'darktable {import_dir}', backups: [{ name: 'NAS', path: '/mnt/nas/foto', dot: '#3FB984' }, { name: 'Samsung T7', path: 'Marker: FRAMEHIVE_BACKUP', dot: '#E8A33D' }] },
+      { name: 'Client job', slug: 'kunde', sub: 'any device · 2 backups', device: 'any device', photos: '~/Jobs', videos: '~/Jobs',
+        dir: '{date:%Y}/{job}/RAW', file: '{job}_{date:%Y%m%d}_{seq:4}', copies: '3', keywords: 'Job', auto: false,
+        hook: '~/bin/notify-client.sh {job}', backups: [{ name: 'NAS', path: '/mnt/nas/jobs', dot: '#3FB984' }, { name: 'Samsung T7', path: 'Marker: FRAMEHIVE_BACKUP', dot: '#E8A33D' }] },
+      { name: 'Phone', slug: 'handy', sub: 'Pixel 9 · automatic', device: 'Pixel 9', photos: '~/Pictures/Handy', videos: '~/Videos/Handy',
+        dir: '{date:%Y}/{date:%m}', file: '{date:%Y%m%d}-{time:%H%M%S}_{name}', copies: '2', keywords: 'Phone', auto: true,
+        hook: '', backups: [{ name: 'NAS', path: '/mnt/nas/handy', dot: '#3FB984' }] }
+    ];
+    this.state = { idx: 0 };
+  }
+  renderVals() {
+    var self = this, idx = this.state.idx;
+    return {
+      cur: this.profiles[idx],
+      profiles: this.profiles.map(function (p, i) {
+        return { name: p.name, sub: p.sub, current: i === idx ? 'true' : 'false', pick: function () { self.setState({ idx: i }); } };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

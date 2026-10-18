@@ -1,0 +1,44 @@
+# SPDX-FileCopyrightText: 2026 Framehive contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+[workspace]
+resolver = "3"
+members = [
+    "crates/domain",
+    "crates/kernel",
+    "xtask",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.98.1"
+license = "GPL-3.0-or-later"
+publish = false
+
+# Every direct dependency is pinned here and listed in dependencies.yaml (ADR 0009).
+[workspace.dependencies]
+domain = { path = "crates/domain" }
+kernel = { path = "crates/kernel" }
+thiserror = { version = "2", default-features = false, features = ["std"] }
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+unreachable_pub = "warn"
+
+[workspace.lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+unwrap_used = "warn"
+expect_used = "warn"
+panic = "warn"
+print_stdout = "warn"
+print_stderr = "warn"
+dbg_macro = "warn"
+todo = "warn"
+unimplemented = "warn"
+too_many_lines = "warn"
+
+[profile.release]
+codegen-units = 1
+lto = "thin"

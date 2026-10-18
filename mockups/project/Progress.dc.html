@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Framehive – Import running</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#111214}
+a{color:#7FB2FF;text-decoration:none}a:hover{color:#A9CBFF}
+.lbl{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#9A9DA3}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 14px;border-radius:6px;border:1px solid #3A3D43;background:#26282C;color:#E8E6E3;font:500 13px 'IBM Plex Sans',sans-serif;cursor:pointer;box-sizing:border-box}
+.btn:hover{background:#2E3035;color:#E8E6E3}
+.card{display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:10px;background:#1E1F22;border:1px solid #2C2E33}
+.bar{height:6px;border-radius:3px;background:#33363B;overflow:hidden}
+.mono{font-family:'IBM Plex Mono',monospace}
+.stat{display:flex;flex-direction:column;gap:2px}
+.stat b{font:600 22px 'IBM Plex Sans',sans-serif}
+.log{display:grid;grid-template-columns:70px 1fr 220px 90px;gap:10px;padding:7px 12px;border-bottom:1px solid #26282C;font-size:12px;align-items:center}
+</style>
+</helmet>
+<div style="width:1440px;height:900px;display:flex;flex-direction:column;background:#17181A;color:#E8E6E3;font-family:'IBM Plex Sans',sans-serif;font-size:13px;overflow:hidden">
+
+  <header style="height:52px;flex-shrink:0;display:flex;align-items:center;gap:14px;padding:0 16px;border-bottom:1px solid #2A2C30;background:#1B1C1F">
+    <a class="btn" href="Main.dc.html" style="height:32px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+      Overview
+    </a>
+    <h1 style="margin:0;font-size:15px;font-weight:600">{{title}}</h1>
+    <span style="color:#9A9DA3">Profile Vacation · Job Dolomiten</span>
+    <div style="flex:1"></div>
+    <a class="btn" href="Library.dc.html" style="height:32px;background:#2A3550;border-color:#3B5378">Continue in background</a>
+    <button class="btn" style="height:32px" onClick="{{step}}">Simulation: {{stepLabel}}</button>
+  </header>
+
+  <div style="flex:1;display:flex;flex-direction:column;gap:16px;padding:20px 24px;min-height:0;overflow:auto">
+
+    <section class="card" style="gap:14px">
+      <div style="display:flex;align-items:flex-end;gap:40px">
+        <div class="stat"><span class="lbl">Progress</span><b>{{pct}}%</b></div>
+        <div class="stat"><span class="lbl">Files</span><b class="mono">{{done}} / 42</b></div>
+        <div class="stat"><span class="lbl">Throughput</span><b class="mono">{{speed}}</b></div>
+        <div class="stat"><span class="lbl">Time remaining</span><b class="mono">{{eta}}</b></div>
+        <div style="flex:1"></div>
+        <sc-if value="{{running}}" hint-placeholder-val="{{true}}">
+          <div style="display:flex;gap:8px">
+            <button class="btn">Pause</button>
+            <button class="btn" style="color:#FFA397">Cancel</button>
+          </div>
+        </sc-if>
+      </div>
+      <div class="bar" style="height:10px;border-radius:5px"><div style="width:{{pctW}};height:100%;background:{{barColor}}"></div></div>
+      <span style="font-size:12px;color:#9A9DA3">Source is read once, all destinations written in parallel. Each file is verified with BLAKE3 after writing. You can cancel anytime: the import resumes on next start.</span>
+    </section>
+
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px">
+      <section class="card">
+        <span class="lbl">Source</span>
+        <div style="display:flex;justify-content:space-between"><span style="font-weight:600">Fujifilm X-T5</span><span class="mono" style="color:#9A9DA3">{{readMb}} / 38.4 GB</span></div>
+        <div class="bar"><div style="width:{{readW}};height:100%;background:#5B9DFF"></div></div>
+        <span style="font-size:12px;color:#9A9DA3">Reading · PTP · 2 slots</span>
+      </section>
+      <section class="card">
+        <span class="lbl">Destination</span>
+        <div style="display:flex;justify-content:space-between"><span style="font-weight:600">~/Pictures/Archive</span><span class="mono" style="color:#9A9DA3">{{done}} verified</span></div>
+        <div class="bar"><div style="width:{{pctW}};height:100%;background:#3FB984"></div></div>
+        <span style="font-size:12px;color:#9A9DA3">NVMe · 1.2 TB free</span>
+      </section>
+      <section class="card">
+        <span class="lbl">Backup</span>
+        <div style="display:flex;justify-content:space-between"><span style="font-weight:600">NAS /mnt/nas/foto</span><span class="mono" style="color:#9A9DA3">{{nasDone}} verified</span></div>
+        <div class="bar"><div style="width:{{nasW}};height:100%;background:#3FB984"></div></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-top:6px;border-top:1px solid #2C2E33">
+          <span>Samsung T7</span><span style="font-size:12px;color:#E8A33D">missing · will catch up</span>
+        </div>
+      </section>
+    </div>
+
+    <sc-if value="{{finished}}" hint-placeholder-val="{{false}}">
+      <section style="display:flex;align-items:center;gap:20px;padding:20px;border-radius:10px;background:#132A20;border:1px solid #2F7A57">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#3FB984" stroke-width="2" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"></path><path d="M8.5 12l2.5 2.5 4.5-5"></path></svg>
+        <div style="flex:1;display:flex;flex-direction:column;gap:4px">
+          <span style="font-size:17px;font-weight:600;color:#BFF0D8">Fujifilm X-T5 can be formatted</span>
+          <span style="color:#A5D6BE">42 of 42 files exist in 2 locations with matching checksum (destination + NAS). 1 rejected file stays on the card.</span>
+        </div>
+        <button class="btn">Log</button>
+        <button class="btn">Open in darktable</button>
+        <button class="btn" style="background:#3FB984;border-color:#3FB984;color:#08130E;font-weight:600">Eject</button>
+      </section>
+    </sc-if>
+    <sc-if value="{{running}}" hint-placeholder-val="{{true}}">
+      <section style="display:flex;align-items:center;gap:16px;padding:16px 20px;border-radius:10px;background:#1E1F22;border:1px dashed #3A3D43">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6C7079" stroke-width="2" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"></path></svg>
+        <span style="color:#B8BBC0">Card not released yet: {{remaining}} files are not yet verified in 2 locations.</span>
+      </section>
+    </sc-if>
+
+    <section class="card" style="gap:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center"><span class="lbl">Queue</span><a href="Main.dc.html" style="font-size:12px">+ Schedule next import</a></div>
+      <div style="display:grid;grid-template-columns:24px 1fr 200px 120px 90px;gap:10px;align-items:center;padding:8px 0;border-top:1px solid #2C2E33">
+        <span class="mono" style="color:#9A9DA3">2</span><span><b style="font-weight:600">Pixel 9</b> <span style="color:#9A9DA3">· Profile Phone · 8 files</span></span>
+        <span style="color:#9A9DA3;font-size:12px">different destination → starts in parallel</span><span class="mono" style="font-size:12px;color:#9A9DA3">0.2 GB</span><span style="color:#7FB2FF;text-align:right">starting soon</span>
+      </div>
+      <div style="display:grid;grid-template-columns:24px 1fr 200px 120px 90px;gap:10px;align-items:center;padding:8px 0;border-top:1px solid #2C2E33">
+        <span class="mono" style="color:#9A9DA3">3</span><span><b style="font-weight:600">EOS_DIGITAL</b> <span style="color:#9A9DA3">· Profile Vacation · 214 files</span></span>
+        <span style="color:#9A9DA3;font-size:12px">same destination → waiting, numbers 0455–0668 reserved</span><span class="mono" style="font-size:12px;color:#9A9DA3">11.8 GB</span><span style="color:#9A9DA3;text-align:right">waiting</span>
+      </div>
+    </section>
+
+    <section style="display:flex;flex-direction:column;border-radius:10px;border:1px solid #2C2E33;overflow:hidden;flex-shrink:0">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#1E1F22;border-bottom:1px solid #2C2E33">
+        <span class="lbl">Activity</span>
+        <span style="font-size:12px;color:#9A9DA3">1 warning</span>
+      </div>
+      <sc-for list="{{log}}" as="l" hint-placeholder-count="7">
+        <div class="log">
+          <span class="mono" style="color:#9A9DA3">{{l.t}}</span>
+          <span class="mono" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{l.name}}</span>
+          <span style="color:#9A9DA3">{{l.where}}</span>
+          <span style="color:{{l.color}};font-weight:500;text-align:right">{{l.state}}</span>
+        </div>
+      </sc-for>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { s: 0 };
+  }
+  renderVals() {
+    var self = this, s = this.state.s;
+    var P = [
+      { pct: 38, done: 16, nas: 14, read: '14.6', speed: '612 MB/s', eta: '0:42' },
+      { pct: 81, done: 34, nas: 33, read: '31.1', speed: '598 MB/s', eta: '0:12' },
+      { pct: 100, done: 42, nas: 42, read: '38.4', speed: 'avg 604 MB/s', eta: 'done' }
+    ][s];
+    var finished = s === 2;
+    var base = 412 + P.done;
+    var log = finished ? [
+      { t: '09:14:52', name: 'Import log saved', where: '~/.local/share/framehive/log', state: 'OK', color: '#3FB984' },
+      { t: '09:14:51', name: '20261013-0920_Dolomiten_0453.RAF', where: 'Destination + NAS', state: 'verified', color: '#3FB984' },
+      { t: '09:14:49', name: '20261013-0912_Dolomiten_0452.RAF', where: 'Destination + NAS', state: 'verified', color: '#3FB984' },
+      { t: '09:13:02', name: 'DSCF3414.RAF', where: 'rejected in Loupe', state: 'skipped', color: '#9A9DA3' },
+      { t: '09:12:40', name: 'Samsung T7', where: 'backup destination', state: 'catch up', color: '#E8A33D' }
+    ] : [
+      { t: '09:13:' + (10 + s * 30), name: '20261012-0' + (8 + s) + '31_Dolomiten_0' + base + '.RAF', where: 'Destination → NAS', state: 'writing', color: '#7FB2FF' },
+      { t: '09:13:' + (9 + s * 30), name: '20261012-0' + (8 + s) + '24_Dolomiten_0' + (base - 1) + '.RAF', where: 'Destination + NAS', state: 'checking …', color: '#7FB2FF' },
+      { t: '09:13:' + (8 + s * 30), name: '20261012-0' + (8 + s) + '24_Dolomiten_0' + (base - 1) + '.JPG', where: 'Destination + NAS', state: 'verified', color: '#3FB984' },
+      { t: '09:13:' + (6 + s * 30), name: '20261012-0' + (8 + s) + '16_Dolomiten_0' + (base - 2) + '.RAF', where: 'Destination + NAS', state: 'verified', color: '#3FB984' },
+      { t: '09:13:02', name: 'DSCF3414.RAF', where: 'rejected in Loupe', state: 'skipped', color: '#9A9DA3' },
+      { t: '09:12:40', name: 'Samsung T7', where: 'backup destination', state: 'catch up', color: '#E8A33D' }
+    ];
+    return {
+      title: finished ? 'Import complete' : 'Import running',
+      stepLabel: ['next', 'finish', 'restart'][s],
+      step: function () { self.setState({ s: (self.state.s + 1) % 3 }); },
+      pct: P.pct, pctW: P.pct + '%', done: P.done, speed: P.speed, eta: P.eta,
+      readMb: P.read, readW: Math.round(P.pct * 1.0) + '%',
+      nasDone: P.nas, nasW: Math.round(P.nas / 42 * 100) + '%',
+      barColor: finished ? '#3FB984' : '#5B9DFF',
+      finished: finished, running: !finished, remaining: 42 - P.nas,
+      log: log
+    };
+  }
+}
+</script>
+</body>
+</html>

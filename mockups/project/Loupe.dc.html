@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Framehive – Loupe</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#111214}
+a{color:#7FB2FF;text-decoration:none}a:hover{color:#A9CBFF}
+.lbl{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#9A9DA3}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 12px;border-radius:6px;border:1px solid #3A3D43;background:#26282C;color:#E8E6E3;font:500 13px 'IBM Plex Sans',sans-serif;cursor:pointer;box-sizing:border-box}
+.btn:hover{background:#2E3035;color:#E8E6E3}
+.kbd{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 4px;border-radius:3px;border:1px solid #4A4D54;font:500 10px 'IBM Plex Mono',monospace;color:#B8BBC0;box-sizing:border-box}
+.flag{flex:1;height:44px}
+.flag[aria-pressed="true"].pick{background:#173A2C;border-color:#3FB984;color:#7FE0B2}
+.flag[aria-pressed="true"].rej{background:#3E1E1B;border-color:#E5604F;color:#FFA397}
+.star{width:44px;height:44px;border:0;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:6px}
+.star:hover{background:#26282C}
+.fs{position:relative;flex-shrink:0;width:96px;height:64px;border-radius:4px;border:2px solid transparent;padding:0;overflow:hidden;cursor:pointer}
+.fs[aria-current="true"]{border-color:#5B9DFF}
+.mono{font-family:'IBM Plex Mono',monospace}
+</style>
+</helmet>
+<div style="width:1440px;height:900px;display:flex;flex-direction:column;background:#0E0F10;color:#E8E6E3;font-family:'IBM Plex Sans',sans-serif;font-size:13px;overflow:hidden">
+
+  <header style="height:52px;flex-shrink:0;display:flex;align-items:center;gap:14px;padding:0 16px;border-bottom:1px solid #222427;background:#151618">
+    <a class="btn" href="Main.dc.html" style="height:32px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+      Grid <span class="kbd">G</span>
+    </a>
+    <span class="mono" style="font-size:13px">{{cur.name}}</span>
+    <span style="color:#9A9DA3">{{pos}} of {{count}} · Sat, Oct 12 · 07:12–09:48</span>
+    <div style="flex:1"></div>
+    <span style="font-size:12px;color:#9A9DA3">Preview from embedded JPEG · 1616 × 1080</span>
+    <button class="btn" style="height:32px">Compare <span class="kbd">C</span></button>
+    <button class="btn" style="height:32px">100% <span class="kbd">Z</span></button>
+  </header>
+
+  <div style="flex:1;display:flex;min-height:0">
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:16px;padding:24px;min-height:0">
+        <button class="btn" onClick="{{prev}}" aria-label="Previous image" style="width:44px;height:64px;padding:0">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+        </button>
+        <div style="position:relative;width:900px;height:600px;border-radius:2px;overflow:hidden;background:{{cur.sky}};box-shadow:0 8px 40px rgba(0,0,0,.6)">
+          <div style="position:absolute;left:0;right:0;bottom:0;height:{{cur.horizon}};background:{{cur.ground}}"></div>
+          <div style="position:absolute;left:0;right:0;bottom:0;height:{{cur.horizon2}};background:{{cur.ground2}}"></div>
+          <div style="position:absolute;left:{{cur.sunX}};top:90px;width:70px;height:70px;border-radius:50%;background:{{cur.sun}}"></div>
+          <sc-if value="{{cur.isRej}}" hint-placeholder-val="{{false}}">
+            <div style="position:absolute;inset:0;background:rgba(14,15,16,.55);display:flex;align-items:center;justify-content:center">
+              <span style="padding:8px 16px;border-radius:6px;background:#3E1E1B;border:1px solid #E5604F;color:#FFA397;font-weight:600">Rejected · will not be imported</span>
+            </div>
+          </sc-if>
+          <div style="position:absolute;left:12px;bottom:12px;display:flex;gap:6px">
+            <span class="mono" style="padding:2px 6px;border-radius:3px;background:rgba(0,0,0,.6);font-size:11px">RAF+JPG</span>
+            <span class="mono" style="padding:2px 6px;border-radius:3px;background:rgba(0,0,0,.6);font-size:11px">Slot 1</span>
+          </div>
+        </div>
+        <button class="btn" onClick="{{next}}" aria-label="Next image" style="width:44px;height:64px;padding:0">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
+        </button>
+      </div>
+
+      <div style="height:100px;flex-shrink:0;display:flex;align-items:center;gap:8px;padding:0 16px;border-top:1px solid #222427;background:#151618;overflow-x:auto">
+        <sc-for list="{{strip}}" as="s" hint-placeholder-count="12">
+          <button class="fs" aria-current="{{s.current}}" aria-label="{{s.name}}" onClick="{{s.go}}" style="background:{{s.sky}};opacity:{{s.opacity}}">
+            <span style="position:absolute;left:0;right:0;bottom:0;height:{{s.horizon}};background:{{s.ground}}"></span>
+            <sc-if value="{{s.isPick}}" hint-placeholder-val="{{false}}"><span style="position:absolute;top:3px;right:3px;width:10px;height:10px;border-radius:50%;background:#3FB984;border:1px solid #0E0F10"></span></sc-if>
+            <sc-if value="{{s.isRej}}" hint-placeholder-val="{{false}}"><span style="position:absolute;top:2px;right:3px;color:#FFA397;font:600 12px 'IBM Plex Sans',sans-serif">✕</span></sc-if>
+            <sc-if value="{{s.stars}}" hint-placeholder-val="{{false}}"><span class="mono" style="position:absolute;left:3px;bottom:2px;font-size:10px;color:#FFD27A">{{s.stars}}★</span></sc-if>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+
+    <aside style="width:320px;flex-shrink:0;display:flex;flex-direction:column;gap:20px;padding:20px;border-left:1px solid #222427;background:#151618;box-sizing:border-box">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <span class="lbl">Culling</span>
+        <div style="display:flex;gap:8px">
+          <button class="btn flag pick" aria-pressed="{{cur.pickPressed}}" onClick="{{doPick}}">Keep <span class="kbd">P</span></button>
+          <button class="btn flag rej" aria-pressed="{{cur.rejPressed}}" onClick="{{doRej}}">Reject <span class="kbd">X</span></button>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex" role="group" aria-label="Rating">
+            <sc-for list="{{stars}}" as="st" hint-placeholder-count="5">
+              <button class="star" aria-label="{{st.label}}" onClick="{{st.set}}">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="{{st.fill}}" stroke="{{st.stroke}}" stroke-width="1.6" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"></path></svg>
+              </button>
+            </sc-for>
+          </div>
+          <span class="kbd">1–5</span>
+        </div>
+        <span style="font-size:12px;color:#9A9DA3">Rating and flag are written as an XMP sidecar on import. Rejected images stay on the card.</span>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <span class="lbl">Capture</span>
+        <div style="display:grid;grid-template-columns:100px 1fr;gap:7px 10px;font-size:13px">
+          <span style="color:#9A9DA3">Camera</span><span>FUJIFILM X-T5</span>
+          <span style="color:#9A9DA3">Lens</span><span>XF16-55mmF2.8 R LM WR</span>
+          <span style="color:#9A9DA3">Exposure</span><span class="mono">1/500 s · f/8 · ISO 100</span>
+          <span style="color:#9A9DA3">Focal length</span><span class="mono">35 mm</span>
+          <span style="color:#9A9DA3">Captured</span><span class="mono">2026-10-12 {{cur.time}}</span>
+          <span style="color:#9A9DA3">corrected</span><span class="mono" style="color:#E8A33D">+1 h → {{cur.timeFixed}}</span>
+          <span style="color:#9A9DA3">Size</span><span class="mono">24.1 MB + 8.9 MB</span>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <span class="lbl">Imports as</span>
+        <span class="mono" style="font-size:12px;color:#C9CCD1;word-break:break-all">~/Pictures/Archive/2026/2026-10-12_Dolomiten/{{cur.target}}</span>
+      </div>
+
+      <div style="flex:1"></div>
+      <div style="display:flex;justify-content:space-between;padding:12px;border-radius:8px;background:#1E1F22;font-size:12px">
+        <span><span style="color:#7FE0B2;font-weight:600">{{nPick}}</span> kept</span>
+        <span><span style="color:#FFA397;font-weight:600">{{nRej}}</span> rejected</span>
+        <span><span style="font-weight:600">{{nOpen}}</span> open</span>
+      </div>
+    </aside>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    var pal = [
+      ['#8FA9C2','#4E5B47','#E9D9A6','#36402F'], ['#B8B2A6','#6A5A44','#F3E3B5','#4C3F30'], ['#6F8FAF','#3E4A3F','#F0D79A','#2A3329'],
+      ['#A7B9C9','#7A6A55','#FFF1C8','#55493A'], ['#52677D','#2F3A34','#D9C98F','#202824'], ['#C9A98A','#5B4636','#FFE2B0','#3F3026']
+    ];
+    var imgs = [];
+    for (var i = 0; i < 18; i++) {
+      var p = pal[(i * 3) % pal.length];
+      var m = 7 * 60 + 12 + i * 8, hh = Math.floor(m / 60), mm = m % 60;
+      var t = '0' + hh + ':' + (mm < 10 ? '0' : '') + mm;
+      var m2 = m + 60, h2 = Math.floor(m2 / 60), mi2 = m2 % 60;
+      var t2 = (h2 < 10 ? '0' : '') + h2 + ':' + (mi2 < 10 ? '0' : '') + mi2;
+      imgs.push({
+        name: 'DSCF' + (3412 + i) + '.RAF', time: t + ':' + (10 + i * 2), timeFixed: t2 + ':' + (10 + i * 2),
+        target: '2026101' + 2 + '-' + t2.replace(':', '') + '_Dolomiten_' + String(412 + i).padStart(4, '0') + '.RAF',
+        sky: p[0], ground: p[1], sun: p[2], ground2: p[3],
+        horizon: (34 + (i * 13) % 30) + '%', horizon2: (12 + (i * 7) % 14) + '%', sunX: (10 + (i * 37) % 75) + '%'
+      });
+    }
+    this.imgs = imgs;
+    this.state = { idx: 3, flags: { 0: 'pick', 1: 'pick', 2: 'rej', 5: 'pick' }, stars: { 0: 3, 1: 4, 5: 2 } };
+  }
+  renderVals() {
+    var self = this, st = this.state, n = this.imgs.length;
+    var go = function (i) { self.setState({ idx: (i + n) % n }); };
+    var flag = st.flags[st.idx] || '';
+    var stars = st.stars[st.idx] || 0;
+    var setFlag = function (f) {
+      var fl = Object.assign({}, self.state.flags);
+      if (fl[self.state.idx] === f) delete fl[self.state.idx]; else fl[self.state.idx] = f;
+      self.setState({ flags: fl });
+    };
+    var nPick = 0, nRej = 0;
+    Object.keys(st.flags).forEach(function (k) { if (st.flags[k] === 'pick') nPick++; else nRej++; });
+    var cur = Object.assign({}, this.imgs[st.idx], {
+      isRej: flag === 'rej', pickPressed: flag === 'pick' ? 'true' : 'false', rejPressed: flag === 'rej' ? 'true' : 'false'
+    });
+    return {
+      cur: cur, pos: st.idx + 1, count: n, nPick: nPick, nRej: nRej, nOpen: n - nPick - nRej,
+      prev: function () { go(self.state.idx - 1); },
+      next: function () { go(self.state.idx + 1); },
+      doPick: function () { setFlag('pick'); },
+      doRej: function () { setFlag('rej'); },
+      stars: [1, 2, 3, 4, 5].map(function (k) {
+        return {
+          label: k + ' stars', fill: k <= stars ? '#FFD27A' : 'none', stroke: k <= stars ? '#FFD27A' : '#6C7079',
+          set: function () { var s = Object.assign({}, self.state.stars); s[self.state.idx] = (s[self.state.idx] === k ? 0 : k); self.setState({ stars: s }); }
+        };
+      }),
+      strip: this.imgs.map(function (im, i) {
+        var f = st.flags[i] || '';
+        return {
+          name: im.name, sky: im.sky, ground: im.ground, horizon: im.horizon,
+          current: i === st.idx ? 'true' : 'false', opacity: f === 'rej' ? 0.4 : 1,
+          isPick: f === 'pick', isRej: f === 'rej', stars: st.stars[i] || 0,
+          go: function () { go(i); }
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

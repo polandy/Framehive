@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Framehive – Import</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#111214}
+a{color:#7FB2FF;text-decoration:none}a:hover{color:#A9CBFF}
+.lbl{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#9A9DA3}
+.btn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:6px;border:1px solid #3A3D43;background:#26282C;color:#E8E6E3;font:500 13px 'IBM Plex Sans',sans-serif;cursor:pointer;box-sizing:border-box}
+.btn:hover{background:#2E3035;color:#E8E6E3}
+.seg{display:inline-flex;border:1px solid #3A3D43;border-radius:6px;overflow:hidden}
+.seg button{height:30px;padding:0 12px;border:0;background:#1E1F22;color:#B8BBC0;font:500 13px 'IBM Plex Sans',sans-serif;cursor:pointer}
+.seg button[aria-pressed="true"]{background:#33363B;color:#FFFFFF}
+.tile{position:relative;display:flex;flex-direction:column;gap:6px;padding:6px;border-radius:8px;border:2px solid transparent;background:#1E1F22;cursor:pointer;text-align:left;font:inherit;color:inherit}
+.tile:hover{background:#26282C}
+.tile[aria-pressed="true"]{border-color:#5B9DFF;background:#1F2633}
+.tile.done{opacity:.42}
+.thumb{position:relative;height:96px;border-radius:4px;overflow:hidden}
+.chk{position:absolute;top:6px;left:6px;width:18px;height:18px;border-radius:4px;border:1.5px solid rgba(255,255,255,.85);background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center}
+.tile[aria-pressed="true"] .chk{background:#5B9DFF;border-color:#5B9DFF}
+.badge{position:absolute;bottom:6px;right:6px;padding:1px 5px;border-radius:3px;background:rgba(0,0,0,.65);color:#fff;font:500 10px 'IBM Plex Mono',monospace}
+.dev{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:8px;background:#1E1F22;border:1px solid #2C2E33}
+.bar{height:4px;border-radius:2px;background:#33363B;overflow:hidden}
+.grp{display:flex;justify-content:space-between;align-items:center;width:100%;padding:8px 10px;border-radius:6px;border:0;background:transparent;color:#D6D4D1;font:400 13px 'IBM Plex Sans',sans-serif;cursor:pointer;text-align:left}
+.grp:hover{background:#26282C}
+.grp[aria-pressed="true"]{background:#1F2633;color:#FFFFFF}
+.mod{display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:6px;color:#B8BBC0;font-weight:500}
+a.mod:hover{background:#26282C;color:#E8E6E3}
+.mod[aria-current="page"]{background:#2A3550;color:#FFFFFF}
+.mono{font-family:'IBM Plex Mono',monospace}
+.card{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:8px;background:#1E1F22;border:1px solid #2C2E33}
+</style>
+</helmet>
+<div style="width:1440px;height:900px;display:flex;flex-direction:column;background:#17181A;color:#E8E6E3;font-family:'IBM Plex Sans',sans-serif;font-size:13px;overflow:hidden">
+
+  <header style="height:52px;flex-shrink:0;display:flex;align-items:center;gap:16px;padding:0 16px;border-bottom:1px solid #2A2C30;background:#1B1C1F">
+    <div style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:15px">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5B9DFF" stroke-width="1.8" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"></rect><path d="M8 6l1.5-2h5L16 6"></path><circle cx="12" cy="12.5" r="3.5"></circle></svg>
+      Framehive
+    </div>
+    <nav style="display:flex;gap:2px;margin-left:8px" aria-label="Module">
+      <span class="mod" aria-current="page">Import</span>
+      <a class="mod" href="Library.dc.html">Library</a>
+      <span class="mod" style="color:#6C7079" title="coming after v1">Map</span>
+      <span class="mod" style="color:#6C7079" title="coming after v1">People</span>
+    </nav>
+    <a class="btn" href="Profiles.dc.html" style="margin-left:12px">
+      <span style="color:#9A9DA3">Profile</span>
+      <span>Vacation</span>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+    </a>
+    <div style="flex:1"></div>
+    <label style="display:flex;align-items:center;gap:8px;height:32px;padding:0 10px;width:260px;border-radius:6px;background:#26282C;border:1px solid #3A3D43;box-sizing:border-box">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9A9DA3" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>
+      <input aria-label="Filter files" placeholder="Filter: name, camera, ISO …" style="flex:1;border:0;background:transparent;color:#E8E6E3;font:400 13px 'IBM Plex Sans',sans-serif;outline:none">
+      <span class="mono" style="font-size:11px;color:#9A9DA3">⌘K</span>
+    </label>
+    <a class="btn" href="Progress.dc.html" title="Background jobs" style="gap:8px">
+      <span style="width:14px;height:14px;border-radius:50%;border:2px solid #33363B;border-top-color:#5B9DFF;box-sizing:border-box"></span>
+      <span>1 Import</span><span class="mono" style="font-size:12px;color:#9A9DA3">38%</span>
+    </a>
+    <button class="btn" aria-label="Settings" style="width:32px;padding:0;justify-content:center">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg>
+    </button>
+  </header>
+
+  <div style="flex:1;display:flex;min-height:0">
+
+    <aside style="width:268px;flex-shrink:0;display:flex;flex-direction:column;gap:18px;padding:16px;border-right:1px solid #2A2C30;background:#1B1C1F;overflow:auto;box-sizing:border-box">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span class="lbl">Sources</span>
+          <button class="btn" style="height:24px;padding:0 8px;font-size:12px" aria-label="Add folder as source">+ Folder</button>
+        </div>
+
+        <div class="dev" style="border-color:#3B5378">
+          <div style="display:flex;align-items:center;gap:8px">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9CCD1" stroke-width="1.8" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"></rect><circle cx="12" cy="12.5" r="3.5"></circle></svg>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600">Fujifilm X-T5</div>
+              <div style="font-size:12px;color:#9A9DA3">PTP · Slot 1 + 2 deduplicated</div>
+            </div>
+            <span class="mono" style="font-size:12px;color:#C9CCD1">42</span>
+          </div>
+          <div class="bar"><div style="width:62%;height:100%;background:#5B9DFF"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:#9A9DA3"><span>38.4 GB new</span><span>62% used</span></div>
+        </div>
+
+        <div class="dev">
+          <div style="display:flex;align-items:center;gap:8px">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9CCD1" stroke-width="1.8" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"></rect><path d="M11 18h2"></path></svg>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600">Pixel 9</div>
+              <div style="font-size:12px;color:#9A9DA3">MTP · File transfer</div>
+            </div>
+            <span class="mono" style="font-size:12px;color:#C9CCD1">8</span>
+          </div>
+          <div class="bar"><div style="width:81%;height:100%;background:#6C7079"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:#9A9DA3"><span>everything already imported</span><span>81%</span></div>
+        </div>
+
+        <div class="dev" style="opacity:.7">
+          <div style="display:flex;align-items:center;gap:8px">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9CCD1" stroke-width="1.8" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"></path><path d="M10 7v3M13 7v3M16 9v1"></path></svg>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600">EOS_DIGITAL</div>
+              <div style="font-size:12px;color:#9A9DA3">SD · scanning …</div>
+            </div>
+            <span class="mono" style="font-size:12px;color:#C9CCD1">…</span>
+          </div>
+          <div class="bar"><div style="width:35%;height:100%;background:#E8A33D"></div></div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span class="lbl">Timeline</span>
+          <span class="mono" style="font-size:11px;color:#9A9DA3">Gap {{gapLabel}}</span>
+        </div>
+        <input type="range" min="0" max="5" value="{{gapIdx}}" onChange="{{setGap}}" aria-label="Time gap between groups" style="width:100%;accent-color:#5B9DFF">
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <button class="grp" aria-pressed="{{allPressed}}" onClick="{{showAll}}"><span>All groups</span><span class="mono" style="font-size:12px;color:#9A9DA3">{{total}}</span></button>
+          <sc-for list="{{groups}}" as="g" hint-placeholder-count="4">
+            <button class="grp" aria-pressed="{{g.pressed}}" onClick="{{g.pick}}">
+              <span style="display:flex;flex-direction:column;gap:2px">
+                <span>{{g.day}}</span>
+                <span class="mono" style="font-size:11px;color:#9A9DA3">{{g.range}}</span>
+              </span>
+              <span style="display:flex;align-items:center;gap:6px">
+                <span style="width:{{g.barW}};height:6px;border-radius:3px;background:{{g.barColor}}"></span>
+                <span class="mono" style="font-size:12px;color:#9A9DA3;width:20px;text-align:right">{{g.count}}</span>
+              </span>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+    </aside>
+
+    <main style="flex:1;min-width:0;display:flex;flex-direction:column">
+      <div style="height:52px;flex-shrink:0;display:flex;align-items:center;gap:12px;padding:0 16px;border-bottom:1px solid #2A2C30">
+        <div class="seg" role="group" aria-label="View">
+          <button aria-pressed="{{newPressed}}" onClick="{{showNew}}">New</button>
+          <button aria-pressed="{{allFilesPressed}}" onClick="{{showAllFiles}}">All</button>
+        </div>
+        <button class="btn">Sort: Capture time
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+        </button>
+        <button class="btn">RAF+JPG grouped</button>
+        <div style="flex:1"></div>
+        <button class="btn" onClick="{{selectAll}}">Select all</button>
+        <button class="btn" onClick="{{selectNone}}">None</button>
+        <a class="btn" href="Loupe.dc.html" style="background:#2A3550;border-color:#3B5378">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3M11 8v6M8 11h6"></path></svg>
+          Loupe <span class="mono" style="font-size:11px;color:#9AB6E0">Space</span>
+        </a>
+      </div>
+
+      <div style="flex:1;overflow:auto;padding:12px 16px 24px;display:flex;flex-direction:column;gap:18px">
+        <sc-for list="{{visibleGroups}}" as="g" hint-placeholder-count="2">
+          <section style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:baseline;gap:10px">
+              <h2 style="margin:0;font-size:14px;font-weight:600">{{g.day}}</h2>
+              <span class="mono" style="font-size:12px;color:#9A9DA3">{{g.range}} · {{g.count}} files · {{g.device}}</span>
+              <span style="flex:1;height:1px;background:#2A2C30"></span>
+              <button class="btn" style="height:24px;padding:0 8px;font-size:12px" onClick="{{g.jobAssign}}">Job Code: {{g.job}}</button>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px">
+              <sc-for list="{{g.files}}" as="f" hint-placeholder-count="6">
+                <button class="{{f.cls}}" aria-pressed="{{f.checked}}" onClick="{{f.toggle}}" title="{{f.tip}}">
+                  <div class="thumb" style="background:{{f.sky}}">
+                    <div style="position:absolute;left:0;right:0;bottom:0;height:{{f.horizon}};background:{{f.ground}}"></div>
+                    <div style="position:absolute;left:{{f.sunX}};top:18px;width:14px;height:14px;border-radius:50%;background:{{f.sun}}"></div>
+                    <span class="chk"><sc-if value="{{f.checked}}" hint-placeholder-val="{{true}}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" aria-hidden="true"><path d="M5 12l5 5L20 7"></path></svg></sc-if></span>
+                    <sc-if value="{{f.badge}}" hint-placeholder-val="{{true}}"><span class="badge">{{f.badge}}</span></sc-if>
+                    <sc-if value="{{f.imported}}" hint-placeholder-val="{{false}}"><span class="badge" style="left:6px;right:auto;bottom:6px">imported</span></sc-if>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;gap:4px;padding:0 2px">
+                    <span class="mono" style="font-size:11px;color:#C9CCD1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{f.name}}</span>
+                    <span class="mono" style="font-size:11px;color:#9A9DA3">{{f.time}}</span>
+                  </div>
+                </button>
+              </sc-for>
+            </div>
+          </section>
+        </sc-for>
+      </div>
+    </main>
+
+    <aside style="width:340px;flex-shrink:0;display:flex;flex-direction:column;gap:14px;padding:16px;border-left:1px solid #2A2C30;background:#1B1C1F;overflow:auto;box-sizing:border-box">
+      <div class="card">
+        <span class="lbl">Destination</span>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <span style="font-size:12px;color:#9A9DA3">Photos</span>
+          <span class="mono" style="font-size:12px">~/Pictures/Archive</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <span style="font-size:12px;color:#9A9DA3">Videos</span>
+          <span class="mono" style="font-size:12px">~/Videos/Archive</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:3px;padding:10px;border-radius:6px;background:#141517;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#C9CCD1">
+          <span>Archive/</span>
+          <span style="padding-left:14px">2026/</span>
+          <span style="padding-left:28px">2026-10-12_Dolomiten/ <span style="color:#3FB984">+{{selCount12}}</span></span>
+          <span style="padding-left:28px">2026-10-13_Dolomiten/ <span style="color:#3FB984">+{{selCount13}}</span></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span class="lbl">Naming</span>
+          <a href="Template.dc.html" style="font-size:12px">Edit</a>
+        </div>
+        <div class="mono" style="font-size:12px;line-height:1.5;color:#C9CCD1;word-break:break-all">{date:%Y%m%d}-{time:%H%M}_{job}_{seq:4}.{ext}</div>
+        <div style="display:flex;flex-direction:column;gap:2px;font-size:12px">
+          <span style="color:#9A9DA3">Example</span>
+          <span class="mono">20261012-0831_Dolomiten_0412.RAF</span>
+          <span class="mono">20261012-0831_Dolomiten_0412.JPG</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="lbl">Backup</span>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="width:8px;height:8px;border-radius:50%;background:#3FB984"></span>
+          <div style="flex:1"><div>NAS · /mnt/nas/foto</div><div style="font-size:12px;color:#9A9DA3">3.1 TB free</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="width:8px;height:8px;border-radius:50%;background:#E8A33D"></span>
+          <div style="flex:1"><div>Samsung T7</div><div style="font-size:12px;color:#E8A33D">not connected</div></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:#9A9DA3;padding-top:4px;border-top:1px solid #2C2E33">
+          <span>Card can be formatted after</span><span style="color:#E8E6E3">2 verified copies</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="lbl">Metadata (XMP)</span>
+        <div style="display:grid;grid-template-columns:90px 1fr;gap:6px 10px;font-size:12px">
+          <span style="color:#9A9DA3">Copyright</span><span>© 2026 Andy Pollari</span>
+          <span style="color:#9A9DA3">Keywords</span><span>Vacation, Mountains</span>
+          <span style="color:#9A9DA3">Time correction</span><span>Fujifilm X-T5: +1 h 00 min</span>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <footer style="height:64px;flex-shrink:0;display:flex;align-items:center;gap:24px;padding:0 16px;border-top:1px solid #2A2C30;background:#1B1C1F">
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <span style="font-weight:600">{{selCount}} of {{total}} selected · {{selSize}}</span>
+      <span style="font-size:12px;color:#9A9DA3">Destination: 1.2 TB free · NAS: 3.1 TB free · 2 RAF+JPG pairs</span>
+    </div>
+    <div style="flex:1"></div>
+    <span style="display:flex;align-items:center;gap:8px;font-size:12px;color:#E8A33D">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 9v4M12 17h.01"></path><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>
+      1 backup destination missing
+    </span>
+    <span style="font-size:12px;color:#9A9DA3;text-align:right">Continues in the background.<br>Plan the next source right after.</span>
+    <a class="btn" href="Progress.dc.html" style="height:40px;padding:0 22px;background:#5B9DFF;border-color:#5B9DFF;color:#0B1220;font-weight:600;font-size:14px">Import</a>
+    <a class="btn" href="Progress.dc.html" style="height:40px">Add to queue</a>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    var palettes = [
+      ['#8FA9C2','#4E5B47','#E9D9A6'], ['#B8B2A6','#6A5A44','#F3E3B5'], ['#6F8FAF','#3E4A3F','#F0D79A'],
+      ['#A7B9C9','#7A6A55','#FFF1C8'], ['#52677D','#2F3A34','#D9C98F'], ['#C9A98A','#5B4636','#FFE2B0'],
+      ['#7C95A8','#56634D','#EADBAF'], ['#9AA7B0','#4A4E56','#E5E1D6']
+    ];
+    var defs = [
+      { id: 'g1', day: 'Sat, Oct 12', range: '07:12–09:48', device: 'Fujifilm X-T5', job: 'Dolomiten', n: 18, start: 7*60+12, step: 8, base: 3412, imported: false },
+      { id: 'g2', day: 'Sat, Oct 12', range: '13:30–15:05', device: 'Fujifilm X-T5', job: 'Dolomiten', n: 12, start: 13*60+30, step: 8, base: 3431, imported: false },
+      { id: 'g3', day: 'Sun, Oct 13', range: '06:55–08:20', device: 'Fujifilm X-T5', job: '—', n: 12, start: 6*60+55, step: 7, base: 3444, imported: false },
+      { id: 'g4', day: 'Fri, Oct 11', range: '18:02–21:40', device: 'Pixel 9', job: '—', n: 8, start: 18*60+2, step: 27, base: 1201, imported: true }
+    ];
+    var files = [];
+    defs.forEach(function (d, gi) {
+      for (var i = 0; i < d.n; i++) {
+        var m = d.start + i * d.step;
+        var hh = Math.floor(m / 60), mm = m % 60;
+        var p = palettes[(i * 3 + gi) % palettes.length];
+        var isVid = (i % 7 === 5);
+        var pair = (!isVid && i % 4 === 1);
+        var num = d.base + i;
+        var name = d.device === 'Pixel 9' ? ('PXL_20261011_' + (180200 + i * 271)) : ('DSCF' + num);
+        var ext = isVid ? '.MP4' : (d.device === 'Pixel 9' ? '.jpg' : '.RAF');
+        files.push({
+          id: d.id + '-' + i, group: d.id, name: name + ext,
+          time: (hh < 10 ? '0' : '') + hh + ':' + (mm < 10 ? '0' : '') + mm,
+          sky: p[0], ground: p[1], sun: p[2], horizon: (30 + (i * 13) % 35) + '%', sunX: (12 + (i * 37) % 70) + '%',
+          badge: isVid ? ('0:' + (12 + i * 3)) : (pair ? 'RAF+JPG' : ''),
+          imported: d.imported, mb: isVid ? 410 : (pair ? 34 : 26)
+        });
+      }
+    });
+    var sel = {};
+    files.forEach(function (f) { if (!f.imported) sel[f.id] = true; });
+    this.defs = defs;
+    this.files = files;
+    this.gaps = ['15 min', '30 min', '1 h', '2 h', '6 h', '24 h'];
+    this.state = { sel: sel, group: null, show: 'neu', gapIdx: 3 };
+  }
+  renderVals() {
+    var self = this, st = this.state;
+    var selCount = 0, mb = 0, c12 = 0, c13 = 0;
+    this.files.forEach(function (f) {
+      if (st.sel[f.id]) {
+        selCount++; mb += f.mb;
+        if (f.group === 'g1' || f.group === 'g2') c12++;
+        if (f.group === 'g3') c13++;
+      }
+    });
+    var max = 18;
+    var groups = this.defs.map(function (d) {
+      return {
+        day: d.day, range: d.range, count: d.n,
+        barW: Math.round(8 + 52 * d.n / max) + 'px',
+        barColor: d.imported ? '#4A4D54' : '#5B9DFF',
+        pressed: st.group === d.id ? 'true' : 'false',
+        pick: function () { self.setState({ group: d.id }); }
+      };
+    });
+    var visibleGroups = this.defs.filter(function (d) {
+      if (st.group && st.group !== d.id) return false;
+      if (st.show === 'neu' && d.imported) return false;
+      return true;
+    }).map(function (d) {
+      return {
+        day: d.day, range: d.range, count: d.n, device: d.device, job: d.job,
+        jobAssign: function () {},
+        files: self.files.filter(function (f) { return f.group === d.id; }).map(function (f) {
+          var on = !!st.sel[f.id];
+          return Object.assign({}, f, {
+            checked: on ? 'true' : 'false',
+            cls: f.imported ? 'tile done' : 'tile',
+            tip: f.imported ? ('Already imported to ~/Pictures/Archive/2026/2026-10-11/' + f.name) : f.name,
+            toggle: function () {
+              var s = Object.assign({}, self.state.sel);
+              if (s[f.id]) delete s[f.id]; else s[f.id] = true;
+              self.setState({ sel: s });
+            }
+          });
+        })
+      };
+    });
+    var setSel = function (pred) {
+      var s = {};
+      self.files.forEach(function (f) { if (pred(f)) s[f.id] = true; });
+      self.setState({ sel: s });
+    };
+    return {
+      groups: groups, visibleGroups: visibleGroups,
+      total: this.files.length, selCount: selCount,
+      selSize: (mb / 1024).toFixed(1) + ' GB',
+      selCount12: c12, selCount13: c13,
+      allPressed: st.group ? 'false' : 'true',
+      showAll: function () { self.setState({ group: null }); },
+      newPressed: st.show === 'neu' ? 'true' : 'false',
+      allFilesPressed: st.show === 'alle' ? 'true' : 'false',
+      showNew: function () { self.setState({ show: 'neu' }); },
+      showAllFiles: function () { self.setState({ show: 'alle' }); },
+      selectAll: function () { setSel(function (f) { return !f.imported; }); },
+      selectNone: function () { setSel(function () { return false; }); },
+      gapIdx: st.gapIdx, gapLabel: this.gaps[st.gapIdx],
+      setGap: function (e) { self.setState({ gapIdx: Number(e.target.value) }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

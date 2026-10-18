@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Framehive – Naming</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#111214}
+a{color:#7FB2FF;text-decoration:none}a:hover{color:#A9CBFF}
+.lbl{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#9A9DA3}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 12px;border-radius:6px;border:1px solid #3A3D43;background:#26282C;color:#E8E6E3;font:500 13px 'IBM Plex Sans',sans-serif;cursor:pointer;box-sizing:border-box}
+.btn:hover{background:#2E3035;color:#E8E6E3}
+.tab{height:36px;padding:0 14px;border:0;border-bottom:2px solid transparent;background:transparent;color:#B8BBC0;font:500 14px 'IBM Plex Sans',sans-serif;cursor:pointer}
+.tab[aria-selected="true"]{color:#FFFFFF;border-bottom-color:#5B9DFF}
+.chip{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 6px 0 10px;border-radius:6px;border:1px solid #3B5378;background:#1F2633;color:#DCE8FF;font:500 12px 'IBM Plex Mono',monospace}
+.chip.sep{border-color:#3A3D43;background:#26282C;color:#E8E6E3}
+.chip button{width:22px;height:22px;border:0;border-radius:4px;background:transparent;color:#9AB6E0;cursor:pointer;font-size:14px;line-height:1}
+.chip button:hover{background:rgba(255,255,255,.08)}
+.tok{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:8px 10px;border-radius:6px;border:1px solid #2C2E33;background:#1E1F22;color:#E8E6E3;cursor:pointer;text-align:left;font:400 12px 'IBM Plex Sans',sans-serif}
+.tok:hover{border-color:#3B5378;background:#1F2633}
+.mono{font-family:'IBM Plex Mono',monospace}
+.row{display:grid;grid-template-columns:200px 24px 1fr 120px;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid #26282C;font-size:12px}
+.opt{display:flex;align-items:flex-start;gap:10px;font-size:13px;cursor:pointer}
+.opt input{margin-top:2px;accent-color:#5B9DFF;width:16px;height:16px}
+</style>
+</helmet>
+<div style="width:1440px;height:900px;display:flex;flex-direction:column;background:#17181A;color:#E8E6E3;font-family:'IBM Plex Sans',sans-serif;font-size:13px;overflow:hidden">
+
+  <header style="height:52px;flex-shrink:0;display:flex;align-items:center;gap:14px;padding:0 16px;border-bottom:1px solid #2A2C30;background:#1B1C1F">
+    <a class="btn" href="Main.dc.html">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+      Back
+    </a>
+    <h1 style="margin:0;font-size:15px;font-weight:600">Naming &amp; Folders</h1>
+    <span style="color:#9A9DA3">Profile Vacation</span>
+    <div style="flex:1"></div>
+    <label style="display:flex;align-items:center;gap:8px;color:#9A9DA3">Template
+      <select style="height:32px;padding:0 8px;border-radius:6px;border:1px solid #3A3D43;background:#26282C;color:#E8E6E3;font:500 13px 'IBM Plex Sans',sans-serif">
+        <option>Date-Time_Job_Number</option>
+        <option>Keep original</option>
+        <option>ASMP recommendation</option>
+      </select>
+    </label>
+    <button class="btn">Save as template</button>
+    <a class="btn" href="Main.dc.html" style="background:#5B9DFF;border-color:#5B9DFF;color:#0B1220;font-weight:600">Apply</a>
+  </header>
+
+  <div style="flex:1;display:flex;min-height:0">
+    <main style="flex:1;min-width:0;display:flex;flex-direction:column;gap:20px;padding:20px 24px;overflow:auto">
+
+      <div style="display:flex;gap:4px;border-bottom:1px solid #2A2C30" role="tablist">
+        <button class="tab" role="tab" aria-selected="{{tabFile}}" onClick="{{toFile}}">Filename · Photos</button>
+        <button class="tab" role="tab" aria-selected="{{tabVideo}}" onClick="{{toVideo}}">Filename · Videos</button>
+        <button class="tab" role="tab" aria-selected="{{tabDir}}" onClick="{{toDir}}">Subfolder</button>
+      </div>
+
+      <section style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span class="lbl">Structure</span>
+          <span style="font-size:12px;color:#9A9DA3">Click tokens to add, ✕ to remove</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-height:52px;padding:10px;border-radius:8px;border:1px solid #3A3D43;background:#141517">
+          <sc-for list="{{chips}}" as="c" hint-placeholder-count="7">
+            <span class="{{c.cls}}">{{c.label}}<button aria-label="{{c.removeLabel}}" onClick="{{c.remove}}">×</button></span>
+          </sc-for>
+          <span class="mono" style="font-size:12px;color:#6C7079">{{suffix}}</span>
+        </div>
+        <label style="display:flex;flex-direction:column;gap:6px">
+          <span style="font-size:12px;color:#9A9DA3">Text mode (same template, directly editable)</span>
+          <input class="mono" value="{{templateText}}" readonly="readonly" style="height:36px;padding:0 10px;border-radius:6px;border:1px solid #3A3D43;background:#141517;color:#DCE8FF;font:500 13px 'IBM Plex Mono',monospace">
+        </label>
+      </section>
+
+      <section style="display:flex;flex-direction:column;gap:10px">
+        <span class="lbl">Tokens</span>
+        <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px">
+          <sc-for list="{{palette}}" as="t" hint-placeholder-count="15">
+            <button class="tok" onClick="{{t.add}}">
+              <span style="font-weight:500">{{t.title}}</span>
+              <span class="mono" style="color:#9A9DA3">{{t.example}}</span>
+            </button>
+          </sc-for>
+        </div>
+      </section>
+
+      <section style="display:flex;flex-direction:column;gap:0;border-radius:8px;border:1px solid #2C2E33;overflow:hidden">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#1E1F22;border-bottom:1px solid #2C2E33">
+          <span class="lbl">Live preview · 6 files from the selection</span>
+          <sc-if value="{{hasConflict}}" hint-placeholder-val="{{false}}">
+            <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:#E8A33D">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 9v4M12 17h.01"></path><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>
+              {{conflictText}}
+            </span>
+          </sc-if>
+          <sc-if value="{{noConflict}}" hint-placeholder-val="{{true}}">
+            <span style="font-size:12px;color:#3FB984">No conflicts in 42 files</span>
+          </sc-if>
+        </div>
+        <sc-for list="{{preview}}" as="p" hint-placeholder-count="6">
+          <div class="row">
+            <span class="mono" style="color:#9A9DA3">{{p.orig}}</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6C7079" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+            <span class="mono" style="color:{{p.color}};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{p.out}}</span>
+            <span style="font-size:11px;color:{{p.noteColor}};text-align:right">{{p.note}}</span>
+          </div>
+        </sc-for>
+      </section>
+    </main>
+
+    <aside style="width:340px;flex-shrink:0;display:flex;flex-direction:column;gap:22px;padding:20px;border-left:1px solid #2A2C30;background:#1B1C1F;overflow:auto;box-sizing:border-box">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <span class="lbl">Sequence</span>
+        <label style="display:flex;justify-content:space-between;align-items:center">Type
+          <select style="height:32px;width:180px;padding:0 8px;border-radius:6px;border:1px solid #3A3D43;background:#26282C;color:#E8E6E3;font:400 13px 'IBM Plex Sans',sans-serif">
+            <option>per job code</option><option>per destination folder</option><option>imported today</option><option>saved counter</option><option>session</option>
+          </select>
+        </label>
+        <label style="display:flex;justify-content:space-between;align-items:center">Digits
+          <input type="number" value="4" min="1" max="6" style="height:32px;width:80px;padding:0 8px;border-radius:6px;border:1px solid #3A3D43;background:#26282C;color:#E8E6E3;font:400 13px 'IBM Plex Mono',monospace;box-sizing:border-box">
+        </label>
+        <label style="display:flex;justify-content:space-between;align-items:center">Next value
+          <input value="0412" style="height:32px;width:80px;padding:0 8px;border-radius:6px;border:1px solid #3A3D43;background:#26282C;color:#E8E6E3;font:400 13px 'IBM Plex Mono',monospace;box-sizing:border-box">
+        </label>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <span class="lbl">Options</span>
+        <label class="opt"><input type="checkbox" checked="checked"><span>RAW + JPG get the same name<br><span style="font-size:12px;color:#9A9DA3">Also applies to XMP, WAV, LRV</span></span></label>
+        <label class="opt"><input type="checkbox" checked="checked"><span>Compatible with Windows &amp; macOS<br><span style="font-size:12px;color:#9A9DA3">Removes : * ? " &lt; &gt; |</span></span></label>
+        <label class="opt"><input type="checkbox"><span>Lowercase extensions</span></label>
+        <label class="opt"><input type="checkbox" checked="checked"><span>Apply camera time correction<br><span style="font-size:12px;color:#9A9DA3">Fujifilm X-T5 +1 h</span></span></label>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <span class="lbl">On name conflict</span>
+        <label class="opt"><input type="radio" name="conf" checked="checked"><span>Append suffix <span class="mono" style="color:#9A9DA3">_1, _2</span></span></label>
+        <label class="opt"><input type="radio" name="conf"><span>Skip if content is identical (hash)</span></label>
+      </div>
+    </aside>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.tokens = {
+      date: { title: 'Date', t: '{date:%Y%m%d}', ex: '20261012' },
+      dateIso: { title: 'Date ISO', t: '{date:%Y-%m-%d}', ex: '2026-10-12' },
+      year: { title: 'Year', t: '{date:%Y}', ex: '2026' },
+      month: { title: 'Month', t: '{date:%m}', ex: '10' },
+      time: { title: 'Time', t: '{time:%H%M}', ex: '0731' },
+      job: { title: 'Job Code', t: '{job}', ex: 'Dolomiten' },
+      seq: { title: 'Sequence', t: '{seq:4}', ex: '0412' },
+      orig: { title: 'Original name', t: '{name}', ex: 'DSCF3412' },
+      num: { title: 'Image number', t: '{num:4}', ex: '3412' },
+      cam: { title: 'Camera', t: '{camera}', ex: 'X-T5' },
+      iso: { title: 'ISO', t: 'ISO{iso}', ex: 'ISO100' },
+      lens: { title: 'Focal length', t: '{focal}mm', ex: '35mm' },
+      under: { title: 'Underscore', t: '_', ex: '_', sep: true },
+      dash: { title: 'Hyphen', t: '-', ex: '-', sep: true },
+      slash: { title: 'Folder level', t: '/', ex: '/', sep: true }
+    };
+    this.files = [
+      { o: 'DSCF3412.RAF', d: '20261012', di: '2026-10-12', t: '0831', s: '0412', n: '3412', iso: '100', f: '35', e: 'RAF' },
+      { o: 'DSCF3412.JPG', d: '20261012', di: '2026-10-12', t: '0831', s: '0412', n: '3412', iso: '100', f: '35', e: 'JPG', pair: true },
+      { o: 'DSCF3413.RAF', d: '20261012', di: '2026-10-12', t: '0831', s: '0413', n: '3413', iso: '100', f: '35', e: 'RAF' },
+      { o: 'DSCF3414.RAF', d: '20261012', di: '2026-10-12', t: '0839', s: '0414', n: '3414', iso: '200', f: '70', e: 'RAF' },
+      { o: 'C0017.MP4', d: '20261012', di: '2026-10-12', t: '0852', s: '0415', n: '0017', iso: '400', f: '24', e: 'MP4' },
+      { o: 'DSCF3444.RAF', d: '20261013', di: '2026-10-13', t: '0755', s: '0416', n: '3444', iso: '100', f: '24', e: 'RAF' }
+    ];
+    this.state = {
+      tab: 'file',
+      chips: {
+        file: ['date', 'dash', 'time', 'under', 'job', 'under', 'seq'],
+        video: ['date', 'dash', 'time', 'under', 'job', 'under', 'orig'],
+        dir: ['year', 'slash', 'dateIso', 'under', 'job']
+      }
+    };
+  }
+  val(k, f) {
+    var m = { date: f.d, dateIso: f.di, year: f.d.slice(0, 4), month: f.d.slice(4, 6), time: f.t, job: 'Dolomiten', seq: f.s,
+      orig: f.o.replace(/\.[^.]+$/, ''), num: f.n, cam: 'X-T5', iso: 'ISO' + f.iso, lens: f.f + 'mm', under: '_', dash: '-', slash: '/' };
+    return m[k];
+  }
+  renderVals() {
+    var self = this, st = this.state, tab = st.tab, list = st.chips[tab];
+    var setList = function (nl) { var c = Object.assign({}, self.state.chips); c[tab] = nl; self.setState({ chips: c }); };
+    var isDir = tab === 'dir';
+    var files = tab === 'video' ? this.files.filter(function (f) { return f.e === 'MP4'; }).concat([
+      { o: 'C0018.MP4', d: '20261012', di: '2026-10-12', t: '0907', s: '0417', n: '0018', iso: '400', f: '24', e: 'MP4' },
+      { o: 'C0019.MP4', d: '20261013', di: '2026-10-13', t: '0712', s: '0418', n: '0019', iso: '400', f: '24', e: 'MP4' }
+    ]) : this.files;
+    var outs = files.map(function (f) {
+      var base = list.map(function (k) { return self.val(k, f); }).join('');
+      return isDir ? ('Archive/' + base + '/') : (base + '.' + f.e);
+    });
+    var seen = {}, dupes = 0;
+    var preview = files.map(function (f, i) {
+      var key = outs[i], dupe = !isDir && seen[key] && !f.pair;
+      if (dupe) dupes++;
+      seen[key] = true;
+      var note = '', noteColor = '#9A9DA3';
+      if (dupe) { note = 'Conflict → _1'; noteColor = '#E8A33D'; }
+      else if (f.pair) { note = 'RAF+JPG pair'; }
+      return { orig: f.o, out: dupe ? key.replace(/(\.[^.]+)$/, '_1$1') : key, color: dupe ? '#E8A33D' : '#E8E6E3', note: note, noteColor: noteColor };
+    });
+    var tpl = list.map(function (k) { return self.tokens[k].t; }).join('') + (isDir ? '/' : '.{ext}');
+    return {
+      tabFile: tab === 'file' ? 'true' : 'false', tabVideo: tab === 'video' ? 'true' : 'false', tabDir: isDir ? 'true' : 'false',
+      toFile: function () { self.setState({ tab: 'file' }); },
+      toVideo: function () { self.setState({ tab: 'video' }); },
+      toDir: function () { self.setState({ tab: 'dir' }); },
+      chips: list.map(function (k, i) {
+        var t = self.tokens[k];
+        return {
+          label: t.sep ? t.t : t.title, cls: t.sep ? 'chip sep' : 'chip', removeLabel: 'Remove ' + t.title,
+          remove: function () { var nl = list.slice(); nl.splice(i, 1); setList(nl); }
+        };
+      }),
+      suffix: isDir ? '/' : '.RAF',
+      templateText: tpl,
+      palette: Object.keys(this.tokens).map(function (k) {
+        var t = self.tokens[k];
+        return { title: t.title, example: t.ex, add: function () { setList(list.concat([k])); } };
+      }),
+      preview: preview,
+      hasConflict: dupes > 0, noConflict: dupes === 0,
+      conflictText: dupes + ' conflict' + (dupes > 1 ? 's' : '') + ' – add sequence or time'
+    };
+  }
+}
+</script>
+</body>
+</html>

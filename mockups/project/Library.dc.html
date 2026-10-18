@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Framehive – Library</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#111214}
+a{color:#7FB2FF;text-decoration:none}a:hover{color:#A9CBFF}
+.lbl{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#9A9DA3}
+.btn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:6px;border:1px solid #3A3D43;background:#26282C;color:#E8E6E3;font:500 13px 'IBM Plex Sans',sans-serif;cursor:pointer;box-sizing:border-box}
+.btn:hover{background:#2E3035;color:#E8E6E3}
+.mod{display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:6px;color:#B8BBC0;font-weight:500}
+a.mod:hover{background:#26282C;color:#E8E6E3}
+.mod[aria-current="page"]{background:#2A3550;color:#FFFFFF}
+.mono{font-family:'IBM Plex Mono',monospace}
+.nav{display:flex;justify-content:space-between;align-items:center;width:100%;padding:5px 8px;border-radius:5px;border:0;background:transparent;color:#D6D4D1;font:400 13px 'IBM Plex Sans',sans-serif;cursor:pointer;text-align:left;box-sizing:border-box}
+.nav:hover{background:#26282C}
+.nav[aria-pressed="true"]{background:#1F2633;color:#FFFFFF}
+.chip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:14px;border:1px solid #3A3D43;background:#1E1F22;color:#C9CCD1;font:500 12px 'IBM Plex Sans',sans-serif;cursor:pointer}
+.chip[aria-pressed="true"]{background:#2A3550;border-color:#3B5378;color:#FFFFFF}
+.tile{position:relative;display:flex;flex-direction:column;padding:0;border-radius:6px;border:2px solid transparent;background:#1E1F22;cursor:pointer;overflow:hidden;font:inherit;color:inherit;text-align:left}
+.tile:hover{border-color:#3A3D43}
+.tile[aria-pressed="true"]{border-color:#5B9DFF}
+.tile.rej{opacity:.38}
+.thumb{position:relative;height:118px;overflow:hidden}
+.meta{display:flex;justify-content:space-between;align-items:center;padding:5px 7px;font-size:11px}
+.ov{position:absolute;padding:1px 5px;border-radius:3px;background:rgba(0,0,0,.65);color:#fff;font:500 10px 'IBM Plex Mono',monospace}
+.star{width:26px;height:26px;border:0;background:transparent;color:#4A4D54;font-size:18px;cursor:pointer;padding:0;line-height:1}
+.star.on{color:#E8C547}
+.tag{display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border-radius:4px;background:#26282C;border:1px solid #33363B;font-size:12px}
+.tag button{border:0;background:transparent;color:#9A9DA3;cursor:pointer;padding:0;font-size:13px}
+.sug{border:1px dashed #3A3D43;background:transparent;color:#9A9DA3;cursor:pointer;font:400 12px 'IBM Plex Sans',sans-serif;padding:3px 8px;border-radius:4px}
+.sug:hover{color:#E8E6E3;border-color:#5B9DFF}
+.pk{flex:1;height:30px;border-radius:6px;border:1px solid #3A3D43;background:#1E1F22;color:#C9CCD1;font:500 12px 'IBM Plex Sans',sans-serif;cursor:pointer}
+.lblbtn{width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0}
+.lblbtn[aria-pressed="true"]{border-color:#FFFFFF}
+.job{display:grid;grid-template-columns:1fr auto;gap:4px 10px;padding:10px 0;border-top:1px solid #2C2E33}
+.bar{height:4px;border-radius:2px;background:#33363B;overflow:hidden}
+</style>
+</helmet>
+<div style="position:relative;width:1440px;height:900px;display:flex;flex-direction:column;background:#17181A;color:#E8E6E3;font-family:'IBM Plex Sans',sans-serif;font-size:13px;overflow:hidden">
+
+  <header style="height:52px;flex-shrink:0;display:flex;align-items:center;gap:16px;padding:0 16px;border-bottom:1px solid #2A2C30;background:#1B1C1F">
+    <div style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:15px">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5B9DFF" stroke-width="1.8" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"></rect><path d="M8 6l1.5-2h5L16 6"></path><circle cx="12" cy="12.5" r="3.5"></circle></svg>
+      Framehive
+    </div>
+    <nav style="display:flex;gap:2px;margin-left:8px" aria-label="Module">
+      <a class="mod" href="Main.dc.html">Import</a>
+      <span class="mod" aria-current="page">Library</span>
+      <span class="mod" style="color:#6C7079" title="coming after v1">Map</span>
+      <span class="mod" style="color:#6C7079" title="coming after v1">People</span>
+    </nav>
+    <div style="flex:1"></div>
+    <label style="display:flex;align-items:center;gap:8px;height:32px;padding:0 10px;width:340px;border-radius:6px;background:#26282C;border:1px solid #3A3D43;box-sizing:border-box">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9A9DA3" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>
+      <input aria-label="Search library" placeholder="Search: tag, place, camera … or “dog on the beach”" style="flex:1;border:0;background:transparent;color:#E8E6E3;font:400 13px 'IBM Plex Sans',sans-serif;outline:none">
+      <span class="mono" style="font-size:11px;color:#9A9DA3">⌘K</span>
+    </label>
+    <button class="btn" onClick="{{toggleJobs}}" aria-expanded="{{jobsOpen}}" style="gap:8px">
+      <span style="width:14px;height:14px;border-radius:50%;border:2px solid #33363B;border-top-color:#5B9DFF;box-sizing:border-box"></span>
+      <span>3 Jobs</span><span class="mono" style="font-size:12px;color:#9A9DA3">Import 38%</span>
+    </button>
+  </header>
+
+  <sc-if value="{{jobsOpenB}}" hint-placeholder-val="{{false}}">
+    <div style="position:absolute;top:58px;right:16px;width:400px;z-index:10;padding:14px 16px 6px;border-radius:10px;background:#212226;border:1px solid #3A3D43;box-shadow:0 12px 32px rgba(0,0,0,.5)">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px"><span class="lbl">Background jobs</span><a href="Main.dc.html" style="font-size:12px">+ Schedule import</a></div>
+      <div class="job">
+        <span><b style="font-weight:600">Import Fujifilm X-T5</b> <span style="color:#9A9DA3">· Dolomiten</span></span><a href="Progress.dc.html" style="font-size:12px">Details</a>
+        <div class="bar" style="grid-column:1/3"><div style="width:38%;height:100%;background:#5B9DFF"></div></div>
+        <span style="font-size:12px;color:#9A9DA3">16 / 42 verified · 0:42 left</span><span class="mono" style="font-size:12px;color:#9A9DA3">612 MB/s</span>
+      </div>
+      <div class="job">
+        <span><b style="font-weight:600">Import Pixel 9</b> <span style="color:#9A9DA3">· Phone</span></span><span style="font-size:12px;color:#9A9DA3">waiting</span>
+        <span style="font-size:12px;color:#9A9DA3;grid-column:1/3">8 files · starts in parallel (different destination)</span>
+      </div>
+      <div class="job">
+        <span><b style="font-weight:600">Write XMP</b> <span style="color:#9A9DA3">· Samsung T7</span></span><span style="font-size:12px;color:#E8A33D">offline</span>
+        <span style="font-size:12px;color:#9A9DA3;grid-column:1/3">23 changes queued · will be written when connected</span>
+      </div>
+      <div class="job">
+        <span style="color:#9A9DA3">Similarity &amp; faces</span><span style="font-size:12px;color:#9A9DA3">paused</span>
+        <span style="font-size:12px;color:#6C7079;grid-column:1/3">resumes once the import is finished</span>
+      </div>
+    </div>
+  </sc-if>
+
+  <div style="flex:1;display:flex;min-height:0">
+
+    <aside style="width:260px;flex-shrink:0;display:flex;flex-direction:column;gap:18px;padding:14px 12px;border-right:1px solid #2A2C30;background:#1B1C1F;overflow:auto;box-sizing:border-box">
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <span class="lbl" style="padding:0 8px 6px">Storage locations</span>
+        <div class="nav"><span style="display:flex;align-items:center;gap:8px"><span style="width:7px;height:7px;border-radius:50%;background:#3FB984"></span>Archive <span style="color:#9A9DA3;font-size:12px">local</span></span><span class="mono" style="font-size:12px;color:#9A9DA3">48,210</span></div>
+        <div class="nav"><span style="display:flex;align-items:center;gap:8px"><span style="width:7px;height:7px;border-radius:50%;background:#3FB984"></span>NAS foto <span style="color:#9A9DA3;font-size:12px">SMB</span></span><span class="mono" style="font-size:12px;color:#9A9DA3">121,904</span></div>
+        <div class="nav" title="Offline: previews from cache, changes are queued"><span style="display:flex;align-items:center;gap:8px;color:#9A9DA3"><span style="width:7px;height:7px;border-radius:50%;border:1.5px solid #6C7079;box-sizing:border-box"></span>Samsung T7 <span style="font-size:12px">offline</span></span><span class="mono" style="font-size:12px;color:#6C7079">9,877</span></div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <div style="display:flex;gap:4px;padding:0 4px 6px">
+          <sc-for list="{{views}}" as="v" hint-placeholder-count="3">
+            <button class="chip" aria-pressed="{{v.pressed}}" onClick="{{v.pick}}" style="height:24px;padding:0 9px">{{v.label}}</button>
+          </sc-for>
+        </div>
+        <sc-for list="{{tree}}" as="t" hint-placeholder-count="8">
+          <button class="nav" aria-pressed="{{t.pressed}}" onClick="{{t.pick}}" style="padding-left:{{t.indent}}">
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{t.label}}</span>
+            <span style="display:flex;align-items:center;gap:6px">
+              <sc-if value="{{t.live}}" hint-placeholder-val="{{false}}"><span style="font-size:10px;font-weight:600;color:#5B9DFF">LIVE</span></sc-if>
+              <span class="mono" style="font-size:12px;color:#9A9DA3">{{t.count}}</span>
+            </span>
+          </button>
+        </sc-for>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <span class="lbl" style="padding:0 8px 6px">Albums</span>
+        <div class="nav"><span>Portfolio 2026</span><span class="mono" style="font-size:12px;color:#9A9DA3">64</span></div>
+        <div class="nav"><span>Photo book Dolomites</span><span class="mono" style="font-size:12px;color:#9A9DA3">0</span></div>
+        <div class="nav"><span style="color:#B8BBC0">⚡ 5 stars, last 30 days</span><span class="mono" style="font-size:12px;color:#9A9DA3">31</span></div>
+      </div>
+    </aside>
+
+    <main style="flex:1;min-width:0;display:flex;flex-direction:column">
+      <div style="flex-shrink:0;display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid #2A2C30;flex-wrap:wrap">
+        <sc-for list="{{pickFilters}}" as="f" hint-placeholder-count="4">
+          <button class="chip" aria-pressed="{{f.pressed}}" onClick="{{f.pick}}">{{f.label}}</button>
+        </sc-for>
+        <span style="width:1px;height:20px;background:#3A3D43;margin:0 4px"></span>
+        <sc-for list="{{starFilters}}" as="f" hint-placeholder-count="4">
+          <button class="chip" aria-pressed="{{f.pressed}}" onClick="{{f.pick}}">{{f.label}}</button>
+        </sc-for>
+        <span style="width:1px;height:20px;background:#3A3D43;margin:0 4px"></span>
+        <button class="chip">Camera: all ▾</button>
+        <button class="chip">Film sim. ▾</button>
+        <button class="chip">Lens ▾</button>
+        <button class="chip">+ Filter</button>
+        <div style="flex:1"></div>
+        <span style="font-size:12px;color:#9A9DA3">Show</span>
+        <sc-for list="{{groupModes}}" as="f" hint-placeholder-count="4">
+          <button class="chip" aria-pressed="{{f.pressed}}" onClick="{{f.pick}}" title="{{f.title}}">{{f.label}}</button>
+        </sc-for>
+        <span class="mono" style="font-size:12px;color:#9A9DA3">{{shown}} {{shownUnit}}</span>
+        <input type="range" min="0" max="2" value="1" aria-label="Thumbnail size" style="width:80px;accent-color:#5B9DFF">
+      </div>
+
+      <div style="flex:1;overflow:auto;padding:14px 16px 20px;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;background:#172033;border:1px solid #2B3D5C;font-size:12px;color:#B9CDEB">
+          <span style="width:12px;height:12px;border-radius:50%;border:2px solid #33363B;border-top-color:#5B9DFF;box-sizing:border-box"></span>
+          Import running: verified images appear here immediately and can already be rated.
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px">
+          <sc-for list="{{tiles}}" as="f" hint-placeholder-count="10">
+            <button class="{{f.cls}}" aria-pressed="{{f.sel}}" onClick="{{f.pick}}" title="{{f.name}}">
+              <div class="thumb" style="background:{{f.sky}}">
+                <div style="position:absolute;left:0;right:0;bottom:0;height:{{f.horizon}};background:{{f.ground}}"></div>
+                <div style="position:absolute;left:{{f.sunX}};top:20px;width:14px;height:14px;border-radius:50%;background:{{f.sun}}"></div>
+                <sc-if value="{{f.isNew}}" hint-placeholder-val="{{false}}"><span class="ov" style="top:6px;left:6px;background:#2A4A8A">new</span></sc-if>
+                <sc-if value="{{f.isPick}}" hint-placeholder-val="{{false}}"><span class="ov" style="top:6px;right:6px;background:#1E6B4A">✓</span></sc-if>
+                <span class="ov" style="bottom:6px;right:6px">{{f.ext}}</span>
+              </div>
+              <div class="meta">
+                <span style="color:#E8C547;letter-spacing:1px">{{f.stars}}</span>
+                <span style="display:flex;align-items:center;gap:6px">
+                  <sc-if value="{{f.hasLabel}}" hint-placeholder-val="{{false}}"><span style="width:9px;height:9px;border-radius:50%;background:{{f.labelColor}}"></span></sc-if>
+                  <span class="mono" style="color:#9A9DA3">{{f.time}}</span>
+                </span>
+              </div>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="height:34px;flex-shrink:0;display:flex;align-items:center;gap:18px;padding:0 16px;border-top:1px solid #2A2C30;background:#1B1C1F;font-size:12px;color:#9A9DA3">
+        <span><span class="mono" style="color:#C9CCD1">P</span> Keep</span>
+        <span><span class="mono" style="color:#C9CCD1">X</span> Reject</span>
+        <span><span class="mono" style="color:#C9CCD1">1–5</span> Rating</span>
+        <span><span class="mono" style="color:#C9CCD1">6–9</span> Color label</span>
+        <span><span class="mono" style="color:#C9CCD1">T</span> Tag</span>
+        <span><span class="mono" style="color:#C9CCD1">C</span> Compare</span>
+        <div style="flex:1"></div>
+        <a href="Loupe.dc.html">Loupe (Space)</a>
+      </div>
+    </main>
+
+    <aside style="width:330px;flex-shrink:0;display:flex;flex-direction:column;gap:16px;padding:16px;border-left:1px solid #2A2C30;background:#1B1C1F;overflow:auto;box-sizing:border-box">
+      <div style="position:relative;height:190px;border-radius:6px;overflow:hidden;background:{{cur.sky}}">
+        <div style="position:absolute;left:0;right:0;bottom:0;height:{{cur.horizon}};background:{{cur.ground}}"></div>
+        <div style="position:absolute;left:{{cur.sunX}};top:34px;width:22px;height:22px;border-radius:50%;background:{{cur.sun}}"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <span class="mono" style="font-size:12px">{{cur.file}}</span>
+        <span style="font-size:12px;color:#9A9DA3">{{cur.path}}</span>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;gap:6px">
+          <button class="pk" onClick="{{setPick}}" style="{{pickStyle}}">✓ Keep</button>
+          <button class="pk" onClick="{{setReject}}" style="{{rejStyle}}">✕ Reject</button>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex">
+            <sc-for list="{{starBtns}}" as="b" hint-placeholder-count="5">
+              <button class="{{b.cls}}" onClick="{{b.set}}" aria-label="{{b.aria}}">★</button>
+            </sc-for>
+          </div>
+          <div style="display:flex;gap:6px">
+            <sc-for list="{{labelBtns}}" as="b" hint-placeholder-count="5">
+              <button class="lblbtn" aria-pressed="{{b.pressed}}" onClick="{{b.set}}" aria-label="{{b.aria}}" style="background:{{b.color}}"></button>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <span class="lbl">Tags</span>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <sc-for list="{{tags}}" as="t" hint-placeholder-count="3">
+            <span class="tag"><span><span style="color:#9A9DA3">{{t.parent}}</span>{{t.leaf}}</span><button onClick="{{t.remove}}" aria-label="Remove tag">×</button></span>
+          </sc-for>
+        </div>
+        <div style="display:flex;align-items:center;height:30px;padding:0 10px;border-radius:6px;background:#141517;border:1px solid #3A3D43;color:#6C7079;font-size:12px">Add tag… (T)</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <sc-for list="{{suggestions}}" as="t" hint-placeholder-count="3">
+            <button class="sug" onClick="{{t.add}}">+ {{t.label}}</button>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <span class="lbl">Capture</span>
+        <div style="display:grid;grid-template-columns:90px 1fr;gap:5px 10px;font-size:12px">
+          <span style="color:#9A9DA3">Camera</span><span>Fujifilm X-T5</span>
+          <span style="color:#9A9DA3">Lens</span><span>XF 16–55 mm F2.8 R LM WR</span>
+          <span style="color:#9A9DA3">Film sim.</span><span>Classic Chrome · DR200</span>
+          <span style="color:#9A9DA3">Files</span><span class="mono">{{cur.ext}} · grouped</span>
+          <span style="color:#9A9DA3">Exposure</span><span class="mono">1/500 · f/8 · ISO 100 · 35 mm</span>
+          <span style="color:#9A9DA3">Date</span><span class="mono">{{cur.date}}</span>
+          <span style="color:#9A9DA3">Location</span><span>46.618° N, 11.796° E · Seceda</span>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:6px;background:#1E1F22;border:1px solid #2C2E33;font-size:12px">
+        <span style="width:7px;height:7px;border-radius:50%;background:{{xmpColor}}"></span>
+        <span style="flex:1;color:#B8BBC0">{{xmpText}}</span>
+        <span class="mono" style="color:#6C7079">.RAF.xmp</span>
+      </div>
+    </aside>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    var palettes = [
+      ['#8FA9C2','#4E5B47','#E9D9A6'], ['#B8B2A6','#6A5A44','#F3E3B5'], ['#6F8FAF','#3E4A3F','#F0D79A'],
+      ['#A7B9C9','#7A6A55','#FFF1C8'], ['#52677D','#2F3A34','#D9C98F'], ['#C9A98A','#5B4636','#FFE2B0'],
+      ['#7C95A8','#56634D','#EADBAF'], ['#9AA7B0','#4A4E56','#E5E1D6']
+    ];
+    var labels = ['', '#E5604F', '#E8A33D', '#3FB984', '#5B9DFF'];
+    var imgs = [];
+    for (var i = 0; i < 20; i++) {
+      var p = palettes[(i * 3) % palettes.length];
+      var m = 7 * 60 + 12 + i * 9, hh = Math.floor(m / 60), mm = m % 60;
+      var t = (hh < 10 ? '0' : '') + hh + ':' + (mm < 10 ? '0' : '') + mm;
+      imgs.push({
+        id: i, file: '20261012-' + t.replace(':', '') + '_Dolomiten_0' + (412 + i) + '.RAF', time: t,
+        date: '12.10.2026 ' + t + ':' + (10 + i), path: 'Archive / 2026 / 2026-10-12_Dolomiten',
+        sky: p[0], ground: p[1], sun: p[2], horizon: (30 + (i * 13) % 35) + '%', sunX: (12 + (i * 37) % 70) + '%',
+        ext: i % 5 === 2 ? 'RAF' : (i % 7 === 4 ? 'RAF+HIF' : 'RAF+JPG'), isNew: i >= 14
+      });
+    }
+    var meta = {};
+    imgs.forEach(function (im, i) {
+      meta[i] = {
+        stars: i >= 14 ? 0 : [3, 4, 2, 5, 3, 0, 4, 1, 3, 5, 2, 4, 0, 3][i],
+        pick: i >= 14 ? 'none' : (i === 5 || i === 12 ? 'reject' : (i % 3 === 0 ? 'pick' : 'none')),
+        label: i >= 14 ? 0 : (i % 5 === 3 ? 3 : (i % 7 === 2 ? 2 : 0)),
+        tags: i >= 14 ? [] : (i % 2 ? ['Places/Italy/Dolomiten', 'Nature/Mountains'] : ['Places/Italy/Dolomiten', 'Nature/Mountains', 'Light/Morning'])
+      };
+    });
+    this.imgs = imgs;
+    this.labels = labels;
+    this.allTags = ['Nature/Mountains', 'Light/Morning', 'Light/Fog', 'Places/Italy/Seceda', 'People/Family'];
+    this.state = { sel: 3, meta: meta, pickF: 'all', starF: 0, group: 'grouped', view: 'date', node: 'd12', jobsOpen: false, dirty: false };
+  }
+  renderVals() {
+    var self = this, st = this.state;
+    var upd = function (patch) {
+      var meta = Object.assign({}, st.meta);
+      meta[st.sel] = Object.assign({}, meta[st.sel], patch);
+      self.setState({ meta: meta, dirty: true });
+    };
+    var cur = this.imgs[st.sel], cm = st.meta[st.sel];
+    var visible = this.imgs.filter(function (im) {
+      var m = st.meta[im.id];
+      if (st.group === 'raw_only' && im.ext.indexOf('RAF') !== 0) return false;
+      if (st.group === 'rendered_only' && im.ext === 'RAF') return false;
+      if (st.pickF === 'pick' && m.pick !== 'pick') return false;
+      if (st.pickF === 'open' && m.pick !== 'none') return false;
+      if (st.pickF === 'reject' && m.pick !== 'reject') return false;
+      if (m.stars < st.starF) return false;
+      return true;
+    });
+    var trees = {
+      date: [
+        { id: 'y', label: '2026', count: '18,402', indent: '8px' },
+        { id: 'm', label: 'October', count: '1,214', indent: '20px' },
+        { id: 'd11', label: 'Oct 11 · Fri', count: '8', indent: '32px' },
+        { id: 'd12', label: 'Oct 12 · Sat', count: '30', indent: '32px', live: true },
+        { id: 'd13', label: 'Oct 13 · Sun', count: '12', indent: '32px', live: true },
+        { id: 'sep', label: 'September', count: '2,093', indent: '20px' },
+        { id: 'y25', label: '2025', count: '24,117', indent: '8px' },
+        { id: 'y24', label: '2024', count: '21,860', indent: '8px' }
+      ],
+      folder: [
+        { id: 'f0', label: 'Archive', count: '48,210', indent: '8px' },
+        { id: 'f1', label: '2026', count: '18,402', indent: '20px' },
+        { id: 'd12', label: '2026-10-12_Dolomiten', count: '30', indent: '32px', live: true },
+        { id: 'd13', label: '2026-10-13_Dolomiten', count: '12', indent: '32px', live: true },
+        { id: 'f4', label: '2026-09-21_Wedding_M', count: '612', indent: '32px' },
+        { id: 'f5', label: '2025', count: '24,117', indent: '20px' }
+      ],
+      tags: [
+        { id: 't0', label: 'Places', count: '31,002', indent: '8px' },
+        { id: 't1', label: 'Italy', count: '2,410', indent: '20px' },
+        { id: 'd12', label: 'Dolomiten', count: '1,120', indent: '32px' },
+        { id: 't3', label: 'Nature', count: '12,884', indent: '8px' },
+        { id: 't4', label: 'Mountains', count: '4,301', indent: '20px' },
+        { id: 't5', label: 'Light', count: '3,115', indent: '8px' },
+        { id: 't6', label: 'People', count: '9,744', indent: '8px' }
+      ]
+    };
+    var mk = function (arr, key, cur, set) {
+      return arr.map(function (a) {
+        return { label: a[1], pressed: cur === a[0] ? 'true' : 'false', pick: function () { var o = {}; o[key] = a[0]; self.setState(o); } };
+      });
+    };
+    var tagSplit = function (t) { var i = t.lastIndexOf('/'); return { parent: t.slice(0, i + 1), leaf: t.slice(i + 1) }; };
+    return {
+      jobsOpen: st.jobsOpen ? 'true' : 'false', jobsOpenB: st.jobsOpen,
+      toggleJobs: function () { self.setState({ jobsOpen: !self.state.jobsOpen }); },
+      views: mk([['date', 'Date'], ['folder', 'Folder'], ['tags', 'Tags']], 'view', st.view),
+      tree: trees[st.view].map(function (t) {
+        return { label: t.label, count: t.count, indent: t.indent, live: !!t.live,
+          pressed: st.node === t.id ? 'true' : 'false', pick: function () { self.setState({ node: t.id }); } };
+      }),
+      pickFilters: mk([['all', 'All'], ['pick', '✓ Keep'], ['open', 'Unrated'], ['reject', '✕ Rejected']], 'pickF', st.pickF),
+      starFilters: mk([[0, 'all ★'], [3, '★★★+'], [4, '★★★★+'], [5, '★★★★★']], 'starF', st.starF),
+      groupModes: mk([['grouped', 'Grouped'], ['raw_only', 'RAW'], ['rendered_only', 'JPEG/HEIF'], ['all_files', 'All files']], 'group', st.group).map(function (g, i) {
+        return Object.assign(g, { title: ['One tile per asset (RAF+JPG together)', 'Only assets with a RAW file', 'Only assets with a camera JPEG/HEIF', 'One tile per file'][i] });
+      }),
+      shown: st.group === 'all_files' ? visible.reduce(function (n, im) { return n + (im.ext.indexOf('+') > 0 ? 2 : 1); }, 0) : visible.length,
+      shownUnit: st.group === 'all_files' ? 'files' : 'assets',
+      tiles: visible.map(function (im) {
+        var m = st.meta[im.id];
+        return Object.assign({}, im, {
+          sel: im.id === st.sel ? 'true' : 'false',
+          cls: m.pick === 'reject' ? 'tile rej' : 'tile',
+          isPick: m.pick === 'pick',
+          stars: m.stars ? '★★★★★'.slice(0, m.stars) : '·',
+          hasLabel: !!m.label, labelColor: self.labels[m.label],
+          pick: function () { self.setState({ sel: im.id }); }
+        });
+      }),
+      cur: cur,
+      setPick: function () { upd({ pick: cm.pick === 'pick' ? 'none' : 'pick' }); },
+      setReject: function () { upd({ pick: cm.pick === 'reject' ? 'none' : 'reject' }); },
+      pickStyle: cm.pick === 'pick' ? 'background:#173D2C;border-color:#3FB984;color:#BFF0D8' : '',
+      rejStyle: cm.pick === 'reject' ? 'background:#3D1A17;border-color:#E5604F;color:#FFC2BA' : '',
+      starBtns: [1, 2, 3, 4, 5].map(function (n) {
+        return { cls: n <= cm.stars ? 'star on' : 'star', aria: n + ' stars', set: function () { upd({ stars: cm.stars === n ? 0 : n }); } };
+      }),
+      labelBtns: [1, 2, 3, 4].map(function (n) {
+        return { color: self.labels[n], aria: 'Color label ' + n, pressed: cm.label === n ? 'true' : 'false', set: function () { upd({ label: cm.label === n ? 0 : n }); } };
+      }),
+      tags: cm.tags.map(function (t) {
+        var s = tagSplit(t);
+        return { parent: s.parent, leaf: s.leaf, remove: function () { upd({ tags: cm.tags.filter(function (x) { return x !== t; }) }); } };
+      }),
+      suggestions: this.allTags.filter(function (t) { return cm.tags.indexOf(t) < 0; }).slice(0, 4).map(function (t) {
+        return { label: t, add: function () { upd({ tags: cm.tags.concat([t]) }); } };
+      }),
+      xmpColor: st.dirty ? '#5B9DFF' : '#3FB984',
+      xmpText: st.dirty ? 'Changed · being written to XMP…' : 'XMP in sync'
+    };
+  }
+}
+</script>
+</body>
+</html>

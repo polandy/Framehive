@@ -1,0 +1,42 @@
+{
+  "attribution": {
+    "commit": false,
+    "pr": false,
+    "sessionUrl": false
+  },
+  "permissions": {
+    "allow": [
+      "Bash(cargo xtask:*)",
+      "Bash(cargo build:*)",
+      "Bash(cargo check:*)",
+      "Bash(cargo clippy:*)",
+      "Bash(cargo fmt:*)",
+      "Bash(cargo test:*)",
+      "Bash(cargo nextest:*)",
+      "Bash(nix develop -c cargo xtask:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)",
+      "Bash(git ls-files:*)"
+    ],
+    "deny": [
+      "Edit(Cargo.lock)",
+      "Edit(flake.lock)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/format-file.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

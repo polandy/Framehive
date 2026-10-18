@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: 2026 Framehive contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+# Files without their own SPDX header. Specs must start with their title line
+# (`cargo xtask check-specs`), skills and agents start with front matter, JSON has
+# no comments, and lock files and mockups are generated.
+version = 1
+
+[[annotations]]
+path = [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "Cargo.lock",
+    "flake.lock",
+    "TODO.md",
+    ".claude/settings.json",
+    ".claude/commands/**",
+    ".claude/skills/**",
+    ".claude/agents/**",
+    "docs/**",
+    "specs/**",
+    "mockups/**",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Framehive contributors"
+SPDX-License-Identifier = "GPL-3.0-or-later"

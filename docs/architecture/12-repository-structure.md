@@ -1,0 +1,40 @@
+# 12. Repository structure (target)
+
+Part of the [architecture](README.md).
+
+```
+framehive/
+├── CLAUDE.md                 # Working rules for AI agents (AGENTS.md points to it)
+├── .claude/                  # Claude Code: permissions, format hook, commands, skills, agents
+├── TODO.md                   # Open work without another home (/todo)
+├── LICENSE  LICENSES/        # GPL-3.0-or-later; REUSE layout, SPDX headers in every file (ADR 0014)
+├── Cargo.toml                # Workspace, shared lints and versions
+├── dependencies.yaml         # Allowlist of direct dependencies with justification (ADR 0009)
+├── rust-toolchain.toml
+├── flake.nix / flake.lock
+├── deny.toml  clippy.toml  rustfmt.toml  .config/nextest.toml
+├── docs/
+│   ├── requirements/  architecture/   one file per section
+│   └── adr/
+├── specs/                    # Feature specifications (ADR 0010)
+├── schemas/                  # JSON Schemas for the YAML configuration (ADR 0011)
+├── crates/
+│   ├── domain/  kernel/  ui-kit/
+│   ├── services/  catalog/  metadata/  volumes/  jobs/  previews/  naming/  devices/  export/
+│   └── adapters/  sqlite/  fs/  gphoto2/  mtp/  udisks/  macos-disks/  xmp/  exif/  raw/  ffmpeg/  onnx/  osm-tiles/  digikam-db/  immich-http/
+├── modules/
+│   ├── import/  import-ui/
+│   ├── library/  library-ui/
+│   ├── map/  map-ui/            (Phase 3)
+│   ├── people/  people-ui/      (v1 with Immich as face provider)
+│   ├── immich/  immich-ui/      (v1, ADR 0013)
+│   ├── similarity/              (Phase 2)
+│   └── migrate/  migrate-ui/    (Phase 2)
+├── apps/
+│   ├── gui/
+│   └── cli/
+├── xtask/                    # ci, check-architecture, new-module, testdata
+├── testdata/                 # small text fixtures (XMP, YAML); no binaries (ADR 0017)
+├── testdata.lock             # pinned large test data from framehive-testdata
+└── mockups/                  # UI mockups as HTML (design canvas); no image exports
+```

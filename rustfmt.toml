@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Framehive contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+edition = "2024"
+max_width = 100

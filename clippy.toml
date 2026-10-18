@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: 2026 Framehive contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+# Unwrap and expect are fine in tests; the workspace lints forbid them elsewhere.
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+allow-panic-in-tests = true
+too-many-lines-threshold = 60
+
+# Wall clock, sleeping and randomness only through ports (architecture §6, §9.2).
+disallowed-methods = [
+    { path = "std::time::SystemTime::now", reason = "use the Clock port" },
+    { path = "std::time::Instant::now", reason = "use the Clock port" },
+    { path = "std::thread::sleep", reason = "wait on events, never on time" },
+]

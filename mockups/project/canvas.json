@@ -1,0 +1,80 @@
+{
+  "v": 3,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-10-17T12:55:39Z"
+  },
+  "title": "Framehive UI Mockups",
+  "launch": {
+    "view": "canvas"
+  },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 900,
+      "title": "1 · Import – Main Window (Module)",
+      "is_interactive": true
+    },
+    "Loupe.dc.html": {
+      "x": 1520,
+      "y": 0,
+      "w": 1440,
+      "h": 900,
+      "title": "2 · Loupe & Culling",
+      "is_interactive": true
+    },
+    "Template.dc.html": {
+      "x": 0,
+      "y": 1020,
+      "w": 1440,
+      "h": 900,
+      "title": "3 · Naming & Folders (Template Editor)",
+      "is_interactive": true
+    },
+    "Progress.dc.html": {
+      "x": 1520,
+      "y": 1020,
+      "w": 1440,
+      "h": 900,
+      "title": "4 · Import Running / Queue",
+      "is_interactive": true
+    },
+    "Profiles.dc.html": {
+      "x": 0,
+      "y": 2040,
+      "w": 1440,
+      "h": 900,
+      "title": "5 · Profiles",
+      "is_interactive": true
+    },
+    "Library.dc.html": {
+      "x": 1520,
+      "y": 2040,
+      "w": 1440,
+      "h": 900,
+      "title": "6 · Library – Views, Tagging, Culling",
+      "is_interactive": true
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Loupe.dc.html",
+    "Template.dc.html",
+    "Progress.dc.html",
+    "Profiles.dc.html",
+    "Library.dc.html"
+  ],
+  "notes": {
+    "head": {
+      "x": 0,
+      "y": -300,
+      "text": "Framehive – UI mockups v0.3",
+      "kind": "title1",
+      "maxW": 2960
+    }
+  },
+  "designSystems": []
+}

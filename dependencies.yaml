@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: 2026 Framehive contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+# Allowlist of direct dependencies (ADR 0009).
+# `cargo xtask check-dependencies` rejects any direct dependency that is missing here,
+# used by a layer that is not allowed, or built with features that are not listed.
+schema_version: 1
+
+dependencies:
+  - name: thiserror
+    purpose: Error types in library crates
+    rationale: De-facto standard for error types, no runtime cost; required by CLAUDE.md for all libraries
+    review: Rust ecosystem staple maintained by dtolnay, version 2, std-only, no transitive dependencies besides its proc macro
+    adr: "0016"
+    allowed_layers: [domain, kernel, service, module, adapter]
+    features: [std]
