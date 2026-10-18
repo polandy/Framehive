@@ -15,6 +15,7 @@ Names in the code follow this glossary.
 | Library root | `LibraryRoot` | A root directory with a marker file and a UUID |
 | Volume | `Volume` | Physical or network storage medium on which library roots reside |
 | Source | `Source` | What is imported from: camera, card, phone, folder |
+| Name template | `NameTemplate` | Text that derives an imported file's folders and name (IMPORT-001) |
 | Import plan | `ImportPlan` | A pure description: which file goes where, with what name, and which conflicts |
 | Job | `Job` | Background work in the queue |
 | Index | `Index` | Machine-local database, reconstructible from files |
