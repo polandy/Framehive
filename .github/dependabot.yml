@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: 2026 Framehive contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+# Keeps the commit-pinned GitHub Actions current. Cargo dependencies are updated by
+# hand, because each one is a reviewed decision (ADR 0009).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: ci

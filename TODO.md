@@ -13,5 +13,5 @@ feature live in its spec, decisions in `docs/adr/`. Add items with `/todo`.
 - [ ] Implement `cargo xtask new-module` and `cargo xtask new-adapter` — named in CLAUDE.md "Adding things", architecture §4.5 (2026-10-18)
 - [ ] Implement `cargo xtask schemas` and the first JSON Schema in `schemas/` (ADR 0011) (2026-10-18)
 - [ ] Check the `Spec-Unchanged:` and `Spec-Only:` trailers against the base branch, and add `cargo xtask spec-report` (ADR 0010) (2026-10-18)
-- [ ] Choose where the repository is hosted and set up CI — then add the PR workflow, a `pr-review` skill and a script that shows only the failures of a red run (2026-10-18)
-- [ ] Create the `framehive-assets` repository for review screenshots (`pr-<n>/`) once hosting is chosen, and require them for UI pull requests in the PR workflow (ADR 0017) (2026-10-18)
+- [ ] Add the PR workflow, a `pr-review` skill and a script that shows only the failures of a red CI run; require the `xtask ci` checks in branch protection (ADR 0018) (2026-10-18)
+- [ ] Create the `framehive-assets` repository for review screenshots (`pr-<n>/`) on GitHub, and require them for UI pull requests in the PR workflow (ADR 0017) (2026-10-18)

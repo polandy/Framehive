@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: 2026 Framehive contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+# CI runs exactly `cargo xtask ci` in the Nix shell, on Linux and macOS (ADR 0007,
+# ADR 0018). Add checks to xtask, never here, so a local run stays identical.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  # A newer push to a pull request makes the older run worthless; main runs to the end.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  ci:
+    name: xtask ci (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    steps:
+      # Actions are pinned to a commit, because a tag can be moved (ADR 0018).
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            target
+          key: cargo-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock', 'rust-toolchain.toml', 'Cargo.lock') }}
+          restore-keys: cargo-${{ runner.os }}-${{ runner.arch }}-
+
+      - name: cargo xtask ci
+        run: nix develop --command cargo xtask ci

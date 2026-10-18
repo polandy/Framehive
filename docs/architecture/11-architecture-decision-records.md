@@ -24,3 +24,4 @@ acceptance (a change means a new ADR that supersedes the old one).
 | [0015](../adr/0015-metadata-in-dng-files.md) | Metadata in DNG files | accepted |
 | [0016](../adr/0016-thiserror-in-every-library-layer.md) | `thiserror` in every library layer | accepted |
 | [0017](../adr/0017-no-binary-files-in-the-repository.md) | No binary files in the repository | accepted |
+| [0018](../adr/0018-github-and-github-actions.md) | Hosting on GitHub, CI with GitHub Actions | accepted |

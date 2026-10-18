@@ -5,6 +5,7 @@ Part of the [architecture](README.md).
 ```
 framehive/
 ├── CLAUDE.md                 # Working rules for AI agents (AGENTS.md points to it)
+├── .github/                  # CI workflow (runs cargo xtask ci, ADR 0018), Dependabot for actions
 ├── .claude/                  # Claude Code: permissions, format hook, commands, skills, agents
 ├── TODO.md                   # Open work without another home (/todo)
 ├── LICENSE  LICENSES/        # GPL-3.0-or-later; REUSE layout, SPDX headers in every file (ADR 0014)

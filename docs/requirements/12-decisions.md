@@ -32,3 +32,4 @@ Part of the [requirements](README.md).
 | 2026-10-18 | The Canon EOS 7D is a reference camera (CR2, 2.8); DNG is a reference format (Adobe DNG Converter, drones, action cameras) |
 | 2026-10-18 | DNG metadata goes to the sidecar; an option also embeds it into the DNG for Lightroom (ADR 0015) |
 | 2026-10-18 | No binaries in the repository: test data in `framehive-testdata`, pinned in `testdata.lock`; screenshot tests store BLAKE3 hashes, diffs go to CI artifacts; review screenshots live in `framehive-assets` (ADR 0017) |
+| 2026-10-18 | Hosted on GitHub; CI is one GitHub Actions workflow that runs `cargo xtask ci` on Linux and macOS (ADR 0018) |
