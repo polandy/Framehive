@@ -16,6 +16,7 @@ framehive/
 ├── deny.toml  clippy.toml  rustfmt.toml  .config/nextest.toml
 ├── docs/
 │   ├── requirements/  architecture/   one file per section
+│   ├── pull-requests.md      # How a change reaches main
 │   └── adr/
 ├── specs/                    # Feature specifications (ADR 0010)
 ├── schemas/                  # JSON Schemas for the YAML configuration (ADR 0011)

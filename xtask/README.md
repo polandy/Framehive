@@ -24,6 +24,7 @@ Run them as `cargo xtask <command>`, inside `nix develop`.
 | `check-architecture` | Every crate declares a valid layer; dependencies follow architecture §3; adapters use only their port service; module UIs use only their module and `ui-kit`; crate roots contain `#![forbid(unsafe_code)]` unless `ffi = true`; every README has the required sections |
 | `check-dependencies` | Every external dependency is listed in `dependencies.yaml`, used only by allowed layers and crates, with allowed features (`default` counts as a feature), and pinned in `[workspace.dependencies]`; no unused entries |
 | `check-specs` | Spec headers, IDs, status and fields; origins exist in `docs/requirements/`; dependencies exist (a warning for drafts); unique criteria; no open questions in binding specs; every `/// spec: <ID>.<n>` points to an existing, non-draft criterion; every criterion of an implemented spec has a test |
+| `ci-failures [<pr>]` | Not a check: prints only what failed in the CI run of a pull request (default: the pull request of the current branch), from the `FAIL` line of `cargo xtask ci` on, or the end of the log for a job that failed before. Needs `gh`, logged in |
 
 ## Crate metadata
 

@@ -42,6 +42,7 @@
             (pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml)
             pkgs.cargo-deny
             pkgs.cargo-nextest
+            pkgs.gh
             pkgs.reuse
           ];
         };
