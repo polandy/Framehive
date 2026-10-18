@@ -30,17 +30,17 @@ SPDX-License-Identifier: GPL-3.0-or-later
 ## Why Framehive
 
 - **Your files are the source of truth.** Ratings, labels and tags live in standard XMP
-  sidecars. The index is only a cache and can be rebuilt at any time. darktable,
-  digiKam and Lightroom see the same metadata, so there is no lock-in.
+  sidecars. The index is only a cache and can be rebuilt at any time. Other photo
+  applications that follow the standards see the same metadata, so there is no lock-in.
 - **Know for certain that the card can be formatted.** Every imported file is
   checksummed while it is read and verified again at the destination and at every
   backup. A device turns green only when each file is safe in enough places.
 - **Built for RAW shooters.** RAW and JPEG pairs form one asset, culling happens in a
   keyboard-driven loupe, and thumbnails come from embedded previews, so a grid of
   200,000 photos stays fast.
-- **Fits into what you already run.** Nextcloud sync folders as library roots and
-  import targets, NAS and offline drives, and an Immich integration for faces, albums
-  and places.
+- **Works with the storage you already have.** One library can span several
+  locations: local disks, sync folders, network shares and drives that are sometimes
+  offline.
 - **Scriptable.** The same core runs headless: `framehive import --profile vacation …`.
 
 ## What is planned
@@ -49,9 +49,9 @@ SPDX-License-Identifier: GPL-3.0-or-later
 |---|---|---|
 | **Import** | Fetch photos and videos from cameras, cards, phones and folders; rename, store, back up in parallel and verify, in the background | MVP |
 | **Library** | Browse, view, rate, tag, cull, search and build albums | MVP |
-| **People** | Name faces and filter by person, starting with faces from Immich | v1 |
+| **People** | Name faces and filter by person | v1 |
 | **Map** | Photos by location and geotagging | soon after v1 |
-| Editor | Until then, Framehive hands off to darktable, RawTherapee or GIMP | later |
+| Editor | Image editing; until then, Framehive hands photos to an external editor | later |
 
 The full plan is in the [roadmap](docs/requirements/10-roadmap.md).
 
