@@ -37,7 +37,10 @@ owner already uses GitHub.
 
 ## Consequences
 
-- A red check on either platform blocks the merge once branch protection requires the
-  `xtask ci` jobs.
+- A ruleset protects `main`: changes arrive only through pull requests, both
+  `xtask ci` jobs must pass on the latest base, history stays linear (squash or rebase
+  merge), and force pushes and deletion are blocked. The owner may bypass it only
+  when merging a pull request, so even the owner's token cannot push to `main`
+  directly.
 - A macOS-only failure is a real bug, like any red CI (ADR 0006).
 - Cold runs download the Nix shell from the public cache, which takes a few minutes.
