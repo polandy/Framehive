@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: 2026 Framehive contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+[package]
+name = "{{id}}-ui"
+description = "Views of the {{id}} module of Framehive, bound to its ViewModels"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[package.metadata.framehive]
+layer = "module-ui"
+
+[dependencies]
+{{id}}.workspace = true
+
+[lints]
+workspace = true

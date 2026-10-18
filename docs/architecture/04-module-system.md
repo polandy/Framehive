@@ -73,6 +73,9 @@ via `ui-kit`.
 
 1. `cargo xtask new-module <id>` generates both crates from a template: README,
    module implementation, example ViewModel, conformance test, workspace entry.
+   The template lives in `xtask/templates/module/` and grows with the kernel: until the
+   module contract and `ui-kit` exist, the module implementation is the module id and
+   the conformance test checks only that id.
 2. Describe responsibility and boundaries in the README; create an ADR for new
    events or commands in the kernel.
 3. Register in the apps (one line per app).

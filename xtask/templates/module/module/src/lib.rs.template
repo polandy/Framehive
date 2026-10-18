@@ -1,0 +1,26 @@
+// SPDX-FileCopyrightText: 2026 Framehive contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+//! The `{{id}}` module of Framehive: business logic, use cases and ViewModels
+//! (architecture §4.1). Its views live in `{{id}}-ui`. See `README.md`.
+
+#![forbid(unsafe_code)]
+
+mod view_model;
+
+use kernel::{ModuleId, ModuleIdError};
+
+pub use view_model::ExampleViewModel;
+
+/// Stable, unique id of this module (architecture §4.2).
+pub const MODULE_ID: &str = "{{id}}";
+
+/// Returns [`MODULE_ID`] as a validated [`ModuleId`].
+///
+/// # Errors
+///
+/// Returns a [`ModuleIdError`] if [`MODULE_ID`] is not a valid module id; the
+/// conformance test rules that out.
+pub fn module_id() -> Result<ModuleId, ModuleIdError> {
+    ModuleId::new(MODULE_ID)
+}

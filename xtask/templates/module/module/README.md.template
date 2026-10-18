@@ -1,0 +1,41 @@
+<!--
+SPDX-FileCopyrightText: 2026 Framehive contributors
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+
+# {{id}}
+
+Layer: `module` (architecture §3, §4)
+
+## Purpose
+
+TODO: describe the responsibility of the {{id}} module and its boundaries: what it
+does, and what it leaves to other modules and services.
+
+## Public API
+
+| Item | Meaning |
+|---|---|
+| `MODULE_ID`, `module_id` | Stable id of the module (architecture §4.2) |
+| `ExampleViewModel` | Example ViewModel from the template; replace it |
+
+## Events
+
+Published: none yet. Subscribed: none yet. New events need an ADR (architecture §4.5).
+
+## Commands
+
+Handled: none yet. Sent: none yet. New commands need an ADR (architecture §4.5).
+
+## Data
+
+No tables yet. Tables use the prefix `{{id}}_` and describe their rebuild
+(architecture §4.4).
+
+## Extension points
+
+None yet.
+
+## Dependencies
+
+- `kernel`
