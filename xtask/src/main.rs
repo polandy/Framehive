@@ -16,6 +16,7 @@
 mod allowlist;
 mod architecture;
 mod ci;
+mod ci_failures;
 mod dependencies;
 mod files;
 mod json;
@@ -33,13 +34,15 @@ commands:
   check-architecture   layers, unsafe code and crate READMEs (architecture §3)
   check-dependencies   dependencies.yaml allowlist (ADR 0009)
   check-specs          specifications and their tests (ADR 0010)
-  check-files          only text files, no binaries (ADR 0017)";
+  check-files          only text files, no binaries (ADR 0017)
+  ci-failures [<pr>]   only the failures of a red CI run (needs gh)";
 
 fn main() -> ExitCode {
-    let command = std::env::args().nth(1);
+    let arguments: Vec<String> = std::env::args().skip(1).collect();
     let root = repository_root();
-    let result = match command.as_deref() {
+    let result = match arguments.first().map(String::as_str) {
         Some("ci") => ci::run(&root),
+        Some("ci-failures") => ci_failures::run(&root, arguments.get(1).map(String::as_str)),
         Some("check-architecture") => check_architecture(&root),
         Some("check-dependencies") => check_dependencies(&root),
         Some("check-specs") => check_specs(&root),

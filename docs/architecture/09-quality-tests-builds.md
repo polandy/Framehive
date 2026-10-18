@@ -40,7 +40,8 @@ Nightly runs the suite 20 times in random order to catch flakes early.
 ## 9.4 Development process
 
 - Trunk-based: small, self-contained changes; `main` is always green and
-  release-ready.
+  release-ready. Every change arrives as a squash-merged pull request
+  ([pull-requests.md](../pull-requests.md)).
 - Every change: tests first or at the same time, a changelog entry for user-visible
   changes, a Conventional Commits message.
 - Architecture decisions as an ADR (Section 11), before code is written.

@@ -16,9 +16,9 @@ Run them inside `nix develop`, or prefix them with `nix develop -c`.
   failing step in full.
 - While iterating: `cargo nextest run -p <crate> [test name]`, and single checks with
   `cargo xtask check-files|check-architecture|check-dependencies|check-specs`.
-- Open work: `TODO.md`. `/todo` adds an item, `/next` picks and plans a task, `/status` and
-  `/review` check the state and a diff. Subagents: `framehive-implementer` (one spec),
-  `framehive-reviewer` (one change).
+- Open work: `TODO.md`. `/todo` adds, `/next` plans, `/status` and `/review` check, skill
+  `pr-review` reviews a PR. Subagents: `framehive-implementer` (one spec),
+  `framehive-reviewer` (one change). Red CI: `cargo xtask ci-failures`.
 
 ## Read first
 
@@ -106,8 +106,7 @@ Every tool result is re-read, and paid for, on each later turn.
    changes, and the ADRs and requirements if they are affected.
 7. Commit using Conventional Commits, in English. The body explains why. Use the
    `Spec-Unchanged:` or `Spec-Only:` trailer when ADR 0010 asks for it. No `Co-Authored-By`
-   or "Generated with" lines, in commits or PR descriptions (`.claude/settings.json`
-   turns them off for Claude Code).
+   or "Generated with" lines. `main` changes only by pull request (`docs/pull-requests.md`).
 
 ## Adding things
 
