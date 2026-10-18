@@ -1,6 +1,6 @@
 # IMPORT-001 – Name templates
 
-- Status: draft
+- Status: accepted
 - Module: import
 - Origin: R1, R6, R8, N9
 - Depends on: –
@@ -195,3 +195,4 @@ can never contain `/`.
 | Date | Change |
 |---|---|
 | 2026-10-19 | Initial draft |
+| 2026-10-19 | Accepted by the owner |
