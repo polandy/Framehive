@@ -42,7 +42,7 @@ The user sees an error that names the template and suggests more digits.
 ## Acceptance criteria
 
 ### IMPORT-002.1 – Imported-today counter continues within a day
-- **Given** the template `{date:%Y%m%d}_{seq_today:3}` and an earlier import today that
+- **Given** the template `{date:%Y%m%d}_{seq_today:3}.{ext}` and an earlier import today that
   used numbers 001–012
 - **When** the user queues an import of 3 pictures today
 - **Then** the files are named with numbers 013, 014 and 015
@@ -54,7 +54,7 @@ The user sees an error that names the template and suggests more digits.
 
 ### IMPORT-002.3 – RAW and JPEG share a number
 - **Given** a card folder with `DSC_0001.ARW`, `DSC_0001.JPG` and `DSC_0002.ARW`
-- **When** they are imported with `{seq_session:4}`
+- **When** they are imported with `{seq_session:4}.{ext}`
 - **Then** both `DSC_0001` files get `0001` and `DSC_0002.ARW` gets `0002`
 
 ### IMPORT-002.4 – Parallel jobs never collide
@@ -75,14 +75,14 @@ The user sees an error that names the template and suggests more digits.
 - **Then** they get `aa` and `ab`
 
 ### IMPORT-002.7 – Overflow is rejected when queuing
-- **Given** the template `{seq_stored:2}` and the stored counter at 98
+- **Given** the template `{seq_stored:2}.{ext}` and the stored counter at 98
 - **When** the user queues an import of 5 pictures
 - **Then** the job is not queued, and the error names the template and suggests
   `{seq_stored:3}`
 
 ### IMPORT-002.8 – Counters survive restarts
 - **Given** the stored counter is at 250
-- **When** the application is restarted and a picture is imported with `{seq_stored:4}`
+- **When** the application is restarted and a picture is imported with `{seq_stored:4}.{ext}`
 - **Then** it gets `0251`
 
 ## Not in scope
@@ -102,3 +102,4 @@ The user sees an error that names the template and suggests more digits.
 | Date | Change |
 |---|---|
 | 2026-10-17 | Initial draft |
+| 2026-10-19 | Example templates end with `.{ext}`, as IMPORT-001 requires |
