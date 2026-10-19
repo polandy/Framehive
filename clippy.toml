@@ -6,6 +6,8 @@ allow-unwrap-in-tests = true
 allow-expect-in-tests = true
 allow-panic-in-tests = true
 too-many-lines-threshold = 60
+# Terms of the architecture that are words in prose, not code (".." keeps the defaults).
+doc-valid-idents = ["ViewModel", "ViewModels", ".."]
 
 # Wall clock, sleeping and randomness only through ports (architecture §6, §9.2).
 disallowed-methods = [

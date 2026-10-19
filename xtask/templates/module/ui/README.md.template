@@ -1,0 +1,22 @@
+<!--
+SPDX-FileCopyrightText: 2026 Framehive contributors
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+
+# {{id}}-ui
+
+Layer: `module-ui` (architecture §3, §4)
+
+## Purpose
+
+Views of the {{id}} module, bound to the ViewModels of the `{{id}}` crate. It holds
+only presentation and binding; all interaction logic stays in `{{id}}`
+(architecture §4.1). The crate is empty until `ui-kit` and the Slint views exist.
+
+## Public API
+
+None yet.
+
+## Dependencies
+
+- `{{id}}`
