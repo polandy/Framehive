@@ -6,6 +6,8 @@ resolver = "3"
 members = [
     "crates/domain",
     "crates/kernel",
+    "modules/import/import",
+    "modules/import/import-ui",
     "xtask",
 ]
 
@@ -19,6 +21,8 @@ publish = false
 # Every direct dependency is pinned here and listed in dependencies.yaml (ADR 0009).
 [workspace.dependencies]
 domain = { path = "crates/domain" }
+import = { path = "modules/import/import" }
+import-ui = { path = "modules/import/import-ui" }
 kernel = { path = "crates/kernel" }
 thiserror = { version = "2", default-features = false, features = ["std"] }
 
