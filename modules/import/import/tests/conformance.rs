@@ -1,0 +1,12 @@
+// SPDX-FileCopyrightText: 2026 Framehive contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+//! Module conformance test (architecture §4.5). It checks what the kernel defines so
+//! far, the module id; `kernel::testing::module_conformance` replaces it once the
+//! module contract exists.
+
+#[test]
+fn module_id_is_valid_and_stable() {
+    let id = import::module_id().unwrap();
+    assert_eq!(id.as_str(), "import");
+}
