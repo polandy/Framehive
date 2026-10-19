@@ -57,6 +57,8 @@ values: the same capture time, image number and sequence number. The capture tim
 from the RAW file if it has one, otherwise from the first other file that has one. So a
 RAW and its JPEG always land in the same folder under the same base name. A sidecar
 keeps the suffix it had after the base name: `DSC_0042.RAF.xmp` follows the RAF file.
+When no file of the asset has a capture time, the same order picks the modification
+time: the RAW file's, or the first other file's if there is no RAW.
 
 **Validation.** A template is checked when it is saved, before any file is rendered. A
 template is rejected, with the column of the error, when it has:
@@ -70,8 +72,10 @@ template is rejected, with the column of the error, when it has:
 - a leading `/`, an empty segment, or a segment that is `.` or `..`.
 
 **Per-file failures.** When `{number}` is used and the original base name does not end
-in a digit, that file cannot be named. The import plan marks it with the reason; the
-other files are planned normally.
+in a digit, that file cannot be named. The same holds when a rendered segment is empty,
+or becomes `.` or `..` (also after compatibility mode strips characters), because it
+would not stay inside the destination. The import plan marks the file with the reason;
+the other files are planned normally.
 
 **Compatibility mode.** On by default. It keeps names valid on memory cards (exFAT),
 network shares (SMB) and macOS. In every rendered segment it replaces
@@ -178,6 +182,13 @@ can never contain `/`.
 - **When** the import plan is made
 - **Then** the folder is `14:05`
 
+### IMPORT-001.18 – A rendered segment that would leave the destination cannot be named
+- **Given** a file whose rendered segment is empty, or becomes `.` or `..` (also after
+  compatibility mode strips characters)
+- **When** the import plan is made
+- **Then** that file cannot be named, and the plan marks it with the reason; the other
+  files are planned normally
+
 ## Out of scope
 
 - Sequence numbers: IMPORT-002.
@@ -196,3 +207,4 @@ can never contain `/`.
 |---|---|
 | 2026-10-19 | Initial draft |
 | 2026-10-19 | Accepted by the owner |
+| 2026-10-19 | Clarified the modification-time fallback order for assets without a capture time, and added IMPORT-001.18 for a rendered segment that would leave the destination (naming service, review) |

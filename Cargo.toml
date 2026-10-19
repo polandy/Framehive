@@ -6,6 +6,7 @@ resolver = "3"
 members = [
     "crates/domain",
     "crates/kernel",
+    "crates/services/naming",
     "modules/import/import",
     "modules/import/import-ui",
     "xtask",
@@ -24,6 +25,7 @@ domain = { path = "crates/domain" }
 import = { path = "modules/import/import" }
 import-ui = { path = "modules/import/import-ui" }
 kernel = { path = "crates/kernel" }
+naming = { path = "crates/services/naming" }
 thiserror = { version = "2", default-features = false, features = ["std"] }
 
 [workspace.lints.rust]
