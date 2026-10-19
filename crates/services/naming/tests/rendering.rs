@@ -263,6 +263,52 @@ fn capture_time_of_the_first_other_file_is_used_without_raw() {
     assert!(asset_date(&[]).is_none());
 }
 
+/// spec: IMPORT-001.8
+#[test]
+fn modification_time_falls_back_in_the_same_order_as_the_capture_time() {
+    // The RAW file's modification time wins even though it is later, showing that the
+    // fallback follows the RAW-first order rather than the earliest modification time.
+    let raw_modified = time("2026-10-19 00:00:00");
+    let with_raw = [
+        FileTimes {
+            is_raw: false,
+            capture_time: None,
+            modification_time: time("2026-10-18 00:00:00"),
+        },
+        FileTimes {
+            is_raw: true,
+            capture_time: None,
+            modification_time: raw_modified,
+        },
+    ];
+    let date = asset_date(&with_raw).unwrap();
+    assert_eq!(
+        (date.time, date.source),
+        (raw_modified, DateSource::ModificationTime)
+    );
+
+    // Without a RAW file, the fallback is the first file in the given order, not the
+    // one with the earliest modification time.
+    let first_modified = time("2026-10-20 00:00:00");
+    let without_raw = [
+        FileTimes {
+            is_raw: false,
+            capture_time: None,
+            modification_time: first_modified,
+        },
+        FileTimes {
+            is_raw: false,
+            capture_time: None,
+            modification_time: time("2026-10-10 00:00:00"),
+        },
+    ];
+    let date = asset_date(&without_raw).unwrap();
+    assert_eq!(
+        (date.time, date.source),
+        (first_modified, DateSource::ModificationTime)
+    );
+}
+
 /// spec: IMPORT-001.9
 #[test]
 fn sidecars_follow_their_file() {
@@ -308,7 +354,7 @@ fn compatibility_mode_replaces_control_characters() {
     assert_eq!(name.unwrap(), "a_b_______.jpg");
 }
 
-/// spec: IMPORT-001.16
+/// spec: IMPORT-001.18
 #[test]
 fn rendered_segment_must_not_vanish() {
     let values = values("..", "2026-10-17 14:05:09");
