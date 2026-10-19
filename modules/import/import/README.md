@@ -13,17 +13,16 @@ The import module brings files from a source (camera, card, phone, folder) into 
 library. It decides where each file goes and what it is called, and describes that
 decision as an import plan before anything is copied.
 
-Its first feature is the name template (IMPORT-001): it validates a template when it is
-saved, reporting the column of an error, and renders it once per asset file into a path
-relative to the import destination. All files of one asset are rendered from the same
-values, sidecars follow their file, and compatibility mode keeps the names valid on
-exFAT, SMB and macOS.
+Its first feature is the name template (IMPORT-001): in the import plan, a name
+template gives each asset file its folders and name, relative to the import
+destination. All files of one asset get the same values, sidecars follow their file,
+and compatibility mode keeps the names valid on exFAT, SMB and macOS.
 
 Boundaries:
 
 - **Pure logic.** Making an import plan does no I/O. Capture times, file modification
-  times and the time the import was queued reach the module as values, through the
-  kernel's ports (`Clock`, files, devices); copying runs as a job.
+  times and the time the import was queued reach the module as values, through ports
+  (`Clock` in `domain`, files and devices in the services); copying runs as a job.
 - **Grouping** of files into assets is defined by LIBRARY-001; the module uses it and
   does not redefine it.
 - **Not covered yet:** sequence numbers (IMPORT-002), name conflicts (IMPORT-003),
