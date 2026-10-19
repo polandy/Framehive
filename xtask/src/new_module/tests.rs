@@ -233,3 +233,26 @@ fn rejects_ids_that_name_an_existing_crate() {
     }
     assert_eq!(workspace.files(), ["Cargo.toml"]);
 }
+
+#[test]
+fn rejects_ids_whose_library_name_an_existing_crate_already_has() {
+    let workspace = Workspace::new("library");
+    generate(&workspace.root, "map").unwrap();
+    let manifest = workspace.read("Cargo.toml");
+    // `map-ui` and `map_ui` both compile to the library `map_ui`.
+    assert_eq!(
+        generate(&workspace.root, "map_ui"),
+        Err("the workspace already has a crate named \"map-ui\"".to_owned())
+    );
+    assert_eq!(workspace.read("Cargo.toml"), manifest);
+}
+
+#[test]
+fn run_without_an_id_prints_the_usage() {
+    let workspace = Workspace::new("usage");
+    assert_eq!(
+        run(&workspace.root, None),
+        Err("usage: cargo xtask new-module <id>".to_owned())
+    );
+    assert_eq!(workspace.files(), ["Cargo.toml"]);
+}

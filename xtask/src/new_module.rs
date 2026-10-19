@@ -202,13 +202,22 @@ fn reject_existing(
     }
     let ui_name = format!("{id}{UI_SUFFIX}");
     let known = manifest::known_crates(manifest);
-    if let Some(name) = [id, ui_name.as_str()]
-        .into_iter()
-        .find(|name| known.iter().any(|known| known == name))
-    {
-        return Err(format!("the workspace already has a crate named {name:?}"));
+    for name in [id, ui_name.as_str()] {
+        if let Some(existing) = known
+            .iter()
+            .find(|known| library_name(known) == library_name(name))
+        {
+            return Err(format!(
+                "the workspace already has a crate named {existing:?}"
+            ));
+        }
     }
     Ok(())
+}
+
+/// Cargo turns `-` into `_` for the library name, so `map-ui` and `map_ui` collide.
+fn library_name(crate_name: &str) -> String {
+    crate_name.replace('-', "_")
 }
 
 fn write_crate(
