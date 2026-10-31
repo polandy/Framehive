@@ -1,6 +1,6 @@
 # CORE-005 – Capture time
 
-- Status: draft
+- Status: accepted
 - Module: core (metadata service)
 - Origin: F2, N23
 - Depends on: –
@@ -136,3 +136,4 @@ Invalid sub-seconds or offsets are ignored; the date and time are still used.
 | Date | Change |
 |---|---|
 | 2026-10-31 | Initial draft (milestone 1) |
+| 2026-10-31 | Accepted by the owner |

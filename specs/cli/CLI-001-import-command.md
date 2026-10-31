@@ -1,6 +1,6 @@
 # CLI-001 – `framehive import`
 
-- Status: draft
+- Status: accepted
 - Module: cli (`apps/cli`)
 - Origin: N18, X1, N26
 - Depends on: IMPORT-001, IMPORT-003, IMPORT-004, IMPORT-005, CORE-005
@@ -163,3 +163,4 @@ Errors that stop the command, and log messages, go to standard error.
 | Date | Change |
 |---|---|
 | 2026-10-31 | Initial draft (milestone 1) |
+| 2026-10-31 | Accepted by the owner |

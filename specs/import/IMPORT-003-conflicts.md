@@ -1,6 +1,6 @@
 # IMPORT-003 – Name conflicts and files already imported
 
-- Status: draft
+- Status: accepted
 - Module: import
 - Origin: I5, Q8, N3
 - Depends on: IMPORT-001, IMPORT-004
@@ -135,3 +135,4 @@ that appears at a target path after the plan was made is handled by IMPORT-004.9
 | Date | Change |
 |---|---|
 | 2026-10-31 | Initial draft (milestone 1) |
+| 2026-10-31 | Accepted by the owner |

@@ -1,6 +1,6 @@
 # 0021 – Own EXIF reader for the capture time
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-10-31
 - Amends: ADR 0020, decision 4, in where `LocalDateTime` lives
 
