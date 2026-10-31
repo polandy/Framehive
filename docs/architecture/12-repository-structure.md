@@ -23,7 +23,7 @@ framehive/
 ├── crates/
 │   ├── domain/  kernel/  ui-kit/
 │   ├── services/  catalog/  metadata/  volumes/  jobs/  previews/  naming/  files/  devices/  export/
-│   └── adapters/  sqlite/  fs/  blake3/  clock/  gphoto2/  mtp/  udisks/  macos-disks/  xmp/  exif/  raw/  ffmpeg/  onnx/  osm-tiles/  digikam-db/  immich-http/
+│   └── adapters/  sqlite/  fs/  blake3/  clock/  gphoto2/  mtp/  udisks/  macos-disks/  xmp/  raw/  ffmpeg/  onnx/  osm-tiles/  digikam-db/  immich-http/
 ├── modules/
 │   ├── import/  import-ui/
 │   ├── library/  library-ui/

@@ -16,7 +16,7 @@ Part of the [architecture](README.md).
 ┌───────────────▼─────────────── Kernel & shared services ────────────────────────────────┐
 │  kernel     module contract, registry, event bus, commands, settings                    │
 │  catalog    index & queries over all assets (read model, port: CatalogStore)            │
-│  metadata   XMP/EXIF/IPTC model, read/write/merge (port: MetadataCodec)                 │
+│  metadata   XMP/EXIF/IPTC model, read/write/merge, own EXIF reader (port: MetadataCodec)│
 │  volumes    storage locations, volume IDs, path mapping, online/offline                 │
 │  jobs       queue, scheduler, priorities, resume (port: JobStore)                       │
 │  previews   thumbnails & previews, cache (port: PreviewDecoder)                         │
@@ -32,7 +32,7 @@ Part of the [architecture](README.md).
 ┌──────────────────────── Adapters (implementations of the ports) ────────────────────────┐
 │  adapter-sqlite   adapter-fs   adapter-blake3   adapter-clock   adapter-gphoto2         │
 │  adapter-mtp   adapter-udisks                                                           │
-│  adapter-macos-disks   adapter-xmp   adapter-exif   adapter-raw   adapter-ffmpeg        │
+│  adapter-macos-disks   adapter-xmp   adapter-raw   adapter-ffmpeg                       │
 │  adapter-onnx   adapter-osm-tiles   adapter-digikam-db   adapter-immich-http            │
 └─────────────────────────────────────────────────────────────────────────────────────────┘
 ```
