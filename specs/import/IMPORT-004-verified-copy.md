@@ -33,8 +33,9 @@ Only then is the file reported as copied, with its checksum. Checksums use BLAKE
 are written `blake3:<hex>` (architecture §8).
 
 A file that fails at any step is reported as failed, with the step and the reason. Its
-`.part` file is removed, and a target that failed verification is removed too, because
-the import wrote it. The import goes on with the next file. A file that exists at the
+`.part` file is removed, and so is a target that the import renamed into place when a
+later step (syncing the folder, reading back, verification) fails, because the import
+wrote it and it is not verified. The import goes on with the next file. A file that exists at the
 target name before the rename is never touched; whether the import plan may use that
 name is decided by IMPORT-003, so a file found there at this point appeared during the
 copy.
