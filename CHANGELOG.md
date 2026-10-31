@@ -25,3 +25,9 @@ All user-visible changes are listed here. The format follows
   modification time, resolves name conflicts and skips files already imported
   (IMPORT-003), and copies each file with a verified copy through a `.part` file
   (IMPORT-004). A file that fails is reported and the import goes on.
+- `framehive import <source> <destination>` (CLI-001): imports a folder or a mounted
+  memory card into a library folder from the command line, with `--template`,
+  `--on-conflict add_suffix|skip|fail` and `--dry-run`. It prints one line per file
+  as soon as the file is done and a summary, creates a missing destination, rejects
+  a destination inside the source, and exits with 0 (all done), 1 (a file failed or
+  a folder could not be read) or 2 (the import did not start).

@@ -72,7 +72,20 @@ The full plan is in the [roadmap](docs/requirements/10-roadmap.md).
 
 ## Getting started
 
-There is no app to run yet. To work on the code:
+The first thing that runs is the command-line import. It copies the photos and
+videos of a folder or a mounted memory card into a library folder, sorted into
+folders by capture date, verifies every copy, and skips files that are already
+there:
+
+```sh
+cargo run --locked -p framehive-cli -- import <source> <destination> [--dry-run]
+```
+
+`--template` sets the folders and names, `--on-conflict add_suffix|skip|fail` decides
+what happens when a name is taken, and `--dry-run` prints the plan without copying.
+`framehive import --help` describes every argument.
+
+To work on the code:
 
 ```sh
 nix develop          # or: direnv allow
