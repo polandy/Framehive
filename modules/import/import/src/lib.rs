@@ -7,11 +7,14 @@
 #![forbid(unsafe_code)]
 
 mod plan;
+mod roles;
+mod scan;
 mod view_model;
 
 use kernel::{ModuleId, ModuleIdError};
 
 pub use plan::{AssetFile, ImportPlan, PlannedFile};
+pub use scan::{FoundFile, LeftOut, LeftOutReason, ScanError, SourceScan, scan_source};
 pub use view_model::ExampleViewModel;
 
 /// Stable, unique id of this module (architecture §4.2).

@@ -19,7 +19,7 @@ use requirements::requirement_ids;
 /// Directories whose `.rs` files may contain test markers.
 /// The requirements catalogue, one file per section.
 const REQUIREMENTS_DIRECTORY: &str = "docs/requirements";
-const SOURCE_DIRECTORIES: [&str; 3] = ["crates", "apps", "xtask"];
+const SOURCE_DIRECTORIES: [&str; 4] = ["crates", "modules", "apps", "xtask"];
 
 /// The outcome: errors fail the check, warnings are only printed.
 #[derive(Debug, Default)]
