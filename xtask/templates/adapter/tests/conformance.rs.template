@@ -1,0 +1,13 @@
+// SPDX-FileCopyrightText: 2026 Framehive contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+//! Port conformance test: every adapter must pass the conformance suite of the port
+//! it implements (CLAUDE.md, "Adding things").
+
+#[test]
+fn conforms_to_the_port() {
+    // TODO: replace with the suite from `{{port}}::testing`, run against this
+    // adapter; it returns one message per failed check.
+    let failures: Vec<String> = Vec::new();
+    assert!(failures.is_empty(), "{failures:#?}");
+}

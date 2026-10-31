@@ -5,7 +5,7 @@
 //! template in `xtask/templates/module/` and registers them in the workspace
 //! (architecture §4.1, §4.5).
 
-mod manifest;
+pub(crate) mod manifest;
 
 use std::fs::{self, OpenOptions};
 use std::io::Write;
@@ -216,7 +216,7 @@ fn reject_existing(
 }
 
 /// Cargo turns `-` into `_` for the library name, so `map-ui` and `map_ui` collide.
-fn library_name(crate_name: &str) -> String {
+pub(crate) fn library_name(crate_name: &str) -> String {
     crate_name.replace('-', "_")
 }
 
@@ -240,7 +240,7 @@ fn write_crate(
 }
 
 /// Writes a file that must not exist yet, creating its parent directories.
-fn write_new(path: &Path, text: &str) -> Result<(), String> {
+pub(crate) fn write_new(path: &Path, text: &str) -> Result<(), String> {
     let error = |error: std::io::Error| format!("cannot write {}: {error}", path.display());
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(error)?;
@@ -254,7 +254,7 @@ fn write_new(path: &Path, text: &str) -> Result<(), String> {
 }
 
 /// Cargo.toml uses forward slashes on every platform.
-fn slash_path(path: &Path) -> String {
+pub(crate) fn slash_path(path: &Path) -> String {
     path.components()
         .map(|component| component.as_os_str().to_string_lossy())
         .collect::<Vec<_>>()
@@ -268,7 +268,7 @@ fn slash_path(path: &Path) -> String {
 /// locked version untouched. `cargo update` must not be used here: with no package
 /// given it re-resolves the whole workspace and can silently bump unrelated
 /// dependencies to whatever newer, semver-compatible version happens to be cached.
-fn update_lock_file(root: &Path) -> Result<(), String> {
+pub(crate) fn update_lock_file(root: &Path) -> Result<(), String> {
     let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".to_owned());
     let output = Command::new(cargo)
         .args(["fetch", "--offline"])

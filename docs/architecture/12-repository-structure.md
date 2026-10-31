@@ -35,7 +35,7 @@ framehive/
 ├── apps/
 │   ├── gui/
 │   └── cli/
-├── xtask/                    # ci, check-architecture, new-module, testdata
+├── xtask/                    # ci, check-architecture, new-module, new-adapter, testdata
 ├── testdata/                 # small text fixtures (XMP, YAML); no binaries (ADR 0017)
 ├── testdata.lock             # pinned large test data from framehive-testdata
 ├── mockups/                  # UI mockups as HTML (design canvas); no image exports

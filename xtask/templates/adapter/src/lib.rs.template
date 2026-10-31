@@ -1,0 +1,7 @@
+// SPDX-FileCopyrightText: 2026 Framehive contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+//! The `{{name}}` adapter of Framehive: it implements a port of `{{port}}`
+//! (architecture §3). Only apps depend on it. See `README.md`.
+
+#![forbid(unsafe_code)]
