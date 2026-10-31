@@ -4,6 +4,7 @@
 [workspace]
 resolver = "3"
 members = [
+    "apps/cli",
     "crates/adapters/blake3",
     "crates/adapters/clock",
     "crates/adapters/fs",
@@ -37,6 +38,7 @@ kernel = { path = "crates/kernel" }
 metadata = { path = "crates/services/metadata" }
 naming = { path = "crates/services/naming" }
 blake3 = { version = "1", default-features = false, features = ["std"] }
+clap = { version = "4", default-features = false, features = ["std", "help", "usage", "error-context"] }
 jiff = { version = "0.2", default-features = false, features = ["std", "tz-system", "tzdb-zoneinfo"] }
 thiserror = { version = "2", default-features = false, features = ["std"] }
 

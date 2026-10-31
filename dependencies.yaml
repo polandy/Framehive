@@ -32,3 +32,12 @@ dependencies:
     allowed_layers: [adapter]
     allowed_crates: [adapter-clock]
     features: [std, tz-system, tzdb-zoneinfo]
+
+  - name: clap
+    purpose: The command line of framehive-cli, with the builder API
+    rationale: Help text, error messages and subcommands of a command line are a broad problem readers expect clap to solve; the builder API avoids a proc-macro crate for a handful of arguments
+    review: The most used argument parser in Rust (Cargo, rustup), by the clap-rs organization with several active maintainers, version 4.x, MIT OR Apache-2.0
+    adr: "0020"
+    allowed_layers: [app]
+    allowed_crates: [framehive-cli]
+    features: [std, help, usage, error-context]
