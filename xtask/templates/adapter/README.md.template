@@ -1,0 +1,26 @@
+<!--
+SPDX-FileCopyrightText: 2026 Framehive contributors
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+
+# adapter-{{name}}
+
+Layer: `adapter`, port `{{port}}` (architecture §3)
+
+## Purpose
+
+TODO: name the port of `{{port}}` this adapter implements, the library or system
+interface it wraps, and what it leaves to other crates.
+
+## Public API
+
+None yet. List each public type and the port trait it implements.
+
+## Conformance
+
+`tests/conformance.rs` runs the conformance suite of the port from
+`{{port}}::testing`.
+
+## Dependencies
+
+- `{{port}}`

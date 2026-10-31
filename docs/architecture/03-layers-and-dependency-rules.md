@@ -7,7 +7,7 @@ Each crate declares its layer in `Cargo.toml`:
 ```toml
 [package.metadata.framehive]
 layer = "module"        # domain | kernel | service | module | module-ui | adapter | app | tooling
-port = "metadata"       # adapters only: the service crate whose port the adapter implements
+port = "metadata"       # adapters only: the service crate whose port it implements; none for ports of domain
 ffi = true              # FFI adapters only: allows `unsafe` (see below)
 ```
 

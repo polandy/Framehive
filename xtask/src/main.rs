@@ -20,6 +20,7 @@ mod ci_failures;
 mod dependencies;
 mod files;
 mod json;
+mod new_adapter;
 mod new_module;
 mod specs;
 mod workspace;
@@ -37,7 +38,9 @@ commands:
   check-specs          specifications and their tests (ADR 0010)
   check-files          only text files, no binaries (ADR 0017)
   ci-failures [<pr>]   only the failures of a red CI run (needs gh)
-  new-module <id>      generate the two crates of a new module (architecture §4.5)";
+  new-module <id>      generate the two crates of a new module (architecture §4.5)
+  new-adapter <port> <name>
+                       generate the adapter crate adapter-<name> for a port (architecture §3)";
 
 fn main() -> ExitCode {
     let arguments: Vec<String> = std::env::args().skip(1).collect();
@@ -50,6 +53,11 @@ fn main() -> ExitCode {
         Some("check-specs") => check_specs(&root),
         Some("check-files") => check_files(&root),
         Some("new-module") => new_module::run(&root, arguments.get(1).map(String::as_str)),
+        Some("new-adapter") => new_adapter::run(
+            &root,
+            arguments.get(1).map(String::as_str),
+            arguments.get(2).map(String::as_str),
+        ),
         _ => Err(USAGE.to_owned()),
     };
     match result {

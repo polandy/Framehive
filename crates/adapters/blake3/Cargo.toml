@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2026 Framehive contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+[package]
+name = "adapter-blake3"
+description = "BLAKE3 checksums for the Hasher port of Framehive"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[package.metadata.framehive]
+layer = "adapter"
+port = "files"
+
+[dependencies]
+blake3.workspace = true
+domain.workspace = true
+files.workspace = true
+
+[lints]
+workspace = true
