@@ -6,10 +6,12 @@
 
 #![forbid(unsafe_code)]
 
+mod plan;
 mod view_model;
 
 use kernel::{ModuleId, ModuleIdError};
 
+pub use plan::{AssetFile, ImportPlan, PlannedFile};
 pub use view_model::ExampleViewModel;
 
 /// Stable, unique id of this module (architecture §4.2).
