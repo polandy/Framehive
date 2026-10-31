@@ -11,6 +11,7 @@
 #![forbid(unsafe_code)]
 
 mod capture_time;
+mod file;
 mod jpeg;
 mod raf;
 mod reason;
@@ -20,4 +21,5 @@ mod tiff;
 mod values;
 
 pub use capture_time::capture_time_from_bytes;
+pub use file::{CaptureTimeError, read_capture_time};
 pub use reason::NoCaptureTime;
