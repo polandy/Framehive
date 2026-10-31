@@ -1,6 +1,6 @@
 # IMPORT-003 – Name conflicts and files already imported
 
-- Status: accepted
+- Status: implemented
 - Module: import
 - Origin: I5, Q8, N3
 - Depends on: IMPORT-001, IMPORT-004
@@ -136,3 +136,4 @@ that appears at a target path after the plan was made is handled by IMPORT-004.9
 |---|---|
 | 2026-10-31 | Initial draft (milestone 1) |
 | 2026-10-31 | Accepted by the owner |
+| 2026-10-31 | `import::TargetResolver` covers IMPORT-003.1–.11 against `MemoryFileSystem`; case is ignored with Unicode `str::to_lowercase`, and the destination is compared by listing the target folder; Unicode normalization is open in `TODO.md` |

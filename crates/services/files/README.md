@@ -40,6 +40,7 @@ Boundaries:
 |---|---|
 | `FileSystem`, `ReadSeek`, `WriteFile`, `EntryKind`, `FolderEntry` | Port for files and folders, with explicit syncing; files are read from any offset (ADR 0021); folders are listed without following symbolic links (IMPORT-005) |
 | `Hasher`, `HashState` | Port for a hash function that yields a `domain::Checksum` with its algorithm id |
+| `checksum_file` | Reads a file in full and returns its checksum; used to compare content (IMPORT-003) and to read a copy back |
 | `copy_verified` | Copies one file through a `.part` file and verifies it (IMPORT-004) |
 | `CopyError`, `CopyStep`, `CopyErrorKind`, `CleanupFailure` | The failed step, why, and a file that could not be removed |
 | `testing::MemoryFileSystem`, `testing::Fault` | `FileSystem` in memory with simulated crashes, symbolic links, read, write, read-back and listing faults, and stops after a number of operations |
