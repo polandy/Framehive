@@ -142,6 +142,7 @@ dependencies = [
  "domain",
  "files",
  "kernel",
+ "metadata",
  "naming",
  "thiserror",
 ]
