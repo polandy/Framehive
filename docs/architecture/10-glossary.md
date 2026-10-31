@@ -17,12 +17,18 @@ Names in the code follow this glossary.
 | Source | `Source` | What is imported from: camera, card, phone, folder |
 | Name template | `NameTemplate` | Text that derives an imported file's folders and name (IMPORT-001) |
 | Capture time | `CaptureTime` | The wall-clock time the camera recorded, from EXIF `DateTimeOriginal`, with optional sub-seconds and UTC offset (CORE-005) |
+| Timestamp | `Timestamp` | An instant in UTC, to the nanosecond, without calendar or time zone (ADR 0022) |
+| UTC offset | `UtcOffset` | The difference between local time and UTC at an instant, in seconds east of UTC |
+| Clock | `Clock` | Port in `domain` for the current timestamp and the local UTC offset at a timestamp |
 | Local date-time | `LocalDateTime` | A calendar date and wall-clock time without a time zone, to the second; capture times and names use it |
 | Conflict policy | `ConflictPolicy` | What the import does when a target name holds a different file: `add_suffix`, `skip` or `fail` (IMPORT-003) |
 | Import plan | `ImportPlan` | A pure description: which file goes where, with what name, and which conflicts |
 | Import run | `ImportRun` | The execution of an import plan: copies each file and reports its progress and result (ADR 0020) |
 | Verified copy | `copy_verified` | A copy through a `.part` file whose content is checked against the source checksum before it counts as copied (IMPORT-004) |
 | Checksum | `Checksum` | Hash of a file's content with its algorithm, written `blake3:<hex>` (architecture §8) |
+| File system | `FileSystem` | Port of the `files` service for files and folders on a storage device, with explicit syncing; implemented by `adapter-fs` |
+| Hasher | `Hasher` | Port of the `files` service that computes a checksum; implemented by `adapter-blake3` |
+| Part file | `.part` file | `<target>.part` next to the target path; a verified copy writes it and renames it to the target only when it is complete (IMPORT-004) |
 | Job | `Job` | Background work in the queue |
 | Index | `Index` | Machine-local database, reconstructible from files |
 | Rating | `Rating` | 0–5 stars |

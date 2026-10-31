@@ -10,6 +10,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "files"
+version = "0.1.0"
+dependencies = [
+ "domain",
+ "thiserror",
+]
+
+[[package]]
 name = "import"
 version = "0.1.0"
 dependencies = [

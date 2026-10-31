@@ -33,8 +33,9 @@ Only then is the file reported as copied, with its checksum. Checksums use BLAKE
 are written `blake3:<hex>` (architecture §8).
 
 A file that fails at any step is reported as failed, with the step and the reason. Its
-`.part` file is removed, and a target that failed verification is removed too, because
-the import wrote it. The import goes on with the next file. A file that exists at the
+`.part` file is removed, and so is a target that the import renamed into place when a
+later step (syncing the folder, reading back, verification) fails, because the import
+wrote it and it is not verified. The import goes on with the next file. A file that exists at the
 target name before the rename is never touched; whether the import plan may use that
 name is decided by IMPORT-003, so a file found there at this point appeared during the
 copy.
@@ -134,3 +135,4 @@ import. It is replaced.
 |---|---|
 | 2026-10-31 | Initial draft (milestone 1) |
 | 2026-10-31 | The target keeps the source's modification time (IMPORT-004.12); accepted by the owner |
+| 2026-10-31 | `copy_verified` in the `files` service covers IMPORT-004.1–.10 and .12 against `MemoryFileSystem`; stays `accepted` until `adapter-fs` runs it on a real file system and the import run covers IMPORT-004.11 |
