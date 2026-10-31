@@ -7,6 +7,7 @@ members = [
     "crates/domain",
     "crates/kernel",
     "crates/services/files",
+    "crates/services/metadata",
     "crates/services/naming",
     "modules/import/import",
     "modules/import/import-ui",
@@ -27,6 +28,7 @@ files = { path = "crates/services/files" }
 import = { path = "modules/import/import" }
 import-ui = { path = "modules/import/import-ui" }
 kernel = { path = "crates/kernel" }
+metadata = { path = "crates/services/metadata" }
 naming = { path = "crates/services/naming" }
 thiserror = { version = "2", default-features = false, features = ["std"] }
 

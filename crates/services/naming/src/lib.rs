@@ -10,14 +10,12 @@
 #![forbid(unsafe_code)]
 
 mod date_format;
-mod date_time;
 mod dating;
 mod error;
 mod render;
 mod template;
 mod token;
 
-pub use date_time::{DateTimeError, LocalDateTime};
 pub use dating::{AssetDate, DateSource, FileTimes, asset_date};
 pub use error::{TemplateError, TemplateErrorKind};
 pub use render::{AssetValues, CompatibilityMode, RenderError};

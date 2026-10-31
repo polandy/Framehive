@@ -3,7 +3,7 @@
 
 //! Open files of a [`MemoryFileSystem`](super::MemoryFileSystem).
 
-use std::io::{self, Read, Write};
+use std::io::{self, Read, Seek, SeekFrom, Write};
 use std::sync::{Arc, Mutex};
 
 use domain::Timestamp;
@@ -33,6 +33,32 @@ impl Read for MemoryReader {
         self.position += count;
         Ok(count)
     }
+}
+
+impl Seek for MemoryReader {
+    /// Seeks like [`std::fs::File`]: past the end is allowed, before the start is not.
+    fn seek(&mut self, position: SeekFrom) -> io::Result<u64> {
+        lock(&self.state).count_operation()?;
+        let target = match position {
+            SeekFrom::Start(offset) => usize::try_from(offset).ok(),
+            SeekFrom::End(delta) => self.content.len().checked_add_signed(delta_of(delta)?),
+            SeekFrom::Current(delta) => self.position.checked_add_signed(delta_of(delta)?),
+        }
+        .ok_or_else(seek_out_of_range)?;
+        self.position = target;
+        u64::try_from(target).map_err(|_| seek_out_of_range())
+    }
+}
+
+fn delta_of(delta: i64) -> io::Result<isize> {
+    isize::try_from(delta).map_err(|_| seek_out_of_range())
+}
+
+fn seek_out_of_range() -> io::Error {
+    io::Error::new(
+        io::ErrorKind::InvalidInput,
+        "seek to a position before the start or out of range",
+    )
 }
 
 /// Writes to one file, which stays the same file if it is renamed.

@@ -3,7 +3,7 @@
 
 //! The ports of the files service (ADR 0020 §4).
 
-use std::io::{self, Read, Write};
+use std::io::{self, Read, Seek, Write};
 use std::path::Path;
 
 use domain::{Checksum, Timestamp};
@@ -44,12 +44,16 @@ pub trait FileSystem {
     /// [`io::ErrorKind::NotFound`] if the parent folder is missing.
     fn create_folder(&self, path: &Path) -> io::Result<()>;
 
-    /// Opens the file `path` for reading.
+    /// Opens the file `path` for reading, from the start or from any offset.
+    ///
+    /// Seeking follows [`Seek`]: a position past the end reads nothing, and a position
+    /// before the start is an error. Metadata readers seek to the byte ranges they
+    /// need instead of reading a whole RAW file (ADR 0021).
     ///
     /// # Errors
     ///
     /// Returns [`io::ErrorKind::NotFound`] if no file exists at `path`.
-    fn open_read(&self, path: &Path) -> io::Result<Box<dyn Read>>;
+    fn open_read(&self, path: &Path) -> io::Result<Box<dyn ReadSeek>>;
 
     /// Creates the file `path` for writing, or empties it if it exists. Its parent
     /// folder must exist.
@@ -95,6 +99,14 @@ pub trait FileSystem {
     /// Returns an error if the folder does not exist or cannot be synced.
     fn sync_folder(&self, path: &Path) -> io::Result<()>;
 }
+
+/// A file opened for reading by [`FileSystem::open_read`]: it reads and seeks.
+///
+/// Every type that is [`Read`] and [`Seek`] is a `ReadSeek`, such as
+/// [`std::fs::File`] and [`std::io::Cursor`].
+pub trait ReadSeek: Read + Seek {}
+
+impl<T: Read + Seek + ?Sized> ReadSeek for T {}
 
 /// A file opened for writing by [`FileSystem::create_file`].
 pub trait WriteFile: Write {

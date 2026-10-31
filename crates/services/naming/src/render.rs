@@ -3,11 +3,12 @@
 
 //! Rendering a name template for one asset file (IMPORT-001).
 
+use domain::LocalDateTime;
 use thiserror::Error;
 
+use crate::NameTemplate;
 use crate::template::Part;
 use crate::token::Token;
-use crate::{LocalDateTime, NameTemplate};
 
 /// Characters that exFAT, SMB or macOS do not accept in a name.
 const INCOMPATIBLE_CHARACTERS: [char; 9] = ['<', '>', ':', '"', '\\', '|', '?', '*', '\u{7f}'];
@@ -84,7 +85,8 @@ impl NameTemplate {
     /// `RAF.xmp`.
     ///
     /// ```
-    /// use naming::{AssetValues, CompatibilityMode, LocalDateTime, NameTemplate};
+    /// use domain::LocalDateTime;
+    /// use naming::{AssetValues, CompatibilityMode, NameTemplate};
     ///
     /// let template = NameTemplate::parse("{date:%Y-%m-%d}/{name}.{ext}")?;
     /// let values = AssetValues {

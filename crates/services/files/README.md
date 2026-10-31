@@ -38,7 +38,7 @@ Boundaries:
 
 | Item | Meaning |
 |---|---|
-| `FileSystem`, `WriteFile`, `EntryKind` | Port for files and folders, with explicit syncing |
+| `FileSystem`, `ReadSeek`, `WriteFile`, `EntryKind` | Port for files and folders, with explicit syncing; files are read from any offset (ADR 0021) |
 | `Hasher`, `HashState` | Port for a hash function that yields a `domain::Checksum` with its algorithm id |
 | `copy_verified` | Copies one file through a `.part` file and verifies it (IMPORT-004) |
 | `CopyError`, `CopyStep`, `CopyErrorKind`, `CleanupFailure` | The failed step, why, and a file that could not be removed |

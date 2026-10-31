@@ -4,10 +4,9 @@
 //! The import plan: where each file of an import goes and what it is called
 //! (IMPORT-001).
 
-use domain::AssetFileRole;
+use domain::{AssetFileRole, CaptureTime, LocalDateTime};
 use naming::{
-    AssetValues, CompatibilityMode, DateSource, FileTimes, LocalDateTime, NameTemplate,
-    RenderError, asset_date,
+    AssetValues, CompatibilityMode, DateSource, FileTimes, NameTemplate, RenderError, asset_date,
 };
 
 /// One file of an asset, as the import finds it on the source (glossary: Asset file).
@@ -21,7 +20,7 @@ pub struct AssetFile {
     /// The role of the file in its asset.
     pub role: AssetFileRole,
     /// The capture time, after camera time correction, if the file records one.
-    pub capture_time: Option<LocalDateTime>,
+    pub capture_time: Option<CaptureTime>,
     /// The file modification time.
     pub modification_time: LocalDateTime,
 }
@@ -54,15 +53,15 @@ impl PlannedFile {
 /// normally. Name conflicts are not part of the plan yet (IMPORT-003).
 ///
 /// ```
-/// use domain::AssetFileRole;
+/// use domain::{AssetFileRole, LocalDateTime};
 /// use import::{AssetFile, ImportPlan};
-/// use naming::{CompatibilityMode, LocalDateTime, NameTemplate};
+/// use naming::{CompatibilityMode, NameTemplate};
 ///
 /// let captured = LocalDateTime::new(2026, 10, 17, 14, 5, 9)?;
 /// let raw = AssetFile {
 ///     file_name: "DSC_0042.RAF".to_owned(),
 ///     role: AssetFileRole::Raw,
-///     capture_time: Some(captured),
+///     capture_time: Some(captured.into()),
 ///     modification_time: captured,
 /// };
 /// let template = NameTemplate::parse("{date:%Y-%m-%d}/{name}.{ext}")?;

@@ -5,10 +5,9 @@
 
 #![allow(clippy::unwrap_used, reason = "test helpers may panic on bad fixtures")]
 
-use domain::AssetFileRole;
+use domain::{AssetFileRole, LocalDateTime};
 use naming::{
-    AssetValues, CompatibilityMode, DateSource, FileTimes, LocalDateTime, NameTemplate,
-    RenderError, asset_date,
+    AssetValues, CompatibilityMode, DateSource, FileTimes, NameTemplate, RenderError, asset_date,
 };
 
 fn time(text: &str) -> LocalDateTime {
@@ -213,7 +212,7 @@ fn files_of_one_asset_share_the_capture_time() {
         },
         FileTimes {
             role: AssetFileRole::Raw,
-            capture_time: Some(time("2026-10-17 23:59:59")),
+            capture_time: Some(time("2026-10-17 23:59:59").into()),
             modification_time: time("2026-10-18 00:00:02"),
         },
     ];
@@ -248,12 +247,12 @@ fn capture_time_of_the_first_other_file_is_used_without_raw() {
         },
         FileTimes {
             role: AssetFileRole::Rendered,
-            capture_time: Some(first),
+            capture_time: Some(first.into()),
             modification_time: time("2026-10-18 00:00:00"),
         },
         FileTimes {
             role: AssetFileRole::Rendered,
-            capture_time: Some(time("2026-10-16 10:00:00")),
+            capture_time: Some(time("2026-10-16 10:00:00").into()),
             modification_time: time("2026-10-18 00:00:00"),
         },
     ];

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 //! Instants and UTC offsets, std-only (ADR 0022). Calendar dates and wall-clock times
-//! belong to the services that need them, such as `naming`.
+//! are `LocalDateTime` and `CaptureTime` (ADR 0021).
 
 use std::fmt;
 use std::time::Duration;

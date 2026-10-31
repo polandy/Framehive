@@ -41,6 +41,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "metadata"
+version = "0.1.0"
+dependencies = [
+ "domain",
+ "files",
+ "thiserror",
+]
+
+[[package]]
 name = "naming"
 version = "0.1.0"
 dependencies = [
