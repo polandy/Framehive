@@ -1,6 +1,6 @@
 # CORE-005 – Capture time
 
-- Status: accepted
+- Status: implemented
 - Module: core (metadata service)
 - Origin: F2, N23
 - Depends on: –
@@ -137,3 +137,4 @@ Invalid sub-seconds or offsets are ignored; the date and time are still used.
 |---|---|
 | 2026-10-31 | Initial draft (milestone 1) |
 | 2026-10-31 | Accepted by the owner |
+| 2026-10-31 | Implemented in the `metadata` service, with `LocalDateTime` and `CaptureTime` in `domain` |
