@@ -17,6 +17,9 @@ Names in the code follow this glossary.
 | Source | `Source` | What is imported from: camera, card, phone, folder |
 | Name template | `NameTemplate` | Text that derives an imported file's folders and name (IMPORT-001) |
 | Capture time | `CaptureTime` | The wall-clock time the camera recorded, from EXIF `DateTimeOriginal`, with optional sub-seconds and UTC offset (CORE-005) |
+| Timestamp | `Timestamp` | An instant in UTC, to the nanosecond, without calendar or time zone (ADR 0022) |
+| UTC offset | `UtcOffset` | The difference between local time and UTC at an instant, in seconds east of UTC |
+| Clock | `Clock` | Port in `domain` for the current timestamp and the local UTC offset at a timestamp |
 | Local date-time | `LocalDateTime` | A calendar date and wall-clock time without a time zone, to the second; capture times and names use it |
 | Conflict policy | `ConflictPolicy` | What the import does when a target name holds a different file: `add_suffix`, `skip` or `fail` (IMPORT-003) |
 | Import plan | `ImportPlan` | A pure description: which file goes where, with what name, and which conflicts |

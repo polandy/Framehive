@@ -9,7 +9,14 @@
 #![forbid(unsafe_code)]
 
 mod asset_file;
+mod checksum;
+mod clock;
 mod rating;
+pub mod testing;
+mod time;
 
 pub use asset_file::AssetFileRole;
+pub use checksum::{Checksum, ChecksumError};
+pub use clock::Clock;
 pub use rating::{Rating, RatingError};
+pub use time::{TimeError, Timestamp, UtcOffset};
