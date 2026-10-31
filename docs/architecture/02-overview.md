@@ -21,15 +21,17 @@ Part of the [architecture](README.md).
 │  jobs       queue, scheduler, priorities, resume (port: JobStore)                       │
 │  previews   thumbnails & previews, cache (port: PreviewDecoder)                         │
 │  naming     template language for file and folder names                                 │
+│  files      file system and hashing, verified copy (ports: FileSystem, Hasher)          │
 └───────────────┬─────────────────────────────────────────────────────────────────────────┘
                 │
 ┌───────────────▼───────────────── Domain (pure, no I/O) ─────────────────────────────────┐
 │  domain     Asset, Sidecar, Volume, Rating, Pick, ColorLabel, Tag, Region, GeoPoint,    │
-│             ContentHash, Clock/Id ports …                                               │
+│             Checksum, Timestamp, Clock/Id ports …                                       │
 └─────────────────────────────────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────── Adapters (implementations of the ports) ────────────────────────┐
-│  adapter-sqlite   adapter-fs   adapter-gphoto2   adapter-mtp   adapter-udisks           │
+│  adapter-sqlite   adapter-fs   adapter-blake3   adapter-clock   adapter-gphoto2         │
+│  adapter-mtp   adapter-udisks                                                           │
 │  adapter-macos-disks   adapter-xmp   adapter-exif   adapter-raw   adapter-ffmpeg        │
 │  adapter-onnx   adapter-osm-tiles   adapter-digikam-db   adapter-immich-http            │
 └─────────────────────────────────────────────────────────────────────────────────────────┘
