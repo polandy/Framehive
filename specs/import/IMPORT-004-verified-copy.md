@@ -134,3 +134,4 @@ import. It is replaced.
 |---|---|
 | 2026-10-31 | Initial draft (milestone 1) |
 | 2026-10-31 | The target keeps the source's modification time (IMPORT-004.12); accepted by the owner |
+| 2026-10-31 | `copy_verified` in the `files` service covers IMPORT-004.1–.10 and .12 against `MemoryFileSystem`; stays `accepted` until `adapter-fs` runs it on a real file system and the import run covers IMPORT-004.11 |
