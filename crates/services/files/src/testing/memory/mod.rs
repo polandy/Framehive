@@ -6,13 +6,13 @@
 mod handles;
 mod state;
 
-use std::io::{self, Read};
+use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use domain::Timestamp;
 
-use crate::{EntryKind, FileSystem, WriteFile};
+use crate::{EntryKind, FileSystem, ReadSeek, WriteFile};
 
 use handles::{MemoryReader, MemoryWriter};
 use state::{Entry, State, lock, reachable_entries};
@@ -188,7 +188,7 @@ impl FileSystem for MemoryFileSystem {
         })
     }
 
-    fn open_read(&self, path: &Path) -> io::Result<Box<dyn Read>> {
+    fn open_read(&self, path: &Path) -> io::Result<Box<dyn ReadSeek>> {
         self.operate(|state| {
             let id = state.file_id(path)?;
             let mut content = state.file(id).content.clone();
@@ -208,7 +208,7 @@ impl FileSystem for MemoryFileSystem {
                 position: 0,
                 readable,
             };
-            Ok(Box::new(reader) as Box<dyn Read>)
+            Ok(Box::new(reader) as Box<dyn ReadSeek>)
         })
     }
 

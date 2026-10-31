@@ -3,7 +3,7 @@
 
 //! The conformance suite of the [`FileSystem`] port.
 
-use std::io::{self, Read, Write};
+use std::io::{self, Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 
 use domain::Timestamp;
@@ -34,13 +34,17 @@ type CaseFn = fn(&Case<'_>) -> CaseResult;
 /// Each case works in its own folder below `root`.
 #[must_use]
 pub fn check_file_system(under_test: &FileSystemUnderTest<'_>) -> Vec<String> {
-    let cases: [(&str, CaseFn); 12] = [
+    let cases: [(&str, CaseFn); 13] = [
         (
             "entry_reports_missing_files_and_folders",
             entry_reports_missing,
         ),
         ("create_folder_needs_a_parent_and_no_entry", create_folder),
         ("written_content_reads_back", written_content_reads_back),
+        (
+            "open_read_seeks_to_any_offset",
+            open_read_seeks_to_any_offset,
+        ),
         ("create_file_empties_an_existing_file", create_file_empties),
         (
             "create_file_needs_a_parent_folder",
@@ -185,6 +189,40 @@ fn written_content_reads_back(case: &Case<'_>) -> CaseResult {
     case.write(&path, &content)?;
     case.expect_entry(&path, Some(EntryKind::File))?;
     case.expect_content(&path, &content)
+}
+
+/// Metadata readers read byte ranges at offsets and never a whole RAW file (ADR 0021).
+fn open_read_seeks_to_any_offset(case: &Case<'_>) -> CaseResult {
+    let path = case.path("photo.raf");
+    case.write(&path, b"0123456789")?;
+    let mut reader = case.fs().open_read(&path).map_err(failed("open_read"))?;
+    let mut read_at = |position: SeekFrom| -> Result<(u64, Vec<u8>), String> {
+        let offset = reader.seek(position).map_err(failed("seek"))?;
+        let mut bytes = [0; 2];
+        let count = reader.read(&mut bytes).map_err(failed("read"))?;
+        Ok((offset, bytes[..count].to_vec()))
+    };
+
+    let reads = [
+        read_at(SeekFrom::Start(6))?,
+        read_at(SeekFrom::Current(-5))?,
+        read_at(SeekFrom::End(-1))?,
+        read_at(SeekFrom::Start(20))?,
+    ];
+    let expected = [
+        (6, b"67".to_vec()),
+        (3, b"34".to_vec()),
+        (9, b"9".to_vec()),
+        (20, Vec::new()),
+    ];
+    ensure(
+        reads == expected,
+        format!("seek and read gave {reads:?}, expected {expected:?}"),
+    )?;
+    ensure(
+        reader.seek(SeekFrom::End(-11)).is_err(),
+        "seeking before the start succeeded".to_owned(),
+    )
 }
 
 fn create_file_empties(case: &Case<'_>) -> CaseResult {

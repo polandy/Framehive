@@ -17,4 +17,4 @@ pub mod testing;
 
 pub use copy::copy_verified;
 pub use copy_error::{CleanupFailure, CopyError, CopyErrorKind, CopyStep};
-pub use ports::{EntryKind, FileSystem, HashState, Hasher, WriteFile};
+pub use ports::{EntryKind, FileSystem, HashState, Hasher, ReadSeek, WriteFile};

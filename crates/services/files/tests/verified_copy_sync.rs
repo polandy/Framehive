@@ -25,7 +25,7 @@ impl FileSystem for FailingFolderSync<'_> {
     fn create_folder(&self, path: &Path) -> std::io::Result<()> {
         self.inner.create_folder(path)
     }
-    fn open_read(&self, path: &Path) -> std::io::Result<Box<dyn std::io::Read>> {
+    fn open_read(&self, path: &Path) -> std::io::Result<Box<dyn files::ReadSeek>> {
         self.inner.open_read(path)
     }
     fn create_file(&self, path: &Path) -> std::io::Result<Box<dyn files::WriteFile>> {
