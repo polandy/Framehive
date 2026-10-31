@@ -5,7 +5,9 @@
 
 use std::fmt::Write as _;
 
-use crate::{LocalDateTime, TemplateError, TemplateErrorKind};
+use domain::LocalDateTime;
+
+use crate::{TemplateError, TemplateErrorKind};
 
 /// A parsed date format: literal text and date codes.
 #[derive(Debug, Clone, PartialEq, Eq)]

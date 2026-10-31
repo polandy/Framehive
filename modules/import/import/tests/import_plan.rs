@@ -5,9 +5,9 @@
 
 #![allow(clippy::unwrap_used, reason = "test helpers may panic on bad fixtures")]
 
-use domain::AssetFileRole;
+use domain::{AssetFileRole, LocalDateTime};
 use import::{AssetFile, ImportPlan, PlannedFile};
-use naming::{CompatibilityMode, DateSource, LocalDateTime, NameTemplate, RenderError};
+use naming::{CompatibilityMode, DateSource, NameTemplate, RenderError};
 
 fn time(text: &str) -> LocalDateTime {
     // "YYYY-MM-DD HH:MM:SS", parsed here so the tests read like the spec.
@@ -33,7 +33,7 @@ fn captured(file_name: &str, role: AssetFileRole, capture_time: &str) -> AssetFi
     AssetFile {
         file_name: file_name.to_owned(),
         role,
-        capture_time: Some(time(capture_time)),
+        capture_time: Some(time(capture_time).into()),
         modification_time: time("2026-12-24 12:00:00"),
     }
 }

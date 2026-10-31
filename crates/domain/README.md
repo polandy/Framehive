@@ -24,6 +24,8 @@ time library is visible here (ADR 0022).
 | `Timestamp` | An instant in UTC, to the nanosecond, since the Unix epoch |
 | `UtcOffset` | Offset of local time from UTC, in seconds, below a day |
 | `TimeError` | Why values are not a valid `Timestamp` or `UtcOffset` |
+| `LocalDateTime`, `DateTimeError` | Date and wall-clock time without a time zone, to the second; `from_timestamp` gives the local time of a `Timestamp` at a `UtcOffset` (ADR 0021) |
+| `CaptureTime` | The wall-clock time the camera recorded, with optional sub-seconds and UTC offset (CORE-005) |
 | `Checksum`, `ChecksumError` | Hash of a file's content with its algorithm, written `<algorithm>:<hex>` (architecture §8) |
 | `Clock` | Port for the current `Timestamp` and the local `UtcOffset` at a `Timestamp` (ADR 0020, ADR 0022) |
 | `testing::ManualClock` | `Clock` for tests that shows the time it is set to |

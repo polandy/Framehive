@@ -18,7 +18,8 @@ Boundaries:
 
 - **Pure.** Rendering is a function of the values it is given: capture time, import
   time, base name and file name. The service reads no files and no clock; the caller
-  passes times as `LocalDateTime` values (architecture §3).
+  passes times as `LocalDateTime` and `CaptureTime` values of `domain` (architecture §3,
+  ADR 0021).
 - **Asset values.** All files of one asset are rendered from one `AssetValues`.
   `asset_date` chooses its capture time from each file's `AssetFileRole`: the RAW file first, then the other files in
   order, falling back to the modification time.
@@ -38,7 +39,6 @@ Boundaries:
 | `AssetValues` | The values all files of one asset are rendered from |
 | `CompatibilityMode` | Keep names valid on exFAT, SMB and macOS (`On` by default) or not |
 | `RenderError` | Why one file cannot be named |
-| `LocalDateTime`, `DateTimeError` | Date and wall-clock time without a time zone |
 | `FileTimes`, `AssetDate`, `DateSource`, `asset_date` | Choosing the capture time of an asset from its files |
 
 ## Dependencies
