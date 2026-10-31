@@ -1,6 +1,6 @@
 # 0020 – Import execution, verified copy, `blake3` and `clap`
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-10-31
 
 ## Context

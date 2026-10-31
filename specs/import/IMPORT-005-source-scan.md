@@ -1,6 +1,6 @@
 # IMPORT-005 – Source scan
 
-- Status: draft
+- Status: accepted
 - Module: import
 - Origin: Q4, Q6, V7, 2.7, N26
 - Depends on: IMPORT-001
@@ -28,6 +28,11 @@ Each file is classified by its extension, ignoring case:
 
 The lists are the formats of requirements section 2.7.
 
+Until grouping (LIBRARY-001) is implemented, each file is its own asset, so a sidecar
+would be named from its own modification time and could land in another folder than its
+photo. The scan therefore leaves sidecars out, with the reason "sidecar, needs
+grouping".
+
 The scan leaves out, and lists with the reason:
 
 - files with any other extension or without one ("unsupported type"),
@@ -54,9 +59,9 @@ files it imported before. Such an import is refused before the scan starts.
 - **Then** both files are found
 
 ### IMPORT-005.2 – Roles come from the extension, ignoring case
-- **Given** `DSCF0001.RAF`, `photo.jpeg`, `clip.MOV`, `clip.Thm` and `DSCF0001.xmp`
+- **Given** `DSCF0001.RAF`, `photo.jpeg` and `clip.MOV`
 - **When** the source is scanned
-- **Then** their roles are `Raw`, `Rendered`, `Video`, `Sidecar` and `Sidecar`
+- **Then** their roles are `Raw`, `Rendered` and `Video`
 
 ### IMPORT-005.3 – Unsupported files are listed, not imported
 - **Given** a source with `DSCF0001.RAF`, `notes.txt` and `README`
@@ -109,28 +114,30 @@ files it imported before. Such an import is refused before the scan starts.
 - **Then** it is refused before the scan, with an error that names both paths, and no
   file is copied
 
+### IMPORT-005.12 – Sidecars are left out until grouping
+- **Given** a source with `DSCF0001.RAF`, `DSCF0001.xmp` and `clip.Thm`
+- **When** it is scanned
+- **Then** only `DSCF0001.RAF` is found, and `DSCF0001.xmp` and `clip.Thm` are listed as
+  left out with the reason "sidecar, needs grouping"
+
 ## Out of scope
 
 - Detecting cards, cameras and phones (Q1, Q2): the device spec; this spec scans a
   folder.
 - Configurable scanned folders and ignore patterns (Q6), as part of a profile (N8).
 - Grouping files into assets (LIBRARY-001); until it is implemented, each file is its
-  own asset.
+  own asset and sidecars are left out (IMPORT-005.12).
 - The capture time of a file: CORE-005.
 - Files already imported, and name conflicts: IMPORT-003.
 - Deduplicating two card slots (Q8), and audio and proxy files (V7, G2): later specs.
 
 ## Open questions
 
-1. Sidecars without grouping: as long as each file is its own asset, a sidecar is named
-   from its own modification time, not from its photo's capture time, and can land in
-   another folder than its photo (IMPORT-001, "Assets"). Recommendation: until
-   LIBRARY-001 is implemented, the scan finds sidecars but leaves them out, with the
-   reason "sidecar, needs grouping", so none is separated from its photo. Fujifilm
-   cameras write no sidecars, so milestone 1 loses nothing for the reference cameras.
+–
 
 ## History
 
 | Date | Change |
 |---|---|
 | 2026-10-31 | Initial draft (milestone 1) |
+| 2026-10-31 | Sidecars are left out until grouping (IMPORT-005.12); accepted by the owner |

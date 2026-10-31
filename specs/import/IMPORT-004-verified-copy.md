@@ -1,6 +1,6 @@
 # IMPORT-004 – Verified copy
 
-- Status: draft
+- Status: accepted
 - Module: import
 - Origin: N1, N2, N7, N26
 - Depends on: IMPORT-001
@@ -23,8 +23,9 @@ For each file:
 1. The folders of the target path are created when they are missing.
 2. The source is read once. While it is read, its checksum is computed and the bytes
    are written to `<target>.part` in the target folder.
-3. The `.part` file is written to the storage device (synced), then renamed to the
-   target name, and the folder is synced. The rename never replaces a file.
+3. The `.part` file gets the source's modification time, is written to the storage
+   device (synced), then renamed to the target name, and the folder is synced. The
+   rename never replaces a file.
 4. The target is read back in full, and its checksum is compared with the source
    checksum.
 
@@ -108,6 +109,11 @@ import. It is replaced.
 - **Then** the first and third are copied and verified, and only the second is reported
   as failed
 
+### IMPORT-004.12 – The target keeps the modification time
+- **Given** a source file modified at 2026-10-17 14:05:09 UTC
+- **When** it is imported
+- **Then** the target's modification time is 2026-10-17 14:05:09 UTC
+
 ## Out of scope
 
 - A target name that already exists, or two files with the same target, and files
@@ -120,12 +126,11 @@ import. It is replaced.
 
 ## Open questions
 
-1. Should the target keep the source's modification time? Recommendation: yes. Other
-   programs and a re-scan then see the capture order, and the time is part of what a
-   camera wrote; it costs one more call per file. If yes, it becomes a criterion here.
+–
 
 ## History
 
 | Date | Change |
 |---|---|
 | 2026-10-31 | Initial draft (milestone 1) |
+| 2026-10-31 | The target keeps the source's modification time (IMPORT-004.12); accepted by the owner |

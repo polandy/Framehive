@@ -1,6 +1,6 @@
 # 0022 – `jiff` as the time library
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-10-31
 
 ## Context

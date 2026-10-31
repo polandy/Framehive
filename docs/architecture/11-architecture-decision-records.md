@@ -26,5 +26,5 @@ acceptance (a change means a new ADR that supersedes the old one).
 | [0017](../adr/0017-no-binary-files-in-the-repository.md) | No binary files in the repository | accepted, decision 9 partly superseded by 0019 |
 | [0018](../adr/0018-github-and-github-actions.md) | Hosting on GitHub, CI with GitHub Actions | accepted |
 | [0019](../adr/0019-review-screenshots-in-a-comment.md) | Review screenshots are linked from a comment | accepted |
-| [0020](../adr/0020-import-execution-and-verified-copy.md) | Import execution, verified copy, `blake3` and `clap` | proposed |
-| [0022](../adr/0022-jiff-as-the-time-library.md) | `jiff` as the time library | proposed |
+| [0020](../adr/0020-import-execution-and-verified-copy.md) | Import execution, verified copy, `blake3` and `clap` | accepted |
+| [0022](../adr/0022-jiff-as-the-time-library.md) | `jiff` as the time library | accepted |
