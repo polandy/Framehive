@@ -26,6 +26,9 @@ Names in the code follow this glossary.
 | Import run | `ImportRun` | The execution of an import plan: copies each file and reports its progress and result (ADR 0020) |
 | Verified copy | `copy_verified` | A copy through a `.part` file whose content is checked against the source checksum before it counts as copied (IMPORT-004) |
 | Checksum | `Checksum` | Hash of a file's content with its algorithm, written `blake3:<hex>` (architecture §8) |
+| File system | `FileSystem` | Port of the `files` service for files and folders on a storage device, with explicit syncing; implemented by `adapter-fs` |
+| Hasher | `Hasher` | Port of the `files` service that computes a checksum; implemented by `adapter-blake3` |
+| Part file | `.part` file | `<target>.part` next to the target path; a verified copy writes it and renames it to the target only when it is complete (IMPORT-004) |
 | Job | `Job` | Background work in the queue |
 | Index | `Index` | Machine-local database, reconstructible from files |
 | Rating | `Rating` | 0–5 stars |
