@@ -5,6 +5,7 @@
 resolver = "3"
 members = [
     "crates/adapters/blake3",
+    "crates/adapters/fs",
     "crates/domain",
     "crates/kernel",
     "crates/services/files",
@@ -25,6 +26,7 @@ publish = false
 # Every direct dependency is pinned here and listed in dependencies.yaml (ADR 0009).
 [workspace.dependencies]
 adapter-blake3 = { path = "crates/adapters/blake3" }
+adapter-fs = { path = "crates/adapters/fs" }
 domain = { path = "crates/domain" }
 files = { path = "crates/services/files" }
 import = { path = "modules/import/import" }
