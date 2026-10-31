@@ -1,6 +1,6 @@
 # IMPORT-001 – Name templates
 
-- Status: accepted
+- Status: implemented
 - Module: import
 - Origin: R1, R6, R8, N9
 - Depends on: –
@@ -208,3 +208,4 @@ can never contain `/`.
 | 2026-10-19 | Initial draft |
 | 2026-10-19 | Accepted by the owner |
 | 2026-10-19 | Clarified the modification-time fallback order for assets without a capture time, and added IMPORT-001.18 for a rendered segment that would leave the destination (naming service, review) |
+| 2026-10-31 | Implemented: `ImportPlan` in the import module, on the naming service |
