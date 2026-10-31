@@ -11,8 +11,8 @@ acceptance (a change means a new ADR that supersedes the old one).
 | [0002](../adr/0002-rust-and-slint.md) | Rust and Slint | accepted |
 | [0003](../adr/0003-files-and-xmp-are-the-source-of-truth.md) | Files and XMP are the source of truth, per-machine index | accepted |
 | [0004](../adr/0004-modular-architecture.md) | Modular architecture with kernel and static registration | proposed |
-| [0005](../adr/0005-ports-and-adapters.md) | Ports & adapters, business logic without I/O | proposed |
-| [0006](../adr/0006-deterministic-tests.md) | Deterministic tests, no retries | proposed |
+| [0005](../adr/0005-ports-and-adapters.md) | Ports & adapters, business logic without I/O | accepted |
+| [0006](../adr/0006-deterministic-tests.md) | Deterministic tests, no retries | accepted |
 | [0007](../adr/0007-reproducible-builds-with-nix.md) | Reproducible builds with a pinned toolchain and Nix | proposed |
 | [0008](../adr/0008-development-by-ai-agents.md) | Development by AI agents: enforce rules by machine | proposed |
 | [0009](../adr/0009-minimal-dependencies.md) | Minimal dependencies, only established libraries | accepted |
@@ -26,3 +26,5 @@ acceptance (a change means a new ADR that supersedes the old one).
 | [0017](../adr/0017-no-binary-files-in-the-repository.md) | No binary files in the repository | accepted, decision 9 partly superseded by 0019 |
 | [0018](../adr/0018-github-and-github-actions.md) | Hosting on GitHub, CI with GitHub Actions | accepted |
 | [0019](../adr/0019-review-screenshots-in-a-comment.md) | Review screenshots are linked from a comment | accepted |
+| [0020](../adr/0020-import-execution-and-verified-copy.md) | Import execution, verified copy, `blake3` and `clap` | proposed |
+| [0022](../adr/0022-jiff-as-the-time-library.md) | `jiff` as the time library | proposed |

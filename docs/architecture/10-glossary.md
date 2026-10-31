@@ -17,6 +17,9 @@ Names in the code follow this glossary.
 | Source | `Source` | What is imported from: camera, card, phone, folder |
 | Name template | `NameTemplate` | Text that derives an imported file's folders and name (IMPORT-001) |
 | Import plan | `ImportPlan` | A pure description: which file goes where, with what name, and which conflicts |
+| Import run | `ImportRun` | The execution of an import plan: copies each file and reports its progress and result (ADR 0020) |
+| Verified copy | `copy_verified` | A copy through a `.part` file whose content is checked against the source checksum before it counts as copied (IMPORT-004) |
+| Checksum | `Checksum` | Hash of a file's content with its algorithm, written `blake3:<hex>` (architecture §8) |
 | Job | `Job` | Background work in the queue |
 | Index | `Index` | Machine-local database, reconstructible from files |
 | Rating | `Rating` | 0–5 stars |

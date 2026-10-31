@@ -1,6 +1,6 @@
 # 0005 – Ports & adapters, domain logic without I/O
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-10-17
 
 ## Context
