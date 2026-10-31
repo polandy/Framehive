@@ -38,7 +38,7 @@ pub enum TemplateErrorKind {
         token: String,
     },
     /// The token needs an option, e.g. the date format of `{date:…}`.
-    #[error("{token} needs an option, e.g. {{date:%Y-%m-%d}}")]
+    #[error("{token} needs an option, e.g. {example}", example = option_example(token))]
     MissingOption {
         /// The token as written, with its braces.
         token: String,
@@ -73,4 +73,47 @@ pub enum TemplateErrorKind {
         /// The segment, `.` or `..`.
         segment: String,
     },
+}
+
+/// An example of `token` with an option, so the message shows how to fix it.
+fn option_example(token: &str) -> String {
+    let name = token.trim_start_matches('{').trim_end_matches('}');
+    let option = if name.starts_with("seq_") {
+        "3"
+    } else {
+        "%Y-%m-%d"
+    };
+    format!("{{{name}:{option}}}")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn missing_option_message(token: &str) -> String {
+        TemplateErrorKind::MissingOption {
+            token: token.to_owned(),
+        }
+        .to_string()
+    }
+
+    #[test]
+    fn missing_option_example_fits_the_token() {
+        assert_eq!(
+            missing_option_message("{date}"),
+            "{date} needs an option, e.g. {date:%Y-%m-%d}"
+        );
+        assert_eq!(
+            missing_option_message("{imported}"),
+            "{imported} needs an option, e.g. {imported:%Y-%m-%d}"
+        );
+        assert_eq!(
+            missing_option_message("{seq_today}"),
+            "{seq_today} needs an option, e.g. {seq_today:3}"
+        );
+        assert_eq!(
+            missing_option_message("{seq_session}"),
+            "{seq_session} needs an option, e.g. {seq_session:3}"
+        );
+    }
 }

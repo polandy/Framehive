@@ -20,7 +20,7 @@ Boundaries:
   time, base name and file name. The service reads no files and no clock; the caller
   passes times as `LocalDateTime` values (architecture §3).
 - **Asset values.** All files of one asset are rendered from one `AssetValues`.
-  `asset_date` chooses its capture time: the RAW file first, then the other files in
+  `asset_date` chooses its capture time from each file's `AssetFileRole`: the RAW file first, then the other files in
   order, falling back to the modification time.
 - **Sidecars.** A file's extension is everything after the asset's base name and a
   dot, so `DSC_0042.RAF.xmp` keeps `RAF.xmp` and follows its RAF file.
@@ -43,4 +43,5 @@ Boundaries:
 
 ## Dependencies
 
+- `domain`
 - `thiserror` (ADR 0016)

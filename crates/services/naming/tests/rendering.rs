@@ -5,6 +5,7 @@
 
 #![allow(clippy::unwrap_used, reason = "test helpers may panic on bad fixtures")]
 
+use domain::AssetFileRole;
 use naming::{
     AssetValues, CompatibilityMode, DateSource, FileTimes, LocalDateTime, NameTemplate,
     RenderError, asset_date,
@@ -182,7 +183,7 @@ fn import_time_is_the_value_given_for_the_job() {
 #[test]
 fn missing_capture_time_falls_back_to_modification_time() {
     let files = [FileTimes {
-        is_raw: false,
+        role: AssetFileRole::Rendered,
         capture_time: None,
         modification_time: time("2026-03-01 08:00:00"),
     }];
@@ -206,12 +207,12 @@ fn missing_capture_time_falls_back_to_modification_time() {
 fn files_of_one_asset_share_the_capture_time() {
     let files = [
         FileTimes {
-            is_raw: false,
+            role: AssetFileRole::Rendered,
             capture_time: None,
             modification_time: time("2026-10-18 00:00:01"),
         },
         FileTimes {
-            is_raw: true,
+            role: AssetFileRole::Raw,
             capture_time: Some(time("2026-10-17 23:59:59")),
             modification_time: time("2026-10-18 00:00:02"),
         },
@@ -241,17 +242,17 @@ fn capture_time_of_the_first_other_file_is_used_without_raw() {
     let first = time("2026-10-17 10:00:00");
     let files = [
         FileTimes {
-            is_raw: false,
+            role: AssetFileRole::Rendered,
             capture_time: None,
             modification_time: time("2026-10-18 00:00:00"),
         },
         FileTimes {
-            is_raw: false,
+            role: AssetFileRole::Rendered,
             capture_time: Some(first),
             modification_time: time("2026-10-18 00:00:00"),
         },
         FileTimes {
-            is_raw: false,
+            role: AssetFileRole::Rendered,
             capture_time: Some(time("2026-10-16 10:00:00")),
             modification_time: time("2026-10-18 00:00:00"),
         },
@@ -271,12 +272,12 @@ fn modification_time_falls_back_in_the_same_order_as_the_capture_time() {
     let raw_modified = time("2026-10-19 00:00:00");
     let with_raw = [
         FileTimes {
-            is_raw: false,
+            role: AssetFileRole::Rendered,
             capture_time: None,
             modification_time: time("2026-10-18 00:00:00"),
         },
         FileTimes {
-            is_raw: true,
+            role: AssetFileRole::Raw,
             capture_time: None,
             modification_time: raw_modified,
         },
@@ -292,12 +293,12 @@ fn modification_time_falls_back_in_the_same_order_as_the_capture_time() {
     let first_modified = time("2026-10-20 00:00:00");
     let without_raw = [
         FileTimes {
-            is_raw: false,
+            role: AssetFileRole::Rendered,
             capture_time: None,
             modification_time: first_modified,
         },
         FileTimes {
-            is_raw: false,
+            role: AssetFileRole::Rendered,
             capture_time: None,
             modification_time: time("2026-10-10 00:00:00"),
         },

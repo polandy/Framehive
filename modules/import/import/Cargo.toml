@@ -14,7 +14,9 @@ publish.workspace = true
 layer = "module"
 
 [dependencies]
+domain.workspace = true
 kernel.workspace = true
+naming.workspace = true
 
 [lints]
 workspace = true

@@ -8,6 +8,8 @@
 
 #![forbid(unsafe_code)]
 
+mod asset_file;
 mod rating;
 
+pub use asset_file::AssetFileRole;
 pub use rating::{Rating, RatingError};
