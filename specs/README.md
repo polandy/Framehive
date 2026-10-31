@@ -12,6 +12,7 @@ specs/
 ├── core/                # kernel, services (catalog, metadata, jobs, volumes, …)
 ├── import/              # import module
 ├── library/              # library module
+├── cli/                  # command line (apps/cli)
 ├── map/  people/  …     # other modules
 ```
 
