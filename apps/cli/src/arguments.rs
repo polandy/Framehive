@@ -18,7 +18,6 @@ const CONFLICT_POLICIES: [&str; 3] = ["add_suffix", "skip", "fail"];
 
 /// What the user asked `framehive` to do.
 #[derive(Debug)]
-#[expect(dead_code, reason = "read once the import is wired to the adapters")]
 pub(crate) enum Invocation {
     /// `framehive import`.
     Import(ImportArguments),
@@ -26,7 +25,6 @@ pub(crate) enum Invocation {
 
 /// The arguments of `framehive import`, checked by the parser.
 #[derive(Debug)]
-#[expect(dead_code, reason = "read once the import is wired to the adapters")]
 pub(crate) struct ImportArguments {
     /// The folder to import from, as given.
     pub(crate) source: PathBuf,

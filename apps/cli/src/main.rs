@@ -6,12 +6,18 @@
 #![forbid(unsafe_code)]
 
 mod arguments;
+mod import_command;
+mod paths;
+mod report;
 
 use std::io::{self, Write};
 use std::process::ExitCode;
 
 use arguments::Invocation;
 
+/// The exit code when the import ran and a file failed or a folder could not be read
+/// (CLI-001).
+const FILES_FAILED: u8 = 1;
 /// The exit code when the import did not start (CLI-001).
 const NOT_STARTED: u8 = 2;
 
@@ -24,10 +30,7 @@ fn main() -> ExitCode {
 
 fn run(invocation: &Invocation) -> ExitCode {
     match invocation {
-        Invocation::Import(_) => {
-            report_error("the import is not available yet");
-            ExitCode::from(NOT_STARTED)
-        }
+        Invocation::Import(arguments) => import_command::run_import(arguments),
     }
 }
 

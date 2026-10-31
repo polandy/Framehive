@@ -18,7 +18,17 @@ name = "framehive"
 path = "src/main.rs"
 
 [dependencies]
+adapter-blake3.workspace = true
+adapter-clock.workspace = true
+adapter-fs.workspace = true
 clap.workspace = true
+files.workspace = true
+import.workspace = true
+naming.workspace = true
+
+[dev-dependencies]
+files.workspace = true
+metadata.workspace = true
 
 [lints]
 workspace = true
