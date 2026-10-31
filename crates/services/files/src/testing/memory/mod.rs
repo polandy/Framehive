@@ -12,10 +12,10 @@ use std::sync::{Arc, Mutex, MutexGuard};
 
 use domain::Timestamp;
 
-use crate::{EntryKind, FileSystem, ReadSeek, WriteFile};
+use crate::{EntryKind, FileSystem, FolderEntry, ReadSeek, WriteFile};
 
 use handles::{MemoryReader, MemoryWriter};
-use state::{Entry, State, lock, reachable_entries};
+use state::{Entry, State, lock, reachable_entries, symbolic_link};
 
 /// A fault that [`MemoryFileSystem`] injects for one path.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -33,6 +33,9 @@ pub enum Fault {
     /// Reading the file returns different bytes than it holds: the last byte is
     /// inverted.
     ReadReturnsDifferentBytes,
+    /// Listing the folder fails with [`io::ErrorKind::PermissionDenied`], as for a
+    /// folder the user may not read.
+    ListFails,
     /// The first write to the file makes another program create the file `path`
     /// with `content`.
     OtherProgramCreates {
@@ -52,8 +55,10 @@ pub enum Fault {
 /// [`FileSystem::sync_folder`]. [`MemoryFileSystem::crash`] drops everything that
 /// was not durable.
 ///
-/// Files and folders added with [`MemoryFileSystem::add_file`] and
-/// [`MemoryFileSystem::add_folder`] are durable at once. Clones share one file
+/// Files, folders and symbolic links added with [`MemoryFileSystem::add_file`],
+/// [`MemoryFileSystem::add_folder`] and [`MemoryFileSystem::add_symbolic_link`] are
+/// durable at once. Symbolic links are only listed: opening one, or asking for its
+/// size or modification time, fails. Clones share one file
 /// system.
 ///
 /// ```
@@ -104,6 +109,21 @@ impl MemoryFileSystem {
         state
             .durable_entries
             .insert(path.to_path_buf(), Entry::File(id));
+    }
+
+    /// Adds a symbolic link at `path` and its missing parent folders, all durable.
+    /// What it points to does not matter, because this file system never follows it.
+    pub fn add_symbolic_link(&self, path: &Path) {
+        let mut state = self.lock();
+        if let Some(parent) = path.parent() {
+            state.add_folders(parent);
+        }
+        state
+            .entries
+            .insert(path.to_path_buf(), Entry::SymbolicLink);
+        state
+            .durable_entries
+            .insert(path.to_path_buf(), Entry::SymbolicLink);
     }
 
     /// Returns the current content of the file `path`, or `None` if there is none.
@@ -179,6 +199,17 @@ impl FileSystem for MemoryFileSystem {
         self.operate(|state| Ok(state.entry_kind(path)))
     }
 
+    fn list_folder(&self, path: &Path) -> io::Result<Vec<FolderEntry>> {
+        self.operate(|state| state.children(path))
+    }
+
+    fn file_size(&self, path: &Path) -> io::Result<u64> {
+        self.operate(|state| {
+            let id = state.file_id(path)?;
+            u64::try_from(state.file(id).content.len()).map_err(io::Error::other)
+        })
+    }
+
     fn create_folder(&self, path: &Path) -> io::Result<()> {
         self.operate(|state| {
             state.require_absent(path)?;
@@ -220,6 +251,7 @@ impl FileSystem for MemoryFileSystem {
                 Some(Entry::Folder) => {
                     return Err(io::Error::other(format!("{} is a folder", path.display())));
                 }
+                Some(Entry::SymbolicLink) => return Err(symbolic_link(path)),
                 None => {
                     let id = state.new_file(Vec::new(), Timestamp::UNIX_EPOCH);
                     state.entries.insert(path.to_path_buf(), Entry::File(id));

@@ -10,7 +10,7 @@ use std::rc::Rc;
 
 use domain::Timestamp;
 use files::testing::MemoryFileSystem;
-use files::{EntryKind, FileSystem, ReadSeek, WriteFile};
+use files::{EntryKind, FileSystem, FolderEntry, ReadSeek, WriteFile};
 
 /// `MemoryFileSystem` that counts opened files and the bytes read from them.
 pub(crate) struct CountingFileSystem {
@@ -48,6 +48,12 @@ impl CountingFileSystem {
 impl FileSystem for CountingFileSystem {
     fn entry(&self, path: &Path) -> io::Result<Option<EntryKind>> {
         self.inner.entry(path)
+    }
+    fn list_folder(&self, path: &Path) -> io::Result<Vec<FolderEntry>> {
+        self.inner.list_folder(path)
+    }
+    fn file_size(&self, path: &Path) -> io::Result<u64> {
+        self.inner.file_size(path)
     }
     fn create_folder(&self, path: &Path) -> io::Result<()> {
         self.inner.create_folder(path)

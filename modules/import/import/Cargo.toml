@@ -15,8 +15,11 @@ layer = "module"
 
 [dependencies]
 domain.workspace = true
+files.workspace = true
 kernel.workspace = true
+metadata.workspace = true
 naming.workspace = true
+thiserror.workspace = true
 
 [lints]
 workspace = true

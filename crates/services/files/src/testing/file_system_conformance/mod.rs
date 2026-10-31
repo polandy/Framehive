@@ -10,9 +10,14 @@ use domain::Timestamp;
 
 use crate::{EntryKind, FileSystem};
 
+mod listing;
+
 /// A modification time every supported file system stores exactly: whole, even
 /// seconds (exFAT stores two-second steps).
 const MODIFIED_SECONDS: i64 = 1_792_245_908;
+
+/// Creates a symbolic link at its first path that points to its second.
+pub type MakeSymbolicLink<'a> = dyn Fn(&Path, &Path) -> io::Result<()> + 'a;
 
 /// What the [`FileSystem`] conformance suite runs against.
 pub struct FileSystemUnderTest<'a> {
@@ -23,6 +28,10 @@ pub struct FileSystemUnderTest<'a> {
     /// Simulates a crash that loses every write that was not synced, if the
     /// implementation can; the durability cases then check what survives it.
     pub crash: Option<&'a dyn Fn()>,
+    /// Creates a symbolic link at its first path that points to its second, if the
+    /// implementation's storage has them; the port itself cannot create one. The
+    /// listing cases then check that links are reported and not followed.
+    pub make_symbolic_link: Option<&'a MakeSymbolicLink<'a>>,
 }
 
 type CaseResult = Result<(), String>;
@@ -34,12 +43,21 @@ type CaseFn = fn(&Case<'_>) -> CaseResult;
 /// Each case works in its own folder below `root`.
 #[must_use]
 pub fn check_file_system(under_test: &FileSystemUnderTest<'_>) -> Vec<String> {
-    let cases: [(&str, CaseFn); 13] = [
+    let cases: [(&str, CaseFn); 16] = [
         (
             "entry_reports_missing_files_and_folders",
             entry_reports_missing,
         ),
         ("create_folder_needs_a_parent_and_no_entry", create_folder),
+        (
+            "list_folder_names_files_and_folders",
+            listing::list_folder_names_entries,
+        ),
+        (
+            "list_folder_does_not_follow_symbolic_links",
+            listing::list_folder_does_not_follow_links,
+        ),
+        ("file_size_is_the_content_length", listing::file_size),
         ("written_content_reads_back", written_content_reads_back),
         (
             "open_read_seeks_to_any_offset",

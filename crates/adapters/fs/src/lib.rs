@@ -33,7 +33,7 @@ use std::io::{self, Write};
 use std::path::Path;
 
 use domain::Timestamp;
-use files::{EntryKind, FileSystem, ReadSeek, WriteFile};
+use files::{EntryKind, FileSystem, FolderEntry, ReadSeek, WriteFile};
 
 /// Creates a second name for a file, as [`fs::hard_link`] does. A seam, so that tests
 /// can stand in for a file system without hard links.
@@ -41,8 +41,9 @@ type LinkFn = fn(&Path, &Path) -> io::Result<()>;
 
 /// The [`FileSystem`] of the machine, over `std::fs`.
 ///
-/// Symbolic links are not followed by [`FileSystem::entry`]; they are
-/// [`EntryKind::Other`], so a scan cannot loop or leave its source (IMPORT-005).
+/// Symbolic links are not followed by [`FileSystem::entry`] and
+/// [`FileSystem::list_folder`]; they are [`EntryKind::SymbolicLink`], so a scan cannot
+/// loop or leave its source (IMPORT-005).
 #[derive(Debug, Clone, Copy)]
 pub struct StdFileSystem {
     link: LinkFn,
@@ -86,12 +87,31 @@ impl Default for StdFileSystem {
 impl FileSystem for StdFileSystem {
     fn entry(&self, path: &Path) -> io::Result<Option<EntryKind>> {
         match fs::symlink_metadata(path) {
-            Ok(metadata) if metadata.is_file() => Ok(Some(EntryKind::File)),
-            Ok(metadata) if metadata.is_dir() => Ok(Some(EntryKind::Folder)),
-            Ok(_) => Ok(Some(EntryKind::Other)),
+            Ok(metadata) => Ok(Some(entry_kind(metadata.file_type()))),
             Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(None),
             Err(error) => Err(error),
         }
+    }
+
+    fn list_folder(&self, path: &Path) -> io::Result<Vec<FolderEntry>> {
+        fs::read_dir(path)?
+            .map(|entry| {
+                let entry = entry?;
+                // `DirEntry::file_type` does not follow symbolic links.
+                Ok(FolderEntry {
+                    name: entry.file_name(),
+                    kind: entry_kind(entry.file_type()?),
+                })
+            })
+            .collect()
+    }
+
+    fn file_size(&self, path: &Path) -> io::Result<u64> {
+        let metadata = fs::metadata(path)?;
+        if metadata.is_dir() {
+            return Err(is_a_folder(path));
+        }
+        Ok(metadata.len())
     }
 
     fn create_folder(&self, path: &Path) -> io::Result<()> {
@@ -138,6 +158,18 @@ impl FileSystem for StdFileSystem {
 
     fn sync_folder(&self, path: &Path) -> io::Result<()> {
         File::open(path)?.sync_all()
+    }
+}
+
+fn entry_kind(file_type: fs::FileType) -> EntryKind {
+    if file_type.is_symlink() {
+        EntryKind::SymbolicLink
+    } else if file_type.is_file() {
+        EntryKind::File
+    } else if file_type.is_dir() {
+        EntryKind::Folder
+    } else {
+        EntryKind::Other
     }
 }
 

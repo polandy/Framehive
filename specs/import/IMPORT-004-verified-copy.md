@@ -1,6 +1,6 @@
 # IMPORT-004 – Verified copy
 
-- Status: accepted
+- Status: implemented
 - Module: import
 - Origin: N1, N2, N7, N26
 - Depends on: IMPORT-001
@@ -137,3 +137,4 @@ import. It is replaced.
 | 2026-10-31 | The target keeps the source's modification time (IMPORT-004.12); accepted by the owner |
 | 2026-10-31 | `copy_verified` in the `files` service covers IMPORT-004.1–.10 and .12 against `MemoryFileSystem`; stays `accepted` until `adapter-fs` runs it on a real file system and the import run covers IMPORT-004.11 |
 | 2026-10-31 | `adapter-fs` passes the `FileSystem` conformance suite on a real file system, also without hard links, and `adapter-blake3` the `Hasher` suite; stays `accepted` until the import run covers IMPORT-004.11 |
+| 2026-10-31 | `ImportRun` in the import module dates, names, resolves and copies each file and goes on after a failed file (IMPORT-004.11); `implemented` |

@@ -4,15 +4,13 @@
 //! The verified copy of one file (IMPORT-004, ADR 0020 §3).
 
 use std::ffi::OsString;
-use std::io::{self, Read};
+use std::io;
 use std::path::{Path, PathBuf};
 
 use domain::Checksum;
 
+use crate::checksum::{BUFFER_SIZE, checksum_file, read_some};
 use crate::{CleanupFailure, CopyError, CopyErrorKind, CopyStep, EntryKind, FileSystem, Hasher};
-
-/// How many bytes are read and written at a time.
-const BUFFER_SIZE: usize = 64 * 1024;
 
 /// Copies `source` to `target` and verifies the copy (glossary: Verified copy).
 ///
@@ -224,21 +222,8 @@ impl Copy<'_> {
 
     /// Reads the target back in full and compares its checksum with the source's.
     fn verify_target(&self, source_checksum: &Checksum) -> Result<(), Failure> {
-        let read_failed = || Failure::io(CopyStep::ReadBack, self.target);
-        let mut reader = self
-            .file_system
-            .open_read(self.target)
-            .map_err(read_failed())?;
-        let mut hash = self.hasher.start();
-        let mut buffer = vec![0; BUFFER_SIZE];
-        loop {
-            let count = read_some(&mut *reader, &mut buffer).map_err(read_failed())?;
-            if count == 0 {
-                break;
-            }
-            hash.update(&buffer[..count]);
-        }
-        let target_checksum = hash.finish();
+        let target_checksum = checksum_file(self.file_system, self.hasher, self.target)
+            .map_err(Failure::io(CopyStep::ReadBack, self.target))?;
         if target_checksum != *source_checksum {
             return Err(Failure {
                 step: CopyStep::Verify,
@@ -260,16 +245,6 @@ impl Copy<'_> {
                 path: path.to_path_buf(),
                 error,
             })),
-        }
-    }
-}
-
-/// Reads into `buffer`, retrying reads that a signal interrupted.
-fn read_some(reader: &mut dyn Read, buffer: &mut [u8]) -> io::Result<usize> {
-    loop {
-        match reader.read(buffer) {
-            Err(error) if error.kind() == io::ErrorKind::Interrupted => {}
-            result => return result,
         }
     }
 }

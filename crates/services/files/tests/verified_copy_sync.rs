@@ -22,6 +22,12 @@ impl FileSystem for FailingFolderSync<'_> {
     fn entry(&self, path: &Path) -> std::io::Result<Option<EntryKind>> {
         self.inner.entry(path)
     }
+    fn list_folder(&self, path: &Path) -> std::io::Result<Vec<files::FolderEntry>> {
+        self.inner.list_folder(path)
+    }
+    fn file_size(&self, path: &Path) -> std::io::Result<u64> {
+        self.inner.file_size(path)
+    }
     fn create_folder(&self, path: &Path) -> std::io::Result<()> {
         self.inner.create_folder(path)
     }

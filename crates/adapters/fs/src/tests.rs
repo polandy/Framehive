@@ -38,6 +38,7 @@ fn passes_the_conformance_suite_without_hard_links() {
             file_system: &without_links(link),
             root: folder.path(),
             crash: None,
+            make_symbolic_link: None,
         });
         assert!(failures.is_empty(), "{failures:#?}");
     }

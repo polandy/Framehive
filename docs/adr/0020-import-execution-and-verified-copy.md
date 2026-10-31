@@ -67,6 +67,15 @@ race with another program writing the same name is accepted and documented.
 | `adapter-clock` (`crates/adapters/clock`) | adapter | `Clock` from `domain`, with the system time zone; ADR 0022 |
 | `framehive-cli` (`apps/cli`) | app | The binary `framehive`; wires the adapters, parses arguments (CLI-001) |
 
+**Amendment (2026-10-31): listing folders.** The source scan (IMPORT-005) needs to walk
+a folder and know each file's size. The `FileSystem` port therefore also has
+`list_folder`, which returns each entry's name and `EntryKind` without following
+symbolic links, and `file_size`. `EntryKind` gains `SymbolicLink`, so a scan can list a
+link as left out instead of following it into a loop or out of the source.
+`MemoryFileSystem` models symbolic links and folders that cannot be listed, and the
+conformance suite checks the new methods, with real symbolic links where the adapter's
+platform has them.
+
 `MemoryFileSystem` can drop every write that was not synced, so tests can check that a
 file reported as copied survives a crash. `FnvHasher` is a small, non-cryptographic
 hasher for tests that need no real checksum. `TempDir` is our own helper for tests that

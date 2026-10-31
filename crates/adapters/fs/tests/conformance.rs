@@ -6,7 +6,7 @@
 //! "Adding things").
 
 use adapter_fs::StdFileSystem;
-use files::testing::{FileSystemUnderTest, TempDir, check_file_system};
+use files::testing::{FileSystemUnderTest, MakeSymbolicLink, TempDir, check_file_system};
 
 #[test]
 fn conforms_to_the_file_system_port() {
@@ -16,21 +16,47 @@ fn conforms_to_the_file_system_port() {
         root: folder.path(),
         // A crash cannot be simulated on a real file system.
         crash: None,
+        make_symbolic_link: SYMBOLIC_LINKS,
     });
     assert!(failures.is_empty(), "{failures:#?}");
 }
 
+/// Symbolic links of the platform, for the listing cases of the suite.
+#[cfg(unix)]
+const SYMBOLIC_LINKS: Option<&MakeSymbolicLink<'static>> =
+    Some(&|link, target| std::os::unix::fs::symlink(target, link));
+
+#[cfg(not(unix))]
+const SYMBOLIC_LINKS: Option<&MakeSymbolicLink<'static>> = None;
+
+/// A folder without read permission fails to list as `std::fs::read_dir` does, so
+/// the scan can list it as left out (IMPORT-005.6). Permissions do not bind the
+/// superuser; then both listings succeed, which the comparison covers too.
 #[cfg(unix)]
 #[test]
-fn reports_symbolic_links_as_other_entries() {
-    use files::{EntryKind, FileSystem};
+fn list_folder_fails_like_read_dir_for_a_folder_without_permission() {
+    use std::fs::{self, Permissions};
+    use std::os::unix::fs::PermissionsExt;
+
+    use files::FileSystem;
+
     let folder = TempDir::new().unwrap();
-    let target = folder.path().join("photo.jpg");
-    std::fs::write(&target, b"jpeg").unwrap();
-    let link = folder.path().join("link.jpg");
-    std::os::unix::fs::symlink(&target, &link).unwrap();
-    assert_eq!(
-        StdFileSystem::new().entry(&link).unwrap(),
-        Some(EntryKind::Other)
-    );
+    let locked = folder.path().join("locked");
+    fs::create_dir(&locked).unwrap();
+    fs::write(locked.join("DSCF0001.RAF"), b"raw").unwrap();
+    fs::set_permissions(&locked, Permissions::from_mode(0o000)).unwrap();
+
+    let expected = fs::read_dir(&locked)
+        .map(|_| ())
+        .map_err(|error| error.kind());
+    let listed = StdFileSystem::new()
+        .list_folder(&locked)
+        .map(|_| ())
+        .map_err(|error| error.kind());
+    fs::set_permissions(&locked, Permissions::from_mode(0o755)).unwrap();
+
+    assert_eq!(listed, expected);
+    if let Err(kind) = listed {
+        assert_eq!(kind, std::io::ErrorKind::PermissionDenied);
+    }
 }

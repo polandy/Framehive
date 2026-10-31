@@ -140,8 +140,11 @@ name = "import"
 version = "0.1.0"
 dependencies = [
  "domain",
+ "files",
  "kernel",
+ "metadata",
  "naming",
+ "thiserror",
 ]
 
 [[package]]

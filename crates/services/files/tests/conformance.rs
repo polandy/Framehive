@@ -16,11 +16,16 @@ fn memory_file_system_conforms() {
     let root = Path::new("/conformance");
     file_system.add_folder(root);
     let crash = || file_system.crash();
+    let make_symbolic_link = |link: &Path, _target: &Path| {
+        file_system.add_symbolic_link(link);
+        Ok(())
+    };
 
     let failures = check_file_system(&FileSystemUnderTest {
         file_system: &file_system,
         root,
         crash: Some(&crash),
+        make_symbolic_link: Some(&make_symbolic_link),
     });
 
     assert_eq!(failures, Vec::<String>::new());

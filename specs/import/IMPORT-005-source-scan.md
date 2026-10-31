@@ -1,6 +1,6 @@
 # IMPORT-005 – Source scan
 
-- Status: accepted
+- Status: implemented
 - Module: import
 - Origin: Q4, Q6, V7, 2.7, N26
 - Depends on: IMPORT-001
@@ -141,3 +141,4 @@ files it imported before. Such an import is refused before the scan starts.
 |---|---|
 | 2026-10-31 | Initial draft (milestone 1) |
 | 2026-10-31 | Sidecars are left out until grouping (IMPORT-005.12); accepted by the owner |
+| 2026-10-31 | `import::scan_source` covers IMPORT-005.1–.12 against `MemoryFileSystem`; a hidden folder is listed once and not entered; `adapter-fs` lists symbolic links and unreadable folders on a real file system as the scan needs |

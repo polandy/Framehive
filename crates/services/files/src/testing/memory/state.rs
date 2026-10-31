@@ -12,7 +12,7 @@ use std::sync::{Mutex, MutexGuard, PoisonError};
 use domain::Timestamp;
 
 use super::Fault;
-use crate::EntryKind;
+use crate::{EntryKind, FolderEntry};
 
 #[derive(Debug, Default)]
 pub(super) struct State {
@@ -31,6 +31,7 @@ pub(super) type FileId = u64;
 pub(super) enum Entry {
     Folder,
     File(FileId),
+    SymbolicLink,
 }
 
 #[derive(Debug, Clone)]
@@ -112,13 +113,41 @@ impl State {
         match self.entries.get(path)? {
             Entry::Folder => Some(EntryKind::Folder),
             Entry::File(_) => Some(EntryKind::File),
+            Entry::SymbolicLink => Some(EntryKind::SymbolicLink),
         }
+    }
+
+    /// The entries directly in `folder`, by name.
+    pub(super) fn children(&self, folder: &Path) -> io::Result<Vec<FolderEntry>> {
+        match self.entry_kind(folder) {
+            Some(EntryKind::Folder) => {}
+            Some(_) => return Err(not_a_folder(folder)),
+            None => return Err(not_found(folder)),
+        }
+        if let Some(Fault::ListFails) = self.faults.get(folder) {
+            return Err(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                format!("{} cannot be read", folder.display()),
+            ));
+        }
+        let children = self
+            .entries
+            .keys()
+            .filter(|path| is_child_of(path, folder))
+            .filter_map(|path| {
+                Some(FolderEntry {
+                    name: path.file_name()?.to_os_string(),
+                    kind: self.entry_kind(path)?,
+                })
+            });
+        Ok(children.collect())
     }
 
     pub(super) fn file_id(&self, path: &Path) -> io::Result<FileId> {
         match self.entries.get(path) {
             Some(Entry::File(id)) => Ok(*id),
             Some(Entry::Folder) => Err(io::Error::other(format!("{} is a folder", path.display()))),
+            Some(Entry::SymbolicLink) => Err(symbolic_link(path)),
             None => Err(not_found(path)),
         }
     }
@@ -182,6 +211,18 @@ pub(super) fn is_root(path: &Path) -> bool {
 fn is_child_of(path: &Path, folder: &Path) -> bool {
     let parent = path.parent().unwrap_or(Path::new(""));
     parent == folder || (is_root(parent) && is_root(folder))
+}
+
+/// The memory file system never follows symbolic links; they exist to be listed.
+pub(super) fn symbolic_link(path: &Path) -> io::Error {
+    io::Error::other(format!(
+        "{} is a symbolic link, which this file system does not follow",
+        path.display()
+    ))
+}
+
+fn not_a_folder(path: &Path) -> io::Error {
+    io::Error::other(format!("{} is not a folder", path.display()))
 }
 
 fn not_found(path: &Path) -> io::Error {
