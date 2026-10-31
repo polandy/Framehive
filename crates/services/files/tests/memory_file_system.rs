@@ -154,3 +154,32 @@ fn stopped_file_system_fails_every_later_operation() {
     assert!(file_system.create_folder(&path("2026")).is_err());
     assert_eq!(file_system.operations(), 1);
 }
+
+#[test]
+fn list_fails_fault_denies_listing_the_folder() {
+    let file_system = file_system();
+    file_system.add_folder(&path("locked"));
+    file_system.inject_fault(&path("locked"), Fault::ListFails);
+
+    let error = file_system.list_folder(&path("locked")).unwrap_err();
+
+    assert_eq!(error.kind(), io::ErrorKind::PermissionDenied);
+    assert_eq!(
+        file_system.entry(&path("locked")).unwrap(),
+        Some(EntryKind::Folder)
+    );
+}
+
+#[test]
+fn symbolic_links_are_listed_but_never_followed() {
+    let file_system = file_system();
+    file_system.add_symbolic_link(&path("all"));
+
+    assert_eq!(
+        file_system.entry(&path("all")).unwrap(),
+        Some(EntryKind::SymbolicLink)
+    );
+    assert!(file_system.open_read(&path("all")).is_err());
+    assert!(file_system.file_size(&path("all")).is_err());
+    assert!(file_system.list_folder(&path("all")).is_err());
+}

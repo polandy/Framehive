@@ -3,6 +3,7 @@
 
 //! The ports of the files service (ADR 0020 §4).
 
+use std::ffi::OsString;
 use std::io::{self, Read, Seek, Write};
 use std::path::Path;
 
@@ -15,8 +16,21 @@ pub enum EntryKind {
     File,
     /// A folder.
     Folder,
+    /// A symbolic link. The port never follows it when it inspects or lists a path,
+    /// so a scan cannot loop or leave its source (IMPORT-005).
+    SymbolicLink,
     /// Anything else, such as a device or a socket.
     Other,
+}
+
+/// One entry of a folder, as [`FileSystem::list_folder`] returns it.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct FolderEntry {
+    /// The entry's name within its folder, without the folder's path.
+    pub name: OsString,
+    /// What the entry is; a symbolic link is [`EntryKind::SymbolicLink`], not what it
+    /// points to.
+    pub kind: EntryKind,
 }
 
 /// Port for the files and folders of a storage device (ADR 0020 §4).
@@ -29,12 +43,31 @@ pub enum EntryKind {
 /// Errors are [`io::Error`]s. Where the contract names an [`io::ErrorKind`], callers
 /// rely on it.
 pub trait FileSystem {
-    /// Returns what `path` names, or `None` if nothing exists there.
+    /// Returns what `path` names, or `None` if nothing exists there. A symbolic link
+    /// is [`EntryKind::SymbolicLink`]; it is not followed.
     ///
     /// # Errors
     ///
     /// Returns an error if the path cannot be inspected.
     fn entry(&self, path: &Path) -> io::Result<Option<EntryKind>>;
+
+    /// Returns the entries of the folder `path`, in no particular order, without `.`
+    /// and `..`. Symbolic links are listed as [`EntryKind::SymbolicLink`] and not
+    /// followed.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`io::ErrorKind::NotFound`] if nothing exists at `path`, and an error
+    /// if `path` is not a folder or cannot be read.
+    fn list_folder(&self, path: &Path) -> io::Result<Vec<FolderEntry>>;
+
+    /// Returns the size in bytes of the file `path`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`io::ErrorKind::NotFound`] if no file exists at `path`, and an error
+    /// if `path` is a folder.
+    fn file_size(&self, path: &Path) -> io::Result<u64>;
 
     /// Creates the folder `path`. Its parent folder must exist.
     ///

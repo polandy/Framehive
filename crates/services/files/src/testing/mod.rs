@@ -13,7 +13,7 @@ mod hasher_conformance;
 mod memory;
 mod temp_dir;
 
-pub use file_system_conformance::{FileSystemUnderTest, check_file_system};
+pub use file_system_conformance::{FileSystemUnderTest, MakeSymbolicLink, check_file_system};
 pub use fnv::FnvHasher;
 pub use hasher_conformance::{HasherUnderTest, check_hasher};
 pub use memory::{Fault, MemoryFileSystem};

@@ -6,7 +6,7 @@
 //! "Adding things").
 
 use adapter_fs::StdFileSystem;
-use files::testing::{FileSystemUnderTest, TempDir, check_file_system};
+use files::testing::{FileSystemUnderTest, MakeSymbolicLink, TempDir, check_file_system};
 
 #[test]
 fn conforms_to_the_file_system_port() {
@@ -16,21 +16,15 @@ fn conforms_to_the_file_system_port() {
         root: folder.path(),
         // A crash cannot be simulated on a real file system.
         crash: None,
+        make_symbolic_link: SYMBOLIC_LINKS,
     });
     assert!(failures.is_empty(), "{failures:#?}");
 }
 
+/// Symbolic links of the platform, for the listing cases of the suite.
 #[cfg(unix)]
-#[test]
-fn reports_symbolic_links_as_other_entries() {
-    use files::{EntryKind, FileSystem};
-    let folder = TempDir::new().unwrap();
-    let target = folder.path().join("photo.jpg");
-    std::fs::write(&target, b"jpeg").unwrap();
-    let link = folder.path().join("link.jpg");
-    std::os::unix::fs::symlink(&target, &link).unwrap();
-    assert_eq!(
-        StdFileSystem::new().entry(&link).unwrap(),
-        Some(EntryKind::Other)
-    );
-}
+const SYMBOLIC_LINKS: Option<&MakeSymbolicLink<'static>> =
+    Some(&|link, target| std::os::unix::fs::symlink(target, link));
+
+#[cfg(not(unix))]
+const SYMBOLIC_LINKS: Option<&MakeSymbolicLink<'static>> = None;
