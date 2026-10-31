@@ -3,13 +3,15 @@
 
 //! Which time `{date:…}` shows for an asset (IMPORT-001, "Capture time" and "Assets").
 
+use domain::AssetFileRole;
+
 use crate::LocalDateTime;
 
 /// The times known for one file of an asset.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FileTimes {
-    /// Whether the file is the asset's RAW file.
-    pub is_raw: bool,
+    /// The role of the file in its asset; the RAW file is dated first.
+    pub role: AssetFileRole,
     /// The capture time, after camera time correction, if the file records one.
     pub capture_time: Option<LocalDateTime>,
     /// The file modification time.
@@ -41,13 +43,22 @@ pub struct AssetDate {
 /// file in that order is used. Returns `None` for an asset without files.
 ///
 /// ```
+/// use domain::AssetFileRole;
 /// use naming::{DateSource, FileTimes, LocalDateTime, asset_date};
 ///
 /// let raw = LocalDateTime::new(2026, 10, 17, 23, 59, 59)?;
 /// let jpeg_modified = LocalDateTime::new(2026, 10, 18, 0, 0, 1)?;
 /// let files = [
-///     FileTimes { is_raw: false, capture_time: None, modification_time: jpeg_modified },
-///     FileTimes { is_raw: true, capture_time: Some(raw), modification_time: raw },
+///     FileTimes {
+///         role: AssetFileRole::Rendered,
+///         capture_time: None,
+///         modification_time: jpeg_modified,
+///     },
+///     FileTimes {
+///         role: AssetFileRole::Raw,
+///         capture_time: Some(raw),
+///         modification_time: raw,
+///     },
 /// ];
 /// let date = asset_date(&files).unwrap();
 /// assert_eq!((date.time, date.source), (raw, DateSource::CaptureTime));
@@ -56,8 +67,9 @@ pub struct AssetDate {
 #[must_use]
 pub fn asset_date(files: &[FileTimes]) -> Option<AssetDate> {
     let raw_first = || {
-        let raw = files.iter().filter(|file| file.is_raw);
-        raw.chain(files.iter().filter(|file| !file.is_raw))
+        let is_raw = |file: &&FileTimes| file.role == AssetFileRole::Raw;
+        let raw = files.iter().filter(is_raw);
+        raw.chain(files.iter().filter(move |file| !is_raw(file)))
     };
     let captured = raw_first()
         .find_map(|file| file.capture_time)

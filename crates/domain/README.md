@@ -17,6 +17,7 @@ files and devices are reached only through ports defined by the layers above.
 
 | Item | Meaning |
 |---|---|
+| `AssetFileRole` | Role of one file of an asset: `Raw`, `Rendered`, `Video`, `Sidecar` |
 | `Rating`, `RatingError` | Star rating of an asset, 0–5 |
 
 ## Dependencies
