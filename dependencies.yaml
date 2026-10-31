@@ -14,3 +14,12 @@ dependencies:
     adr: "0016"
     allowed_layers: [domain, kernel, service, module, adapter]
     features: [std]
+
+  - name: blake3
+    purpose: BLAKE3 checksums of imported files, in adapter-blake3
+    rationale: A cryptographic hash function is a deep, security-critical problem ADR 0009 assigns to a library; BLAKE3 is the checksum architecture §8 names
+    review: Official implementation by the BLAKE3 authors (BLAKE3-team), version 1.x, CC0-1.0 OR Apache-2.0; its SIMD paths contain assembly and C built by its build script, accepted in ADR 0020 §5
+    adr: "0020"
+    allowed_layers: [adapter]
+    allowed_crates: [adapter-blake3]
+    features: [std]
