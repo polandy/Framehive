@@ -23,3 +23,12 @@ dependencies:
     allowed_layers: [adapter]
     allowed_crates: [adapter-blake3]
     features: [std]
+
+  - name: jiff
+    purpose: The system time and the local UTC offset of the system time zone, in adapter-clock
+    rationale: Time zone rules and the system time zone database are a deep problem ADR 0009 assigns to a library; std has no time zones
+    review: By Andrew Gallant (BurntSushi), pure Rust, Unlicense OR MIT; version 0.2 before 1.0 is an accepted exception, confined to one adapter (ADR 0022)
+    adr: "0022"
+    allowed_layers: [adapter]
+    allowed_crates: [adapter-clock]
+    features: [std, tz-system, tzdb-zoneinfo]

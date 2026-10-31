@@ -5,6 +5,7 @@
 resolver = "3"
 members = [
     "crates/adapters/blake3",
+    "crates/adapters/clock",
     "crates/adapters/fs",
     "crates/domain",
     "crates/kernel",
@@ -26,6 +27,7 @@ publish = false
 # Every direct dependency is pinned here and listed in dependencies.yaml (ADR 0009).
 [workspace.dependencies]
 adapter-blake3 = { path = "crates/adapters/blake3" }
+adapter-clock = { path = "crates/adapters/clock" }
 adapter-fs = { path = "crates/adapters/fs" }
 domain = { path = "crates/domain" }
 files = { path = "crates/services/files" }
@@ -35,6 +37,7 @@ kernel = { path = "crates/kernel" }
 metadata = { path = "crates/services/metadata" }
 naming = { path = "crates/services/naming" }
 blake3 = { version = "1", default-features = false, features = ["std"] }
+jiff = { version = "0.2", default-features = false, features = ["std", "tz-system", "tzdb-zoneinfo"] }
 thiserror = { version = "2", default-features = false, features = ["std"] }
 
 [workspace.lints.rust]
