@@ -10,7 +10,11 @@
 
 #![forbid(unsafe_code)]
 
+mod copy;
+mod copy_error;
 mod ports;
 pub mod testing;
 
+pub use copy::copy_verified;
+pub use copy_error::{CleanupFailure, CopyError, CopyErrorKind, CopyStep};
 pub use ports::{EntryKind, FileSystem, HashState, Hasher, WriteFile};
