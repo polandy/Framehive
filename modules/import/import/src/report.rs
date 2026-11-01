@@ -25,6 +25,12 @@ pub trait ProgressSink {
     fn file_started(&mut self, path: &Path);
     /// The file is done: copied, not copied, or failed.
     fn file_finished(&mut self, report: &FileReport);
+    /// Asked before each file: whether the run goes on. When it answers `false`, the
+    /// run ends without starting the remaining files (IMPORT-004, "Stopping"). The
+    /// default goes on.
+    fn should_continue(&mut self) -> bool {
+        true
+    }
 }
 
 /// A [`ProgressSink`] that ignores every step, for callers that only need the
@@ -144,6 +150,9 @@ pub struct ImportSummary {
     pub files: Vec<FileReport>,
     /// The files and folders the scan left out.
     pub left_out: Vec<LeftOut>,
+    /// Whether the [`ProgressSink`] stopped the run before every file was done; the
+    /// files it did not start are not in `files`.
+    pub stopped: bool,
 }
 
 impl ImportSummary {

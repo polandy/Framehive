@@ -134,6 +134,19 @@ pub fn scan_source(
             destination: destination.to_path_buf(),
         });
     }
+    scan_folder(file_system, source)
+}
+
+/// Scans the folder `source` with all its subfolders (IMPORT-005), like
+/// [`scan_source`], but without an import destination to refuse. A caller that checks
+/// the destination itself uses it, such as the guided import, which shows the files of
+/// a card also when the destination lies on it (CLI-003.4).
+///
+/// # Errors
+///
+/// Returns a [`ScanError`] if the source does not exist, is not a folder or cannot be
+/// read.
+pub fn scan_folder(file_system: &dyn FileSystem, source: &Path) -> Result<SourceScan, ScanError> {
     let entries = list_source(file_system, source)?;
     let mut scanner = Scanner {
         file_system,

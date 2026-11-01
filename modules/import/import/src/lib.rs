@@ -9,6 +9,7 @@
 mod conflicts;
 mod job_code;
 mod plan;
+mod recent_job_codes;
 mod report;
 mod roles;
 mod run;
@@ -24,11 +25,14 @@ pub use job_code::{
     JobCode, JobCodeError, MAX_JOB_CODE_CHARACTERS, MissingJobCode, require_job_code,
 };
 pub use plan::{AssetFile, ImportPlan, PlannedFile};
+pub use recent_job_codes::{MAX_RECENT_JOB_CODES, RecentJobCodes};
 pub use report::{
     FileError, FileOutcome, FileReport, ImportSummary, NoProgress, ProgressSink, RunError,
 };
 pub use run::{ImportRun, ImportSettings, PlannedRun, RunFile};
-pub use scan::{FoundFile, LeftOut, LeftOutReason, ScanError, SourceScan, scan_source};
+pub use scan::{
+    FoundFile, LeftOut, LeftOutReason, ScanError, SourceScan, scan_folder, scan_source,
+};
 pub use view_model::ExampleViewModel;
 
 /// Stable, unique id of this module (architecture §4.2).

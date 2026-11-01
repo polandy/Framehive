@@ -40,6 +40,13 @@ code, the import does not start: nothing is scanned or copied, and the error nam
 An import with a job code whose template has no `{job}` runs as usual; the job code does
 not change any name. How the CLI reports this: CLI-001.
 
+**Recent job codes.** The import module keeps a list of the job codes used before, so
+that the guided import (CLI-002) can offer them. It holds at most 10 job codes, the most
+recently used first, each at most once; job codes are equal when their texts are equal,
+case included. Using a job code moves it to the front, or adds it there; when the list
+then has 11 entries, the last one is dropped. The list is built from stored job codes in
+their order, and job codes that are invalid or repeated are left out when it is built.
+
 ## Acceptance criteria
 
 ### IMPORT-006.1 – Surrounding whitespace is removed
@@ -85,11 +92,25 @@ not change any name. How the CLI reports this: CLI-001.
 - **Then** each is rejected with an error that says it consists of dots only, while
   `..x` is accepted
 
+### IMPORT-006.9 – Using a job code puts it first
+- **Given** the recent job codes `Harbour`, `Smith wedding`
+- **When** `Smith wedding` is used, and then `Alps`
+- **Then** the list is `Alps`, `Smith wedding`, `Harbour`
+
+### IMPORT-006.10 – At most 10 recent job codes
+- **Given** 10 recent job codes, the oldest `Job 1`
+- **When** a job code that is not in the list is used
+- **Then** it is first, the list has 10 entries, and `Job 1` is gone
+
+### IMPORT-006.11 – Building the list from stored job codes
+- **Given** the stored job codes `Harbour`, `smith`, `Smith`, `Harbour`, `a/b`
+- **When** the list is built from them
+- **Then** it is `Harbour`, `smith`, `Smith`
+
 ## Out of scope
 
-- Remembering the job codes the user has entered, and offering them again: a later
-  version of this spec, with the guided import (CLI-002).
-- Asking for a job code at the start of an import: the guided import (CLI-002).
+- Where the recent job codes are stored, and asking for a job code at the start of an
+  import: the guided import (CLI-003, ADR 0025).
 - Writing the job code to XMP as IPTC Job Id (`photoshop:TransmissionReference`, N16):
   the XMP milestone.
 - Job codes stored in profiles (N8): the profile spec.
@@ -107,3 +128,5 @@ not change any name. How the CLI reports this: CLI-001.
 | 2026-11-01 | Accepted by the owner |
 | 2026-11-01 | Implemented: `JobCode` in the import module, `{job}` in the naming service |
 | 2026-11-01 | Job codes of dots only are rejected (owner decided after review) |
+| 2026-11-01 | Recent job codes (IMPORT-006.9–.11), for the guided import (CLI-002); status `accepted` until implemented |
+| 2026-11-01 | `RecentJobCodes` in the import module covers IMPORT-006.9–.11; `implemented` |

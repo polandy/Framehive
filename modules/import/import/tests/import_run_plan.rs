@@ -6,14 +6,14 @@
 
 #![allow(clippy::unwrap_used, reason = "test helpers may panic on bad fixtures")]
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use domain::testing::ManualClock;
 use domain::{Timestamp, UtcOffset};
 use files::testing::{Fault, FnvHasher, MemoryFileSystem};
 use import::{
-    ConflictPolicy, FileReport, ImportRun, ImportSettings, PlannedRun, ProgressSink, SourceScan,
-    scan_source,
+    ConflictPolicy, FileOutcome, FileReport, ImportRun, ImportSettings, NoProgress, PlannedRun,
+    ProgressSink, SourceScan, scan_source,
 };
 use naming::{CompatibilityMode, NameTemplate};
 
@@ -170,4 +170,49 @@ fn executing_the_plan_of_all_files_is_a_run() {
     assert_eq!(format!("{executed:?}"), format!("{summary:?}"));
     assert_eq!(step_progress.0, run_progress.0[1..]);
     assert_eq!(by_steps.paths(), by_run.paths());
+}
+
+/// A sink that lets the run go on until `files_before_stop` files are done.
+struct StopAfter {
+    files_before_stop: usize,
+    finished: Vec<PathBuf>,
+}
+
+impl ProgressSink for StopAfter {
+    fn scan_finished(&mut self, _scan: &SourceScan) {}
+    fn file_started(&mut self, _path: &Path) {}
+    fn file_finished(&mut self, report: &FileReport) {
+        self.finished.push(report.path.clone());
+    }
+    fn should_continue(&mut self) -> bool {
+        self.finished.len() < self.files_before_stop
+    }
+}
+
+/// spec: IMPORT-004.13
+#[test]
+fn the_run_stops_between_files_when_asked() {
+    let file_system = source_with(&["a.MOV", "b.MOV", "c.MOV"]);
+    let (template, clock) = (template(), clock());
+    let run = ImportRun::new(&file_system, &FnvHasher, &clock);
+    let mut sink = StopAfter {
+        files_before_stop: 1,
+        finished: Vec::new(),
+    };
+
+    let summary = run.run(&settings(&template), &mut sink).unwrap();
+
+    assert_eq!(summary.files.len(), 1);
+    assert!(matches!(
+        &summary.files[0].outcome,
+        FileOutcome::Copied { target, .. } if target == "2026-10-17/a.MOV"
+    ));
+    assert_eq!(sink.finished, [PathBuf::from("a.MOV")]);
+    for name in ["b.MOV", "c.MOV"] {
+        let target = Path::new(DESTINATION).join("2026-10-17").join(name);
+        assert_eq!(file_system.content(&target), None);
+    }
+    assert!(summary.stopped);
+    let whole = run.run(&settings(&template), &mut NoProgress).unwrap();
+    assert!(!whole.stopped);
 }

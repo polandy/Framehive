@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 
 use domain::{AssetFileRole, Timestamp};
 use files::testing::{Fault, MemoryFileSystem};
-use import::{LeftOut, LeftOutReason, ScanError, SourceScan, scan_source};
+use import::{LeftOut, LeftOutReason, ScanError, SourceScan, scan_folder, scan_source};
 
 const SOURCE: &str = "/media/card";
 const DESTINATION: &str = "/library";
@@ -236,6 +236,15 @@ fn destination_inside_the_source_is_refused() {
     // Refused before the scan: the file system was not touched.
     assert_eq!(file_system.operations(), 0);
     assert_eq!(file_system.paths(), paths_before);
+}
+
+#[test]
+fn scanning_a_folder_has_no_destination_to_refuse() {
+    let file_system = source_with(&["DSCF0001.RAF", "library/DSCF0001.RAF"]);
+
+    let scan = scan_folder(&file_system, Path::new(SOURCE)).unwrap();
+
+    assert_eq!(found(&scan), ["DSCF0001.RAF", "library/DSCF0001.RAF"]);
 }
 
 #[test]
