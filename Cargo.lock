@@ -28,6 +28,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "adapter-mounts"
+version = "0.1.0"
+dependencies = [
+ "devices",
+]
+
+[[package]]
 name = "anstyle"
 version = "1.0.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -141,6 +148,13 @@ name = "defmt-parser"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "71958f69fb2de856c5dd51ac9377e986ca1aa5919f931bf5395a807277f889a0"
+dependencies = [
+ "thiserror",
+]
+
+[[package]]
+name = "devices"
+version = "0.1.0"
 dependencies = [
  "thiserror",
 ]
