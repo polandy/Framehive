@@ -25,6 +25,7 @@ Names in the code follow this glossary.
 | Local date-time | `LocalDateTime` | A calendar date and wall-clock time without a time zone, to the second; capture times and names use it |
 | Conflict policy | `ConflictPolicy` | What the import does when a target name holds a different file: `add_suffix`, `skip` or `fail` (IMPORT-003) |
 | Import plan | `ImportPlan` | A pure description: which file goes where, with what name, and which conflicts |
+| Planned run | `PlannedRun` | An import run that is planned and not yet executed: the selected files of a source scan, each dated and named by one import plan; it writes nothing |
 | Import run | `ImportRun` | The execution of an import plan: copies each file and reports its progress and result (ADR 0020) |
 | Verified copy | `copy_verified` | A copy through a `.part` file whose content is checked against the source checksum before it counts as copied (IMPORT-004) |
 | Checksum | `Checksum` | Hash of a file's content with its algorithm, written `blake3:<hex>` (architecture §8) |
