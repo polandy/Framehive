@@ -10,6 +10,7 @@ use std::path::{Path, PathBuf};
 
 use domain::Checksum;
 use files::{EntryKind, FileSystem, Hasher, checksum_file};
+use unicode_normalization::UnicodeNormalization;
 
 /// What the import does when a target name holds a different file or a folder
 /// (glossary: Conflict policy).
@@ -98,18 +99,19 @@ pub struct TargetRequest<'a> {
 /// Resolves the targets of an import plan, file by file in scan order, against the
 /// destination and against the earlier files of the plan (IMPORT-003).
 ///
-/// It never writes. Two targets that differ only in case are the same target; the
-/// names are compared after [`str::to_lowercase`]. Content is compared by size first,
-/// and by checksum only when the sizes are equal.
+/// It never writes. Two targets that differ only in case or in their Unicode
+/// normalization form are the same target; the names are compared by their
+/// canonical caseless key (ADR 0026). Content is compared by size first, and by
+/// checksum only when the sizes are equal.
 pub struct TargetResolver<'a> {
     file_system: &'a dyn FileSystem,
     hasher: &'a dyn Hasher,
     source: &'a Path,
     destination: &'a Path,
     policy: ConflictPolicy,
-    /// Targets given to earlier files, by lower-case target.
+    /// Targets given to earlier files, by the canonical caseless key of the target.
     claimed: HashMap<String, Claim>,
-    /// The listing of each target folder, by lower-case name; read once.
+    /// The listing of each target folder, by canonical caseless key; read once.
     folders: HashMap<String, HashMap<String, Existing>>,
     /// Checksums by absolute path, so that no file is read twice.
     checksums: HashMap<PathBuf, Checksum>,
@@ -188,7 +190,7 @@ impl<'a> TargetResolver<'a> {
             source_path: file.source_path.to_path_buf(),
             size: file.size,
         };
-        self.claimed.insert(candidate.to_lowercase(), claim);
+        self.claimed.insert(caseless_key(candidate), claim);
     }
 
     fn holder(
@@ -196,7 +198,7 @@ impl<'a> TargetResolver<'a> {
         file: &TargetRequest<'_>,
         candidate: &str,
     ) -> Result<Holder, ConflictError> {
-        if let Some(claim) = self.claimed.get(&candidate.to_lowercase()).cloned() {
+        if let Some(claim) = self.claimed.get(&caseless_key(candidate)).cloned() {
             let earlier = self.source.join(&claim.source_path);
             return Ok(if self.same_content(file, claim.size, &earlier)? {
                 Holder::Same(ConflictOutcome::DuplicateOf {
@@ -251,9 +253,10 @@ impl<'a> TargetResolver<'a> {
         Ok(checksum)
     }
 
-    /// The entry at the destination whose name equals `name`, ignoring case.
+    /// The entry at the destination whose name equals `name`, ignoring case and
+    /// normalization form.
     fn existing(&mut self, folder: &str, name: &str) -> Result<Option<Existing>, ConflictError> {
-        let key = folder.to_lowercase();
+        let key = caseless_key(folder);
         if !self.folders.contains_key(&key) {
             let listing = self.list_target_folder(folder)?;
             self.folders.insert(key.clone(), listing);
@@ -261,7 +264,7 @@ impl<'a> TargetResolver<'a> {
         Ok(self
             .folders
             .get(&key)
-            .and_then(|listing| listing.get(&name.to_lowercase()))
+            .and_then(|listing| listing.get(&caseless_key(name)))
             .cloned())
     }
 
@@ -277,7 +280,7 @@ impl<'a> TargetResolver<'a> {
             .map(|entry| {
                 let name = entry.name.to_string_lossy().into_owned();
                 (
-                    name.to_lowercase(),
+                    caseless_key(&name),
                     Existing {
                         name,
                         kind: entry.kind,
@@ -319,6 +322,15 @@ fn join_target(folder: &str, name: &str) -> String {
     } else {
         format!("{folder}/{name}")
     }
+}
+
+/// The canonical caseless key of a name, `NFD(lowercase(NFD(name)))` (Unicode §3.13).
+///
+/// Lowercasing can turn a precomposed letter into a decomposed sequence (`İ` becomes
+/// `i` and U+0307), so the name is decomposed before and after it.
+fn caseless_key(name: &str) -> String {
+    let decomposed: String = name.nfd().collect();
+    decomposed.to_lowercase().nfd().collect()
 }
 
 fn cannot_read(path: &Path) -> impl Fn(io::Error) -> ConflictError + '_ {
