@@ -120,6 +120,10 @@ fn file_without_capture_time_is_dated_by_its_modification_time() {
 
     assert_eq!(targets(&files), [Ok("2026-03-01/scan.jpg")]);
     assert_eq!(files[0].date_source, DateSource::ModificationTime);
+    assert_eq!(
+        files[0].date,
+        LocalDateTime::new(2026, 3, 1, 8, 0, 0).unwrap()
+    );
     assert!(files[0].is_dated_by_modification_time());
 }
 

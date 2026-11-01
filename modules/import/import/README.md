@@ -25,6 +25,8 @@ asset of only sidecars takes its base name from its first file.
 A job code (IMPORT-006) is validated by `JobCode::parse`: trimmed, 1–64 characters,
 no `/`, no control character and not dots only. The plan passes it to the `{job}` token, and
 `require_job_code` refuses an import whose template uses `{job}` without one.
+`RecentJobCodes` keeps the job codes used before, the most recently used first, each
+once and at most ten; the caller stores and restores it.
 
 The source scan (IMPORT-005) walks the source folder and lists each supported file
 with its role, size and modification time, and each file or folder it leaves out with
@@ -54,13 +56,14 @@ Boundaries:
   conflict resolution and the import run read and write only through the `FileSystem`
   and `Hasher` ports of `files` and the `Clock` of `domain`; the app wires the
   adapters. `ImportRun` runs synchronously on the caller's thread and reports to a
-  `ProgressSink`; it becomes the body of the import job once the jobs service exists.
+  `ProgressSink`, which it asks before each file whether to go on
+  (`should_continue`, IMPORT-004.13); a stopped run sets `ImportSummary::stopped`. It
+  becomes the body of the import job once the jobs service exists.
 - **Never writes to the source** and never replaces a file at the destination
   (ADR 0020 §2).
 - **Grouping** of files into assets is defined by LIBRARY-001; the module uses it and
   does not redefine it. `ImportPlan::new` takes assets that are already grouped.
-- **Not covered yet:** sequence numbers (IMPORT-002), metadata tokens, the remembered
-  list of job codes,
+- **Not covered yet:** sequence numbers (IMPORT-002), metadata tokens,
   camera time correction, sidecars (until grouping), backup destinations, resuming an
   interrupted import, the import log, the live preview and block editor (a UI spec), and
   where a profile stores its template (the profile spec).
@@ -72,10 +75,11 @@ Boundaries:
 | `MODULE_ID`, `module_id` | Stable id of the module (architecture §4.2) |
 | `ImportPlan` | Pure description of which file goes where, with what name (IMPORT-001) |
 | `AssetFile` | One file of an asset as the import finds it: name, role, capture and modification time |
-| `PlannedFile` | The target path of one file, or why it cannot be named, and its date source |
-| `scan_source`, `SourceScan`, `FoundFile`, `LeftOut`, `LeftOutReason`, `ScanError` | The source scan and its result (IMPORT-005) |
+| `PlannedFile` | The target path of one file, or why it cannot be named, its date and its date source |
+| `scan_source`, `scan_folder`, `SourceScan`, `FoundFile`, `LeftOut`, `LeftOutReason`, `ScanError` | The source scan and its result (IMPORT-005); `scan_folder` scans without the destination check |
 | `TargetResolver`, `TargetRequest`, `ConflictPolicy`, `ConflictOutcome`, `ConflictError` | Conflict resolution against the destination and the plan (IMPORT-003) |
 | `JobCode`, `JobCodeError`, `MAX_JOB_CODE_CHARACTERS` | A validated job code and why a text is not one (IMPORT-006) |
+| `RecentJobCodes`, `MAX_RECENT_JOB_CODES` | The job codes used before, most recent first (IMPORT-006) |
 | `require_job_code`, `MissingJobCode` | Refuses an import whose template uses `{job}` without a job code (IMPORT-006) |
 | `ImportRun`, `ImportSettings` | Scans, plans, resolves and copies, file by file (ADR 0020, IMPORT-004) |
 | `PlannedRun`, `RunFile` | An import run planned and not yet executed: each selected file with its plan entry or dating failure |

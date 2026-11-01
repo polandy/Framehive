@@ -35,6 +35,8 @@ pub struct PlannedFile {
     /// The path relative to the import destination, with `/` between the segments, or
     /// why this file cannot be named.
     pub target: Result<String, RenderError>,
+    /// The time of the file's asset, in local time, as `{date:…}` renders it.
+    pub date: LocalDateTime,
     /// Where the time of the file's asset comes from.
     pub date_source: DateSource,
 }
@@ -141,6 +143,7 @@ fn plan_asset(files: &[AssetFile], shared: &SharedValues<'_>) -> Vec<PlannedFile
             target: shared
                 .template
                 .render(&values, &file.file_name, shared.mode),
+            date: date.time,
             date_source: date.source,
         })
         .collect()

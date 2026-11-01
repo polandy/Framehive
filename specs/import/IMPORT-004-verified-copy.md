@@ -43,6 +43,11 @@ copy.
 A `.part` file that is already at `<target>.part` is the remainder of an interrupted
 import. It is replaced.
 
+**Stopping.** Before each file, the import run asks the caller whether to go on. When
+the caller says stop, the run ends: the file that is being copied is finished first,
+the remaining files are not started and not reported, and the summary says the run was
+stopped. Callers that never stop are not affected (ADR 0024).
+
 ## Acceptance criteria
 
 ### IMPORT-004.1 – The copy matches the source
@@ -115,6 +120,12 @@ import. It is replaced.
 - **When** it is imported
 - **Then** the target's modification time is 2026-10-17 14:05:09 UTC
 
+### IMPORT-004.13 – The run stops between files when asked
+- **Given** three files, and a caller that asks to stop after the first file is done
+- **When** they are imported
+- **Then** the first file is copied and verified, the second and third are neither
+  copied nor reported, and the summary says the run was stopped
+
 ## Out of scope
 
 - A target name that already exists, or two files with the same target, and files
@@ -138,3 +149,5 @@ import. It is replaced.
 | 2026-10-31 | `copy_verified` in the `files` service covers IMPORT-004.1–.10 and .12 against `MemoryFileSystem`; stays `accepted` until `adapter-fs` runs it on a real file system and the import run covers IMPORT-004.11 |
 | 2026-10-31 | `adapter-fs` passes the `FileSystem` conformance suite on a real file system, also without hard links, and `adapter-blake3` the `Hasher` suite; stays `accepted` until the import run covers IMPORT-004.11 |
 | 2026-10-31 | `ImportRun` in the import module dates, names, resolves and copies each file and goes on after a failed file (IMPORT-004.11); `implemented` |
+| 2026-11-01 | The run stops between files when the caller asks (IMPORT-004.13), for a card pulled during the guided import (ADR 0024); status `accepted` until implemented |
+| 2026-11-01 | `ProgressSink::should_continue` and `ImportSummary::stopped` cover IMPORT-004.13; `implemented` |

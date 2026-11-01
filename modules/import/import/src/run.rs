@@ -171,7 +171,8 @@ impl<'a> ImportRun<'a> {
     /// Executes `plan`: resolves the conflicts of each planned file against
     /// `settings.destination` under `settings.policy`, and copies it, or with
     /// `settings.dry_run` only reports where it would go. Files run in plan order, and
-    /// each is reported to `progress`.
+    /// each is reported to `progress`. Before each file, `progress` is asked whether to
+    /// go on; when it says stop, the remaining files are not started (IMPORT-004.13).
     ///
     /// `settings.source` must be the one the plan was made from.
     pub fn execute(
@@ -188,7 +189,12 @@ impl<'a> ImportRun<'a> {
             settings.policy,
         );
         let mut files = Vec::with_capacity(plan.files.len());
+        let mut stopped = false;
         for file in plan.files {
+            if !progress.should_continue() {
+                stopped = true;
+                break;
+            }
             progress.file_started(&file.found.path);
             let report = self.execute_file(settings, &mut resolver, file);
             progress.file_finished(&report);
@@ -197,6 +203,7 @@ impl<'a> ImportRun<'a> {
         ImportSummary {
             files,
             left_out: plan.left_out,
+            stopped,
         }
     }
 

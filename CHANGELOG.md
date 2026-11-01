@@ -39,3 +39,11 @@ All user-visible changes are listed here. The format follows
 - Nix flake package: `nix run . -- import <source> <destination>` runs the
   `framehive` command and `nix profile install .` installs it, built with the pinned
   toolchain.
+- Guided import (CLI-002, CLI-003): `framehive` without a subcommand starts a line-based
+  dialog in the terminal. It asks once for the library folder, waits for a memory
+  card, offers three template presets with a preview of the card's first files, asks
+  for a job code only when the template has `{job}`, and shows a plan summary before
+  it imports with a progress line. It reports failed and skipped files, offers to
+  eject the card, and stops between files when the card is pulled, going on when it
+  is inserted again. The library folder, the template and the recent job codes are
+  remembered in `$XDG_STATE_HOME/framehive` (IMPORT-006).
