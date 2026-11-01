@@ -41,6 +41,13 @@ import plan, resolves each target and copies the file with `files::copy_verified
 that fails is reported with the reason and the run goes on (IMPORT-004.11). A dry run
 resolves everything and writes nothing.
 
+`ImportRun::run` is the composition of two steps that callers can also use on their
+own. `plan` (all files of a scan) or `plan_first` (the first files only, for a preview)
+fixes the import time, dates only the selected files and returns a `PlannedRun`: each
+file with its planned target, or why it could not be dated. It resolves no conflicts
+and writes nothing. `execute` takes a `PlannedRun`, resolves conflicts and copies, with
+the same progress steps and summary as `run`.
+
 Boundaries:
 
 - **Pure logic, I/O through ports.** Making an import plan does no I/O. The scan,
@@ -71,6 +78,7 @@ Boundaries:
 | `JobCode`, `JobCodeError`, `MAX_JOB_CODE_CHARACTERS` | A validated job code and why a text is not one (IMPORT-006) |
 | `require_job_code`, `MissingJobCode` | Refuses an import whose template uses `{job}` without a job code (IMPORT-006) |
 | `ImportRun`, `ImportSettings` | Scans, plans, resolves and copies, file by file (ADR 0020, IMPORT-004) |
+| `PlannedRun`, `RunFile` | An import run planned and not yet executed: each selected file with its plan entry or dating failure |
 | `ProgressSink`, `NoProgress` | Receives each step of an import run on the caller's thread |
 | `ImportSummary`, `FileReport`, `FileOutcome`, `FileError`, `RunError` | What a run reports per file, and why a run did not start |
 | `ExampleViewModel` | Example ViewModel from the template; replace it |

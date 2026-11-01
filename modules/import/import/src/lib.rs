@@ -27,7 +27,7 @@ pub use plan::{AssetFile, ImportPlan, PlannedFile};
 pub use report::{
     FileError, FileOutcome, FileReport, ImportSummary, NoProgress, ProgressSink, RunError,
 };
-pub use run::{ImportRun, ImportSettings};
+pub use run::{ImportRun, ImportSettings, PlannedRun, RunFile};
 pub use scan::{FoundFile, LeftOut, LeftOutReason, ScanError, SourceScan, scan_source};
 pub use view_model::ExampleViewModel;
 
