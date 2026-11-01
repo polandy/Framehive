@@ -58,7 +58,10 @@ summary as well. Errors that stop the command go to standard error as
 `tests/` runs the real binary (`CARGO_BIN_EXE_framehive`) in a temporary folder with
 `TZ=UTC`, with test files from `metadata::testing`. Unreadable files and folders use
 mode 000; when the tests run as root, which reads them anyway, the expectation
-follows what the file system allows.
+follows what the file system allows. `tests/memory_card.rs` checks the milestone 1
+guarantees end to end on a folder laid out like a memory card: a dry run writes
+nothing, the import fails only the unreadable file, a second run copies nothing, and
+the source keeps its paths, bytes and modification times.
 
 ## Dependencies
 

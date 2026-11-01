@@ -31,3 +31,6 @@ All user-visible changes are listed here. The format follows
   as soon as the file is done and a summary, creates a missing destination, rejects
   a destination inside the source, and exits with 0 (all done), 1 (a file failed or
   a folder could not be read) or 2 (the import did not start).
+- Nix flake package: `nix run . -- import <source> <destination>` runs the
+  `framehive` command and `nix profile install .` installs it, built with the pinned
+  toolchain.

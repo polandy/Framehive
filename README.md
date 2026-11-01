@@ -85,6 +85,14 @@ cargo run --locked -p framehive-cli -- import <source> <destination> [--dry-run]
 what happens when a name is taken, and `--dry-run` prints the plan without copying.
 `framehive import --help` describes every argument.
 
+With Nix, the flake builds the `framehive` command with the pinned toolchain. Run it
+without installing, or install it into your profile:
+
+```sh
+nix run . -- import <source> <destination> [--dry-run]
+nix profile install .
+```
+
 To work on the code:
 
 ```sh
