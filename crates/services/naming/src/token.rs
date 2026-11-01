@@ -29,6 +29,8 @@ pub(crate) enum Token {
     },
     /// A sequence token (IMPORT-002), kept as written.
     Sequence { text: String },
+    /// `{job}`: the job code of the import (IMPORT-006).
+    JobCode,
 }
 
 /// The case option of `{name}` and `{ext}`.
@@ -62,7 +64,9 @@ impl Token {
             TemplateError::new(column, TemplateErrorKind::UnknownOption { token })
         };
         match (name, option) {
-            ("date" | "imported", Some("")) | ("seq_letters", Some(_)) => Err(unknown_option()),
+            ("date" | "imported", Some("")) | ("seq_letters" | "job", Some(_)) => {
+                Err(unknown_option())
+            }
             ("date" | "imported", Some(format)) => {
                 // The format starts after `{`, the name and `:`.
                 let format = DateFormat::parse(format, column + name.len() + 2)?;
@@ -83,6 +87,7 @@ impl Token {
                 Ok(Token::Sequence { text })
             }
             ("seq_letters", None) => Ok(Token::Sequence { text }),
+            ("job", None) => Ok(Token::JobCode),
             _ => Err(TemplateError::new(
                 column,
                 TemplateErrorKind::UnknownToken { token: text },

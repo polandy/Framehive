@@ -26,6 +26,7 @@ fn sub_seconds_and_offset_do_not_change_the_rendered_time() {
         base_name: "DSC_0042".to_owned(),
         capture_time: date.time,
         import_time: LocalDateTime::new(2026, 10, 19, 9, 0, 0).unwrap(),
+        job_code: None,
     };
     let template = NameTemplate::parse("{date:%H%M%S}.{ext}").unwrap();
 

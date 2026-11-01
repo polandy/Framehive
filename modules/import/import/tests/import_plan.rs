@@ -6,7 +6,7 @@
 #![allow(clippy::unwrap_used, reason = "test helpers may panic on bad fixtures")]
 
 use domain::{AssetFileRole, LocalDateTime};
-use import::{AssetFile, ImportPlan, PlannedFile};
+use import::{AssetFile, ImportPlan, JobCode, PlannedFile};
 use naming::{CompatibilityMode, DateSource, NameTemplate, RenderError};
 
 fn time(text: &str) -> LocalDateTime {
@@ -53,7 +53,7 @@ fn plan_with(
     assets: &[Vec<AssetFile>],
 ) -> Vec<PlannedFile> {
     let template = NameTemplate::parse(template).unwrap();
-    ImportPlan::new(assets, &template, mode, import_time())
+    ImportPlan::new(assets, &template, mode, import_time(), None)
         .files()
         .to_vec()
 }
@@ -187,6 +187,27 @@ fn compatibility_mode_replaces_invalid_characters() {
     let files = plan("{date:%H:%M} {name}. /{name}.{ext}", &[vec![file]]);
 
     assert_eq!(targets(&files), [Ok("14_05 what_/what_.jpg")]);
+}
+
+/// spec: IMPORT-001.19
+#[test]
+fn job_code_is_part_of_the_path() {
+    let raw = captured("DSC_0042.RAF", AssetFileRole::Raw, "2026-10-17 14:05:09");
+    let template = NameTemplate::parse("{date:%Y}/{job}/{name}.{ext}").unwrap();
+    let job_code = JobCode::parse("Smith: wedding").unwrap();
+
+    let plan = ImportPlan::new(
+        &[vec![raw]],
+        &template,
+        CompatibilityMode::On,
+        import_time(),
+        Some(&job_code),
+    );
+
+    assert_eq!(
+        targets(plan.files()),
+        [Ok("2026/Smith_ wedding/DSC_0042.RAF")]
+    );
 }
 
 /// spec: IMPORT-001.17

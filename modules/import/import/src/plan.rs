@@ -9,6 +9,8 @@ use naming::{
     AssetValues, CompatibilityMode, DateSource, FileTimes, NameTemplate, RenderError, asset_date,
 };
 
+use crate::JobCode;
+
 /// One file of an asset, as the import finds it on the source (glossary: Asset file).
 ///
 /// Pure data: the caller reads the times from the file and applies camera time
@@ -67,7 +69,7 @@ impl PlannedFile {
 /// let template = NameTemplate::parse("{date:%Y-%m-%d}/{name}.{ext}")?;
 /// let import_time = LocalDateTime::new(2026, 10, 31, 9, 0, 0)?;
 ///
-/// let plan = ImportPlan::new(&[vec![raw]], &template, CompatibilityMode::On, import_time);
+/// let plan = ImportPlan::new(&[vec![raw]], &template, CompatibilityMode::On, import_time, None);
 ///
 /// assert_eq!(plan.files()[0].target.as_deref(), Ok("2026-10-17/DSC_0042.RAF"));
 /// # Ok::<(), Box<dyn std::error::Error>>(())
@@ -82,17 +84,25 @@ impl ImportPlan {
     /// list holds the files of one asset.
     ///
     /// `import_time` is the time the import was queued, in the machine's local time.
-    /// An asset without files adds nothing to the plan.
+    /// `job_code` gives `{job}` (IMPORT-006); without one, a template with `{job}` marks
+    /// every file as not nameable. An asset without files adds nothing to the plan.
     #[must_use]
     pub fn new(
         assets: &[Vec<AssetFile>],
         template: &NameTemplate,
         mode: CompatibilityMode,
         import_time: LocalDateTime,
+        job_code: Option<&JobCode>,
     ) -> Self {
+        let shared = SharedValues {
+            template,
+            mode,
+            import_time,
+            job_code,
+        };
         let files = assets
             .iter()
-            .flat_map(|asset| plan_asset(asset, template, mode, import_time))
+            .flat_map(|asset| plan_asset(asset, &shared))
             .collect();
         ImportPlan { files }
     }
@@ -104,12 +114,15 @@ impl ImportPlan {
     }
 }
 
-fn plan_asset(
-    files: &[AssetFile],
-    template: &NameTemplate,
+/// What every asset of one plan is rendered with.
+struct SharedValues<'a> {
+    template: &'a NameTemplate,
     mode: CompatibilityMode,
     import_time: LocalDateTime,
-) -> Vec<PlannedFile> {
+    job_code: Option<&'a JobCode>,
+}
+
+fn plan_asset(files: &[AssetFile], shared: &SharedValues<'_>) -> Vec<PlannedFile> {
     let times: Vec<FileTimes> = files.iter().map(file_times).collect();
     // `asset_date` is `None` only for an asset without files, which plans nothing.
     let (Some(date), Some(base_name)) = (asset_date(&times), base_name(files)) else {
@@ -118,13 +131,16 @@ fn plan_asset(
     let values = AssetValues {
         base_name: base_name.to_owned(),
         capture_time: date.time,
-        import_time,
+        import_time: shared.import_time,
+        job_code: shared.job_code.map(|job_code| job_code.as_str().to_owned()),
     };
     files
         .iter()
         .map(|file| PlannedFile {
             file_name: file.file_name.clone(),
-            target: template.render(&values, &file.file_name, mode),
+            target: shared
+                .template
+                .render(&values, &file.file_name, shared.mode),
             date_source: date.source,
         })
         .collect()

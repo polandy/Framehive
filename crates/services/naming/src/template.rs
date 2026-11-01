@@ -63,6 +63,24 @@ impl NameTemplate {
         &self.text
     }
 
+    /// Whether the template contains `{job}`, so an import with it needs a job code
+    /// (IMPORT-006).
+    ///
+    /// ```
+    /// use naming::NameTemplate;
+    ///
+    /// assert!(NameTemplate::parse("{job}/{name}.{ext}")?.uses_job_code());
+    /// assert!(!NameTemplate::parse("{{job}}/{name}.{ext}")?.uses_job_code());
+    /// # Ok::<(), naming::TemplateError>(())
+    /// ```
+    #[must_use]
+    pub fn uses_job_code(&self) -> bool {
+        self.segments
+            .iter()
+            .flatten()
+            .any(|part| matches!(part, Part::Token(Token::JobCode)))
+    }
+
     pub(crate) fn segments(&self) -> &[Vec<Part>] {
         &self.segments
     }

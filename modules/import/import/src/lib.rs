@@ -7,6 +7,7 @@
 #![forbid(unsafe_code)]
 
 mod conflicts;
+mod job_code;
 mod plan;
 mod report;
 mod roles;
@@ -18,6 +19,9 @@ use kernel::{ModuleId, ModuleIdError};
 
 pub use conflicts::{
     ConflictError, ConflictOutcome, ConflictPolicy, TargetRequest, TargetResolver,
+};
+pub use job_code::{
+    JobCode, JobCodeError, MAX_JOB_CODE_CHARACTERS, MissingJobCode, require_job_code,
 };
 pub use plan::{AssetFile, ImportPlan, PlannedFile};
 pub use report::{

@@ -83,6 +83,45 @@ fn uses_an_own_template() {
     assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
 }
 
+/// spec: CLI-001.14
+#[test]
+fn puts_the_job_code_into_the_names() {
+    let folders = Folders::new();
+    folders.add_raf();
+
+    let output = folders.import(&[
+        "--template",
+        "{job}/{name}.{ext}",
+        "--job-code",
+        " Smith wedding ",
+    ]);
+
+    assert!(
+        folders
+            .destination()
+            .join("Smith wedding/DSCF0001.RAF")
+            .is_file()
+    );
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+}
+
+/// spec: CLI-001.17
+#[test]
+fn warns_about_a_job_code_the_template_does_not_use() {
+    let folders = Folders::new();
+    folders.add_raf();
+
+    let output = folders.import(&["--job-code", "Smith wedding"]);
+
+    assert!(folders.destination().join(DEFAULT_TARGET).is_file());
+    let error = stderr(&output);
+    assert!(
+        error.contains("warning: --job-code is not used, because the name template has no {job}"),
+        "{error}"
+    );
+    assert_eq!(output.status.code(), Some(0), "{error}");
+}
+
 /// spec: CLI-001.4
 #[test]
 fn follows_the_conflict_policy() {

@@ -42,6 +42,12 @@ fn exit_for_argument_error(error: &clap::Error) -> ExitCode {
     u8::try_from(error.exit_code()).map_or(ExitCode::from(NOT_STARTED), ExitCode::from)
 }
 
+/// Writes a warning that does not stop the command to standard error (CLI-001).
+fn report_warning(message: &str) {
+    // Nothing more can be reported when standard error is gone.
+    let _ = writeln!(io::stderr().lock(), "warning: {message}");
+}
+
 /// Writes an error that stops the command to standard error (CLI-001).
 fn report_error(message: &str) {
     // Nothing more can be reported when standard error is gone.

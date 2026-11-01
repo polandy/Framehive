@@ -90,6 +90,7 @@ impl Setup {
             source: Path::new(SOURCE),
             destination,
             template: &template,
+            job_code: None,
             mode: CompatibilityMode::On,
             policy: self.policy,
             dry_run: self.dry_run,

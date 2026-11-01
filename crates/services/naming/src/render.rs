@@ -28,6 +28,8 @@ pub struct AssetValues {
     /// The time the import was queued, in the machine's local time. It gives
     /// `{imported:…}`.
     pub import_time: LocalDateTime,
+    /// The job code of the import, already validated (IMPORT-006). It gives `{job}`.
+    pub job_code: Option<String>,
 }
 
 /// Whether rendered names are kept valid on exFAT, SMB and macOS.
@@ -67,6 +69,9 @@ pub enum RenderError {
         /// The segment as rendered.
         segment: String,
     },
+    /// The template has `{job}`, but the import has no job code (IMPORT-006).
+    #[error("{{job}} needs a job code, but none was given")]
+    NoJobCode,
     /// The template has a sequence token; sequence numbers are specified by IMPORT-002
     /// and not available yet.
     #[error("{token} cannot be rendered yet; sequence numbers are not available")]
@@ -93,6 +98,7 @@ impl NameTemplate {
     ///     base_name: "DSC_0042".to_owned(),
     ///     capture_time: LocalDateTime::new(2026, 10, 17, 14, 5, 9)?,
     ///     import_time: LocalDateTime::new(2026, 10, 19, 9, 0, 0)?,
+    ///     job_code: None,
     /// };
     /// let path = template.render(&values, "DSC_0042.RAF.xmp", CompatibilityMode::On)?;
     /// assert_eq!(path, "2026-10-17/DSC_0042.RAF.xmp");
@@ -146,6 +152,9 @@ fn render_part(
         Part::Token(Token::Extension(case)) => output.push_str(&case.apply(extension)),
         Part::Token(Token::ImageNumber { digits, text }) => {
             output.push_str(&image_number(&values.base_name, *digits, text)?);
+        }
+        Part::Token(Token::JobCode) => {
+            output.push_str(values.job_code.as_deref().ok_or(RenderError::NoJobCode)?);
         }
         Part::Token(Token::Sequence { text }) => {
             return Err(RenderError::SequenceUnavailable {
@@ -217,6 +226,7 @@ mod tests {
             base_name: "DSC_0042".to_owned(),
             capture_time: time,
             import_time: time,
+            job_code: None,
         }
     }
 

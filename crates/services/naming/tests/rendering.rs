@@ -29,6 +29,7 @@ fn values(base_name: &str, capture_time: &str) -> AssetValues {
         base_name: base_name.to_owned(),
         capture_time: time(capture_time),
         import_time: time("2026-10-19 09:00:00"),
+        job_code: None,
     }
 }
 
