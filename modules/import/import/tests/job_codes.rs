@@ -67,6 +67,18 @@ fn control_characters_are_rejected() {
     }
 }
 
+/// spec: IMPORT-006.8
+#[test]
+fn dots_only_are_rejected() {
+    for text in [".", "..", "..."] {
+        let error = JobCode::parse(text).unwrap_err();
+
+        assert_eq!(error, JobCodeError::OnlyDots, "{text:?}");
+        assert!(error.to_string().contains("dots only"), "{error}");
+    }
+    assert_eq!(JobCode::parse("..x").unwrap().as_str(), "..x");
+}
+
 /// spec: IMPORT-006.6
 #[test]
 fn a_template_with_job_needs_a_job_code() {

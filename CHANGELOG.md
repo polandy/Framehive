@@ -33,7 +33,7 @@ All user-visible changes are listed here. The format follows
   a folder could not be read) or 2 (the import did not start).
 - Job codes (IMPORT-006): the `{job}` token of a name template inserts a job code,
   and `framehive import --job-code <text>` supplies it. A job code is trimmed and
-  must have 1–64 characters, without `/` or control characters. A template with
+  must have 1–64 characters, without `/` or control characters, and not dots only. A template with
   `{job}` and no job code, or an invalid job code, stops the command with exit code
   2; a job code the template does not use is accepted with a warning.
 - Nix flake package: `nix run . -- import <source> <destination>` runs the

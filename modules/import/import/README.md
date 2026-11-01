@@ -23,7 +23,7 @@ dated by its modification time. An asset without files adds nothing to the plan;
 asset of only sidecars takes its base name from its first file.
 
 A job code (IMPORT-006) is validated by `JobCode::parse`: trimmed, 1–64 characters,
-no `/` and no control character. The plan passes it to the `{job}` token, and
+no `/`, no control character and not dots only. The plan passes it to the `{job}` token, and
 `require_job_code` refuses an import whose template uses `{job}` without one.
 
 The source scan (IMPORT-005) walks the source folder and lists each supported file

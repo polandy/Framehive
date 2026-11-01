@@ -19,17 +19,19 @@ Whitespace is what Unicode calls White_Space; whitespace inside the text is kept
 A job code is valid when, after trimming, it
 
 - has at least 1 and at most 64 characters (Unicode scalar values, not bytes),
-- contains no `/`, and
+- contains no `/`,
 - contains no control character (Unicode category Cc: U+0000–U+001F and
-  U+007F–U+009F).
+  U+007F–U+009F), and
+- does not consist of dots only, because `.` and `..` name the current and the parent
+  folder.
 
 Otherwise it is rejected with an error that names the broken rule. Validation is pure:
 it does not depend on the file system, the language setting or the time.
 
 **Using it.** An import has at most one job code. The `{job}` token inserts it into the
 rendered path, and compatibility mode (IMPORT-001) applies to it like to every other
-value. A job code that renders to an invalid segment, such as `..`, makes those files
-not nameable (IMPORT-001.18).
+value. A job code that still renders to an invalid segment makes those files not
+nameable (IMPORT-001.18).
 
 **Missing job code.** When the name template contains `{job}` and the import has no job
 code, the import does not start: nothing is scanned or copied, and the error names
@@ -77,6 +79,12 @@ not change any name. How the CLI reports this: CLI-001.
 - **When** the import runs
 - **Then** the file is copied as `DSC_0042.RAF`
 
+### IMPORT-006.8 – Not only dots
+- **Given** the texts `.`, `..` and `...`
+- **When** each is taken as a job code
+- **Then** each is rejected with an error that says it consists of dots only, while
+  `..x` is accepted
+
 ## Out of scope
 
 - Remembering the job codes the user has entered, and offering them again: a later
@@ -98,3 +106,4 @@ not change any name. How the CLI reports this: CLI-001.
 | 2026-11-01 | Initial draft, with the rules the owner decided (guided import plan, PR 1) |
 | 2026-11-01 | Accepted by the owner |
 | 2026-11-01 | Implemented: `JobCode` in the import module, `{job}` in the naming service |
+| 2026-11-01 | Job codes of dots only are rejected (owner decided after review) |

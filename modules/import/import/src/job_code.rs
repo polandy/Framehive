@@ -12,7 +12,8 @@ use thiserror::Error;
 pub const MAX_JOB_CODE_CHARACTERS: usize = 64;
 
 /// A validated job code (glossary: Job code): the user's text without leading and
-/// trailing whitespace, 1–64 characters, without `/` and control characters.
+/// trailing whitespace, 1–64 characters, without `/` and control characters, and not
+/// dots only.
 ///
 /// ```
 /// use import::JobCode;
@@ -45,6 +46,9 @@ pub enum JobCodeError {
     /// A control character (Unicode category Cc).
     #[error("a job code must not contain a control character")]
     ContainsControlCharacter,
+    /// Dots only, such as `..`, which would name the current or the parent folder.
+    #[error("a job code must not consist of dots only")]
+    OnlyDots,
 }
 
 impl JobCode {
@@ -67,6 +71,9 @@ impl JobCode {
         }
         if text.chars().any(char::is_control) {
             return Err(JobCodeError::ContainsControlCharacter);
+        }
+        if text.chars().all(|character| character == '.') {
+            return Err(JobCodeError::OnlyDots);
         }
         Ok(JobCode(text.to_owned()))
     }
