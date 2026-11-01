@@ -16,6 +16,8 @@ Names in the code follow this glossary.
 | Volume | `Volume` | Physical or network storage medium on which library roots reside |
 | Source | `Source` | What is imported from: camera, card, phone, folder |
 | Device | `Device` | A removable storage medium, such as a memory card, as it is offered for import |
+| Device source | `DeviceSource` | Port of the `devices` service that lists the devices that are present, sorted by mount point, and ejects one; implemented by `adapter-mounts` (DEVICES-001) |
+| Device watch | `DeviceWatch` | Compares the device list of each poll with that of the last successful poll and reports removed, then added devices (DEVICES-001) |
 | Name template | `NameTemplate` | Text that derives an imported file's folders and name (IMPORT-001) |
 | Job code | `JobCode` | A short label the user gives an import, inserted by the `{job}` token of a name template (IMPORT-006). Not to be confused with a job |
 | Capture time | `CaptureTime` | The wall-clock time the camera recorded, from EXIF `DateTimeOriginal`, with optional sub-seconds and UTC offset (CORE-005) |

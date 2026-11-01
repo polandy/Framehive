@@ -18,4 +18,4 @@ The face provider lives in a service, not in the people module, because modules 
 depend on each other: the immich module provides faces, the people module consumes them.
 
 For every extension point there is a **conformance test suite** (contract tests) that
-every implementation must pass, e.g. `devices::testing::conformance(source)`.
+every implementation must pass, e.g. `devices::testing::check_device_source`.
