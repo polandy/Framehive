@@ -19,6 +19,8 @@ const CONFLICT_POLICIES: [&str; 3] = ["add_suffix", "skip", "fail"];
 /// What the user asked `framehive` to do.
 #[derive(Debug)]
 pub(crate) enum Invocation {
+    /// `framehive` without a subcommand: the guided import (CLI-002).
+    Guided,
     /// `framehive import`.
     Import(ImportArguments),
 }
@@ -63,10 +65,11 @@ pub(crate) fn parse(
     let matches = command().try_get_matches_from(arguments)?;
     match matches.subcommand() {
         Some(("import", import)) => Ok(Invocation::Import(import_arguments(import))),
-        // `subcommand_required` makes clap reject every other case.
-        _ => Err(command().error(
-            clap::error::ErrorKind::MissingSubcommand,
-            "a subcommand is required",
+        None => Ok(Invocation::Guided),
+        // clap rejects subcommands it does not know before this point.
+        Some((other, _)) => Err(command().error(
+            clap::error::ErrorKind::InvalidSubcommand,
+            format!("unknown subcommand {other}"),
         )),
     }
 }
@@ -74,8 +77,7 @@ pub(crate) fn parse(
 fn command() -> Command {
     Command::new("framehive")
         .version(env!("CARGO_PKG_VERSION"))
-        .about("Framehive photo library")
-        .subcommand_required(true)
+        .about("Framehive photo library; without a subcommand, the guided import of a memory card")
         .subcommand(import_command())
 }
 

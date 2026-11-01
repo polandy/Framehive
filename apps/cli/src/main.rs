@@ -1,11 +1,12 @@
 // SPDX-FileCopyrightText: 2026 Framehive contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//! `framehive`, the command line of Framehive (CLI-001). See `README.md`.
+//! `framehive`, the command line of Framehive (CLI-001, CLI-002, CLI-003). See `README.md`.
 
 #![forbid(unsafe_code)]
 
 mod arguments;
+mod guided;
 mod import_command;
 mod paths;
 mod report;
@@ -30,6 +31,7 @@ fn main() -> ExitCode {
 
 fn run(invocation: &Invocation) -> ExitCode {
     match invocation {
+        Invocation::Guided => guided::run_guided(),
         Invocation::Import(arguments) => import_command::run_import(arguments),
     }
 }

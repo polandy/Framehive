@@ -179,6 +179,7 @@ mod tests {
                 path: PathBuf::from("notes.txt"),
                 reason: LeftOutReason::UnsupportedType,
             }],
+            stopped: false,
         };
 
         assert_eq!(

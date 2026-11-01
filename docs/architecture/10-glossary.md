@@ -18,8 +18,10 @@ Names in the code follow this glossary.
 | Device | `Device` | A removable storage medium, such as a memory card, as it is offered for import |
 | Device source | `DeviceSource` | Port of the `devices` service that lists the devices that are present, sorted by mount point, and ejects one; implemented by `adapter-mounts` (DEVICES-001) |
 | Device watch | `DeviceWatch` | Compares the device list of each poll with that of the last successful poll and reports removed, then added devices (DEVICES-001) |
+| Guided import | `framehive` without arguments | The line-based dialog that waits for a memory card, shows the plan, imports the card on Enter and ejects it; it remembers its answers (CLI-002, CLI-003, ADR 0024) |
 | Name template | `NameTemplate` | Text that derives an imported file's folders and name (IMPORT-001) |
 | Job code | `JobCode` | A short label the user gives an import, inserted by the `{job}` token of a name template (IMPORT-006). Not to be confused with a job |
+| Recent job codes | `RecentJobCodes` | The job codes used before, most recently used first, each at most once, at most 10 (IMPORT-006) |
 | Capture time | `CaptureTime` | The wall-clock time the camera recorded, from EXIF `DateTimeOriginal`, with optional sub-seconds and UTC offset (CORE-005) |
 | Timestamp | `Timestamp` | An instant in UTC, to the nanosecond, without calendar or time zone (ADR 0022) |
 | UTC offset | `UtcOffset` | The difference between local time and UTC at an instant, in seconds east of UTC |
