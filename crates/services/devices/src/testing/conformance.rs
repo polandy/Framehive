@@ -100,7 +100,9 @@ fn check_without_dcim(under_test: &mut dyn DeviceSourceUnderTest, failures: &mut
 }
 
 fn check_sorted(under_test: &mut dyn DeviceSourceUnderTest, failures: &mut Vec<String>) {
-    let mut expected: Vec<Device> = ["b", "A B", "a", "Z", "A"]
+    // Names differ also when case is ignored, because macOS file systems usually ignore
+    // it; byte order still puts "Z" before "b".
+    let mut expected: Vec<Device> = ["b", "A B", "c", "Z", "A"]
         .into_iter()
         .map(|name| Device::at(under_test.insert(name, DcimFolder::Folder)))
         .collect();
