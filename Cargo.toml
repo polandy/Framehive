@@ -45,6 +45,7 @@ blake3 = { version = "1", default-features = false, features = ["std"] }
 clap = { version = "4", default-features = false, features = ["std", "help", "usage", "error-context"] }
 jiff = { version = "0.2", default-features = false, features = ["std", "tz-system", "tzdb-zoneinfo"] }
 thiserror = { version = "2", default-features = false, features = ["std"] }
+unicode-normalization = { version = "0.1", default-features = false }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
