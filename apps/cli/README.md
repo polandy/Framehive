@@ -17,12 +17,14 @@ concrete adapters and wire them to the ports.
 
 ```
 framehive import <source> <destination> [--template <template>]
-                 [--on-conflict add_suffix|skip|fail] [--dry-run]
+                 [--job-code <text>] [--on-conflict add_suffix|skip|fail]
+                 [--dry-run]
 framehive --help
 framehive --version
 ```
 
-`framehive import` parses the name template, resolves the source without symbolic
+`framehive import` parses the name template, checks `--job-code` with
+`import::JobCode` and `import::require_job_code` (IMPORT-006), resolves the source without symbolic
 links, resolves the longest existing part of the destination and appends the missing
 folders (rejecting `..` among them), and rejects a destination inside the source.
 Unless it is a dry run, it then creates the missing folders of the destination and
@@ -36,13 +38,15 @@ per file as soon as it is done (`copied`, `would copy`, `already imported`,
 `duplicate`, `skipped`, `failed`), the files and folders the scan left out
 (`left out`), and a summary line; in a dry run `copied` reads `would copy`, in the
 summary as well. Errors that stop the command go to standard error as
-`error: <message>`; there is no log output yet.
+`error: <message>`. A job code that the template does not use is accepted and
+reported on standard error as `warning: <message>`; there is no other log output
+yet.
 
 | Code | Meaning |
 |---|---|
 | 0 | Every file was copied, already imported, a duplicate, skipped or left out |
 | 1 | A file failed, or a folder could not be read (`ImportSummary::has_failures`) |
-| 2 | The import did not start: invalid arguments or template, missing source, destination inside the source or not creatable |
+| 2 | The import did not start: invalid arguments, template or job code, missing source, destination inside the source or not creatable |
 
 ## Modules
 

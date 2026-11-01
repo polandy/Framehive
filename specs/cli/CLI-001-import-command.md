@@ -2,8 +2,8 @@
 
 - Status: implemented
 - Module: cli (`apps/cli`)
-- Origin: N18, X1, N26
-- Depends on: IMPORT-001, IMPORT-003, IMPORT-004, IMPORT-005, CORE-005
+- Origin: N18, X1, N26, R9
+- Depends on: IMPORT-001, IMPORT-003, IMPORT-004, IMPORT-005, IMPORT-006, CORE-005
 
 ## Purpose
 
@@ -15,7 +15,8 @@ shows every decision the import makes.
 
 ```
 framehive import <source> <destination> [--template <template>]
-                 [--on-conflict add_suffix|skip|fail] [--dry-run]
+                 [--job-code <text>] [--on-conflict add_suffix|skip|fail]
+                 [--dry-run]
 ```
 
 | Argument | Meaning | Default |
@@ -23,15 +24,24 @@ framehive import <source> <destination> [--template <template>]
 | `<source>` | Folder to import from (IMPORT-005) | required |
 | `<destination>` | Folder to import into; created with its parents when missing | required |
 | `--template` | Name template (IMPORT-001) | `{date:%Y}/{date:%Y-%m-%d}/{name}.{ext}` |
+| `--job-code` | Job code for the `{job}` token (IMPORT-006) | none |
 | `--on-conflict` | Conflict policy (IMPORT-003) | `add_suffix` |
 | `--dry-run` | Make the plan and print it, copy nothing | off |
 
 Compatibility mode (IMPORT-001) is on. `framehive --help` and `framehive import --help`
 describe the arguments; `framehive --version` prints `framehive <version>`.
 
-**Flow.** The command checks its arguments and the template, scans the source, makes
-the import plan with conflicts resolved, and copies each file with a verified copy
-(IMPORT-004), in scan order.
+**Job code.** `--job-code` is checked by the rules of IMPORT-006 whenever it is given;
+an invalid job code stops the command. When the template contains `{job}`,
+`--job-code` is required. When the template has no `{job}`, a valid job code is
+accepted and not used: the import runs as usual, standard error gets the line
+`warning: --job-code is not used, because the name template has no {job}`, and the
+exit code is not affected. Accepting it keeps scripts that always pass a job code
+working with every template.
+
+**Flow.** The command checks its arguments, the template and the job code, scans the
+source, makes the import plan with conflicts resolved, and copies each file with a
+verified copy (IMPORT-004), in scan order.
 
 **Report.** Standard output gets one line per file as soon as the file is done, then a
 summary. Paths are relative to the source and to the destination.
@@ -60,7 +70,7 @@ Errors that stop the command, and log messages, go to standard error.
 |---|---|
 | 0 | Every file was copied, already imported, a duplicate, skipped or left out |
 | 1 | The import ran, and at least one file failed or a folder could not be read |
-| 2 | The import did not start: invalid arguments, an invalid template, a missing source, a destination inside the source, or a destination that cannot be created |
+| 2 | The import did not start: invalid arguments, an invalid template, an invalid or missing job code, a missing source, a destination inside the source, or a destination that cannot be created |
 
 ## Acceptance criteria
 
@@ -146,6 +156,32 @@ Errors that stop the command, and log messages, go to standard error.
 - **Then** `DSCF0001.RAF` is copied, the output has `left out  locked: <reason>`, and the
   exit code is 1
 
+### CLI-001.14 – Job code in the names
+- **Given** the source of CLI-001.1
+- **When** `framehive import <source> <destination> --template '{job}/{name}.{ext}' --job-code ' Smith wedding '`
+  runs
+- **Then** the destination has `Smith wedding/DSCF0001.RAF`, and the exit code is 0
+
+### CLI-001.15 – Missing job code
+- **Given** the template `{job}/{name}.{ext}` and no `--job-code`
+- **When** the command runs
+- **Then** standard error names `{job}` and `--job-code`, the destination is not
+  created, and the exit code is 2
+
+### CLI-001.16 – Invalid job code
+- **Given** `--job-code 'Smith/Jones'`, with the default template
+- **When** the command runs
+- **Then** standard error names the job code and says why it is invalid, the
+  destination is not created, and the exit code is 2
+
+### CLI-001.17 – Job code without `{job}`
+- **Given** the source of CLI-001.1 and `--job-code 'Smith wedding'`, with the default
+  template
+- **When** the command runs
+- **Then** the destination has `2026/2026-10-17/DSCF0001.RAF`, standard error has
+  `warning: --job-code is not used, because the name template has no {job}`, and the
+  exit code is 0
+
 ## Out of scope
 
 - Profiles and the configuration file (N8, N25), `--profile` (N18): later specs.
@@ -165,3 +201,4 @@ Errors that stop the command, and log messages, go to standard error.
 | 2026-10-31 | Initial draft (milestone 1) |
 | 2026-10-31 | Accepted by the owner |
 | 2026-11-01 | Implemented in `framehive-cli` |
+| 2026-11-01 | Added `--job-code` with CLI-001.14 to CLI-001.17 (IMPORT-006) |

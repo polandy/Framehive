@@ -17,7 +17,7 @@ destination.
 Boundaries:
 
 - **Pure.** Rendering is a function of the values it is given: capture time, import
-  time, base name and file name. The service reads no files and no clock; the caller
+  time, base name, job code and file name. The service reads no files and no clock; the caller
   passes times as `LocalDateTime` and `CaptureTime` values of `domain` (architecture §3,
   ADR 0021).
 - **Asset values.** All files of one asset are rendered from one `AssetValues`.
@@ -25,6 +25,10 @@ Boundaries:
   order, falling back to the modification time.
 - **Sidecars.** A file's extension is everything after the asset's base name and a
   dot, so `DSC_0042.RAF.xmp` keeps `RAF.xmp` and follows its RAF file.
+- **Job code.** `{job}` inserts `AssetValues::job_code` as given; validating it is the
+  import module's job (IMPORT-006). Without a job code, a file of a template with
+  `{job}` cannot be named (`RenderError::NoJobCode`); `uses_job_code` lets the caller
+  refuse such an import before it starts.
 - **Not covered yet:** sequence tokens are validated, but rendering them returns
   `RenderError::SequenceUnavailable` until IMPORT-002. The import plan, which marks
   files that cannot be named or are dated by their modification time, belongs to the
@@ -34,7 +38,7 @@ Boundaries:
 
 | Item | Meaning |
 |---|---|
-| `NameTemplate` | Validated name template; `parse`, `as_str`, `render` |
+| `NameTemplate` | Validated name template; `parse`, `as_str`, `uses_job_code`, `render` |
 | `TemplateError`, `TemplateErrorKind` | Why and at which column a template was rejected |
 | `AssetValues` | The values all files of one asset are rendered from |
 | `CompatibilityMode` | Keep names valid on exFAT, SMB and macOS (`On` by default) or not |

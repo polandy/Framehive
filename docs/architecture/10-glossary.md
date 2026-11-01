@@ -15,7 +15,9 @@ Names in the code follow this glossary.
 | Library root | `LibraryRoot` | A root directory with a marker file and a UUID |
 | Volume | `Volume` | Physical or network storage medium on which library roots reside |
 | Source | `Source` | What is imported from: camera, card, phone, folder |
+| Device | `Device` | A removable storage medium, such as a memory card, as it is offered for import |
 | Name template | `NameTemplate` | Text that derives an imported file's folders and name (IMPORT-001) |
+| Job code | `JobCode` | A short label the user gives an import, inserted by the `{job}` token of a name template (IMPORT-006). Not to be confused with a job |
 | Capture time | `CaptureTime` | The wall-clock time the camera recorded, from EXIF `DateTimeOriginal`, with optional sub-seconds and UTC offset (CORE-005) |
 | Timestamp | `Timestamp` | An instant in UTC, to the nanosecond, without calendar or time zone (ADR 0022) |
 | UTC offset | `UtcOffset` | The difference between local time and UTC at an instant, in seconds east of UTC |

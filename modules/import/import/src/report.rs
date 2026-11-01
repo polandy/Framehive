@@ -13,6 +13,7 @@ use metadata::NoCaptureTime;
 use naming::RenderError;
 
 use crate::conflicts::ConflictError;
+use crate::job_code::MissingJobCode;
 use crate::scan::{LeftOut, LeftOutReason, ScanError, SourceScan};
 
 /// Receives the progress of an [`ImportRun`](crate::ImportRun) on the caller's thread,
@@ -125,6 +126,9 @@ pub enum FileError {
 /// Why an import run did not start. Nothing was copied.
 #[derive(Debug, thiserror::Error)]
 pub enum RunError {
+    /// The template uses `{job}`, but the import has no job code (IMPORT-006).
+    #[error(transparent)]
+    MissingJobCode(#[from] MissingJobCode),
     /// The source cannot be scanned (IMPORT-005).
     #[error(transparent)]
     Scan(#[from] ScanError),

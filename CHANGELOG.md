@@ -31,6 +31,11 @@ All user-visible changes are listed here. The format follows
   as soon as the file is done and a summary, creates a missing destination, rejects
   a destination inside the source, and exits with 0 (all done), 1 (a file failed or
   a folder could not be read) or 2 (the import did not start).
+- Job codes (IMPORT-006): the `{job}` token of a name template inserts a job code,
+  and `framehive import --job-code <text>` supplies it. A job code is trimmed and
+  must have 1–64 characters, without `/` or control characters. A template with
+  `{job}` and no job code, or an invalid job code, stops the command with exit code
+  2; a job code the template does not use is accepted with a warning.
 - Nix flake package: `nix run . -- import <source> <destination>` runs the
   `framehive` command and `nix profile install .` installs it, built with the pinned
   toolchain.

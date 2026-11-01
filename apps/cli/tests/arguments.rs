@@ -40,6 +40,7 @@ fn help_describes_the_import_arguments() {
         "<source>",
         "<destination>",
         "--template",
+        "--job-code",
         "--on-conflict",
         "--dry-run",
     ] {

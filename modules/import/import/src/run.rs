@@ -12,6 +12,7 @@ use metadata::{CaptureTimeError, NoCaptureTime, read_capture_time};
 use naming::{CompatibilityMode, NameTemplate};
 
 use crate::conflicts::{ConflictOutcome, ConflictPolicy, TargetRequest, TargetResolver};
+use crate::job_code::{JobCode, require_job_code};
 use crate::plan::{AssetFile, ImportPlan, PlannedFile};
 use crate::report::{FileError, FileOutcome, FileReport, ImportSummary, ProgressSink, RunError};
 use crate::scan::{FoundFile, scan_source};
@@ -25,6 +26,8 @@ pub struct ImportSettings<'a> {
     pub destination: &'a Path,
     /// The name template for the target paths (IMPORT-001).
     pub template: &'a NameTemplate,
+    /// The job code for `{job}` (IMPORT-006); required when the template uses it.
+    pub job_code: Option<&'a JobCode>,
     /// Whether target names are kept compatible with every file system (IMPORT-001).
     pub mode: CompatibilityMode,
     /// What happens when a target name holds a different file (IMPORT-003).
@@ -70,14 +73,16 @@ impl<'a> ImportRun<'a> {
     ///
     /// # Errors
     ///
-    /// Returns a [`RunError`] if the source cannot be scanned or the current time
-    /// cannot be shown in local time; then nothing is copied. A file that fails is
+    /// Returns a [`RunError`] if the template uses `{job}` without a job code, the
+    /// source cannot be scanned or the current time cannot be shown in local time;
+    /// then nothing is copied. A file that fails is
     /// reported in the [`ImportSummary`] instead.
     pub fn run(
         &self,
         settings: &ImportSettings<'_>,
         progress: &mut dyn ProgressSink,
     ) -> Result<ImportSummary, RunError> {
+        require_job_code(settings.template, settings.job_code)?;
         let import_time = self
             .local_time(self.clock.now())
             .ok_or(RunError::ImportTimeOutOfRange)?;
@@ -94,7 +99,13 @@ impl<'a> ImportRun<'a> {
             .flatten()
             .map(|file| vec![file.asset_file.clone()])
             .collect();
-        let plan = ImportPlan::new(&assets, settings.template, settings.mode, import_time);
+        let plan = ImportPlan::new(
+            &assets,
+            settings.template,
+            settings.mode,
+            import_time,
+            settings.job_code,
+        );
         let mut planned = plan.files().iter();
 
         let mut resolver = TargetResolver::new(

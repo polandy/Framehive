@@ -22,6 +22,10 @@ is marked with the reason, and a file whose asset has no capture time is marked 
 dated by its modification time. An asset without files adds nothing to the plan; an
 asset of only sidecars takes its base name from its first file.
 
+A job code (IMPORT-006) is validated by `JobCode::parse`: trimmed, 1–64 characters,
+no `/` and no control character. The plan passes it to the `{job}` token, and
+`require_job_code` refuses an import whose template uses `{job}` without one.
+
 The source scan (IMPORT-005) walks the source folder and lists each supported file
 with its role, size and modification time, and each file or folder it leaves out with
 the reason: unsupported type, hidden, symbolic link, sidecar until grouping, or cannot
@@ -48,7 +52,8 @@ Boundaries:
   (ADR 0020 §2).
 - **Grouping** of files into assets is defined by LIBRARY-001; the module uses it and
   does not redefine it. `ImportPlan::new` takes assets that are already grouped.
-- **Not covered yet:** sequence numbers (IMPORT-002), metadata and job-code tokens,
+- **Not covered yet:** sequence numbers (IMPORT-002), metadata tokens, the remembered
+  list of job codes,
   camera time correction, sidecars (until grouping), backup destinations, resuming an
   interrupted import, the import log, the live preview and block editor (a UI spec), and
   where a profile stores its template (the profile spec).
@@ -63,6 +68,8 @@ Boundaries:
 | `PlannedFile` | The target path of one file, or why it cannot be named, and its date source |
 | `scan_source`, `SourceScan`, `FoundFile`, `LeftOut`, `LeftOutReason`, `ScanError` | The source scan and its result (IMPORT-005) |
 | `TargetResolver`, `TargetRequest`, `ConflictPolicy`, `ConflictOutcome`, `ConflictError` | Conflict resolution against the destination and the plan (IMPORT-003) |
+| `JobCode`, `JobCodeError`, `MAX_JOB_CODE_CHARACTERS` | A validated job code and why a text is not one (IMPORT-006) |
+| `require_job_code`, `MissingJobCode` | Refuses an import whose template uses `{job}` without a job code (IMPORT-006) |
 | `ImportRun`, `ImportSettings` | Scans, plans, resolves and copies, file by file (ADR 0020, IMPORT-004) |
 | `ProgressSink`, `NoProgress` | Receives each step of an import run on the caller's thread |
 | `ImportSummary`, `FileReport`, `FileOutcome`, `FileError`, `RunError` | What a run reports per file, and why a run did not start |

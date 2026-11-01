@@ -32,6 +32,8 @@ pub(crate) struct ImportArguments {
     pub(crate) destination: PathBuf,
     /// The name template text, not yet parsed.
     pub(crate) template: String,
+    /// The job code text, if given, not yet checked (IMPORT-006).
+    pub(crate) job_code: Option<String>,
     /// The conflict policy.
     pub(crate) on_conflict: OnConflict,
     /// Plan and print, copy nothing.
@@ -100,6 +102,12 @@ fn import_command() -> Command {
                 .help("Name template for the folders and name of each imported file"),
         )
         .arg(
+            Arg::new("job-code")
+                .long("job-code")
+                .value_name("text")
+                .help("Job code that the {job} token of the name template inserts"),
+        )
+        .arg(
             Arg::new("on-conflict")
                 .long("on-conflict")
                 .value_name("policy")
@@ -123,6 +131,7 @@ fn import_arguments(matches: &ArgMatches) -> ImportArguments {
             .get_one::<String>("template")
             .cloned()
             .unwrap_or_else(|| DEFAULT_TEMPLATE.to_owned()),
+        job_code: matches.get_one::<String>("job-code").cloned(),
         on_conflict: on_conflict(matches.get_one::<String>("on-conflict").map(String::as_str)),
         dry_run: matches.get_flag("dry-run"),
     }

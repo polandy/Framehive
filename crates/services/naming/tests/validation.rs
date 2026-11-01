@@ -3,7 +3,11 @@
 
 //! Validation of name templates when they are saved (IMPORT-001).
 
-#![allow(clippy::expect_used, reason = "test helpers may panic on bad fixtures")]
+#![allow(
+    clippy::expect_used,
+    clippy::unwrap_used,
+    reason = "test helpers may panic on bad fixtures"
+)]
 
 use naming::{NameTemplate, TemplateError, TemplateErrorKind};
 
@@ -182,6 +186,30 @@ fn dot_segments_are_rejected() {
 
     let error = rejection("a/./{name}.{ext}");
     assert_eq!(error.column, 3);
+}
+
+/// spec: IMPORT-001.20
+#[test]
+fn job_token_takes_no_option() {
+    let error = rejection("{job:upper}/{name}.{ext}");
+
+    assert_eq!(
+        error.kind,
+        TemplateErrorKind::UnknownOption {
+            token: "{job:upper}".to_owned()
+        }
+    );
+    assert!(error.to_string().contains("{job:upper}"), "{error}");
+}
+
+/// spec: IMPORT-006.6
+#[test]
+fn template_tells_whether_it_uses_the_job_code() {
+    let uses = |text| NameTemplate::parse(text).unwrap().uses_job_code();
+
+    assert!(uses("{date:%Y}/{job}-{name}.{ext}"));
+    assert!(!uses("{{job}}/{name}.{ext}"));
+    assert!(!uses("{name}.{ext}"));
 }
 
 /// spec: IMPORT-001.1

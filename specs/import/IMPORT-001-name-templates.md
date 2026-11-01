@@ -2,7 +2,7 @@
 
 - Status: implemented
 - Module: import
-- Origin: R1, R6, R8, N9
+- Origin: R1, R6, R8, R9, N9
 - Depends on: –
 
 ## Purpose
@@ -29,6 +29,7 @@ Example: `{date:%Y}/{date:%Y-%m-%d}/{date:%Y%m%d}-{name}.{ext}`
 | `{number}` | Image number: the trailing digits of the original base name |
 | `{number:N}` | The last N digits of the image number, padded with zeros to N (1–6) |
 | `{seq_today:N}`, `{seq_stored:N}`, `{seq_session:N}`, `{seq_letters}` | Sequence number (IMPORT-002) |
+| `{job}` | Job code of the import (IMPORT-006); it takes no option |
 
 **Date formats.** A format is literal text with these codes. They are independent of
 the language setting, so the same template gives the same names on every machine.
@@ -189,11 +190,23 @@ can never contain `/`.
 - **Then** that file cannot be named, and the plan marks it with the reason; the other
   files are planned normally
 
+### IMPORT-001.19 – Job code
+- **Given** compatibility mode is on, the job code `Smith: wedding`, `DSC_0042.RAF`
+  captured on 2026-10-17, and the template `{date:%Y}/{job}/{name}.{ext}`
+- **When** the import plan is made
+- **Then** the file's path is `2026/Smith_ wedding/DSC_0042.RAF`
+
+### IMPORT-001.20 – The job code token takes no option
+- **Given** the template `{job:upper}/{name}.{ext}`
+- **When** the user saves it
+- **Then** it is rejected, and the error names `{job:upper}`
+
 ## Out of scope
 
 - Sequence numbers: IMPORT-002.
 - A target name that already exists, or two files with the same target: IMPORT-003.
-- Photo and video metadata tokens (R2, R3) and job codes (R9): later specs.
+- Photo and video metadata tokens (R2, R3): later specs.
+- What a valid job code is, and an import whose template needs one: IMPORT-006.
 - The live preview and block editor (N9, R10): a UI spec.
 - Where a profile stores its template and the mode: the profile spec (N8).
 
@@ -209,3 +222,4 @@ can never contain `/`.
 | 2026-10-19 | Accepted by the owner |
 | 2026-10-19 | Clarified the modification-time fallback order for assets without a capture time, and added IMPORT-001.18 for a rendered segment that would leave the destination (naming service, review) |
 | 2026-10-31 | Implemented: `ImportPlan` in the import module, on the naming service |
+| 2026-11-01 | Added the `{job}` token with IMPORT-001.19 and IMPORT-001.20 (R9, IMPORT-006) |

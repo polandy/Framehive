@@ -27,6 +27,36 @@ fn rejects_an_invalid_template() {
     assert_eq!(output.status.code(), Some(2));
 }
 
+/// spec: CLI-001.15
+#[test]
+fn rejects_a_template_with_job_and_no_job_code() {
+    let folders = Folders::new();
+    folders.add_raf();
+
+    let output = folders.import(&["--template", "{job}/{name}.{ext}"]);
+
+    let error = stderr(&output);
+    assert!(error.contains("{job}"), "{error}");
+    assert!(error.contains("--job-code"), "{error}");
+    assert!(!folders.destination().exists());
+    assert_eq!(output.status.code(), Some(2));
+}
+
+/// spec: CLI-001.16
+#[test]
+fn rejects_an_invalid_job_code() {
+    let folders = Folders::new();
+    folders.add_raf();
+
+    let output = folders.import(&["--job-code", "Smith/Jones"]);
+
+    let error = stderr(&output);
+    assert!(error.contains("Smith/Jones"), "{error}");
+    assert!(error.contains("must not contain \"/\""), "{error}");
+    assert!(!folders.destination().exists());
+    assert_eq!(output.status.code(), Some(2));
+}
+
 /// spec: CLI-001.9
 #[test]
 fn rejects_a_missing_source() {
