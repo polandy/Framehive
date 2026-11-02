@@ -63,15 +63,12 @@ pub(crate) fn parse(
     arguments: impl IntoIterator<Item = OsString>,
 ) -> Result<Invocation, clap::Error> {
     let matches = command().try_get_matches_from(arguments)?;
-    match matches.subcommand() {
-        Some(("import", import)) => Ok(Invocation::Import(import_arguments(import))),
-        None => Ok(Invocation::Guided),
-        // clap rejects subcommands it does not know before this point.
-        Some((other, _)) => Err(command().error(
-            clap::error::ErrorKind::InvalidSubcommand,
-            format!("unknown subcommand {other}"),
-        )),
-    }
+    // `import` is the only subcommand; clap rejects any other before this point.
+    Ok(matches
+        .subcommand_matches("import")
+        .map_or(Invocation::Guided, |import| {
+            Invocation::Import(import_arguments(import))
+        }))
 }
 
 fn command() -> Command {

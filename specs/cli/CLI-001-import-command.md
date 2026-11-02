@@ -140,7 +140,7 @@ Errors that stop the command, and log messages, go to standard error.
 - **Then** standard error names both paths, nothing is copied, and the exit code is 2
 
 ### CLI-001.11 – Invalid arguments
-- **Given** `--on-conflict overwrite`, or a missing destination
+- **Given** `--on-conflict overwrite`, a missing destination, or an unknown subcommand
 - **When** the command runs
 - **Then** standard error says what is wrong and points to `--help`, and the exit code
   is 2
@@ -202,3 +202,4 @@ Errors that stop the command, and log messages, go to standard error.
 | 2026-10-31 | Accepted by the owner |
 | 2026-11-01 | Implemented in `framehive-cli` |
 | 2026-11-01 | Added `--job-code` with CLI-001.14 to CLI-001.17 (IMPORT-006) |
+| 2026-11-02 | CLI-001.11 names the unknown subcommand, which clap already rejected |

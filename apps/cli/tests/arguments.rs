@@ -78,3 +78,15 @@ fn a_missing_destination_is_rejected() {
     assert!(error.contains("--help"), "{error}");
     assert_eq!(output.status.code(), Some(2));
 }
+
+/// spec: CLI-001.11
+#[test]
+fn an_unknown_subcommand_is_rejected() {
+    let output = framehive(&["export", "/library"]);
+
+    let error = text(&output.stderr);
+    assert!(error.contains("export"), "{error}");
+    assert!(error.contains("--help"), "{error}");
+    assert!(output.stdout.is_empty());
+    assert_eq!(output.status.code(), Some(2));
+}

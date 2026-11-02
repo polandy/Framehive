@@ -15,5 +15,3 @@ feature live in its spec, decisions in `docs/adr/`. Add items with `/todo`.
 - [ ] Fix the template in LIBRARY-001.12: `{date:%Y%m%d}_{seq_session:4}` lacks `.{ext}` and would be rejected by IMPORT-001 validation — before LIBRARY-001 is accepted (2026-10-31)
 - [ ] Coverage-guided fuzzing of the EXIF parser (`metadata`) with cargo-fuzz needs an ADR, because it links the native libFuzzer (ADR 0009); until then a deterministic mutation test stands in (CORE-005) (2026-10-31)
 - [ ] Write the job code to XMP as IPTC Job Id (`photoshop:TransmissionReference`, N16) with the XMP milestone, and store job codes in profiles (N8) with the YAML configuration (R9, IMPORT-006) — owner decided (2026-11-01)
-- [ ] Test exit code 2 of the guided import for an unknown home or current folder — `environment()` in `apps/cli/src/guided/mod.rs` runs after the terminal check, so a plain integration test cannot reach it (CLI-002) (2026-11-01)
-- [ ] Remove or justify the unreachable `Some((other, _))` arm in `apps/cli/src/arguments.rs` — clap rejects unknown subcommands before it (CLI-001) (2026-11-01)
