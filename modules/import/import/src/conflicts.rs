@@ -326,8 +326,8 @@ fn join_target(folder: &str, name: &str) -> String {
 
 /// The canonical caseless key of a name, `NFD(lowercase(NFD(name)))` (Unicode §3.13).
 ///
-/// Lowercasing can turn a precomposed letter into a decomposed sequence (`İ` becomes
-/// `i` and U+0307), so the name is decomposed before and after it.
+/// Lowercasing does not preserve a normalization form, so the standard's definition
+/// decomposes the name both before and after it.
 fn caseless_key(name: &str) -> String {
     let decomposed: String = name.nfd().collect();
     decomposed.to_lowercase().nfd().collect()
