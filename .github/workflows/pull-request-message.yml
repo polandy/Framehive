@@ -1,0 +1,53 @@
+# SPDX-FileCopyrightText: 2026 Framehive contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+# Reruns only the spec trailer check when a pull request is opened, pushed or its title
+# or description is edited (ADR 0010 §4). The squash commit is built from the title and
+# description, but editing them does not rerun CI, and adding `edited` to ci.yml would
+# cancel full runs through its concurrency group.
+name: Pull request message
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  # Its own group, so it never cancels a run of ci.yml; a newer edit makes an older run worthless.
+  group: pull-request-message-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  spec-trailers:
+    name: spec trailers
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      # Actions are pinned to a commit, because a tag can be moved (ADR 0018).
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # The spec trailer check compares with the base branch (ADR 0010 §4).
+          fetch-depth: 0
+
+      - uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            target
+          key: cargo-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock', 'rust-toolchain.toml', 'Cargo.lock') }}
+          restore-keys: cargo-${{ runner.os }}-${{ runner.arch }}-
+
+      - name: cargo xtask check-spec-trailers
+        # Passed as variables, never interpolated into the script, so the text cannot
+        # inject commands.
+        env:
+          PULL_REQUEST_TITLE: ${{ github.event.pull_request.title }}
+          PULL_REQUEST_BODY: ${{ github.event.pull_request.body }}
+        run: nix develop --command cargo xtask check-spec-trailers
