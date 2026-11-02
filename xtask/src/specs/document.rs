@@ -26,6 +26,8 @@ pub(super) const NONE_MARKER: &str = "–";
 pub(crate) struct Spec {
     pub(crate) file: String,
     pub(crate) id: String,
+    /// The title after the ID in the first line.
+    pub(crate) title: String,
     pub(crate) status: String,
     pub(crate) origin: Vec<String>,
     pub(crate) depends_on: Vec<String>,
@@ -41,8 +43,11 @@ pub(crate) fn parse_spec(file: &str, text: &str) -> Result<Spec, Vec<String>> {
         ..Spec::default()
     };
     let mut problems = Vec::new();
-    match title_id(text) {
-        Some(id) => id.clone_into(&mut spec.id),
+    match title_line(text) {
+        Some((id, title)) => {
+            id.clone_into(&mut spec.id);
+            title.clone_into(&mut spec.title);
+        }
         None => problems.push(format!("{file}: first line must be `# <ID> – <Title>`")),
     }
     if !spec.id.is_empty() {
@@ -77,10 +82,11 @@ pub(crate) fn status_field(text: &str) -> Option<String> {
     header_fields(text).remove("Status")
 }
 
-fn title_id(text: &str) -> Option<&str> {
-    let title = text.lines().next()?.strip_prefix("# ")?;
-    let (id, rest) = title.split_once(" – ")?;
-    (!rest.trim().is_empty()).then_some(id)
+fn title_line(text: &str) -> Option<(&str, &str)> {
+    let line = text.lines().next()?.strip_prefix("# ")?;
+    let (id, title) = line.split_once(" – ")?;
+    let title = title.trim();
+    (!title.is_empty()).then_some((id, title))
 }
 
 fn check_id(file: &str, id: &str, problems: &mut Vec<String>) {
@@ -175,6 +181,7 @@ mod tests {
     fn parses_a_valid_spec() {
         let spec = parse_spec("specs/core/CORE-009-example.md", VALID).expect("valid spec");
         assert_eq!(spec.id, "CORE-009");
+        assert_eq!(spec.title, "Example");
         assert_eq!(spec.origin, ["B19", "F1–F2", "2.7"]);
         assert_eq!(spec.depends_on, ["LIBRARY-001"]);
         assert_eq!(spec.criteria, [1, 2]);
