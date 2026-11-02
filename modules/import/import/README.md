@@ -34,7 +34,8 @@ the reason: unsupported type, hidden, symbolic link, sidecar until grouping, or 
 be read. `TargetResolver` resolves name conflicts and files already imported
 (IMPORT-003) against the destination and the earlier files of the plan, comparing
 names by their canonical caseless key, without regard to case and Unicode
-normalization form (ADR 0026), and content by size and checksum, under the conflict
+normalization form (ADR 0026); a destination may hold several names with one key,
+and each is compared. Content is compared by size and checksum, under the conflict
 policy `add_suffix`, `skip` or `fail`.
 
 `ImportRun` ties them together (ADR 0020 §1): it scans the source, dates each file by

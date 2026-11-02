@@ -49,7 +49,9 @@ or return a name decomposed (`e` followed by U+0301) that a card holds precompos
 (U+00E9). Paths are compared by their canonical caseless key, `NFD(lowercase(NFD(path)))`
 (Unicode §3.13, ADR 0026). Names are written as rendered, and an existing file is
 reported by the name found at the destination. So a plan gives the same names on every
-file system.
+file system. A destination that tells such names apart may hold several of them; the
+target is "already imported" when any of them holds identical content, and is taken
+otherwise.
 
 **Never overwrite.** No policy replaces or changes a file at the destination. A file
 that appears at a target path after the plan was made is handled by IMPORT-004.9.
@@ -138,6 +140,23 @@ that appears at a target path after the plan was made is handled by IMPORT-004.9
 - **When** the import plan is made
 - **Then** `a/Café.JPG` keeps its target, and `b/Café.JPG` gets the suffix `-1`
 
+### IMPORT-003.14 – A name in another case at the destination
+- **Given** the targets `DSCF0001.JPG` and `ÄRGER.JPG`, and the destination holds
+  `dscf0001.jpg` with identical content and `ärger.jpg` with other content, and the
+  policy `add_suffix`
+- **When** the import plan is made
+- **Then** the first file is marked "already imported" at `dscf0001.jpg`, and the
+  second file's target is `ÄRGER-1.JPG`, written as rendered
+
+### IMPORT-003.15 – Several destination names with one key
+- **Given** a target `Café.JPG`, and the destination tells normalization forms apart
+  and holds both `Café.JPG` written precomposed and `Café.JPG` written decomposed
+- **When** the import plan is made
+- **Then** with content identical to either of them the file is marked "already
+  imported" at that file's name; with content different from both and the policy
+  `add_suffix` its target is `Café-1.JPG`. When both are identical, the name spelled
+  exactly like the target is reported
+
 ## Out of scope
 
 - A file that appears at the target during the copy: IMPORT-004.9.
@@ -158,3 +177,4 @@ that appears at a target path after the plan was made is handled by IMPORT-004.9
 | 2026-10-31 | Accepted by the owner |
 | 2026-10-31 | `import::TargetResolver` covers IMPORT-003.1–.11 against `MemoryFileSystem`; case is ignored with Unicode `str::to_lowercase`, and the destination is compared by listing the target folder; Unicode normalization is open in `TODO.md` |
 | 2026-11-01 | Targets are compared by their canonical caseless key (Unicode §3.13, ADR 0026); IMPORT-003.12–.13 added |
+| 2026-11-02 | Every destination name with the same key is compared, not only one of them; IMPORT-003.14–.15 added |
