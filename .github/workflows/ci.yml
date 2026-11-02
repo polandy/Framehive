@@ -49,3 +49,11 @@ jobs:
 
       - name: cargo xtask ci
         run: nix develop --command cargo xtask ci
+
+      # `cargo xtask ci` writes the report, so a local run produces the same file (ADR 0010).
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() && matrix.os == 'ubuntu-latest' }}
+        with:
+          name: spec-report
+          path: target/spec-report.md
+          if-no-files-found: warn
