@@ -215,6 +215,12 @@ has none.
 - **When** the person types `q`, or the input ends
 - **Then** Framehive exits with code 0 without copying anything further
 
+### CLI-002.15 – Unknown home or current folder
+- **Given** a terminal, and no home folder, a relative home folder or a current folder
+  that cannot be read
+- **When** `framehive` runs without arguments
+- **Then** it prints an error that names the unknown folder and exits with code 2
+
 ## Out of scope
 
 - The arguments, output and exit codes of `framehive import`: CLI-001.
@@ -236,3 +242,4 @@ has none.
 | 2026-11-01 | Implemented in `apps/cli/src/guided`; `implemented` |
 | 2026-11-01 | Split from CLI-002 to stay under the document size limit; criteria renumbered, content unchanged |
 | 2026-11-01 | Exit code 2 also covers an unknown home folder or current folder, as implemented |
+| 2026-11-02 | Criterion CLI-002.15 for the unknown home folder or current folder |

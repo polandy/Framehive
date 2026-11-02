@@ -14,6 +14,7 @@ mod template;
 #[cfg(test)]
 mod tests;
 
+use std::ffi::OsStr;
 use std::io::{self, IsTerminal};
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -90,18 +91,37 @@ pub(crate) fn run_guided() -> ExitCode {
     ExitCode::SUCCESS
 }
 
-/// Finds the home folder, the current folder and the state file.
+/// Finds the home folder, the current folder and the state file of this process.
 ///
 /// # Errors
 ///
 /// Returns the message when the home folder or the current folder is unknown.
 fn environment() -> Result<Environment, String> {
-    let home = std::env::home_dir()
+    environment_from(
+        std::env::home_dir(),
+        std::env::current_dir(),
+        std::env::var_os("XDG_STATE_HOME").as_deref(),
+    )
+}
+
+/// Builds the environment from what the process reported, so the errors are testable
+/// without changing the real home or current folder (CLI-002.15).
+///
+/// # Errors
+///
+/// Returns the message when the home folder is missing or relative, or the current
+/// folder cannot be read.
+pub(crate) fn environment_from(
+    home: Option<PathBuf>,
+    current_folder: io::Result<PathBuf>,
+    xdg_state_home: Option<&OsStr>,
+) -> Result<Environment, String> {
+    let home = home
         .filter(|home| home.is_absolute())
         .ok_or_else(|| "the home folder is unknown; set HOME".to_owned())?;
-    let current_folder = std::env::current_dir()
-        .map_err(|error| format!("the current folder cannot be read: {error}"))?;
-    let state_file = state_file(std::env::var_os("XDG_STATE_HOME").as_deref(), &home);
+    let current_folder =
+        current_folder.map_err(|error| format!("the current folder cannot be read: {error}"))?;
+    let state_file = state_file(xdg_state_home, &home);
     Ok(Environment {
         home,
         current_folder,
