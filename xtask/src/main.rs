@@ -36,6 +36,8 @@ commands:
   check-architecture   layers, unsafe code and crate READMEs (architecture §3)
   check-dependencies   dependencies.yaml allowlist (ADR 0009)
   check-specs          specifications and their tests (ADR 0010)
+  check-spec-trailers  Spec-Unchanged/Spec-Only trailers of the commits since the base (ADR 0010)
+  spec-report          write target/spec-report.md: requirement, spec, criteria, tests
   check-files          only text files, no binaries (ADR 0017)
   ci-failures [<pr>]   only the failures of a red CI run (needs gh)
   new-module <id>      generate the two crates of a new module (architecture §4.5)
@@ -51,6 +53,8 @@ fn main() -> ExitCode {
         Some("check-architecture") => check_architecture(&root),
         Some("check-dependencies") => check_dependencies(&root),
         Some("check-specs") => check_specs(&root),
+        Some("check-spec-trailers") => check_spec_trailers(&root),
+        Some("spec-report") => spec_report(&root),
         Some("check-files") => check_files(&root),
         Some("new-module") => new_module::run(&root, arguments.get(1).map(String::as_str)),
         Some("new-adapter") => new_adapter::run(
@@ -99,6 +103,22 @@ fn check_specs(root: &Path) -> Result<(), String> {
         eprintln!("warning: {warning}");
     }
     finish("specs", &report.errors)
+}
+
+fn check_spec_trailers(root: &Path) -> Result<(), String> {
+    match specs::trailers::git::run(root)? {
+        specs::trailers::git::Outcome::Checked(violations) => finish("spec trailers", &violations),
+        specs::trailers::git::Outcome::Skipped(reason) => {
+            eprintln!("warning: spec trailers not checked: {reason}");
+            Ok(())
+        }
+    }
+}
+
+fn spec_report(root: &Path) -> Result<(), String> {
+    let path = specs::write_report(root)?;
+    println!("spec report: {}", path.display());
+    Ok(())
 }
 
 fn check_files(root: &Path) -> Result<(), String> {

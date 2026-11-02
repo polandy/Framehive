@@ -10,15 +10,19 @@ use std::path::{Path, PathBuf};
 
 mod document;
 mod markers;
+mod report;
 mod requirements;
+pub(crate) mod trailers;
 
 use document::{NONE_MARKER, Spec, parse_spec};
 use markers::{Marker, test_markers};
 use requirements::requirement_ids;
 
-/// Directories whose `.rs` files may contain test markers.
 /// The requirements catalogue, one file per section.
 const REQUIREMENTS_DIRECTORY: &str = "docs/requirements";
+/// Where `cargo xtask spec-report` writes; CI keeps it as an artifact.
+const REPORT_FILE: &str = "target/spec-report.md";
+/// Directories whose `.rs` files may contain test markers.
 const SOURCE_DIRECTORIES: [&str; 4] = ["crates", "modules", "apps", "xtask"];
 
 /// The outcome: errors fail the check, warnings are only printed.
@@ -28,14 +32,54 @@ pub(crate) struct Report {
     pub(crate) warnings: Vec<String>,
 }
 
+/// Everything the spec checks and the report read from the repository.
+struct Repository {
+    requirements: BTreeSet<String>,
+    specs: Vec<Spec>,
+    markers: Vec<Marker>,
+    /// Spec files that could not be parsed, one message per problem.
+    problems: Vec<String>,
+}
+
 /// Reads all specs, the requirements and the test markers below `root` and checks them.
 pub(crate) fn check_repository(root: &Path) -> Result<Report, String> {
+    let repository = load(root)?;
+    let mut report = Report {
+        errors: repository.problems,
+        warnings: Vec::new(),
+    };
+    let checked = check(
+        &repository.specs,
+        &repository.requirements,
+        &repository.markers,
+    );
+    report.errors.extend(checked.errors);
+    report.warnings.extend(checked.warnings);
+    Ok(report)
+}
+
+/// Writes the overview requirement → spec → criteria → tests to `target/spec-report.md`.
+pub(crate) fn write_report(root: &Path) -> Result<PathBuf, String> {
+    let repository = load(root)?;
+    if !repository.problems.is_empty() {
+        return Err(format!(
+            "cannot report on invalid specs:\n{}",
+            repository.problems.join("\n")
+        ));
+    }
+    let path = root.join(REPORT_FILE);
+    let text = report::render(&repository.specs, &repository.markers);
+    fs::write(&path, text).map_err(|error| format!("cannot write {}: {error}", path.display()))?;
+    Ok(path)
+}
+
+fn load(root: &Path) -> Result<Repository, String> {
     let mut requirements = String::new();
     for path in files_with_extension(&root.join(REQUIREMENTS_DIRECTORY), "md")? {
         requirements.push_str(&read(&path)?);
     }
     let mut specs = Vec::new();
-    let mut report = Report::default();
+    let mut problems = Vec::new();
     for path in files_with_extension(&root.join("specs"), "md")? {
         if path.file_name().is_some_and(|name| name == "README.md") {
             continue;
@@ -43,7 +87,7 @@ pub(crate) fn check_repository(root: &Path) -> Result<Report, String> {
         let file = relative(root, &path);
         match parse_spec(&file, &read(&path)?) {
             Ok(spec) => specs.push(spec),
-            Err(problems) => report.errors.extend(problems),
+            Err(found) => problems.extend(found),
         }
     }
     let mut markers = Vec::new();
@@ -52,10 +96,12 @@ pub(crate) fn check_repository(root: &Path) -> Result<Report, String> {
             markers.extend(test_markers(&relative(root, &path), &read(&path)?));
         }
     }
-    let checked = check(&specs, &requirement_ids(&requirements), &markers);
-    report.errors.extend(checked.errors);
-    report.warnings.extend(checked.warnings);
-    Ok(report)
+    Ok(Repository {
+        requirements: requirement_ids(&requirements),
+        specs,
+        markers,
+        problems,
+    })
 }
 
 /// Checks parsed specs against each other, the requirement IDs and the test markers.

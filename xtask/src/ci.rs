@@ -20,7 +20,7 @@ struct Step {
 
 const CARGO: &str = "cargo";
 
-const STEPS: [Step; 10] = [
+const STEPS: [Step; 12] = [
     Step {
         title: "format",
         program: CARGO,
@@ -58,6 +58,17 @@ const STEPS: [Step; 10] = [
         title: "specifications",
         program: CARGO,
         arguments: &["xtask", "check-specs"],
+    },
+    Step {
+        title: "spec trailers",
+        program: CARGO,
+        arguments: &["xtask", "check-spec-trailers"],
+    },
+    // Not a check: writes target/spec-report.md, which CI keeps as an artifact.
+    Step {
+        title: "spec report",
+        program: CARGO,
+        arguments: &["xtask", "spec-report"],
     },
     Step {
         title: "tests",

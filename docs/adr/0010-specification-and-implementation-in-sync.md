@@ -70,6 +70,31 @@ the code.
 - `cargo xtask spec-report` produces an overview: requirement → specification →
   criteria → tests, with status. It is produced as a CI artifact.
 
+**Amendment (2026-11-02): the diff check in detail.** `cargo xtask check-spec-trailers`,
+a step of `cargo xtask ci`, implements the diff check as follows.
+
+- *Which commits.* In a pull request, `origin/<base>..HEAD` with the base branch from
+  `GITHUB_BASE_REF`; each commit of the pull request is judged on its own. On `main`,
+  only the head commit (`HEAD^..HEAD`): the squash commit of a merged pull request is
+  judged as a whole. Locally, `main..HEAD`. Older history is never checked.
+- *Merge commits are skipped.* On a branch they only bring in `main`, whose commits are
+  checked on `main`; the squash merge removes them anyway. The synthetic merge commit
+  GitHub checks out for a pull request is skipped for the same reason.
+- *Trailers.* A line `Spec-Unchanged: <reason>` or `Spec-Only: <reason>` with a
+  non-empty reason counts anywhere in the message, because a squash commit collects the
+  messages of all commits of its pull request.
+- *Rule A (`Spec-Unchanged:`).* A changed `.rs` file that contains `/// spec:` markers
+  for a specification, before or after the commit, requires that specification's file
+  to change in the same commit.
+- *Rule B (`Spec-Only:`).* A changed specification whose status is `implemented` after
+  the commit (before it, if the file was deleted) requires a changed `.rs` file in a
+  crate that holds markers for it. If no crate holds markers for it, any changed `.rs`
+  file counts.
+- *A violation fails CI*, like every other check.
+- *Missing base.* Without a local `main`, a local run skips the check with a notice. In
+  CI (`CI=true`) a base that cannot be resolved, as in a shallow clone, is an error, so
+  the check never passes silently; CI therefore checks out the full history.
+
 Example specification path: `specs/import/IMPORT-002-sequence-numbers.md`.
 
 ## Alternatives
