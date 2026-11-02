@@ -4,7 +4,7 @@
 //! Reads the commits to check from Git and runs the rules of the parent module on them.
 
 use std::collections::{BTreeMap, BTreeSet};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use super::{Commit, Range, choose_range, spec_id_of, violations};
@@ -17,45 +17,84 @@ pub(crate) enum Outcome {
     Skipped(String),
 }
 
+/// The Git checkout to read from.
+pub(crate) struct Repository {
+    pub(crate) root: PathBuf,
+    /// Extra environment for every git call. Empty in production; tests use it to keep
+    /// the developer's own Git configuration out of a throwaway repository.
+    pub(crate) git_variables: Vec<(String, String)>,
+}
+
+impl Repository {
+    /// The checkout at `root`, read with the caller's own Git configuration.
+    pub(crate) fn at(root: &Path) -> Self {
+        Self {
+            root: root.to_path_buf(),
+            git_variables: Vec::new(),
+        }
+    }
+}
+
+/// The parts of the process environment that choose what to check.
+#[derive(Debug, Default)]
+pub(crate) struct Environment {
+    /// `CI=true`: a base that cannot be resolved is an error, not a notice.
+    pub(crate) in_ci: bool,
+    /// `GITHUB_BASE_REF`, set in a pull request run.
+    pub(crate) base_branch: Option<String>,
+    /// `GITHUB_REF`, such as `refs/heads/main`.
+    pub(crate) github_ref: Option<String>,
+}
+
+impl Environment {
+    /// Reads the variables of the running process.
+    pub(crate) fn from_process() -> Self {
+        Self {
+            in_ci: std::env::var("CI").is_ok_and(|value| value == "true"),
+            base_branch: std::env::var("GITHUB_BASE_REF").ok(),
+            github_ref: std::env::var("GITHUB_REF").ok(),
+        }
+    }
+}
+
 /// Checks the commits chosen from the environment. In CI (`CI=true`) a base that cannot
 /// be resolved is an error, so the check never passes silently (ADR 0010 §4).
-pub(crate) fn run(root: &Path) -> Result<Outcome, String> {
-    let in_ci = std::env::var("CI").is_ok_and(|value| value == "true");
-    let range = resolve_range(root)?;
+pub(crate) fn run(repository: &Repository, environment: &Environment) -> Result<Outcome, String> {
+    let range = resolve_range(repository, environment)?;
     let commits = match range {
-        Range::SinceBase(base) => commits_since(root, &base),
-        Range::Head => head_commit(root),
+        Range::SinceBase(base) => commits_since(repository, &base),
+        Range::Head => head_commit(repository),
         Range::Unavailable(reason) => Err(reason),
     };
     match commits {
-        Ok(commits) => check_all(root, &commits).map(Outcome::Checked),
-        Err(reason) if in_ci => Err(format!("cannot choose the commits to check: {reason}")),
+        Ok(commits) => check_all(repository, &commits).map(Outcome::Checked),
+        Err(reason) if environment.in_ci => {
+            Err(format!("cannot choose the commits to check: {reason}"))
+        }
         Err(reason) => Ok(Outcome::Skipped(reason)),
     }
 }
 
-fn resolve_range(root: &Path) -> Result<Range, String> {
-    let base_branch = std::env::var("GITHUB_BASE_REF").ok();
-    let github_ref = std::env::var("GITHUB_REF").ok();
-    let current_branch = git(root, &["branch", "--show-current"])?;
+fn resolve_range(repository: &Repository, environment: &Environment) -> Result<Range, String> {
+    let current_branch = git(repository, &["branch", "--show-current"])?;
     let has_main = git(
-        root,
+        repository,
         &["rev-parse", "--verify", "--quiet", "refs/heads/main"],
     )
     .is_ok();
     Ok(choose_range(
-        base_branch.as_deref(),
-        github_ref.as_deref(),
+        environment.base_branch.as_deref(),
+        environment.github_ref.as_deref(),
         Some(current_branch.trim()),
         has_main,
     ))
 }
 
 /// Non-merge commits in `<base>..HEAD`, oldest first.
-fn commits_since(root: &Path, base: &str) -> Result<Vec<String>, String> {
-    require_full_history(root)?;
+fn commits_since(repository: &Repository, base: &str) -> Result<Vec<String>, String> {
+    require_full_history(repository)?;
     git(
-        root,
+        repository,
         &[
             "rev-parse",
             "--verify",
@@ -64,10 +103,10 @@ fn commits_since(root: &Path, base: &str) -> Result<Vec<String>, String> {
         ],
     )
     .map_err(|_| format!("the base {base} does not exist"))?;
-    git(root, &["merge-base", base, "HEAD"])
+    git(repository, &["merge-base", base, "HEAD"])
         .map_err(|_| format!("{base} and HEAD have no common commit"))?;
     let listing = git(
-        root,
+        repository,
         &[
             "rev-list",
             "--reverse",
@@ -79,58 +118,61 @@ fn commits_since(root: &Path, base: &str) -> Result<Vec<String>, String> {
 }
 
 /// `HEAD` alone, or nothing if it is a merge commit.
-fn head_commit(root: &Path) -> Result<Vec<String>, String> {
-    require_full_history(root)?;
-    let listing = git(root, &["rev-list", "--no-walk", "--no-merges", "HEAD"])?;
+fn head_commit(repository: &Repository) -> Result<Vec<String>, String> {
+    require_full_history(repository)?;
+    let listing = git(
+        repository,
+        &["rev-list", "--no-walk", "--no-merges", "HEAD"],
+    )?;
     Ok(listing.lines().map(str::to_owned).collect())
 }
 
 /// In a shallow clone the oldest commit looks as if it added every file.
-fn require_full_history(root: &Path) -> Result<(), String> {
-    let shallow = git(root, &["rev-parse", "--is-shallow-repository"])?;
+fn require_full_history(repository: &Repository) -> Result<(), String> {
+    let shallow = git(repository, &["rev-parse", "--is-shallow-repository"])?;
     if shallow.trim() == "true" {
         return Err("the clone is shallow; fetch the full history".to_owned());
     }
     Ok(())
 }
 
-fn check_all(root: &Path, commits: &[String]) -> Result<Vec<String>, String> {
+fn check_all(repository: &Repository, commits: &[String]) -> Result<Vec<String>, String> {
     let mut found = Vec::new();
     for id in commits {
-        found.extend(violations(&read_commit(root, id)?));
+        found.extend(violations(&read_commit(repository, id)?));
     }
     Ok(found)
 }
 
-fn read_commit(root: &Path, id: &str) -> Result<Commit, String> {
+fn read_commit(repository: &Repository, id: &str) -> Result<Commit, String> {
     let parent = git(
-        root,
+        repository,
         &["rev-parse", "--verify", "--quiet", &format!("{id}^")],
     )
     .ok();
     let parent = parent.as_deref().map(str::trim);
-    let changed_files = changed_files(root, id)?;
-    let after = markers_at(root, id)?;
+    let changed_files = changed_files(repository, id)?;
+    let after = markers_at(repository, id)?;
     let before = match parent {
-        Some(parent) => markers_at(root, parent)?,
+        Some(parent) => markers_at(repository, parent)?,
         None => BTreeMap::new(),
     };
     Ok(Commit {
-        summary: git(root, &["log", "-1", "--format=%h %s", id])?
+        summary: git(repository, &["log", "-1", "--format=%h %s", id])?
             .trim()
             .to_owned(),
-        message: git(root, &["log", "-1", "--format=%B", id])?,
+        message: git(repository, &["log", "-1", "--format=%B", id])?,
         referenced_specs: referenced_specs(&changed_files, &before, &after),
-        spec_statuses: spec_statuses(root, id, parent, &changed_files),
+        spec_statuses: spec_statuses(repository, id, parent, &changed_files),
         marked_files: invert(&after),
-        crate_directories: crate_directories(root, id)?,
+        crate_directories: crate_directories(repository, id)?,
         changed_files,
     })
 }
 
-fn changed_files(root: &Path, id: &str) -> Result<Vec<String>, String> {
+fn changed_files(repository: &Repository, id: &str) -> Result<Vec<String>, String> {
     let listing = git(
-        root,
+        repository,
         &[
             "diff-tree",
             "--root",
@@ -149,7 +191,10 @@ fn changed_files(root: &Path, id: &str) -> Result<Vec<String>, String> {
 }
 
 /// Spec IDs named by markers, per `.rs` file, in the tree of `revision`.
-fn markers_at(root: &Path, revision: &str) -> Result<BTreeMap<String, BTreeSet<String>>, String> {
+fn markers_at(
+    repository: &Repository,
+    revision: &str,
+) -> Result<BTreeMap<String, BTreeSet<String>>, String> {
     let arguments = [
         "grep",
         "-I",
@@ -161,7 +206,7 @@ fn markers_at(root: &Path, revision: &str) -> Result<BTreeMap<String, BTreeSet<S
         "*.rs",
     ];
     // `git grep` exits with 1 when nothing matches.
-    let output = run_git(root, &arguments)?;
+    let output = run_git(repository, &arguments)?;
     match output.status.code() {
         Some(0 | 1) => Ok(parse_grep(
             revision,
@@ -227,7 +272,7 @@ fn invert(by_file: &BTreeMap<String, BTreeSet<String>>) -> BTreeMap<String, BTre
 
 /// The status of each changed spec file after the commit, or before it if it was deleted.
 fn spec_statuses(
-    root: &Path,
+    repository: &Repository,
     id: &str,
     parent: Option<&str>,
     changed_files: &[String],
@@ -240,7 +285,7 @@ fn spec_statuses(
         let text = [Some(id), parent]
             .into_iter()
             .flatten()
-            .find_map(|revision| git(root, &["show", &format!("{revision}:{file}")]).ok());
+            .find_map(|revision| git(repository, &["show", &format!("{revision}:{file}")]).ok());
         if let Some(status) = text.as_deref().and_then(status_field) {
             statuses.insert(file.clone(), status);
         }
@@ -248,8 +293,8 @@ fn spec_statuses(
     statuses
 }
 
-fn crate_directories(root: &Path, id: &str) -> Result<Vec<String>, String> {
-    let listing = git(root, &["ls-tree", "-r", "--name-only", id])?;
+fn crate_directories(repository: &Repository, id: &str) -> Result<Vec<String>, String> {
+    let listing = git(repository, &["ls-tree", "-r", "--name-only", id])?;
     Ok(listing
         .lines()
         .filter_map(|file| file.strip_suffix("/Cargo.toml"))
@@ -258,18 +303,24 @@ fn crate_directories(root: &Path, id: &str) -> Result<Vec<String>, String> {
 }
 
 /// Runs git and returns its stdout; a non-zero exit is an error.
-fn git(root: &Path, arguments: &[&str]) -> Result<String, String> {
-    let output = run_git(root, arguments)?;
+fn git(repository: &Repository, arguments: &[&str]) -> Result<String, String> {
+    let output = run_git(repository, arguments)?;
     if !output.status.success() {
         return Err(failure(arguments, &output));
     }
     String::from_utf8(output.stdout).map_err(|error| error.to_string())
 }
 
-fn run_git(root: &Path, arguments: &[&str]) -> Result<std::process::Output, String> {
+fn run_git(repository: &Repository, arguments: &[&str]) -> Result<std::process::Output, String> {
     Command::new("git")
         .args(arguments)
-        .current_dir(root)
+        .current_dir(&repository.root)
+        .envs(
+            repository
+                .git_variables
+                .iter()
+                .map(|(name, value)| (name, value)),
+        )
         .output()
         .map_err(|error| format!("cannot run git: {error}"))
 }
@@ -282,6 +333,9 @@ fn failure(arguments: &[&str], output: &std::process::Output) -> String {
         String::from_utf8_lossy(&output.stderr).trim_end()
     )
 }
+
+#[cfg(test)]
+mod repository_tests;
 
 #[cfg(test)]
 mod tests {
