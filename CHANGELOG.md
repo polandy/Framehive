@@ -49,3 +49,10 @@ All user-visible changes are listed here. The format follows
   eject the card, and stops between files when the card is pulled, going on when it
   is inserted again. The library folder, the template and the recent job codes are
   remembered in `$XDG_STATE_HOME/framehive` (IMPORT-006).
+
+### Fixed
+
+- Files already imported are recognized when the destination tells case or Unicode
+  normalization forms apart and holds the same name in several spellings, such as
+  `Café.JPG` precomposed and decomposed: every spelling is compared, so a photo
+  identical to any of them is no longer copied again with a suffix (IMPORT-003).

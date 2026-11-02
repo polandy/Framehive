@@ -27,6 +27,7 @@ fn targets_that_differ_only_in_case() {
     );
 }
 
+/// spec: IMPORT-003.14
 #[test]
 fn destination_names_are_compared_ignoring_case() {
     let file_system = MemoryFileSystem::new();
@@ -87,4 +88,58 @@ fn targets_that_differ_only_in_normalization_form() {
         outcomes,
         [copy_to(PRECOMPOSED), copy_to("Cafe\u{301}-1.JPG")]
     );
+}
+
+/// spec: IMPORT-003.15
+#[test]
+fn identical_to_the_precomposed_one_of_two_names_is_already_imported() {
+    let file_system = MemoryFileSystem::new();
+    let files = [planned(&file_system, "DSCF0001.JPG", b"same", DECOMPOSED)];
+    add(&file_system, DESTINATION, DECOMPOSED, b"theirs");
+    add(&file_system, DESTINATION, PRECOMPOSED, b"same");
+
+    let outcomes = resolve_all(&file_system, ConflictPolicy::AddSuffix, &files);
+
+    assert_eq!(outcomes, [already_imported(PRECOMPOSED)]);
+}
+
+/// spec: IMPORT-003.15
+#[test]
+fn identical_to_the_decomposed_one_of_two_names_is_already_imported() {
+    let file_system = MemoryFileSystem::new();
+    let files = [planned(&file_system, "DSCF0001.JPG", b"same", PRECOMPOSED)];
+    add(&file_system, DESTINATION, PRECOMPOSED, b"theirs");
+    add(&file_system, DESTINATION, DECOMPOSED, b"same");
+
+    let outcomes = resolve_all(&file_system, ConflictPolicy::AddSuffix, &files);
+
+    assert_eq!(outcomes, [already_imported(DECOMPOSED)]);
+}
+
+/// spec: IMPORT-003.15
+#[test]
+fn identical_to_both_names_reports_the_exact_spelling() {
+    for target in [PRECOMPOSED, DECOMPOSED] {
+        let file_system = MemoryFileSystem::new();
+        let files = [planned(&file_system, "DSCF0001.JPG", b"same", target)];
+        add(&file_system, DESTINATION, PRECOMPOSED, b"same");
+        add(&file_system, DESTINATION, DECOMPOSED, b"same");
+
+        let outcomes = resolve_all(&file_system, ConflictPolicy::AddSuffix, &files);
+
+        assert_eq!(outcomes, [already_imported(target)]);
+    }
+}
+
+/// spec: IMPORT-003.15
+#[test]
+fn different_from_both_names_gets_a_suffix() {
+    let file_system = MemoryFileSystem::new();
+    let files = [planned(&file_system, "DSCF0001.JPG", b"ours", PRECOMPOSED)];
+    add(&file_system, DESTINATION, PRECOMPOSED, b"theirs");
+    add(&file_system, DESTINATION, DECOMPOSED, b"others");
+
+    let outcomes = resolve_all(&file_system, ConflictPolicy::AddSuffix, &files);
+
+    assert_eq!(outcomes, [copy_to("Caf\u{e9}-1.JPG")]);
 }

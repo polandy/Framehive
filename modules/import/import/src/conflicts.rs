@@ -112,7 +112,9 @@ pub struct TargetResolver<'a> {
     /// Targets given to earlier files, by the canonical caseless key of the target.
     claimed: HashMap<String, Claim>,
     /// The listing of each target folder, by canonical caseless key; read once.
-    folders: HashMap<String, HashMap<String, Existing>>,
+    /// A destination that tells case or normalization forms apart may hold several
+    /// entries under one key, and each of them may hold the content.
+    folders: HashMap<String, HashMap<String, Vec<Existing>>>,
     /// Checksums by absolute path, so that no file is read twice.
     checksums: HashMap<PathBuf, Checksum>,
 }
@@ -209,23 +211,31 @@ impl<'a> TargetResolver<'a> {
             });
         }
         let (folder, name) = split_target(candidate);
-        let Some(existing) = self.existing(folder, name)? else {
+        let entries = self.existing(folder, name)?;
+        if entries.is_empty() {
             return Ok(Holder::Free);
-        };
-        if existing.kind != EntryKind::File {
-            return Ok(Holder::Different);
         }
-        let target = join_target(folder, &existing.name);
-        let path = self.destination.join(&target);
+        for entry in entries.iter().filter(|entry| entry.kind == EntryKind::File) {
+            let target = join_target(folder, &entry.name);
+            if self.same_as_destination_file(file, &target)? {
+                return Ok(Holder::Same(ConflictOutcome::AlreadyImported { target }));
+            }
+        }
+        Ok(Holder::Different)
+    }
+
+    /// Whether `file` has the same content as the file at `target` in the destination.
+    fn same_as_destination_file(
+        &mut self,
+        file: &TargetRequest<'_>,
+        target: &str,
+    ) -> Result<bool, ConflictError> {
+        let path = self.destination.join(target);
         let size = self
             .file_system
             .file_size(&path)
             .map_err(cannot_read(&path))?;
-        Ok(if self.same_content(file, size, &path)? {
-            Holder::Same(ConflictOutcome::AlreadyImported { target })
-        } else {
-            Holder::Different
-        })
+        self.same_content(file, size, &path)
     }
 
     /// Whether `file` has the same content as the file `other` of `other_size` bytes.
@@ -253,41 +263,47 @@ impl<'a> TargetResolver<'a> {
         Ok(checksum)
     }
 
-    /// The entry at the destination whose name equals `name`, ignoring case and
-    /// normalization form.
-    fn existing(&mut self, folder: &str, name: &str) -> Result<Option<Existing>, ConflictError> {
+    /// The entries at the destination whose names equal `name`, ignoring case and
+    /// normalization form: the one spelled exactly like `name` first, then by name, so
+    /// the outcome does not depend on the order of the listing.
+    fn existing(&mut self, folder: &str, name: &str) -> Result<Vec<Existing>, ConflictError> {
         let key = caseless_key(folder);
         if !self.folders.contains_key(&key) {
             let listing = self.list_target_folder(folder)?;
             self.folders.insert(key.clone(), listing);
         }
-        Ok(self
+        let mut entries = self
             .folders
             .get(&key)
             .and_then(|listing| listing.get(&caseless_key(name)))
-            .cloned())
+            .cloned()
+            .unwrap_or_default();
+        entries.sort_by(|a, b| (a.name != name, &a.name).cmp(&(b.name != name, &b.name)));
+        Ok(entries)
     }
 
-    fn list_target_folder(&self, folder: &str) -> Result<HashMap<String, Existing>, ConflictError> {
+    fn list_target_folder(
+        &self,
+        folder: &str,
+    ) -> Result<HashMap<String, Vec<Existing>>, ConflictError> {
         let path = self.destination.join(folder);
         let entries = match self.file_system.list_folder(&path) {
             Ok(entries) => entries,
             Err(error) if error.kind() == io::ErrorKind::NotFound => Vec::new(),
             Err(error) => return Err(cannot_read(&path)(error)),
         };
-        Ok(entries
-            .into_iter()
-            .map(|entry| {
-                let name = entry.name.to_string_lossy().into_owned();
-                (
-                    caseless_key(&name),
-                    Existing {
-                        name,
-                        kind: entry.kind,
-                    },
-                )
-            })
-            .collect())
+        let mut listing: HashMap<String, Vec<Existing>> = HashMap::new();
+        for entry in entries {
+            let name = entry.name.to_string_lossy().into_owned();
+            listing
+                .entry(caseless_key(&name))
+                .or_default()
+                .push(Existing {
+                    name,
+                    kind: entry.kind,
+                });
+        }
+        Ok(listing)
     }
 }
 
