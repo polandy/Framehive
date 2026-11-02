@@ -32,9 +32,12 @@ description becomes the commit body, word for word. So:
 - **Description:** only commit body text. It explains *why*, and it ends with the
   `Spec-Unchanged:` or `Spec-Only:` trailer when ADR 0010 asks for one.
 - **Trailers are checked.** `cargo xtask check-spec-trailers` judges each commit of the
-  pull request on its own, and after the merge the squash commit as a whole (ADR 0010
-  §4). Give each commit the trailer it needs, and repeat it in the description, because
-  the squash commit is built from the description, not from the commit messages.
+  pull request on its own, and the title and description together with all changes of
+  the pull request as the future squash commit, and after the merge the squash commit
+  itself (ADR 0010 §4). Give each commit the
+  trailer it needs, and repeat it in the description, because the squash commit is built
+  from the description, not from the commit messages. Editing the description reruns
+  the check, so a missing trailer is fixed in the description alone.
 - Notes for the reviewer, open questions and test evidence go into a comment, not into
   the description.
 - No `Co-Authored-By` or "Generated with" lines.

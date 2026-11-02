@@ -77,6 +77,17 @@ a step of `cargo xtask ci`, implements the diff check as follows.
   `GITHUB_BASE_REF`; each commit of the pull request is judged on its own. On `main`,
   only the head commit (`HEAD^..HEAD`): the squash commit of a merged pull request is
   judged as a whole. Locally, `main..HEAD`. Older history is never checked.
+- *The future squash commit.* The squash commit is built from the pull request title
+  and description (`docs/pull-requests.md` §3), so a pull request run also judges one
+  composed commit: its message is the title, a blank line and the description; its
+  changed files are those of `merge-base(origin/<base>, HEAD)..HEAD`; rules A and B
+  apply as to the squash commit on `main`. The workflow passes the title and description
+  as `PULL_REQUEST_TITLE` and `PULL_REQUEST_BODY`. In CI (`CI=true`) a pull request run
+  without `PULL_REQUEST_TITLE` is an error; an empty description is allowed and simply
+  has no trailers. Locally the composed commit is judged only when the variables are
+  set, so a developer can reproduce the CI result. Editing the description does not
+  rerun the main CI workflow, so a separate small workflow reruns only this check when
+  the description is edited.
 - *Merge commits are skipped.* On a branch they only bring in `main`, whose commits are
   checked on `main`; the squash merge removes them anyway. The synthetic merge commit
   GitHub checks out for a pull request is skipped for the same reason.
