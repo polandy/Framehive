@@ -111,9 +111,10 @@ pub struct TargetResolver<'a> {
     policy: ConflictPolicy,
     /// Targets given to earlier files, by the canonical caseless key of the target.
     claimed: HashMap<String, Claim>,
-    /// The listing of each target folder, by canonical caseless key; read once.
-    /// A destination that tells case or normalization forms apart may hold several
-    /// entries under one key, and each of them may hold the content.
+    /// The listing of each folder at the destination, by its path as found there,
+    /// with the entries by canonical caseless key; read once. A destination that
+    /// tells case or normalization forms apart may hold several entries under one
+    /// key, and each of them may hold the content.
     folders: HashMap<String, HashMap<String, Vec<Existing>>>,
     /// Checksums by absolute path, so that no file is read twice.
     checksums: HashMap<PathBuf, Checksum>,
@@ -127,7 +128,8 @@ struct Claim {
 
 #[derive(Debug, Clone)]
 struct Existing {
-    name: String,
+    /// The path relative to the destination, spelled as found there.
+    target: String,
     kind: EntryKind,
 }
 
@@ -210,15 +212,18 @@ impl<'a> TargetResolver<'a> {
                 Holder::Different
             });
         }
-        let (folder, name) = split_target(candidate);
-        let entries = self.existing(folder, name)?;
+        let entries = self.existing(candidate)?;
         if entries.is_empty() {
             return Ok(Holder::Free);
         }
-        for entry in entries.iter().filter(|entry| entry.kind == EntryKind::File) {
-            let target = join_target(folder, &entry.name);
-            if self.same_as_destination_file(file, &target)? {
-                return Ok(Holder::Same(ConflictOutcome::AlreadyImported { target }));
+        for entry in entries
+            .into_iter()
+            .filter(|entry| entry.kind == EntryKind::File)
+        {
+            if self.same_as_destination_file(file, &entry.target)? {
+                return Ok(Holder::Same(ConflictOutcome::AlreadyImported {
+                    target: entry.target,
+                }));
             }
         }
         Ok(Holder::Different)
@@ -263,29 +268,58 @@ impl<'a> TargetResolver<'a> {
         Ok(checksum)
     }
 
-    /// The entries at the destination whose names equal `name`, ignoring case and
-    /// normalization form: the one spelled exactly like `name` first, then by name, so
-    /// the outcome does not depend on the order of the listing.
-    fn existing(&mut self, folder: &str, name: &str) -> Result<Vec<Existing>, ConflictError> {
-        let key = caseless_key(folder);
-        if !self.folders.contains_key(&key) {
-            let listing = self.list_target_folder(folder)?;
-            self.folders.insert(key.clone(), listing);
+    /// The entries at the destination whose paths equal `target`, ignoring case and
+    /// normalization form in every segment: the one spelled exactly like `target`
+    /// first, then by path, so the outcome does not depend on the order of listings.
+    fn existing(&mut self, target: &str) -> Result<Vec<Existing>, ConflictError> {
+        let (folder, name) = split_target(target);
+        let key = caseless_key(name);
+        let mut entries = Vec::new();
+        for found in self.matching_folders(folder)? {
+            if let Some(matches) = self.listing(&found)?.get(&key) {
+                entries.extend(matches.iter().cloned());
+            }
         }
-        let mut entries = self
-            .folders
-            .get(&key)
-            .and_then(|listing| listing.get(&caseless_key(name)))
-            .cloned()
-            .unwrap_or_default();
-        entries.sort_by(|a, b| (a.name != name, &a.name).cmp(&(b.name != name, &b.name)));
+        entries
+            .sort_by(|a, b| (a.target != target, &a.target).cmp(&(b.target != target, &b.target)));
         Ok(entries)
     }
 
-    fn list_target_folder(
-        &self,
-        folder: &str,
-    ) -> Result<HashMap<String, Vec<Existing>>, ConflictError> {
+    /// The folders at the destination whose paths equal `folder`, ignoring case and
+    /// normalization form in every segment, spelled as found there. A destination
+    /// that tells such names apart may hold several of them.
+    fn matching_folders(&mut self, folder: &str) -> Result<Vec<String>, ConflictError> {
+        let mut found = vec![String::new()];
+        for segment in folder.split('/').filter(|segment| !segment.is_empty()) {
+            let key = caseless_key(segment);
+            let mut next = Vec::new();
+            for parent in &found {
+                let Some(matches) = self.listing(parent)?.get(&key) else {
+                    continue;
+                };
+                // A symbolic link may lead to a folder, so only a file is no folder.
+                next.extend(
+                    matches
+                        .iter()
+                        .filter(|entry| entry.kind != EntryKind::File)
+                        .map(|entry| entry.target.clone()),
+                );
+            }
+            found = next;
+        }
+        Ok(found)
+    }
+
+    /// The listing of the folder `folder` at the destination, read on first use.
+    fn listing(&mut self, folder: &str) -> Result<&HashMap<String, Vec<Existing>>, ConflictError> {
+        if !self.folders.contains_key(folder) {
+            let listing = self.list_folder(folder)?;
+            self.folders.insert(folder.to_owned(), listing);
+        }
+        Ok(&self.folders[folder])
+    }
+
+    fn list_folder(&self, folder: &str) -> Result<HashMap<String, Vec<Existing>>, ConflictError> {
         let path = self.destination.join(folder);
         let entries = match self.file_system.list_folder(&path) {
             Ok(entries) => entries,
@@ -299,7 +333,7 @@ impl<'a> TargetResolver<'a> {
                 .entry(caseless_key(&name))
                 .or_default()
                 .push(Existing {
-                    name,
+                    target: join_target(folder, &name),
                     kind: entry.kind,
                 });
         }

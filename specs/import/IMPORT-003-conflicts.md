@@ -51,7 +51,9 @@ or return a name decomposed (`e` followed by U+0301) that a card holds precompos
 reported by the name found at the destination. So a plan gives the same names on every
 file system. A destination that tells such names apart may hold several of them; the
 target is "already imported" when any of them holds identical content, and is taken
-otherwise.
+otherwise. This holds for every folder of the target path, too: the target folder
+`Café/` is found at the destination as `CAFÉ/` or as `Café/` written decomposed, and
+when several such folders exist, the names in all of them are compared.
 
 **Never overwrite.** No policy replaces or changes a file at the destination. A file
 that appears at a target path after the plan was made is handled by IMPORT-004.9.
@@ -157,6 +159,16 @@ that appears at a target path after the plan was made is handled by IMPORT-004.9
   `add_suffix` its target is `Café-1.JPG`. When both are identical, the name spelled
   exactly like the target is reported
 
+### IMPORT-003.16 – A target folder in another spelling at the destination
+- **Given** a target `Café/DSCF0001.JPG` written precomposed, and the destination
+  tells case and normalization forms apart and holds `CAFÉ/DSCF0001.JPG` written
+  decomposed
+- **When** the import plan is made
+- **Then** with identical content the file is marked "already imported" at that file's
+  path; with other content and the policy `add_suffix` its target is
+  `Café/DSCF0001-1.JPG`, written as rendered. When the destination also holds
+  `café/DSCF0001.JPG`, both folders are compared
+
 ## Out of scope
 
 - A file that appears at the target during the copy: IMPORT-004.9.
@@ -178,3 +190,4 @@ that appears at a target path after the plan was made is handled by IMPORT-004.9
 | 2026-10-31 | `import::TargetResolver` covers IMPORT-003.1–.11 against `MemoryFileSystem`; case is ignored with Unicode `str::to_lowercase`, and the destination is compared by listing the target folder; Unicode normalization is open in `TODO.md` |
 | 2026-11-01 | Targets are compared by their canonical caseless key (Unicode §3.13, ADR 0026); IMPORT-003.12–.13 added |
 | 2026-11-02 | Every destination name with the same key is compared, not only one of them; IMPORT-003.14–.15 added |
+| 2026-11-02 | Every folder of the target path is matched by its key, not by the spelling of the plan; IMPORT-003.16 added |
