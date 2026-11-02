@@ -41,3 +41,12 @@ dependencies:
     allowed_layers: [app]
     allowed_crates: [framehive-cli]
     features: [std, help, usage, error-context]
+
+  - name: unicode-normalization
+    purpose: Unicode normalization forms for comparing target names, in import
+    rationale: Normalization needs the decomposition and composition tables of the Unicode Character Database, a deep problem ADR 0009 assigns to a library; std has no normalization
+    review: The unicode-rs organization, the usual normalization crate in Rust (used by rustc), pure Rust, (MIT OR Apache-2.0) AND Unicode-3.0; version 0.1 before 1.0 is an accepted exception, confined to one function in import (ADR 0026)
+    adr: "0026"
+    allowed_layers: [module]
+    allowed_crates: [import]
+    features: []

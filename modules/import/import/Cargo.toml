@@ -20,6 +20,7 @@ kernel.workspace = true
 metadata.workspace = true
 naming.workspace = true
 thiserror.workspace = true
+unicode-normalization.workspace = true
 
 [lints]
 workspace = true

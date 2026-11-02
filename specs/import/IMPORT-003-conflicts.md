@@ -42,9 +42,14 @@ the same plan is treated the same way: identical content marks it "duplicate of
 resolved by the policy. So the same photo on two cards in two card slots is copied
 once.
 
-**Case.** Two target paths that differ only in upper and lower case are the same
-target, because memory cards, macOS and SMB shares do not tell them apart. So a plan
-gives the same names on every file system.
+**Case and Unicode normalization.** Two target paths that differ only in upper and
+lower case, or only in their Unicode normalization form, are the same target. Memory
+cards, macOS and SMB shares do not tell case apart, and macOS and SMB shares may store
+or return a name decomposed (`e` followed by U+0301) that a card holds precomposed
+(U+00E9). Paths are compared by their canonical caseless key, `NFD(lowercase(NFD(path)))`
+(Unicode §3.13, ADR 0026). Names are written as rendered, and an existing file is
+reported by the name found at the destination. So a plan gives the same names on every
+file system.
 
 **Never overwrite.** No policy replaces or changes a file at the destination. A file
 that appears at a target path after the plan was made is handled by IMPORT-004.9.
@@ -118,6 +123,21 @@ that appears at a target path after the plan was made is handled by IMPORT-004.9
 - **Then** the files are treated as different, and neither is read to compute a
   checksum
 
+### IMPORT-003.12 – A name stored decomposed at the destination
+- **Given** a target `Café.JPG` written precomposed (U+00E9), and the destination holds
+  `Café.JPG` written decomposed (`e` followed by U+0301)
+- **When** the import plan is made
+- **Then** with identical content the file is marked "already imported" at the
+  decomposed name, and with other content and the policy `add_suffix` its target is
+  `Café-1.JPG`, written precomposed
+
+### IMPORT-003.13 – Targets that differ only in normalization form
+- **Given** `a/Café.JPG` with the target `Café.JPG` written precomposed, and
+  `b/Café.JPG` with the same target written decomposed, with different content, and
+  the policy `add_suffix`
+- **When** the import plan is made
+- **Then** `a/Café.JPG` keeps its target, and `b/Café.JPG` gets the suffix `-1`
+
 ## Out of scope
 
 - A file that appears at the target during the copy: IMPORT-004.9.
@@ -137,3 +157,4 @@ that appears at a target path after the plan was made is handled by IMPORT-004.9
 | 2026-10-31 | Initial draft (milestone 1) |
 | 2026-10-31 | Accepted by the owner |
 | 2026-10-31 | `import::TargetResolver` covers IMPORT-003.1–.11 against `MemoryFileSystem`; case is ignored with Unicode `str::to_lowercase`, and the destination is compared by listing the target folder; Unicode normalization is open in `TODO.md` |
+| 2026-11-01 | Targets are compared by their canonical caseless key (Unicode §3.13, ADR 0026); IMPORT-003.12–.13 added |

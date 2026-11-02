@@ -23,8 +23,10 @@ All user-visible changes are listed here. The format follows
 - Import run: the import scans a source folder with all its subfolders and lists what
   it leaves out and why (IMPORT-005), dates each file by its capture time or else its
   modification time, resolves name conflicts and skips files already imported
-  (IMPORT-003), and copies each file with a verified copy through a `.part` file
-  (IMPORT-004). A file that fails is reported and the import goes on.
+  (IMPORT-003), treating names that differ only in case or Unicode normalization form
+  as the same name (macOS and SMB shares may store names decomposed), and copies each
+  file with a verified copy through a `.part` file (IMPORT-004). A file that fails is
+  reported and the import goes on.
 - `framehive import <source> <destination>` (CLI-001): imports a folder or a mounted
   memory card into a library folder from the command line, with `--template`,
   `--on-conflict add_suffix|skip|fail` and `--dry-run`. It prints one line per file

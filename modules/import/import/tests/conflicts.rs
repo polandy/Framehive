@@ -8,85 +8,13 @@
 
 use std::path::{Path, PathBuf};
 
-use domain::Timestamp;
 use files::testing::{Fault, FnvHasher, MemoryFileSystem};
 use import::{ConflictOutcome, ConflictPolicy, TargetRequest, TargetResolver};
+use support::{
+    DESTINATION, POLICIES, SOURCE, add, already_imported, copy_to, planned, resolve_all,
+};
 
-const SOURCE: &str = "/media/card";
-const DESTINATION: &str = "/library";
-
-const POLICIES: [ConflictPolicy; 3] = [
-    ConflictPolicy::AddSuffix,
-    ConflictPolicy::Skip,
-    ConflictPolicy::Fail,
-];
-
-fn add(file_system: &MemoryFileSystem, root: &str, relative: &str, content: &[u8]) {
-    file_system.add_file(
-        &Path::new(root).join(relative),
-        content,
-        Timestamp::UNIX_EPOCH,
-    );
-}
-
-/// A source file and its planned target.
-struct Planned {
-    source_path: &'static str,
-    target: &'static str,
-    size: u64,
-}
-
-fn planned(
-    file_system: &MemoryFileSystem,
-    source_path: &'static str,
-    content: &[u8],
-    target: &'static str,
-) -> Planned {
-    add(file_system, SOURCE, source_path, content);
-    Planned {
-        source_path,
-        target,
-        size: content.len() as u64,
-    }
-}
-
-fn resolve_all(
-    file_system: &MemoryFileSystem,
-    policy: ConflictPolicy,
-    files: &[Planned],
-) -> Vec<ConflictOutcome> {
-    let mut resolver = TargetResolver::new(
-        file_system,
-        &FnvHasher,
-        Path::new(SOURCE),
-        Path::new(DESTINATION),
-        policy,
-    );
-    files
-        .iter()
-        .map(|file| {
-            resolver
-                .resolve(&TargetRequest {
-                    source_path: Path::new(file.source_path),
-                    size: file.size,
-                    target: file.target,
-                })
-                .unwrap()
-        })
-        .collect()
-}
-
-fn copy_to(target: &str) -> ConflictOutcome {
-    ConflictOutcome::CopyTo {
-        target: target.to_owned(),
-    }
-}
-
-fn already_imported(target: &str) -> ConflictOutcome {
-    ConflictOutcome::AlreadyImported {
-        target: target.to_owned(),
-    }
-}
+mod support;
 
 /// spec: IMPORT-003.1
 #[test]
@@ -305,41 +233,6 @@ fn same_photo_twice_in_one_source() {
         );
         assert_eq!(outcomes[1].to_string(), "duplicate of slot1/DSCF0001.RAF");
     }
-}
-
-/// spec: IMPORT-003.10
-#[test]
-fn targets_that_differ_only_in_case() {
-    let file_system = MemoryFileSystem::new();
-    let files = [
-        planned(&file_system, "a/dscf0001.jpg", b"first", "dscf0001.jpg"),
-        planned(&file_system, "b/DSCF0001.JPG", b"other", "DSCF0001.JPG"),
-    ];
-
-    let outcomes = resolve_all(&file_system, ConflictPolicy::AddSuffix, &files);
-
-    assert_eq!(
-        outcomes,
-        [copy_to("dscf0001.jpg"), copy_to("DSCF0001-1.JPG")]
-    );
-}
-
-#[test]
-fn destination_names_are_compared_ignoring_case() {
-    let file_system = MemoryFileSystem::new();
-    let files = [
-        planned(&file_system, "DSCF0001.JPG", b"same", "DSCF0001.JPG"),
-        planned(&file_system, "DSCF0002.JPG", b"ours", "ÄRGER.JPG"),
-    ];
-    add(&file_system, DESTINATION, "dscf0001.jpg", b"same");
-    add(&file_system, DESTINATION, "ärger.jpg", b"theirs");
-
-    let outcomes = resolve_all(&file_system, ConflictPolicy::AddSuffix, &files);
-
-    assert_eq!(
-        outcomes,
-        [already_imported("dscf0001.jpg"), copy_to("ÄRGER-1.JPG")]
-    );
 }
 
 /// spec: IMPORT-003.11
