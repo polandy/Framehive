@@ -143,3 +143,78 @@ fn different_from_both_names_gets_a_suffix() {
 
     assert_eq!(outcomes, [copy_to("Caf\u{e9}-1.JPG")]);
 }
+
+const TARGET_IN_FOLDER: &str = "Caf\u{e9}/DSCF0001.JPG";
+const IN_UPPER_DECOMPOSED_FOLDER: &str = "CAFE\u{301}/DSCF0001.JPG";
+const IN_LOWER_FOLDER: &str = "caf\u{e9}/DSCF0001.JPG";
+
+/// spec: IMPORT-003.16
+#[test]
+fn identical_file_in_a_folder_of_another_spelling_is_already_imported() {
+    let file_system = MemoryFileSystem::new();
+    let files = [planned(
+        &file_system,
+        "DSCF0001.JPG",
+        b"same",
+        TARGET_IN_FOLDER,
+    )];
+    add(
+        &file_system,
+        DESTINATION,
+        IN_UPPER_DECOMPOSED_FOLDER,
+        b"same",
+    );
+
+    let outcomes = resolve_all(&file_system, ConflictPolicy::AddSuffix, &files);
+
+    assert_eq!(outcomes, [already_imported(IN_UPPER_DECOMPOSED_FOLDER)]);
+}
+
+/// spec: IMPORT-003.16
+#[test]
+fn different_file_in_a_folder_of_another_spelling_gets_a_suffix() {
+    let file_system = MemoryFileSystem::new();
+    let files = [planned(
+        &file_system,
+        "DSCF0001.JPG",
+        b"ours",
+        TARGET_IN_FOLDER,
+    )];
+    add(
+        &file_system,
+        DESTINATION,
+        IN_UPPER_DECOMPOSED_FOLDER,
+        b"theirs",
+    );
+
+    let outcomes = resolve_all(&file_system, ConflictPolicy::AddSuffix, &files);
+
+    assert_eq!(outcomes, [copy_to("Caf\u{e9}/DSCF0001-1.JPG")]);
+}
+
+/// spec: IMPORT-003.16
+#[test]
+fn every_folder_of_another_spelling_is_compared() {
+    let file_system = MemoryFileSystem::new();
+    let files = [
+        planned(&file_system, "a/DSCF0001.JPG", b"same", TARGET_IN_FOLDER),
+        planned(&file_system, "b/DSCF0001.JPG", b"ours", TARGET_IN_FOLDER),
+    ];
+    add(
+        &file_system,
+        DESTINATION,
+        IN_UPPER_DECOMPOSED_FOLDER,
+        b"theirs",
+    );
+    add(&file_system, DESTINATION, IN_LOWER_FOLDER, b"same");
+
+    let outcomes = resolve_all(&file_system, ConflictPolicy::AddSuffix, &files);
+
+    assert_eq!(
+        outcomes,
+        [
+            already_imported(IN_LOWER_FOLDER),
+            copy_to("Caf\u{e9}/DSCF0001-1.JPG")
+        ]
+    );
+}

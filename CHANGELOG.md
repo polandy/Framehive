@@ -56,3 +56,6 @@ All user-visible changes are listed here. The format follows
   normalization forms apart and holds the same name in several spellings, such as
   `Café.JPG` precomposed and decomposed: every spelling is compared, so a photo
   identical to any of them is no longer copied again with a suffix (IMPORT-003).
+- Files already imported are recognized when their target folder exists at the
+  destination in another case or Unicode normalization form, such as `CAFÉ/` for
+  `Café/`, at a destination that tells such names apart (IMPORT-003).
