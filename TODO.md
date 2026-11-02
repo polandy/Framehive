@@ -14,3 +14,5 @@ feature live in its spec, decisions in `docs/adr/`. Add items with `/todo`.
 - [ ] Fix the template in LIBRARY-001.12: `{date:%Y%m%d}_{seq_session:4}` lacks `.{ext}` and would be rejected by IMPORT-001 validation — before LIBRARY-001 is accepted (2026-10-31)
 - [ ] Coverage-guided fuzzing of the EXIF parser (`metadata`) with cargo-fuzz needs an ADR, because it links the native libFuzzer (ADR 0009); until then a deterministic mutation test stands in (CORE-005) (2026-10-31)
 - [ ] Write the job code to XMP as IPTC Job Id (`photoshop:TransmissionReference`, N16) with the XMP milestone, and store job codes in profiles (N8) with the YAML configuration (R9, IMPORT-006) — owner decided (2026-11-01)
+- [ ] Judge the pull request title and description in the PR run of `check-spec-trailers` (read from `GITHUB_EVENT_PATH`) — the squash commit is built from them but only judged on `main` after the merge, so a green PR can turn `main` red (ADR 0010) (2026-11-02)
+- [ ] Test the git wrapper `xtask/src/specs/trailers/git.rs` against a throwaway repository with fixed dates — today only a real CI run exercises the range choice and the git calls (ADR 0010) (2026-11-02)
