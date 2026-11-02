@@ -48,6 +48,12 @@ jobs:
           restore-keys: cargo-${{ runner.os }}-${{ runner.arch }}-
 
       - name: cargo xtask ci
+        # The spec trailer check judges the title and description as the future squash
+        # commit (ADR 0010 §4). Passed as variables, never interpolated into the script,
+        # so the text cannot inject commands. Empty on `main`, where they are not used.
+        env:
+          PULL_REQUEST_TITLE: ${{ github.event.pull_request.title }}
+          PULL_REQUEST_BODY: ${{ github.event.pull_request.body }}
         run: nix develop --command cargo xtask ci
 
       # `cargo xtask ci` writes the report, so a local run produces the same file (ADR 0010).

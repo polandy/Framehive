@@ -68,6 +68,42 @@ pub(crate) fn choose_range(
     }
 }
 
+/// The message of the future squash commit of a pull request, if it is to be judged
+/// (ADR 0010 §4, amendment of 2026-11-02).
+///
+/// The squash commit is the title, a blank line and the description. `required` is true
+/// in a pull request run in CI, where a missing title is an error; elsewhere the composed
+/// commit is judged only when a title is given. An empty description is allowed: it just
+/// carries no trailers.
+pub(crate) fn squash_message(
+    title: Option<&str>,
+    description: Option<&str>,
+    required: bool,
+) -> Result<Option<String>, String> {
+    match title.map(str::trim).filter(|title| !title.is_empty()) {
+        Some(title) => Ok(Some(format!(
+            "{title}\n\n{}",
+            description.unwrap_or_default()
+        ))),
+        None if required => Err(
+            "PULL_REQUEST_TITLE is not set; the pull request workflow must pass the title \
+             and description to judge the future squash commit (ADR 0010)"
+                .to_owned(),
+        ),
+        None => Ok(None),
+    }
+}
+
+/// Names the future squash commit in a violation, so the fix is obvious: the trailer
+/// belongs in the pull request description, not in a commit.
+pub(crate) fn squash_summary(title: &str) -> String {
+    format!(
+        "pull request \"{}\" (title and description as the future squash commit; \
+         put the trailer in the description)",
+        title.trim()
+    )
+}
+
 /// Returns every rule the commit breaks, one message each.
 pub(crate) fn violations(commit: &Commit) -> Vec<String> {
     let mut found = Vec::new();
@@ -268,6 +304,37 @@ mod tests {
             .spec_statuses
             .insert(SPEC.to_owned(), "accepted".to_owned());
         assert!(violations(&changed).is_empty());
+    }
+
+    #[test]
+    fn squash_message_joins_title_and_description() {
+        assert_eq!(
+            squash_message(Some("feat: x"), Some("Why.\n\nSpec-Only: wording"), true),
+            Ok(Some("feat: x\n\nWhy.\n\nSpec-Only: wording".to_owned()))
+        );
+        assert_eq!(
+            squash_message(Some("feat: x"), None, true),
+            Ok(Some("feat: x\n\n".to_owned()))
+        );
+    }
+
+    #[test]
+    fn squash_message_without_title_is_an_error_only_when_required() {
+        assert!(squash_message(None, Some("body"), true).is_err());
+        assert!(squash_message(Some("  "), None, true).is_err());
+        assert_eq!(squash_message(None, Some("body"), false), Ok(None));
+    }
+
+    #[test]
+    fn squash_violation_points_to_the_description() {
+        let mut squash = with_markers(commit(&[TEST]));
+        squash.summary = squash_summary("feat: x");
+        let found = violations(&squash);
+        assert_eq!(found.len(), 1, "{found:?}");
+        assert!(
+            found[0].starts_with("pull request \"feat: x\"") && found[0].contains("description"),
+            "{found:?}"
+        );
     }
 
     #[test]

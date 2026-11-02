@@ -136,11 +136,14 @@ fn violations(outcome: Result<Outcome, String>) -> Vec<String> {
     }
 }
 
-fn pull_request(base: &str) -> Environment {
+/// A pull request run in CI against `base`, titled `feat: the change`.
+fn pull_request(base: &str, description: &str) -> Environment {
     Environment {
         in_ci: true,
         base_branch: Some(base.to_owned()),
         github_ref: Some("refs/pull/1/merge".to_owned()),
+        pull_request_title: Some("feat: the change".to_owned()),
+        pull_request_body: Some(description.to_owned()),
     }
 }
 
@@ -176,10 +179,63 @@ fn pull_request_run_checks_the_commits_since_the_remote_base() {
     scratch.git(&["branch", "--quiet", "--delete", "main"]);
     scratch.commit_test_change("refactor: on the branch without trailer");
 
-    let found = violations(scratch.run(&pull_request("main")));
+    let found = violations(scratch.run(&pull_request("main", "Spec-Unchanged: comment only")));
 
     assert_eq!(found.len(), 1, "{found:?}");
     assert!(found[0].contains("on the branch"), "{found:?}");
+}
+
+#[test]
+fn pull_request_description_without_the_trailer_fails_the_squash_commit() {
+    let scratch = Scratch::new("squash", "main");
+    scratch.commit_linked_test_and_spec();
+    let base = scratch.git(&["rev-parse", "HEAD"]);
+    scratch.git(&["update-ref", "refs/remotes/origin/main", base.trim()]);
+    scratch.git(&["switch", "--quiet", "--create", "feat/x"]);
+    scratch.commit_test_change("refactor: explained\n\nSpec-Unchanged: comment only");
+    scratch.write("README.md", "readme\n");
+    scratch.commit("docs: add a readme");
+
+    let found = violations(scratch.run(&pull_request("main", "Why the change.")));
+
+    assert_eq!(found.len(), 1, "{found:?}");
+    assert!(
+        found[0].starts_with("pull request \"feat: the change\"")
+            && found[0].contains("description")
+            && found[0].contains("Spec-Unchanged"),
+        "{found:?}"
+    );
+    let explained = pull_request("main", "Why the change.\n\nSpec-Unchanged: comment only");
+    assert!(violations(scratch.run(&explained)).is_empty());
+}
+
+#[test]
+fn local_run_judges_the_squash_commit_only_when_a_title_is_given() {
+    let scratch = Scratch::new("squash-local", "main");
+    scratch.commit_linked_test_and_spec();
+    scratch.git(&["switch", "--quiet", "--create", "feat/x"]);
+    scratch.commit_test_change("refactor: explained\n\nSpec-Unchanged: comment only");
+
+    assert!(violations(scratch.run(&Environment::default())).is_empty());
+    let reproduced = Environment {
+        pull_request_title: Some("feat: the change".to_owned()),
+        ..Environment::default()
+    };
+    assert_eq!(violations(scratch.run(&reproduced)).len(), 1);
+}
+
+#[test]
+fn ci_pull_request_run_without_a_title_is_an_error() {
+    let scratch = Scratch::new("no-title", "main");
+    scratch.commit_linked_test_and_spec();
+    let environment = Environment {
+        pull_request_title: None,
+        ..pull_request("main", "")
+    };
+
+    let error = scratch.run(&environment).err().expect("an error");
+
+    assert!(error.contains("PULL_REQUEST_TITLE"), "{error}");
 }
 
 #[test]
@@ -237,7 +293,7 @@ fn ci_run_without_a_resolvable_base_is_an_error() {
     let scratch = Scratch::new("no-base", "feat/x");
     scratch.commit_linked_test_and_spec();
 
-    let outcome = scratch.run(&pull_request("main"));
+    let outcome = scratch.run(&pull_request("main", ""));
 
     let error = outcome.err().expect("an error");
     assert!(error.contains("origin/main does not exist"), "{error}");

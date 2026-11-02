@@ -3,13 +3,15 @@
 
 //! Reads the commits to check from Git and runs the rules of the parent module on them.
 
-use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use super::{Commit, Range, choose_range, spec_id_of, violations};
-use crate::specs::document::status_field;
-use crate::specs::markers::{TEST_MARKER, test_markers};
+use super::{Range, choose_range, squash_message, violations};
+use change::{read_commit, read_squash};
+
+mod change;
+#[cfg(test)]
+mod repository_tests;
 
 /// The outcome of a run: the violations, or why nothing was checked.
 pub(crate) enum Outcome {
@@ -44,6 +46,10 @@ pub(crate) struct Environment {
     pub(crate) base_branch: Option<String>,
     /// `GITHUB_REF`, such as `refs/heads/main`.
     pub(crate) github_ref: Option<String>,
+    /// `PULL_REQUEST_TITLE`: the subject of the future squash commit.
+    pub(crate) pull_request_title: Option<String>,
+    /// `PULL_REQUEST_BODY`: the body of the future squash commit.
+    pub(crate) pull_request_body: Option<String>,
 }
 
 impl Environment {
@@ -53,21 +59,49 @@ impl Environment {
             in_ci: std::env::var("CI").is_ok_and(|value| value == "true"),
             base_branch: std::env::var("GITHUB_BASE_REF").ok(),
             github_ref: std::env::var("GITHUB_REF").ok(),
+            pull_request_title: std::env::var("PULL_REQUEST_TITLE").ok(),
+            pull_request_body: std::env::var("PULL_REQUEST_BODY").ok(),
         }
+    }
+
+    /// A pull request run in CI, where the title must be passed.
+    fn requires_pull_request_message(&self) -> bool {
+        self.in_ci
+            && self
+                .base_branch
+                .as_deref()
+                .is_some_and(|base| !base.is_empty())
     }
 }
 
-/// Checks the commits chosen from the environment. In CI (`CI=true`) a base that cannot
-/// be resolved is an error, so the check never passes silently (ADR 0010 §4).
+/// Checks the commits chosen from the environment and, when a pull request title is
+/// given, the future squash commit. In CI (`CI=true`) a base that cannot be resolved is an
+/// error, so the check never passes silently (ADR 0010 §4).
 pub(crate) fn run(repository: &Repository, environment: &Environment) -> Result<Outcome, String> {
+    let squash = squash_message(
+        environment.pull_request_title.as_deref(),
+        environment.pull_request_body.as_deref(),
+        environment.requires_pull_request_message(),
+    )?;
     let range = resolve_range(repository, environment)?;
-    let commits = match range {
-        Range::SinceBase(base) => commits_since(repository, &base),
+    let commits = match &range {
+        Range::SinceBase(base) => commits_since(repository, base),
         Range::Head => head_commit(repository),
-        Range::Unavailable(reason) => Err(reason),
+        Range::Unavailable(reason) => Err(reason.clone()),
     };
     match commits {
-        Ok(commits) => check_all(repository, &commits).map(Outcome::Checked),
+        Ok(commits) => {
+            let mut found = check_all(repository, &commits)?;
+            // The squash commit only exists for a branch, never for `main` itself.
+            if let (Range::SinceBase(base), Some(message)) = (&range, squash) {
+                let title = environment
+                    .pull_request_title
+                    .as_deref()
+                    .unwrap_or_default();
+                found.extend(violations(&read_squash(repository, base, title, message)?));
+            }
+            Ok(Outcome::Checked(found))
+        }
         Err(reason) if environment.in_ci => {
             Err(format!("cannot choose the commits to check: {reason}"))
         }
@@ -144,164 +178,6 @@ fn check_all(repository: &Repository, commits: &[String]) -> Result<Vec<String>,
     Ok(found)
 }
 
-fn read_commit(repository: &Repository, id: &str) -> Result<Commit, String> {
-    let parent = git(
-        repository,
-        &["rev-parse", "--verify", "--quiet", &format!("{id}^")],
-    )
-    .ok();
-    let parent = parent.as_deref().map(str::trim);
-    let changed_files = changed_files(repository, id)?;
-    let after = markers_at(repository, id)?;
-    let before = match parent {
-        Some(parent) => markers_at(repository, parent)?,
-        None => BTreeMap::new(),
-    };
-    Ok(Commit {
-        summary: git(repository, &["log", "-1", "--format=%h %s", id])?
-            .trim()
-            .to_owned(),
-        message: git(repository, &["log", "-1", "--format=%B", id])?,
-        referenced_specs: referenced_specs(&changed_files, &before, &after),
-        spec_statuses: spec_statuses(repository, id, parent, &changed_files),
-        marked_files: invert(&after),
-        crate_directories: crate_directories(repository, id)?,
-        changed_files,
-    })
-}
-
-fn changed_files(repository: &Repository, id: &str) -> Result<Vec<String>, String> {
-    let listing = git(
-        repository,
-        &[
-            "diff-tree",
-            "--root",
-            "--no-commit-id",
-            "-r",
-            "--name-only",
-            "-z",
-            id,
-        ],
-    )?;
-    Ok(listing
-        .split('\0')
-        .filter(|file| !file.is_empty())
-        .map(str::to_owned)
-        .collect())
-}
-
-/// Spec IDs named by markers, per `.rs` file, in the tree of `revision`.
-fn markers_at(
-    repository: &Repository,
-    revision: &str,
-) -> Result<BTreeMap<String, BTreeSet<String>>, String> {
-    let arguments = [
-        "grep",
-        "-I",
-        "-F",
-        "-e",
-        TEST_MARKER,
-        revision,
-        "--",
-        "*.rs",
-    ];
-    // `git grep` exits with 1 when nothing matches.
-    let output = run_git(repository, &arguments)?;
-    match output.status.code() {
-        Some(0 | 1) => Ok(parse_grep(
-            revision,
-            &String::from_utf8_lossy(&output.stdout),
-        )),
-        _ => Err(failure(&arguments, &output)),
-    }
-}
-
-/// Parses `git grep <revision>` lines of the form `<revision>:<path>:<line>`.
-fn parse_grep(revision: &str, listing: &str) -> BTreeMap<String, BTreeSet<String>> {
-    let mut by_file: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
-    let prefix = format!("{revision}:");
-    for line in listing.lines() {
-        let Some((file, text)) = line
-            .strip_prefix(&prefix)
-            .and_then(|rest| rest.split_once(':'))
-        else {
-            continue;
-        };
-        for marker in test_markers(file, text) {
-            by_file
-                .entry(file.to_owned())
-                .or_default()
-                .insert(marker.spec_id);
-        }
-    }
-    by_file
-}
-
-fn referenced_specs(
-    changed_files: &[String],
-    before: &BTreeMap<String, BTreeSet<String>>,
-    after: &BTreeMap<String, BTreeSet<String>>,
-) -> BTreeMap<String, BTreeSet<String>> {
-    let mut referenced = BTreeMap::new();
-    for file in changed_files {
-        let specs: BTreeSet<String> = [before.get(file), after.get(file)]
-            .into_iter()
-            .flatten()
-            .flatten()
-            .cloned()
-            .collect();
-        if !specs.is_empty() {
-            referenced.insert(file.clone(), specs);
-        }
-    }
-    referenced
-}
-
-fn invert(by_file: &BTreeMap<String, BTreeSet<String>>) -> BTreeMap<String, BTreeSet<String>> {
-    let mut by_spec: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
-    for (file, specs) in by_file {
-        for spec in specs {
-            by_spec
-                .entry(spec.clone())
-                .or_default()
-                .insert(file.clone());
-        }
-    }
-    by_spec
-}
-
-/// The status of each changed spec file after the commit, or before it if it was deleted.
-fn spec_statuses(
-    repository: &Repository,
-    id: &str,
-    parent: Option<&str>,
-    changed_files: &[String],
-) -> BTreeMap<String, String> {
-    let mut statuses = BTreeMap::new();
-    for file in changed_files
-        .iter()
-        .filter(|file| spec_id_of(file).is_some())
-    {
-        let text = [Some(id), parent]
-            .into_iter()
-            .flatten()
-            .find_map(|revision| git(repository, &["show", &format!("{revision}:{file}")]).ok());
-        if let Some(status) = text.as_deref().and_then(status_field) {
-            statuses.insert(file.clone(), status);
-        }
-    }
-    statuses
-}
-
-fn crate_directories(repository: &Repository, id: &str) -> Result<Vec<String>, String> {
-    let listing = git(repository, &["ls-tree", "-r", "--name-only", id])?;
-    Ok(listing
-        .lines()
-        .filter_map(|file| file.strip_suffix("/Cargo.toml"))
-        .map(str::to_owned)
-        .collect())
-}
-
 /// Runs git and returns its stdout; a non-zero exit is an error.
 fn git(repository: &Repository, arguments: &[&str]) -> Result<String, String> {
     let output = run_git(repository, arguments)?;
@@ -332,39 +208,4 @@ fn failure(arguments: &[&str], output: &std::process::Output) -> String {
         output.status,
         String::from_utf8_lossy(&output.stderr).trim_end()
     )
-}
-
-#[cfg(test)]
-mod repository_tests;
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn grep_lines_become_spec_ids_per_file() {
-        let listing = "abc:a/x.rs:    /// spec: CORE-001.1, CORE-002.3\nabc:b.rs:/// spec: CORE-001.2\n\
-                       other:c.rs:/// spec: CORE-009.1\n";
-        let by_file = parse_grep("abc", listing);
-        assert_eq!(
-            by_file.get("a/x.rs"),
-            Some(&BTreeSet::from([
-                "CORE-001".to_owned(),
-                "CORE-002".to_owned()
-            ]))
-        );
-        assert_eq!(by_file.len(), 2);
-        let by_spec = invert(&by_file);
-        assert_eq!(by_spec.get("CORE-001").map(BTreeSet::len), Some(2));
-    }
-
-    #[test]
-    fn referenced_specs_join_before_and_after() {
-        let before = BTreeMap::from([("a.rs".to_owned(), BTreeSet::from(["X-001".to_owned()]))]);
-        let after = BTreeMap::from([("a.rs".to_owned(), BTreeSet::from(["X-002".to_owned()]))]);
-        let changed = ["a.rs".to_owned(), "b.rs".to_owned()];
-        let referenced = referenced_specs(&changed, &before, &after);
-        assert_eq!(referenced.len(), 1);
-        assert_eq!(referenced.get("a.rs").map(BTreeSet::len), Some(2));
-    }
 }
