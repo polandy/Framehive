@@ -72,6 +72,11 @@ pub(crate) fn parse_spec(file: &str, text: &str) -> Result<Spec, Vec<String>> {
     }
 }
 
+/// The `- Status:` field alone, for a spec that need not be valid as a whole.
+pub(crate) fn status_field(text: &str) -> Option<String> {
+    header_fields(text).remove("Status")
+}
+
 fn title_id(text: &str) -> Option<&str> {
     let title = text.lines().next()?.strip_prefix("# ")?;
     let (id, rest) = title.split_once(" – ")?;

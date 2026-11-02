@@ -11,6 +11,7 @@ use std::path::{Path, PathBuf};
 mod document;
 mod markers;
 mod requirements;
+pub(crate) mod trailers;
 
 use document::{NONE_MARKER, Spec, parse_spec};
 use markers::{Marker, test_markers};

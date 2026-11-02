@@ -3,7 +3,7 @@
 
 //! `/// spec: <ID>.<n>` markers that link tests to acceptance criteria.
 
-const TEST_MARKER: &str = "/// spec:";
+pub(crate) const TEST_MARKER: &str = "/// spec:";
 
 /// A `/// spec: <ID>.<n>` reference in a source file.
 #[derive(Debug, Clone, PartialEq, Eq)]
