@@ -252,6 +252,26 @@ fn run_on_main_checks_the_head_commit_alone() {
 }
 
 #[test]
+fn ci_push_to_main_with_empty_message_variables_checks_the_head_commit_alone() {
+    let scratch = Scratch::new("push-main", "main");
+    scratch.commit_linked_test_and_spec();
+    scratch.commit_test_change("chore: newest without trailer");
+    // GitHub sets the pull request variables to empty strings outside a pull request.
+    let environment = Environment {
+        in_ci: true,
+        base_branch: Some(String::new()),
+        github_ref: Some("refs/heads/main".to_owned()),
+        pull_request_title: Some(String::new()),
+        pull_request_body: Some(String::new()),
+    };
+
+    let found = violations(scratch.run(&environment));
+
+    assert_eq!(found.len(), 1, "{found:?}");
+    assert!(found[0].contains("newest"), "{found:?}");
+}
+
+#[test]
 fn merge_commits_are_left_out() {
     let scratch = Scratch::new("merge", "main");
     scratch.commit_linked_test_and_spec();
