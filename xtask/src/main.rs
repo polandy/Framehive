@@ -106,7 +106,9 @@ fn check_specs(root: &Path) -> Result<(), String> {
 }
 
 fn check_spec_trailers(root: &Path) -> Result<(), String> {
-    match specs::trailers::git::run(root)? {
+    let repository = specs::trailers::git::Repository::at(root);
+    let environment = specs::trailers::git::Environment::from_process();
+    match specs::trailers::git::run(&repository, &environment)? {
         specs::trailers::git::Outcome::Checked(violations) => finish("spec trailers", &violations),
         specs::trailers::git::Outcome::Skipped(reason) => {
             eprintln!("warning: spec trailers not checked: {reason}");
