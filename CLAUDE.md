@@ -15,7 +15,7 @@ Run them inside `nix develop`, or prefix them with `nix develop -c`.
 - **Before finishing:** `cargo xtask ci`. It mirrors CI, prints one line per step and the
   failing step in full.
 - While iterating: `cargo nextest run -p <crate> [test name]`, and single checks with
-  `cargo xtask check-files|check-architecture|check-dependencies|check-specs`.
+  `cargo xtask check-files|check-architecture|check-dependencies|check-specs|check-spec-trailers`.
 - Open work: `TODO.md`. `/todo` adds, `/next` plans, `/status` and `/review` check, skill
   `pr-review` reviews a PR. Subagents: `framehive-implementer` (one spec),
   `framehive-reviewer` (one change). Red CI: `cargo xtask ci-failures`.
