@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: 2026 Framehive contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Large test files, pinned by BLAKE3 hash and size (ADR 0017, ADR 0027).
+# `cargo xtask testdata fetch` downloads them into .testdata/ or $FRAMEHIVE_TESTDATA_DIR.
+# One entry per line: <blake3> <size_bytes> <path> <url>
+# A path ending in / is a .tar.zst archive, unpacked into that directory.
+
+framehive-testdata-lock 1

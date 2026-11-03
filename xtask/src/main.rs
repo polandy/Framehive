@@ -23,6 +23,7 @@ mod json;
 mod new_adapter;
 mod new_module;
 mod specs;
+mod testdata;
 mod workspace;
 
 use std::fs;
@@ -39,6 +40,7 @@ commands:
   check-spec-trailers  Spec-Unchanged/Spec-Only trailers of the commits since the base (ADR 0010)
   spec-report          write target/spec-report.md: requirement, spec, criteria, tests
   check-files          only text files, no binaries (ADR 0017)
+  testdata check       testdata.lock is valid (ADR 0027)
   ci-failures [<pr>]   only the failures of a red CI run (needs gh)
   new-module <id>      generate the two crates of a new module (architecture §4.5)
   new-adapter <port> <name>
@@ -56,6 +58,7 @@ fn main() -> ExitCode {
         Some("check-spec-trailers") => check_spec_trailers(&root),
         Some("spec-report") => spec_report(&root),
         Some("check-files") => check_files(&root),
+        Some("testdata") => testdata::run(&root, arguments.get(1).map(String::as_str)),
         Some("new-module") => new_module::run(&root, arguments.get(1).map(String::as_str)),
         Some("new-adapter") => new_adapter::run(
             &root,
