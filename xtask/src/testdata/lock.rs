@@ -35,7 +35,7 @@ pub(crate) fn parse(text: &str) -> Result<Vec<Entry>, String> {
     let mut entries: Vec<(usize, Entry)> = Vec::new();
     for (index, raw) in text.lines().enumerate() {
         let line_number = index + 1;
-        let line = raw.split_once('#').map_or(raw, |(before, _)| before).trim();
+        let line = strip_comment(raw).trim();
         if line.is_empty() {
             continue;
         }
@@ -54,6 +54,19 @@ pub(crate) fn parse(text: &str) -> Result<Vec<Entry>, String> {
     }
     check_paths_are_distinct(&entries)?;
     Ok(entries.into_iter().map(|(_, entry)| entry).collect())
+}
+
+/// A comment starts at a `#` that begins the line or follows whitespace, so a `#`
+/// inside a URL stays part of it.
+fn strip_comment(line: &str) -> &str {
+    let mut previous = ' ';
+    for (index, character) in line.char_indices() {
+        if character == '#' && previous.is_whitespace() {
+            return &line[..index];
+        }
+        previous = character;
+    }
+    line
 }
 
 fn check_header(line: &str) -> Result<(), String> {
@@ -155,7 +168,8 @@ fn check_paths_are_distinct(entries: &[(usize, Entry)]) -> Result<(), String> {
 }
 
 fn lies_inside(path: &str, archive: &Entry) -> bool {
-    archive.is_archive() && path.starts_with(&archive.path)
+    archive.is_archive()
+        && (path.starts_with(&archive.path) || path == archive.path.trim_end_matches('/'))
 }
 
 #[cfg(test)]

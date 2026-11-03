@@ -141,3 +141,19 @@ fn rejects_a_file_inside_an_archive_directory() {
         assert!(error.contains("overlapping the archive"), "{error}");
     }
 }
+
+#[test]
+fn keeps_a_hash_sign_inside_a_url() {
+    let text = lock(&[&format!("{HASH} 1 a https://x/a#part # comment")]);
+    let entries = parse(&text).expect("valid lock");
+    assert_eq!(entries[0].url, "https://x/a#part");
+}
+
+#[test]
+fn rejects_a_file_with_the_name_of_an_archive_directory() {
+    let error = error_of(&lock(&[
+        &format!("{HASH} 1 fujifilm/ https://x/f.tar.zst"),
+        &format!("{OTHER_HASH} 2 fujifilm https://x/f"),
+    ]));
+    assert!(error.contains("overlapping the archive"), "{error}");
+}
