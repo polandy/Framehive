@@ -36,3 +36,4 @@ Part of the [requirements](README.md).
 | 2026-10-18 | Review screenshots for UI pull requests are linked from a PR comment, not from the description that becomes the squash commit (ADR 0019) |
 | 2026-11-03 | ADRs 0004, 0007 and 0008 accepted; 0008 now requires only the README sections that are checked (Purpose, and Public API for libraries) |
 | 2026-11-03 | ADRs 0012 and 0013 accepted; the LibRaw prototype validates 0012 and a failure means a superseding ADR; XMP namespace `https://polandy.github.io/framehive/ns/1.0/` (prefix `framehive`); `ring` as the TLS crypto backend |
+| 2026-11-04 | The import module has priority; IMPORT-002 accepted: sequence counters in a state file reserved under a lock (ADR 0029), letters end at `zz`, no sharing between machines, a persisted counter cannot recognize files already imported until the import history (N3) |

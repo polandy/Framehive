@@ -35,3 +35,4 @@ acceptance (a change means a new ADR that supersedes the old one).
 | [0026](../adr/0026-unicode-normalization-of-target-names.md) | Unicode normalization of target names | accepted |
 | [0027](../adr/0027-test-data-fetch.md) | Test data fetch with the tools of the Nix shell | accepted |
 | [0028](../adr/0028-libraw-build-and-reference-decode.md) | LibRaw build and reference decode, from the phase 0 prototype | accepted |
+| [0029](../adr/0029-persisted-sequence-counters.md) | Persisted sequence counters | accepted |
