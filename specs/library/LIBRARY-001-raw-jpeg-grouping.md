@@ -124,7 +124,7 @@ and places its file next to it, with the same base name.
 
 ### LIBRARY-001.12 – Import keeps members together
 - **Given** a card with `DSCF1234.RAF` and `DSCF1234.JPG`, and the template
-  `{date:%Y%m%d}_{seq_session:4}`
+  `{date:%Y%m%d}_{seq_session:4}.{ext}`
 - **When** they are imported
 - **Then** both get the same new base name, and they land in the same folder
 
@@ -158,3 +158,4 @@ and places its file next to it, with the same base name.
 | 2026-10-17 | Initial draft |
 | 2026-10-17 | Decided: newest sidecar wins with a badge; pairing across jobs (.14) |
 | 2026-10-18 | `.THM` files join their video's asset (CORE-003) |
+| 2026-11-03 | The template in .12 ends with `.{ext}`, as IMPORT-001 requires |
