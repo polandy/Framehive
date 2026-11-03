@@ -18,8 +18,8 @@ acceptance (a change means a new ADR that supersedes the old one).
 | [0009](../adr/0009-minimal-dependencies.md) | Minimal dependencies, only established libraries | accepted |
 | [0010](../adr/0010-specification-and-implementation-in-sync.md) | Every feature is specified; specification and implementation stay in sync | accepted |
 | [0011](../adr/0011-configuration-in-yaml.md) | Configuration in YAML | accepted |
-| [0012](../adr/0012-raw-decoding-with-libraw.md) | RAW decoding with LibRaw | proposed |
-| [0013](../adr/0013-immich-integration.md) | Immich integration (read-only) | proposed |
+| [0012](../adr/0012-raw-decoding-with-libraw.md) | RAW decoding with LibRaw | accepted |
+| [0013](../adr/0013-immich-integration.md) | Immich integration (read-only) | accepted |
 | [0014](../adr/0014-license-gpl-3-or-later.md) | License GPL-3.0-or-later | accepted |
 | [0015](../adr/0015-metadata-in-dng-files.md) | Metadata in DNG files | accepted |
 | [0016](../adr/0016-thiserror-in-every-library-layer.md) | `thiserror` in every library layer | accepted |

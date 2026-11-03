@@ -1,6 +1,6 @@
 # 0013 – Immich integration (read-only)
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-10-17
 
 ## Context
@@ -42,9 +42,10 @@ reachable, for example when travelling. Immich must never be written to.
    | Albums | Framehive albums (`.framehive/albums/*.yaml`) with `source: immich`, read-only in Framehive |
 
 4. **Manual edits are never overwritten.** The sync records which values it wrote,
-   with a hash, in a Framehive XMP namespace. That namespace is documented in
-   `docs/xmp-namespace.md`; its URI must be one the project controls, and it is fixed
-   before this ADR is accepted. A later sync updates or removes only values that
+   with a hash, in Framehive's XMP namespace
+   `https://polandy.github.io/framehive/ns/1.0/` with the prefix `framehive`. The
+   project controls that URI; like every XMP namespace URI, it is an identifier and
+   never has to resolve. Its fields are documented in `docs/xmp-namespace.md`. A later sync updates or removes only values that
    still match what it wrote. A field the user changed belongs to the user from then
    on.
 5. **Live features use Immich directly** while it is reachable:
@@ -67,6 +68,9 @@ reachable, for example when travelling. Immich must never be written to.
 8. **Dependencies** (ADR 0009):
    - `ureq` with `rustls`: a synchronous HTTP client that fits the std-thread job
      scheduler, with established TLS.
+   - `ring` as the crypto backend of `rustls`. It contains native C and assembly code,
+     which this ADR covers. It builds without CMake, unlike `aws-lc-rs`, so the Nix
+     environment stays simple on Linux and macOS, and it is `ureq`'s default.
    - `serde_json`.
    - `sha1` (RustCrypto).
 
@@ -92,8 +96,8 @@ reachable, for example when travelling. Immich must never be written to.
 ## Consequences
 
 - People, search and places work early, without a local ML stack.
-- One more module, three more dependencies, and a moving external API. This is
+- One more module, four more dependencies, and a moving external API. This is
   contained by the port, the version range and the contract test.
 - Risk: Immich may re-import face regions from Framehive's sidecars and create
-  duplicates. This has to be verified with the pinned version before acceptance. If it
-  happens, region writing becomes configurable.
+  duplicates. This is verified with the pinned version when IMMICH-001 is implemented.
+  If it happens, region writing becomes configurable.
