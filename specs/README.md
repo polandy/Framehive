@@ -14,6 +14,7 @@ specs/
 ├── library/              # library module
 ├── cli/                  # command line (apps/cli)
 ├── devices/              # devices service (device detection, eject)
+├── previews/             # previews service (RAW decode, previews)
 ├── map/  people/  …     # other modules
 ```
 
@@ -22,7 +23,8 @@ File name: `<ID>-<short-name>.md`, e.g. `IMPORT-002-sequence-numbers.md`.
 ## IDs
 
 - Prefix per module or area: `CORE`, `IMPORT`, `LIBRARY`, `MAP`, `PEOPLE`,
-  `SIMILARITY`, `MIGRATE`, `IMMICH`, `CLI`, `DEVICES`.
+  `SIMILARITY`, `MIGRATE`, `IMMICH`, `CLI`, `DEVICES`,
+  `PREVIEWS`.
 - Sequential number, three digits, never reused.
 - Acceptance criteria: `<ID>.<n>`, e.g. `IMPORT-002.3`. Numbers are never reassigned;
   removed criteria stay listed, marked "(removed)".
