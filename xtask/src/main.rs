@@ -41,6 +41,7 @@ commands:
   spec-report          write target/spec-report.md: requirement, spec, criteria, tests
   check-files          only text files, no binaries (ADR 0017)
   testdata check       testdata.lock is valid (ADR 0027)
+  testdata fetch       download and verify the pinned test data (ADR 0017)
   ci-failures [<pr>]   only the failures of a red CI run (needs gh)
   new-module <id>      generate the two crates of a new module (architecture §4.5)
   new-adapter <port> <name>
