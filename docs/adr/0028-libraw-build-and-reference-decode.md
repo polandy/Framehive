@@ -49,6 +49,16 @@ Two findings follow from it:
    do not matter on screen.
 4. The non-deterministic X-Trans demosaicing is reported to LibRaw upstream. If a fix
    is released, a later ADR may drop the one-thread rule.
+5. **`adapter-libraw` binds LibRaw's C API (`libraw_r`) by hand, with a small C shim.**
+   The FFI declarations are written out in `src/ffi.rs`, without bindgen or a
+   pkg-config crate; the Nix shell provides the include and library paths. The C API
+   has no setters for `use_camera_wb` and `user_flip`, so `src/shim.c` sets these two
+   fields of `imgdata.params` by name, which keeps the struct layout out of Rust.
+   `build.rs` compiles the shim with `$CC` and `ar` through `std::process`, without a
+   build dependency. The adapter reads the file itself and passes it to
+   `libraw_open_buffer`, so a missing file is an I/O error with its cause. The
+   reference decode sets one thread with `omp_set_num_threads` for the decoding thread
+   and restores the previous value afterwards.
 
 ## Alternatives
 

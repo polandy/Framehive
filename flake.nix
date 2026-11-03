@@ -36,6 +36,16 @@
             }
           )
         );
+      # LibRaw for adapter-libraw. nixpkgs builds it without zlib and libjpeg, so it
+      # cannot decode deflate or lossy DNG (ADR 0028 §2).
+      libraw =
+        pkgs:
+        pkgs.libraw.overrideAttrs (old: {
+          buildInputs = (old.buildInputs or [ ]) ++ [
+            pkgs.zlib
+            pkgs.libjpeg
+          ];
+        });
       # The `framehive` command from `framehive-cli`. Cargo needs the manifests and
       # sources of every workspace member, but nothing else, so a change to the
       # documentation does not rebuild the package.
@@ -83,6 +93,7 @@
     {
       devShells = forEachSystem (pkgs: {
         default = pkgs.mkShell {
+          buildInputs = [ (libraw pkgs) ];
           packages = [
             (toolchain pkgs)
             pkgs.b3sum

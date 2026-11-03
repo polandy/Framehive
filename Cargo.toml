@@ -8,6 +8,7 @@ members = [
     "crates/adapters/blake3",
     "crates/adapters/clock",
     "crates/adapters/fs",
+    "crates/adapters/libraw",
     "crates/adapters/mounts",
     "crates/domain",
     "crates/kernel",
@@ -33,6 +34,7 @@ publish = false
 adapter-blake3 = { path = "crates/adapters/blake3" }
 adapter-clock = { path = "crates/adapters/clock" }
 adapter-fs = { path = "crates/adapters/fs" }
+adapter-libraw = { path = "crates/adapters/libraw" }
 adapter-mounts = { path = "crates/adapters/mounts" }
 devices = { path = "crates/services/devices" }
 domain = { path = "crates/domain" }
