@@ -1,6 +1,6 @@
 # 0028 – LibRaw build and reference decode, from the phase 0 prototype
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-11-03
 - Amends: ADR 0012, decisions 3 and 5, in how LibRaw is built and how the reference
   decode is configured
