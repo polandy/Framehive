@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: 2026 Framehive contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Large test files, pinned by BLAKE3 hash and size (ADR 0017, ADR 0027).
+# `cargo xtask testdata fetch` downloads them into .testdata/ or $FRAMEHIVE_TESTDATA_DIR.
+# One entry per line: <blake3> <size_bytes> <path> <url>
+# A path ending in / is a .tar.zst archive, unpacked into that directory.
+
+framehive-testdata-lock 1
+
+# Fujifilm X-T5 samples from raw.pixls.us (CC0), for CORE-001 and the LibRaw prototype (ADR 0012).
+fa995b683f50ac2732d7d282dac44dd3bc17d98c1947967d4457366a64e82dbf  43113376  raw.pixls.us/Fujifilm/X-T5/DSCF0021.RAF          https://raw.pixls.us/data/Fujifilm/X-T5/DSCF0021.RAF
+9ca67d033443a66522df4b83238935e824dd12b9066ae0924d022b8e3ee2aec9  28040304  raw.pixls.us/Fujifilm/X-T5/DSCF0022.RAF          https://raw.pixls.us/data/Fujifilm/X-T5/DSCF0022.RAF
+a84551544daa869401fb8146a8141d973f0fc096ce2da64d73059b7bd61c767b  85705728  raw.pixls.us/Fujifilm/X-T5/DSCF0023.RAF          https://raw.pixls.us/data/Fujifilm/X-T5/DSCF0023.RAF
+72909b991ffa325c880cc9270afed9647672c1e1e98e758015e63705e8c3b647  25732448  raw.pixls.us/Fujifilm/X-T5/DSCF4964_70-300.RAF  https://raw.pixls.us/data/Fujifilm/X-T5/DSCF4964_70-300.RAF

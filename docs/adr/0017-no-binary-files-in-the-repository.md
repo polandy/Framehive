@@ -70,8 +70,8 @@ rule must be enforced by `cargo xtask ci` (CLAUDE.md), not by review.
 
 - Tests that need reference files require `cargo xtask testdata fetch` first. CI caches
   `.testdata/` keyed by the hash of `testdata.lock`.
-- The fetch command needs an HTTP client and BLAKE3. Its dependencies go through
-  ADR 0009 when the command is implemented.
+- The fetch command needs an HTTP client and BLAKE3. ADR 0027 decides that it uses
+  the tools of the Nix shell and fixes the format of `testdata.lock`.
 - Releasing the owner's own photos as test data happens in `framehive-testdata`,
   including the cleaning step (CORE-001).
 - Any accidental binary, such as a screenshot or a core dump, fails CI before it can be

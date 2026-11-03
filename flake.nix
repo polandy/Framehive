@@ -85,10 +85,14 @@
         default = pkgs.mkShell {
           packages = [
             (toolchain pkgs)
+            pkgs.b3sum
             pkgs.cargo-deny
             pkgs.cargo-nextest
+            pkgs.curl
             pkgs.gh
+            pkgs.gnutar
             pkgs.reuse
+            pkgs.zstd
           ];
         };
       });

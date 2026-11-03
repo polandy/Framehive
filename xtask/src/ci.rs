@@ -20,7 +20,7 @@ struct Step {
 
 const CARGO: &str = "cargo";
 
-const STEPS: [Step; 12] = [
+const STEPS: [Step; 13] = [
     Step {
         title: "format",
         program: CARGO,
@@ -43,6 +43,11 @@ const STEPS: [Step; 12] = [
         title: "files",
         program: CARGO,
         arguments: &["xtask", "check-files"],
+    },
+    Step {
+        title: "test data lock",
+        program: CARGO,
+        arguments: &["xtask", "testdata", "check"],
     },
     Step {
         title: "architecture",
