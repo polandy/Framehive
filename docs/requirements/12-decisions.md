@@ -34,3 +34,4 @@ Part of the [requirements](README.md).
 | 2026-10-18 | No binaries in the repository: test data in `framehive-testdata`, pinned in `testdata.lock`; screenshot tests store BLAKE3 hashes, diffs go to CI artifacts; review screenshots live in `framehive-assets` (ADR 0017) |
 | 2026-10-18 | Hosted on GitHub; CI is one GitHub Actions workflow that runs `cargo xtask ci` on Linux and macOS (ADR 0018) |
 | 2026-10-18 | Review screenshots for UI pull requests are linked from a PR comment, not from the description that becomes the squash commit (ADR 0019) |
+| 2026-11-03 | ADRs 0004, 0007 and 0008 accepted; 0008 now requires only the README sections that are checked (Purpose, and Public API for libraries) |

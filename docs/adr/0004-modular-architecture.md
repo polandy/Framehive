@@ -1,6 +1,6 @@
 # 0004 – Modular architecture with a kernel and static registration
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-10-17
 
 ## Context

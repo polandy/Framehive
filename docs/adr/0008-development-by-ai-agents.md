@@ -1,6 +1,6 @@
 # 0008 – Development by AI agents: enforce rules mechanically
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-10-17
 
 ## Context
@@ -17,11 +17,11 @@ understandable and traceable for humans, and quality must not depend on human re
   to the agent. `CLAUDE.md` itself is written in English.
 - `CLAUDE.md` in the repository describes the agents' way of working concisely and
   points to the authoritative documents; `AGENTS.md` refers to it for other agents.
-- Every crate has a README with fixed sections: Responsibility, Non-Responsibility,
-  Public API, Invariants, Extension Points, Tests.
+- Every crate has a README with a `## Purpose` section; library crates also have a
+  `## Public API` section. `cargo xtask check-architecture` checks both.
 - Uniform patterns instead of a variety of approaches: templates via
   `cargo xtask new-module` and `new-adapter`.
-- Terms from the glossary (requirements §10) are binding.
+- Terms from the glossary (architecture §10) are binding.
 - Small, self-contained changes with a Conventional Commit message that states the
   *why*.
 
