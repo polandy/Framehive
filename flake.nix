@@ -37,7 +37,9 @@
           )
         );
       # LibRaw for adapter-libraw. nixpkgs builds it without zlib and libjpeg, so it
-      # cannot decode deflate or lossy DNG (ADR 0028 §2).
+      # cannot decode deflate or lossy DNG, and on macOS without OpenMP, because Apple's
+      # clang has no OpenMP runtime (ADR 0028 §2). OpenMP is propagated, so that
+      # adapter-libraw links the same runtime.
       libraw =
         pkgs:
         pkgs.libraw.overrideAttrs (old: {
@@ -45,6 +47,9 @@
             pkgs.zlib
             pkgs.libjpeg
           ];
+          propagatedBuildInputs =
+            (old.propagatedBuildInputs or [ ])
+            ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isDarwin [ pkgs.llvmPackages.openmp ];
         });
       # The `framehive` command from `framehive-cli`. Cargo needs the manifests and
       # sources of every workspace member, but nothing else, so a change to the

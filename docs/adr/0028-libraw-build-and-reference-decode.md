@@ -40,9 +40,12 @@ Two findings follow from it:
 ## Decision
 
 1. ADR 0012 stands: LibRaw decodes X-T5 lossy compressed RAF in the pinned version.
-2. **The flake builds LibRaw from nixpkgs `libraw` with zlib and libjpeg added.** It
-   adds neither the Adobe DNG SDK nor the GoPro GPR SDK, so GPR and JPEG XL DNG are
-   not decoded; CORE-004 shows the embedded preview for them.
+2. **The flake builds LibRaw from nixpkgs `libraw` with zlib and libjpeg added, and
+   on macOS with LLVM's OpenMP runtime.** nixpkgs builds it on macOS without OpenMP,
+   because Apple's clang has no OpenMP runtime; with it, both platforms decode with
+   the threads of decision 3 and one code path. It adds neither the Adobe DNG SDK nor
+   the GoPro GPR SDK, so GPR and JPEG XL DNG are not decoded; CORE-004 shows the
+   embedded preview for them.
 3. **The reference decode uses one OpenMP thread.** It is part of the fixed decode
    configuration of the version test (ADR 0012, decision 3), so stored hashes stay
    valid. Interactive decoding uses all threads, because a few differing pixel values

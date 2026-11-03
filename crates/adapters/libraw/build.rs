@@ -52,7 +52,8 @@ fn run(command: &mut Command) -> Result<(), String> {
     }
 }
 
-/// LibRaw from nixpkgs uses GCC's OpenMP runtime on Linux and LLVM's on macOS.
+/// The flake builds LibRaw with GCC's OpenMP runtime on Linux and LLVM's on macOS
+/// (ADR 0028 §2).
 fn openmp_library() -> Result<&'static str, String> {
     match env::var("CARGO_CFG_TARGET_OS").as_deref() {
         Ok("macos") => Ok("omp"),

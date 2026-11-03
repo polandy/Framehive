@@ -31,7 +31,7 @@ and the size and pixel hash of every supported RAW in `testdata.lock`. Both need
 ## Dependencies
 
 - `previews`
-- LibRaw 0.22.1 with zlib and libjpeg, a native library from the Nix flake
+- LibRaw 0.22.1 with zlib and libjpeg, and LLVM's OpenMP on macOS, a native library from the Nix flake
   (ADR 0028 §2), and its OpenMP runtime (libgomp, libomp on macOS).
 - `src/ffi.rs` declares the C functions by hand; `src/shim.c` sets the two decode
   parameters the C API has no setter for. `build.rs` compiles the shim with `$CC` and
