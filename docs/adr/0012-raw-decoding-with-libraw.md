@@ -1,6 +1,6 @@
 # 0012 – RAW decoding with LibRaw
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-10-17
 
 ## Context
@@ -29,12 +29,12 @@ therefore allows a library, but a native one needs its own ADR.
    covers the RAF header, the embedded JPEG, EXIF, the Fujifilm and Canon maker notes,
    and the TIFF structure shared by CR2 and DNG (ADR 0009, CORE-001, CORE-003,
    CORE-004). Thumbnails and the grid never need the native library.
-3. **A minimum LibRaw version** is pinned in the Nix flake and checked by a test. The
+3. **The LibRaw version** is pinned in the Nix flake and checked by a test. The
    test decodes the X-T2/X-T5, Canon 7D and DNG reference sets and compares the
    output against stored hashes from a fixed decode configuration.
 4. On macOS, LibRaw is linked as a dynamic library and bundled in the app.
 5. Phase 0 validates the decision with a prototype. If LibRaw cannot decode X-T5 lossy
-   compressed RAF in the pinned version, this ADR is revisited before it is accepted.
+   compressed RAF in the pinned version, a new ADR supersedes this one.
    The prototype also checks GoPro GPR (VC-5) and JPEG XL compressed DNG. Missing support
    there does not block the decision; CORE-004 defines a preview fallback.
 
@@ -56,6 +56,7 @@ therefore allows a library, but a native one needs its own ADR.
 - One native dependency more. It is mitigated by the Nix pin, the version test and the
   single adapter crate.
 - LibRaw is dual-licensed (LGPL-2.1 or CDDL-1.0). Dynamic linking satisfies LGPL. The
-  choice of project licence must stay compatible (requirements, open question 1).
+  project licence, GPL-3.0-or-later (ADR 0014), is compatible with it.
+- The version test needs the reference sets from `framehive-testdata` (ADR 0017).
 - New cameras need a LibRaw update. The reference-set test shows whether an update
   breaks existing files.
