@@ -28,6 +28,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "adapter-libraw"
+version = "0.1.0"
+dependencies = [
+ "blake3",
+ "previews",
+]
+
+[[package]]
 name = "adapter-mounts"
 version = "0.1.0"
 dependencies = [
@@ -304,6 +312,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "10ab3eb7f3becc3a1cbc4f2c6f20267996cfc1a6467a873763411b136a122715"
 dependencies = [
  "portable-atomic",
+]
+
+[[package]]
+name = "previews"
+version = "0.1.0"
+dependencies = [
+ "thiserror",
 ]
 
 [[package]]

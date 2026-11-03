@@ -6,7 +6,7 @@
 use std::collections::BTreeMap;
 
 /// Prefixes from `specs/README.md`.
-const PREFIXES: [&str; 10] = [
+const PREFIXES: [&str; 11] = [
     "CORE",
     "IMPORT",
     "LIBRARY",
@@ -17,6 +17,7 @@ const PREFIXES: [&str; 10] = [
     "IMMICH",
     "CLI",
     "DEVICES",
+    "PREVIEWS",
 ];
 const STATUSES: [&str; 4] = ["draft", "accepted", "implemented", "removed"];
 pub(super) const NONE_MARKER: &str = "–";

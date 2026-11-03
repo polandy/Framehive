@@ -23,6 +23,8 @@ Names in the code follow this glossary.
 | Job code | `JobCode` | A short label the user gives an import, inserted by the `{job}` token of a name template (IMPORT-006). Not to be confused with a job |
 | Recent job codes | `RecentJobCodes` | The job codes used before, most recently used first, each at most once, at most 10 (IMPORT-006) |
 | Capture time | `CaptureTime` | The wall-clock time the camera recorded, from EXIF `DateTimeOriginal`, with optional sub-seconds and UTC offset (CORE-005) |
+| Full decode | `PreviewDecoder::decode_full`, `DecodedImage` | Decoding a RAW at full resolution into 16-bit sRGB samples, for 100% zoom and comparison (PREVIEWS-001) |
+| Reference decode | `DecodeMode::Reference` | Full decode with one thread, bit-identical between runs; its pixel hashes pin the decoder version (PREVIEWS-001, ADR 0028) |
 | Timestamp | `Timestamp` | An instant in UTC, to the nanosecond, without calendar or time zone (ADR 0022) |
 | UTC offset | `UtcOffset` | The difference between local time and UTC at an instant, in seconds east of UTC |
 | Clock | `Clock` | Port in `domain` for the current timestamp and the local UTC offset at a timestamp; implemented by `adapter-clock` |

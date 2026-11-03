@@ -8,6 +8,7 @@ members = [
     "crates/adapters/blake3",
     "crates/adapters/clock",
     "crates/adapters/fs",
+    "crates/adapters/libraw",
     "crates/adapters/mounts",
     "crates/domain",
     "crates/kernel",
@@ -15,6 +16,7 @@ members = [
     "crates/services/files",
     "crates/services/metadata",
     "crates/services/naming",
+    "crates/services/previews",
     "modules/import/import",
     "modules/import/import-ui",
     "xtask",
@@ -32,6 +34,7 @@ publish = false
 adapter-blake3 = { path = "crates/adapters/blake3" }
 adapter-clock = { path = "crates/adapters/clock" }
 adapter-fs = { path = "crates/adapters/fs" }
+adapter-libraw = { path = "crates/adapters/libraw" }
 adapter-mounts = { path = "crates/adapters/mounts" }
 devices = { path = "crates/services/devices" }
 domain = { path = "crates/domain" }
@@ -41,6 +44,7 @@ import-ui = { path = "modules/import/import-ui" }
 kernel = { path = "crates/kernel" }
 metadata = { path = "crates/services/metadata" }
 naming = { path = "crates/services/naming" }
+previews = { path = "crates/services/previews" }
 blake3 = { version = "1", default-features = false, features = ["std"] }
 clap = { version = "4", default-features = false, features = ["std", "help", "usage", "error-context"] }
 jiff = { version = "0.2", default-features = false, features = ["std", "tz-system", "tzdb-zoneinfo"] }

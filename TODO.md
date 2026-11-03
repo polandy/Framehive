@@ -14,5 +14,5 @@ feature live in its spec, decisions in `docs/adr/`. Add items with `/todo`.
 - [ ] Write the job code to XMP as IPTC Job Id (`photoshop:TransmissionReference`, N16) with the XMP milestone, and store job codes in profiles (N8) with the YAML configuration (R9, IMPORT-006) — owner decided (2026-11-01)
 - [ ] Add the `cargo public-api` snapshot check for `kernel` and the services (architecture §7, ADR 0004) (2026-11-03)
 - [ ] Make release builds reproducible: `SOURCE_DATE_EPOCH`, `--remap-path-prefix` and a bit-for-bit check in CI, with the first release build (ADR 0007) (2026-11-03)
-- [ ] Build the LibRaw prototype (roadmap phase 0, ADR 0012): pin LibRaw in the flake and decode X-T5 lossy compressed RAF, 7D M-RAW/S-RAW, GoPro GPR and JPEG XL compressed DNG; if lossy RAF fails, a new ADR supersedes 0012 (2026-11-03)
-- [ ] Cache `.testdata/` in CI keyed by the hash of `testdata.lock` and run `cargo xtask testdata fetch` there, with the first test that reads test data (ADR 0017) (2026-11-03)
+- [ ] Test or drop the JPEG XL DNG example for `UnsupportedFormat` in PREVIEWS-001 — no CC0 sample yet, and LibRaw may report a data error that the adapter maps to `Corrupt` (ADR 0028, PR #34 review) (2026-11-03)
+- [ ] Store reference pixel hashes for aarch64-darwin in the LibRaw version test — on macOS it compares only sizes until the hashes are measured on a Mac (PREVIEWS-001, ADR 0028) (2026-11-03)
