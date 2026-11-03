@@ -22,7 +22,7 @@ Run them as `cargo xtask <command>`, inside `nix develop`.
 
 | Command | Checks |
 |---|---|
-| `ci` | Everything, in CI order: format, clippy, the five checks below, `testdata check`, the spec report, nextest, doc tests, `cargo deny`, `reuse lint`. Quiet: one `ok` line per step plus warnings from our own checks, and the full output of the failing step only |
+| `ci` | Everything, in CI order: format, clippy, the five checks below, `testdata check`, the spec report, `testdata fetch`, nextest, doc tests, `cargo deny`, `reuse lint`. Quiet: one `ok` line per step plus warnings from our own checks, and the full output of the failing step only |
 | `check-files` | Every file Git tracks or would track is UTF-8 text without NUL bytes and at most 256 KiB (ADR 0017); Rust files have at most 400 lines; Markdown outside `docs/adr/` and `CHANGELOG.md` has at most 10 KiB (architecture §7) |
 | `check-architecture` | Every crate declares a valid layer; dependencies follow architecture §3; adapters use only their port service; module UIs use only their module and `ui-kit`; crate roots contain `#![forbid(unsafe_code)]` unless `ffi = true`; every README has the required sections |
 | `check-dependencies` | Every external dependency is listed in `dependencies.yaml`, used only by allowed layers and crates, with allowed features (`default` counts as a feature), and pinned in `[workspace.dependencies]`; no unused entries |

@@ -1,6 +1,6 @@
 # PREVIEWS-001 – Full RAW decode
 
-- Status: accepted
+- Status: implemented
 - Module: previews
 - Origin: F4, B4, 2.8
 - Depends on: –
@@ -114,3 +114,4 @@ skipped.
 | Date | Change |
 |---|---|
 | 2026-11-03 | Created from the phase 0 LibRaw prototype (ADR 0028) |
+| 2026-11-03 | Implemented by `adapter-libraw` |

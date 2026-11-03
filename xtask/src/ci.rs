@@ -20,7 +20,7 @@ struct Step {
 
 const CARGO: &str = "cargo";
 
-const STEPS: [Step; 13] = [
+const STEPS: [Step; 14] = [
     Step {
         title: "format",
         program: CARGO,
@@ -74,6 +74,14 @@ const STEPS: [Step; 13] = [
         title: "spec report",
         program: CARGO,
         arguments: &["xtask", "spec-report"],
+    },
+    // Not a check: the tests read the files of testdata.lock and fail without them
+    // (ADR 0017). Entries already in the cache are skipped, so a warm cache costs
+    // almost nothing.
+    Step {
+        title: "test data",
+        program: CARGO,
+        arguments: &["xtask", "testdata", "fetch"],
     },
     Step {
         title: "tests",

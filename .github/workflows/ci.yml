@@ -47,6 +47,15 @@ jobs:
           key: cargo-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock', 'rust-toolchain.toml', 'Cargo.lock') }}
           restore-keys: cargo-${{ runner.os }}-${{ runner.arch }}-
 
+      # `cargo xtask ci` fetches the test data and skips what the cache already holds
+      # (ADR 0017). The key changes with every change of the lock; an older cache is
+      # still a good start, because fetching replaces only the entries that changed.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .testdata
+          key: testdata-${{ runner.os }}-${{ hashFiles('testdata.lock') }}
+          restore-keys: testdata-${{ runner.os }}-
+
       - name: cargo xtask ci
         # The spec trailer check judges the title and description as the future squash
         # commit (ADR 0010 §4). Passed as variables, never interpolated into the script,
