@@ -55,9 +55,10 @@ shows a placeholder until it is ready. The decode result is cached.
 **Linear DNG** (already demosaiced, for example from DNG Converter's "linear" option
 or a denoise step) is decoded without demosaicing.
 
-**GoPro GPR.** Metadata and the embedded preview are read by our code. A full decode
-depends on the RAW decoder being built with VC-5 support. If it is not, 100% zoom shows
-the preview with a notice.
+**GoPro GPR and JPEG XL DNG.** Metadata and the embedded preview are read by our code.
+A full decode depends on the RAW decoder being built with VC-5 support (GPR) or JPEG XL
+support (DNG 1.7). The pinned LibRaw has neither (ADR 0028), so 100% zoom shows the
+preview with a notice.
 
 ## Acceptance criteria
 
@@ -130,8 +131,7 @@ the preview with a notice.
 
 ## Open questions
 
-- Does the pinned LibRaw version decode JPEG XL compressed DNG (DNG 1.7)? To be
-  checked in phase 0. If not, the same fallback as for GPR applies.
+–
 
 ## History
 
@@ -139,3 +139,4 @@ the preview with a notice.
 |---|---|
 | 2026-10-18 | Initial draft |
 | 2026-10-18 | Reference set in `framehive-testdata` (ADR 0017) |
+| 2026-11-03 | Phase 0: the pinned LibRaw decodes neither GPR nor JPEG XL DNG, both use the preview fallback (ADR 0028) |
