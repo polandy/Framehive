@@ -10,11 +10,11 @@ acceptance (a change means a new ADR that supersedes the old one).
 | [0001](../adr/0001-record-architecture-decisions.md) | Record architecture decisions as ADRs | accepted |
 | [0002](../adr/0002-rust-and-slint.md) | Rust and Slint | accepted |
 | [0003](../adr/0003-files-and-xmp-are-the-source-of-truth.md) | Files and XMP are the source of truth, per-machine index | accepted |
-| [0004](../adr/0004-modular-architecture.md) | Modular architecture with kernel and static registration | proposed |
+| [0004](../adr/0004-modular-architecture.md) | Modular architecture with kernel and static registration | accepted |
 | [0005](../adr/0005-ports-and-adapters.md) | Ports & adapters, business logic without I/O | accepted |
 | [0006](../adr/0006-deterministic-tests.md) | Deterministic tests, no retries | accepted |
-| [0007](../adr/0007-reproducible-builds-with-nix.md) | Reproducible builds with a pinned toolchain and Nix | proposed |
-| [0008](../adr/0008-development-by-ai-agents.md) | Development by AI agents: enforce rules by machine | proposed |
+| [0007](../adr/0007-reproducible-builds-with-nix.md) | Reproducible builds with a pinned toolchain and Nix | accepted |
+| [0008](../adr/0008-development-by-ai-agents.md) | Development by AI agents: enforce rules by machine | accepted |
 | [0009](../adr/0009-minimal-dependencies.md) | Minimal dependencies, only established libraries | accepted |
 | [0010](../adr/0010-specification-and-implementation-in-sync.md) | Every feature is specified; specification and implementation stay in sync | accepted |
 | [0011](../adr/0011-configuration-in-yaml.md) | Configuration in YAML | accepted |

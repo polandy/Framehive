@@ -1,6 +1,6 @@
 # 0007 – Reproducible builds with a pinned toolchain and Nix
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-10-17
 
 ## Context
