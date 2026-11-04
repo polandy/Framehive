@@ -6,6 +6,7 @@
 
 #![forbid(unsafe_code)]
 
+mod backup;
 mod conflicts;
 mod job_code;
 mod plan;
@@ -19,6 +20,10 @@ mod view_model;
 
 use kernel::{ModuleId, ModuleIdError};
 
+pub use backup::{
+    BackupCounts, BackupDestinationError, BackupDestinationProblem, BackupError, BackupOutcome,
+    BackupReport, check_backup_destinations,
+};
 pub use conflicts::{
     ConflictError, ConflictOutcome, ConflictPolicy, TargetRequest, TargetResolver,
 };

@@ -5,13 +5,14 @@
 //! copies each file with a verified copy (ADR 0020 §1, IMPORT-004). Planning and
 //! execution are separate steps, so a caller can preview a plan before it runs.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
-use domain::{Clock, LocalDateTime, Timestamp};
+use domain::{Clock, LocalDateTime};
 use files::{FileSystem, Hasher};
-use metadata::{CaptureTimeError, NoCaptureTime, read_capture_time};
+use metadata::NoCaptureTime;
 use naming::{CompatibilityMode, CounterDate, NameTemplate, SequenceCounters};
 
+use crate::backup::{BackupCounts, check_backup_destinations};
 use crate::conflicts::{ConflictPolicy, TargetResolver};
 use crate::job_code::{JobCode, require_job_code};
 use crate::plan::{AssetFile, PlanNotice, PlannedFile};
@@ -20,8 +21,10 @@ use crate::scan::{FoundFile, LeftOut, SourceScan, scan_source};
 use crate::sequence::{Reservation, SessionSequence, sequence_range};
 
 mod copy;
+mod dating;
 mod rename;
 
+use dating::DatedFile;
 use rename::{import_plan, rename};
 
 /// What to import, from where to where, and how.
@@ -31,6 +34,9 @@ pub struct ImportSettings<'a> {
     pub source: &'a Path,
     /// The import destination, absolute and without `..`.
     pub destination: &'a Path,
+    /// The backup destinations, absolute and without `..`, in the order they are
+    /// used (IMPORT-007). Each file goes to the same target path below each of them.
+    pub backup_destinations: &'a [PathBuf],
     /// The name template for the target paths (IMPORT-001).
     pub template: &'a NameTemplate,
     /// The job code for `{job}` (IMPORT-006); required when the template uses it.
@@ -114,12 +120,6 @@ pub struct RunFile {
     pub planned: Result<PlannedFile, FileError>,
 }
 
-/// A found file with its times read, ready for the import plan.
-struct DatedFile {
-    asset_file: AssetFile,
-    no_capture_time: Option<NoCaptureTime>,
-}
-
 impl<'a> ImportRun<'a> {
     /// Creates a run that works through these ports. `counters` holds the persisted
     /// sequence counters, and `session` the session counter of this run of the
@@ -147,9 +147,10 @@ impl<'a> ImportRun<'a> {
     ///
     /// # Errors
     ///
-    /// Returns a [`RunError`] if the template uses `{job}` without a job code, the
-    /// source cannot be scanned, the current time cannot be shown in local time or
-    /// the import cannot get its sequence numbers; then nothing is copied. A file that
+    /// Returns a [`RunError`] if the template uses `{job}` without a job code, a
+    /// backup destination is invalid, the source cannot be scanned, the current time
+    /// cannot be shown in local time or the import cannot get its sequence numbers;
+    /// then nothing is copied. A file that
     /// fails is reported in the [`ImportSummary`] instead.
     pub fn run(
         &self,
@@ -159,6 +160,7 @@ impl<'a> ImportRun<'a> {
         // The job code and the import time are checked before the scan, so a run that
         // cannot start does not scan the source.
         require_job_code(settings.template, settings.job_code)?;
+        check_settings_backup_destinations(settings)?;
         let import_time = self.import_time()?;
         let scan = scan_source(self.file_system, settings.source, settings.destination)?;
         progress.scan_finished(&scan);
@@ -209,11 +211,13 @@ impl<'a> ImportRun<'a> {
 
     /// Starts the import of `plan`: reserves its sequence numbers before the first
     /// file is copied, and names its files again if another import took the numbers
-    /// the plan showed (IMPORT-002, "Reservation"). A dry run reserves nothing.
+    /// the plan showed (IMPORT-002, "Reservation"). A dry run reserves nothing. It
+    /// checks the backup destinations first (IMPORT-007.11).
     ///
     /// # Errors
     ///
-    /// Returns [`RunError::Sequence`] if the persisted counters cannot be read or
+    /// Returns [`RunError::BackupDestination`] if a backup destination is invalid,
+    /// and [`RunError::Sequence`] if the persisted counters cannot be read or
     /// stored, or the numbers do not fit the template; then nothing is reserved and
     /// the import must not run.
     pub fn start(
@@ -221,6 +225,7 @@ impl<'a> ImportRun<'a> {
         settings: &ImportSettings<'_>,
         mut plan: PlannedRun,
     ) -> Result<PlannedRun, RunError> {
+        check_settings_backup_destinations(settings)?;
         if settings.dry_run {
             return Ok(plan);
         }
@@ -265,11 +270,19 @@ impl<'a> ImportRun<'a> {
             progress.file_finished(&report);
             files.push(report);
         }
+        let backups = settings
+            .backup_destinations
+            .iter()
+            .map(|destination| {
+                BackupCounts::of(destination, files.iter().flat_map(|file| &file.backups))
+            })
+            .collect();
         ImportSummary {
             files,
             left_out: plan.left_out,
             stopped,
             notices: plan.notices,
+            backups,
         }
     }
 
@@ -349,37 +362,14 @@ impl<'a> ImportRun<'a> {
             naming,
         })
     }
+}
 
-    /// Reads the capture time and the local modification time of `file`.
-    fn date(&self, source: &Path, file: &FoundFile) -> Result<DatedFile, FileError> {
-        let file_name = file
-            .path
-            .file_name()
-            .and_then(|name| name.to_str())
-            .ok_or(FileError::NameNotUtf8)?;
-        let (capture_time, no_capture_time) =
-            match read_capture_time(self.file_system, &source.join(&file.path)) {
-                Ok(capture_time) => (Some(capture_time), None),
-                Err(CaptureTimeError::NoCaptureTime(reason)) => (None, Some(reason)),
-                Err(CaptureTimeError::Io { error, .. }) => {
-                    return Err(FileError::CannotBeRead { error });
-                }
-            };
-        let modification_time = self
-            .local_time(file.modification_time)
-            .ok_or(FileError::ModificationTimeOutOfRange)?;
-        Ok(DatedFile {
-            asset_file: AssetFile {
-                file_name: file_name.to_owned(),
-                role: file.role,
-                capture_time,
-                modification_time,
-            },
-            no_capture_time,
-        })
-    }
-
-    fn local_time(&self, instant: Timestamp) -> Option<LocalDateTime> {
-        LocalDateTime::from_timestamp(instant, self.clock.local_offset(instant))
-    }
+/// Checks the backup destinations of `settings` before anything is written.
+fn check_settings_backup_destinations(settings: &ImportSettings<'_>) -> Result<(), RunError> {
+    check_backup_destinations(
+        settings.source,
+        settings.destination,
+        settings.backup_destinations,
+    )?;
+    Ok(())
 }

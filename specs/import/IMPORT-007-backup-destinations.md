@@ -1,6 +1,6 @@
 # IMPORT-007 – Backup destinations
 
-- Status: accepted
+- Status: implemented
 - Module: import
 - Origin: I2, I5
 - Depends on: IMPORT-003, IMPORT-004
@@ -71,7 +71,7 @@ import destination is.
   destination, the conflict policy `add_suffix`, and an empty backup destination
 - **When** the file is imported
 - **Then** both the import destination and the backup destination have
-  `DSCF0001_1.RAF`, and the backup destination has no `DSCF0001.RAF`
+  `DSCF0001-1.RAF`, and the backup destination has no `DSCF0001.RAF`
 
 ### IMPORT-007.3 – The source is read once
 - **Given** a source file and two backup destinations
@@ -168,3 +168,4 @@ import destination is.
 | Date | Change |
 |---|---|
 | 2026-11-04 | Initial draft; owner decisions: the source is read once and each copy is verified against its checksum, a backup never overwrites, a failed backup does not undo the import; accepted by the owner |
+| 2026-11-04 | Implemented in `files` (`copy_verified_to_all`) and the import run; IMPORT-007.2 corrected to the suffix `-1` of IMPORT-003 |

@@ -189,6 +189,15 @@ impl<'a> TargetResolver<'a> {
         unreachable_candidates()
     }
 
+    /// The checksum of the source file `source_path`, relative to the source; read
+    /// at most once for the whole resolver, also when conflict resolution read it.
+    pub(crate) fn source_checksum(
+        &mut self,
+        source_path: &Path,
+    ) -> Result<Checksum, ConflictError> {
+        self.checksum(&self.source.join(source_path))
+    }
+
     fn claim(&mut self, file: &TargetRequest<'_>, candidate: &str) {
         let claim = Claim {
             source_path: file.source_path.to_path_buf(),

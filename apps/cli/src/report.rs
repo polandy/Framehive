@@ -139,6 +139,7 @@ mod tests {
             path: PathBuf::from(path),
             dated_by_modification_time: None,
             outcome,
+            backups: Vec::new(),
         }
     }
 
@@ -181,6 +182,7 @@ mod tests {
             }],
             stopped: false,
             notices: Vec::new(),
+            backups: Vec::new(),
         };
 
         assert_eq!(

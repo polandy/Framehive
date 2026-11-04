@@ -45,6 +45,7 @@ fn settings<'s>(
     ImportSettings {
         source: card.mount_point(),
         destination,
+        backup_destinations: &[],
         template,
         job_code,
         mode: CompatibilityMode::On,

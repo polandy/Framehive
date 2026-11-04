@@ -72,6 +72,7 @@ fn settings(template: &NameTemplate) -> ImportSettings<'_> {
     ImportSettings {
         source: Path::new(SOURCE),
         destination: Path::new(DESTINATION),
+        backup_destinations: &[],
         template,
         job_code: None,
         mode: CompatibilityMode::On,

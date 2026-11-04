@@ -12,6 +12,7 @@ use files::CopyError;
 use metadata::NoCaptureTime;
 use naming::{RenderError, SequenceError};
 
+use crate::backup::{BackupCounts, BackupDestinationError, BackupReport};
 use crate::conflicts::ConflictError;
 use crate::job_code::MissingJobCode;
 use crate::plan::PlanNotice;
@@ -54,8 +55,12 @@ pub struct FileReport {
     /// (CORE-005); `None` when it is dated by its capture time or failed before it
     /// was dated.
     pub dated_by_modification_time: Option<NoCaptureTime>,
-    /// What happened to it.
+    /// What happened to it at the import destination.
     pub outcome: FileOutcome,
+    /// What happened to it at each backup destination, in the order of the settings
+    /// (IMPORT-007). Empty when the file is not backed up: when it failed before it
+    /// was copied, was skipped or is a duplicate, and in a dry run.
+    pub backups: Vec<BackupReport>,
 }
 
 /// What happened to one file.
@@ -145,6 +150,9 @@ pub enum RunError {
     /// The import cannot get its sequence numbers (IMPORT-002).
     #[error(transparent)]
     Sequence(#[from] SequenceError),
+    /// A backup destination is invalid (IMPORT-007.11).
+    #[error(transparent)]
+    BackupDestination(#[from] BackupDestinationError),
 }
 
 /// The result of a finished import run, in scan order.
@@ -159,6 +167,8 @@ pub struct ImportSummary {
     pub stopped: bool,
     /// The notices of the plan the run executed.
     pub notices: Vec<PlanNotice>,
+    /// What each backup destination got, in the order of the settings (IMPORT-007).
+    pub backups: Vec<BackupCounts>,
 }
 
 impl ImportSummary {

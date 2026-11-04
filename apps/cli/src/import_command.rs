@@ -57,6 +57,7 @@ fn import(arguments: &ImportArguments) -> Result<ImportSummary, String> {
     let settings = ImportSettings {
         source: &source,
         destination: &destination.path,
+        backup_destinations: &[],
         template: &template,
         job_code: job_code.as_ref(),
         mode: CompatibilityMode::On,

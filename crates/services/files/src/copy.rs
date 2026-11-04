@@ -9,8 +9,8 @@ use std::path::{Path, PathBuf};
 
 use domain::Checksum;
 
-use crate::checksum::{BUFFER_SIZE, checksum_file, read_some};
-use crate::{CleanupFailure, CopyError, CopyErrorKind, CopyStep, EntryKind, FileSystem, Hasher};
+use crate::checksum::{BUFFER_SIZE, read_some};
+use crate::{CleanupFailure, CopyError, CopyErrorKind, CopyStep, FileSystem, Hasher};
 
 /// Copies `source` to `target` and verifies the copy (glossary: Verified copy).
 ///
@@ -60,26 +60,79 @@ pub fn copy_verified(
     source: &Path,
     target: &Path,
 ) -> Result<Checksum, CopyError> {
-    let part = part_path(target);
     let copy = Copy {
         file_system,
         hasher,
         source,
-        target,
-        part: &part,
     };
-    copy.create_missing_folders()
-        .map_err(|failure| failure.into_error(None))?;
-    let source_checksum = copy
-        .write_part()
-        .and_then(|checksum| copy.rename_part().map(|()| checksum))
-        .map_err(|failure| failure.into_error(copy.remove(&part)))?;
-    // From here on, the target is the import's own, unverified file; a failure
-    // removes it.
-    copy.sync_target_folder()
-        .and_then(|()| copy.verify_target(&source_checksum))
-        .map_err(|failure| failure.into_error(copy.remove(target)))?;
-    Ok(source_checksum)
+    let mut targets = [TargetCopy::new(target)];
+    copy.copy_to(&mut targets);
+    let [target] = targets;
+    target.into_result()
+}
+
+/// The result of [`copy_verified_to_all`].
+#[derive(Debug)]
+pub struct VerifiedCopies {
+    /// The source's checksum, when the source was read to its end; `None` when it
+    /// could not be read or every target failed before the end.
+    pub source_checksum: Option<Checksum>,
+    /// One result per target, in the order of the targets: the source's checksum
+    /// once that target is verified, or why it failed.
+    pub targets: Vec<Result<Checksum, CopyError>>,
+}
+
+/// Copies `source` to each of `targets` and verifies each copy, reading the source
+/// once (IMPORT-007, ADR 0030 §1).
+///
+/// The source is read once; its bytes are hashed and written to the `.part` file of
+/// every target. Each target then goes through the steps of [`copy_verified`] on its
+/// own and is compared with the source's checksum. A failure at one target removes
+/// only that target's `.part` file or unverified target; the other targets go on. A
+/// target whose `.part` file cannot be written is dropped from the rest of the read,
+/// and the read ends early only when every target failed. With no targets, nothing
+/// is read.
+///
+/// [`copy_verified`] is this copy with one target.
+///
+/// ```
+/// use std::path::Path;
+///
+/// use domain::Timestamp;
+/// use files::copy_verified_to_all;
+/// use files::testing::{FnvHasher, MemoryFileSystem};
+///
+/// let file_system = MemoryFileSystem::new();
+/// file_system.add_file(Path::new("/card/DSCF0001.RAF"), b"raw", Timestamp::UNIX_EPOCH);
+/// let targets = [Path::new("/photos/DSCF0001.RAF"), Path::new("/backup/DSCF0001.RAF")];
+///
+/// let copies = copy_verified_to_all(&file_system, &FnvHasher, Path::new("/card/DSCF0001.RAF"), &targets);
+///
+/// assert!(copies.targets.iter().all(Result::is_ok));
+/// assert_eq!(file_system.content(targets[1]).as_deref(), Some(&b"raw"[..]));
+/// ```
+#[must_use]
+pub fn copy_verified_to_all(
+    file_system: &dyn FileSystem,
+    hasher: &dyn Hasher,
+    source: &Path,
+    targets: &[&Path],
+) -> VerifiedCopies {
+    let copy = Copy {
+        file_system,
+        hasher,
+        source,
+    };
+    let mut copies: Vec<TargetCopy<'_>> = targets
+        .iter()
+        .map(|target| TargetCopy::new(target))
+        .collect();
+    let source_checksum = copy.copy_to(&mut copies);
+    let targets = copies.into_iter().map(TargetCopy::into_result).collect();
+    VerifiedCopies {
+        source_checksum,
+        targets,
+    }
 }
 
 /// `<target>.part`, next to the target.
@@ -113,138 +166,87 @@ impl Failure {
     }
 }
 
+/// The source of a verified copy and the ports it goes through.
 struct Copy<'a> {
     file_system: &'a dyn FileSystem,
     hasher: &'a dyn Hasher,
     source: &'a Path,
-    target: &'a Path,
-    part: &'a Path,
 }
 
 impl Copy<'_> {
-    /// Creates the missing folders of the target, outermost first, and syncs each
-    /// into its parent so that it survives a crash with the file in it.
-    fn create_missing_folders(&self) -> Result<(), Failure> {
-        let mut missing = Vec::new();
-        for folder in self.target.ancestors().skip(1) {
-            if folder.as_os_str().is_empty() {
-                break;
-            }
-            let entry = self
-                .file_system
-                .entry(folder)
-                .map_err(Failure::io(CopyStep::CreateFolders, folder))?;
-            if entry.is_some() {
-                break;
-            }
-            missing.push(folder);
+    /// Copies the source to every target and verifies each, reading the source
+    /// once. Leaves every target verified or failed, and returns the source's
+    /// checksum if the source was read to its end.
+    fn copy_to(&self, targets: &mut [TargetCopy<'_>]) -> Option<Checksum> {
+        for target in targets.iter_mut() {
+            target.prepare_folders(self.file_system);
         }
-        for folder in missing.into_iter().rev() {
-            self.create_folder(folder)?;
+        if !targets.iter().any(TargetCopy::is_open) {
+            return None;
         }
-        Ok(())
+        let modified = match self.file_system.modification_time(self.source) {
+            Ok(modified) => modified,
+            Err(error) => return self.fail_reading(targets, error),
+        };
+        let mut reader = match self.file_system.open_read(self.source) {
+            Ok(reader) => reader,
+            Err(error) => return self.fail_reading(targets, error),
+        };
+        for target in targets.iter_mut() {
+            target.create_part(self.file_system);
+        }
+        let source_checksum = self.read_into_parts(&mut *reader, targets)?;
+        for target in targets.iter_mut() {
+            target.finish(self, modified, &source_checksum);
+        }
+        Some(source_checksum)
     }
 
-    fn create_folder(&self, folder: &Path) -> Result<(), Failure> {
-        let fail = || Failure::io(CopyStep::CreateFolders, folder);
-        match self.file_system.create_folder(folder) {
-            Ok(()) => {}
-            // Another program created it meanwhile; a folder is all that is needed.
-            Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {
-                let entry = self.file_system.entry(folder).map_err(fail())?;
-                if entry != Some(EntryKind::Folder) {
-                    return Err(fail()(error));
-                }
-            }
-            Err(error) => return Err(fail()(error)),
-        }
-        let parent = folder.parent().unwrap_or(Path::new(""));
-        self.file_system
-            .sync_folder(parent)
-            .map_err(Failure::io(CopyStep::CreateFolders, parent))
-    }
-
-    /// Reads the source once, hashing it while writing it to the `.part` file, then
-    /// timestamps and syncs the `.part` file. Returns the source's checksum.
-    fn write_part(&self) -> Result<Checksum, Failure> {
-        let read_failed = || Failure::io(CopyStep::ReadSource, self.source);
-        let write_failed = || Failure::io(CopyStep::WritePart, self.part);
-        let modified = self
-            .file_system
-            .modification_time(self.source)
-            .map_err(read_failed())?;
-        let mut reader = self
-            .file_system
-            .open_read(self.source)
-            .map_err(read_failed())?;
-        let mut part = self
-            .file_system
-            .create_file(self.part)
-            .map_err(write_failed())?;
+    /// Reads the source once, hashing it while writing it to the `.part` file of each
+    /// target that has not failed. Returns the source's checksum, or `None` when the
+    /// source could not be read or every target failed before its end.
+    fn read_into_parts(
+        &self,
+        reader: &mut dyn io::Read,
+        targets: &mut [TargetCopy<'_>],
+    ) -> Option<Checksum> {
         let mut hash = self.hasher.start();
         let mut buffer = vec![0; BUFFER_SIZE];
-        loop {
-            let count = read_some(&mut *reader, &mut buffer).map_err(read_failed())?;
+        while targets.iter().any(TargetCopy::is_open) {
+            let count = match read_some(reader, &mut buffer) {
+                Ok(count) => count,
+                Err(error) => return self.fail_reading(targets, error),
+            };
             if count == 0 {
-                break;
+                return Some(hash.finish());
             }
             hash.update(&buffer[..count]);
-            part.write_all(&buffer[..count]).map_err(write_failed())?;
+            for target in targets.iter_mut() {
+                target.write(self.file_system, &buffer[..count]);
+            }
         }
-        part.flush().map_err(write_failed())?;
-        part.set_modification_time(modified)
-            .map_err(write_failed())?;
-        part.sync().map_err(write_failed())?;
-        Ok(hash.finish())
+        None
     }
 
-    /// Renames the `.part` file to the target without replacing a file.
-    fn rename_part(&self) -> Result<(), Failure> {
-        match self.file_system.rename_no_replace(self.part, self.target) {
-            Ok(()) => Ok(()),
-            Err(error) if error.kind() == io::ErrorKind::AlreadyExists => Err(Failure {
-                step: CopyStep::Rename,
-                kind: CopyErrorKind::TargetExists {
-                    path: self.target.to_path_buf(),
-                },
-            }),
-            Err(error) => Err(Failure::io(CopyStep::Rename, self.target)(error)),
+    /// Fails every target that has not failed yet, because the source cannot be read.
+    /// Only the first gets `error` itself; the others get one of the same kind and
+    /// message.
+    fn fail_reading(&self, targets: &mut [TargetCopy<'_>], error: io::Error) -> Option<Checksum> {
+        let (kind, message) = (error.kind(), error.to_string());
+        let mut error = Some(error);
+        for target in targets.iter_mut().filter(|target| target.is_open()) {
+            let error = error
+                .take()
+                .unwrap_or_else(|| io::Error::new(kind, message.clone()));
+            target.fail_before_rename(
+                self.file_system,
+                Failure::io(CopyStep::ReadSource, self.source)(error),
+            );
         }
-    }
-
-    /// Syncs the target's folder so the new name survives a crash.
-    fn sync_target_folder(&self) -> Result<(), Failure> {
-        let folder = self.target.parent().unwrap_or(Path::new(""));
-        self.file_system
-            .sync_folder(folder)
-            .map_err(Failure::io(CopyStep::SyncFolder, folder))
-    }
-
-    /// Reads the target back in full and compares its checksum with the source's.
-    fn verify_target(&self, source_checksum: &Checksum) -> Result<(), Failure> {
-        let target_checksum = checksum_file(self.file_system, self.hasher, self.target)
-            .map_err(Failure::io(CopyStep::ReadBack, self.target))?;
-        if target_checksum != *source_checksum {
-            return Err(Failure {
-                step: CopyStep::Verify,
-                kind: CopyErrorKind::ChecksumMismatch {
-                    source_checksum: source_checksum.clone(),
-                    target_checksum,
-                },
-            });
-        }
-        Ok(())
-    }
-
-    /// Removes a file the copy wrote; a file that is already gone is fine.
-    fn remove(&self, path: &Path) -> Option<Box<CleanupFailure>> {
-        match self.file_system.remove_file(path) {
-            Ok(()) => None,
-            Err(error) if error.kind() == io::ErrorKind::NotFound => None,
-            Err(error) => Some(Box::new(CleanupFailure {
-                path: path.to_path_buf(),
-                error,
-            })),
-        }
+        None
     }
 }
+
+mod target;
+
+use target::TargetCopy;

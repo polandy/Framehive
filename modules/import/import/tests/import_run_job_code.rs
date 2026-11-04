@@ -48,6 +48,7 @@ fn import(
     let settings = ImportSettings {
         source: Path::new(SOURCE),
         destination: Path::new(DESTINATION),
+        backup_destinations: &[],
         template: &template,
         job_code: job_code.as_ref(),
         mode: CompatibilityMode::On,

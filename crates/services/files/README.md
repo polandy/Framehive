@@ -23,6 +23,11 @@ Boundaries:
   replacing a file, syncs the folder, and reads the target back to compare checksums.
   Missing folders are created and synced into their parents. It never writes to the
   source.
+- **Several targets.** `copy_verified_to_all` is the same copy to several targets with
+  one read of the source (IMPORT-007, ADR 0030 §1): the bytes go to every `.part` file,
+  and each target is synced, renamed, synced and verified on its own. A target that
+  fails is dropped and cleaned up without touching the others; the read ends early only
+  when every target failed. `copy_verified` is this copy with one target.
 - **Cleanup.** On a failure the `.part` file is removed. After the rename, a failed
   folder sync, read-back or verification also removes the target, because the copy
   wrote it and it is not verified. A file another program put at the target is never
@@ -42,6 +47,7 @@ Boundaries:
 | `Hasher`, `HashState` | Port for a hash function that yields a `domain::Checksum` with its algorithm id |
 | `checksum_file` | Reads a file in full and returns its checksum; used to compare content (IMPORT-003) and to read a copy back |
 | `copy_verified` | Copies one file through a `.part` file and verifies it (IMPORT-004) |
+| `copy_verified_to_all`, `VerifiedCopies` | Copies one file to several targets with one read and verifies each, with one result per target (IMPORT-007) |
 | `CopyError`, `CopyStep`, `CopyErrorKind`, `CleanupFailure` | The failed step, why, and a file that could not be removed |
 | `testing::MemoryFileSystem`, `testing::Fault` | `FileSystem` in memory with simulated crashes, symbolic links, read, write, read-back and listing faults, and stops after a number of operations |
 | `testing::FnvHasher` | Non-cryptographic `Hasher` for tests; its checksums are written `fnv:<hex>` |
