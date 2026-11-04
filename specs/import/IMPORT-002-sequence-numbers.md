@@ -59,12 +59,13 @@ template and suggests the template with one more digit; for letters, it suggests
 persisted counter does not start; the error names the file and the line (ADR 0029). The
 file is not changed. A template without a persisted counter does not read the file.
 
-**Files already imported.** IMPORT-003 recognizes a file already imported by its target
-path. A persisted counter gives the same files a new number on every import, so a card
-imported again is copied again. Session and letter numbers start at 1 in every run, so
-the same card gets the same names again and is recognized. The import plan therefore carries a notice when its
-template has a persisted counter: already imported files are not recognized. Recognition
-by content comes with the import history (N3).
+**Files already imported.** A persisted counter gives the same files a new number on
+every import, so their target paths cannot recognize them. The import history (IMPORT-009)
+recognizes them instead: a file imported before is left out of the import plan, gets no
+sequence number and is not copied. IMPORT-003 still recognizes a file already imported by
+its target path when the history does not know it, for example in an import destination
+filled on another machine; session and letter numbers start at 1 in every run, so the same
+card gets the same names again there.
 
 ## Acceptance criteria
 
@@ -141,22 +142,24 @@ by content comes with the import history (N3).
   `{seq_session:3}.{ext}`
 
 ### IMPORT-002.14 – A session counter still recognizes files already imported
-- **Given** a card imported with `{date:%Y%m%d}_{seq_session:3}.{ext}`
+- **Given** a card imported with `{date:%Y%m%d}_{seq_session:3}.{ext}` into an import
+  destination, and an import history that does not know it
 - **When** the same card is imported again with the same template
 - **Then** every file gets the number it got before, is marked "already imported"
   (IMPORT-003), and no file is copied
 
-### IMPORT-002.15 – A persisted counter cannot recognize files already imported
-- **Given** the template `{seq_today:3}.{ext}`
-- **When** the user plans an import
-- **Then** the plan carries the notice that files already imported are not recognized;
-  with `{seq_session:3}.{ext}` it does not
+### IMPORT-002.15 – A persisted counter recognizes files imported before
+- **Given** a card imported with `{seq_today:3}.{ext}`
+- **When** the same card is imported again with the same template, on the same machine
+- **Then** every file is imported before (IMPORT-009), no number is reserved, and no file
+  is copied
 
 ## Out of scope
 
 - Template syntax and other tokens: IMPORT-001.
 - Conflict handling when a target name already exists on disk: IMPORT-003.
-- Recognizing files already imported by their content: the import history (N3).
+- Recognizing files already imported by their content: the import history
+  (IMPORT-009).
 - Sharing counters between machines: not planned, to avoid sync conflicts (ADR 0003,
   ADR 0029).
 - Letters beyond `zz`: not planned; RPD stops there too, and longer letter names would
@@ -173,3 +176,4 @@ by content comes with the import history (N3).
 | 2026-10-19 | Example templates end with `.{ext}`, as IMPORT-001 requires |
 | 2026-11-04 | Accepted: counters in the state folder (ADR 0029); reserved when an import starts, as there is no queue yet; assets from the grouping, numbered in shooting order; letters end at `zz`; broken counter file stops the import; notice that persisted counters cannot recognize files already imported; criteria 9–15 |
 | 2026-11-04 | Implemented in `naming`, `import`, `adapter-sequence-counters` and `framehive-cli` (CLI-003, CLI-004) |
+| 2026-11-04 | The import history recognizes files imported before (IMPORT-009): the plan notice is removed; criterion 15 now tests the recognition, and criterion 14 an import destination the history does not know |

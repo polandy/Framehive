@@ -22,6 +22,7 @@ Part of the [architecture](README.md).
 │  previews   thumbnails & previews, cache (port: PreviewDecoder)                         │
 │  naming     template language for file and folder names                                 │
 │  files      file system and hashing, verified copy (ports: FileSystem, Hasher)          │
+│  history    import history of every verified copy (port: ImportHistory)                 │
 └───────────────┬─────────────────────────────────────────────────────────────────────────┘
                 │
 ┌───────────────▼───────────────── Domain (pure, no I/O) ─────────────────────────────────┐

@@ -172,8 +172,8 @@ that appears at a target path after the plan was made is handled by IMPORT-004.9
 ## Out of scope
 
 - A file that appears at the target during the copy: IMPORT-004.9.
-- Recognizing files already imported after they were renamed or moved, through an
-  import history (N3, N6): a later spec.
+- Recognizing files already imported after they were renamed or moved, through the
+  import history: IMPORT-009.
 - Conflicts at backup destinations (I5, overwrite or skip): the backup spec.
 - Where the policy is set: CLI-001 for the command line, the profile spec (N8) later.
 

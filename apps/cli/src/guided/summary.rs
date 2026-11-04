@@ -6,17 +6,13 @@
 
 use devices::Device;
 use domain::LocalDateTime;
-use import::{
-    BackupDestinationProblem, ImportSettings, PlanNotice, PlannedRun, check_backup_destinations,
-};
+use import::{BackupDestinationProblem, ImportSettings, PlannedRun, check_backup_destinations};
 
 use super::dialog::{Dialog, Stop};
 use super::format::size_text;
 
 /// The line under a summary whose destination lies inside the card.
 const ON_CARD: &str = "The destination is on the card; type d to choose another.";
-/// The plan notice of a persisted sequence counter (CLI-003, IMPORT-002).
-const NOT_RECOGNIZED: &str = "Files already imported are not recognized, because the template has a persisted sequence counter.";
 
 /// What the person chose at the plan summary.
 pub(super) enum Action {
@@ -59,12 +55,6 @@ impl Dialog<'_> {
             && let Some(job_code) = settings.job_code
         {
             self.say(&format!("  job code  {}", job_code.as_str()));
-        }
-        if plan
-            .notices()
-            .contains(&PlanNotice::AlreadyImportedNotRecognized)
-        {
-            self.say(NOT_RECOGNIZED);
         }
     }
 
@@ -134,7 +124,7 @@ fn captured_text(plan: &PlannedRun) -> Option<String> {
     let dates = plan
         .files()
         .iter()
-        .filter_map(|file| file.planned.as_ref().ok())
+        .filter_map(|file| file.planned.as_ref().ok()?.named())
         .map(|planned| planned.date);
     let first = dates.clone().min()?;
     let last = dates.max()?;

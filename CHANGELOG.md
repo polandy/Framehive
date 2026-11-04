@@ -56,8 +56,7 @@ All user-visible changes are listed here. The format follows
   starts, so two imports never share a number; a dry run and the plan summary show the
   numbers without reserving them. Numbers that do not fit the template stop the
   import with a suggested template, and in the guided import lead back to the
-  template step. With a persisted counter, files already imported are not recognized,
-  and both imports say so.
+  template step. Files imported before get no number (IMPORT-009).
 - Backup destinations (IMPORT-007, CLI-005, CLI-006): `framehive import --backup <folder>`,
   repeatable, writes each copied or already imported file to the same path below every
   backup destination as well. The card is read once, every copy is verified on its
@@ -74,6 +73,15 @@ All user-visible changes are listed here. The format follows
   list each file that is not saved, with the number of locations it is verified at, and
   each unreadable or ungrouped entry the scan left out. The guided import shows it before
   the eject question; a dry run shows nothing, and exit codes are unchanged.
+- Import history in the import run (IMPORT-009): an import recognizes files it copied
+  before by name, size, capture time and checksum, even after they were renamed or
+  deleted in the library or the template changed. It does not copy them again, gives
+  them no sequence number, reports them as `imported before`, and completes their
+  missing backups. Each verified copy is recorded. `framehive import` and the guided
+  import keep the history in `import-history.sqlite` in the state folder (CLI-008,
+  ADR 0031), so a card imported again is recognized across runs, and an interrupted
+  import is resumed by running it again. A history that cannot be used stops the
+  import before any file is copied.
 
 ### Fixed
 

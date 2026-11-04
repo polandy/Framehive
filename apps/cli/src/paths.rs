@@ -141,6 +141,18 @@ pub(crate) fn resolve_destination(destination: &Path) -> Result<Destination, Pat
     ))
 }
 
+/// The canonical absolute path of a folder that may not exist yet: its longest
+/// existing part without symbolic links, with the missing folders appended. Creating
+/// the missing folders does not change it, so the import history finds a destination
+/// of the first run again in later runs (IMPORT-009).
+///
+/// # Errors
+///
+/// Returns a [`PathError`] as [`resolve_destination`] does.
+pub(crate) fn canonical_folder(folder: &Path) -> Result<PathBuf, PathError> {
+    resolve_destination(folder).map(|destination| destination.path)
+}
+
 fn absolute(path: &Path) -> Result<PathBuf, PathError> {
     if path.is_absolute() {
         return Ok(path.to_path_buf());

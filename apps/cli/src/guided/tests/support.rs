@@ -23,7 +23,11 @@ use naming::testing::MemorySequenceCounters;
 use crate::guided::dialog::Dialog;
 use crate::guided::events::{Event, EventSource};
 use crate::guided::state::{RememberedState, load_state, save_state, state_file};
+use history::ImportHistory;
+use history::testing::MemoryImportHistory;
+
 use crate::guided::{Environment, Ports};
+use crate::paths::PathError;
 
 /// The home folder of the tests.
 pub(super) const HOME: &str = "/home/ada";
@@ -74,6 +78,12 @@ pub(super) struct Harness {
     pub(super) devices: MemoryDeviceSource,
     pub(super) counters: MemorySequenceCounters,
     pub(super) session: SessionSequence,
+    /// The import history, kept across the runs of this harness as the history in the
+    /// state folder is kept across program runs.
+    pub(super) history: Box<dyn ImportHistory>,
+    /// Resolves a folder to its canonical path; the paths of the memory file system are
+    /// canonical already, so it returns them unchanged unless a test replaces it.
+    pub(super) resolve_folder: fn(&Path) -> Result<PathBuf, PathError>,
     /// Each copy into the library advances the clock this much.
     pub(super) time_per_copy: Cell<Duration>,
     /// After this many copies, the next read of a card pulls it and fails.
@@ -98,6 +108,8 @@ impl Harness {
             devices: MemoryDeviceSource::new(),
             counters: MemorySequenceCounters::new(),
             session: SessionSequence::new(),
+            history: Box::new(MemoryImportHistory::new()),
+            resolve_folder: |folder| Ok(folder.to_path_buf()),
             time_per_copy: Cell::new(Duration::ZERO),
             pull_after_copies: Cell::new(None),
             copies: Cell::new(0),
@@ -167,6 +179,8 @@ impl Harness {
             devices: &self.devices,
             counters: &self.counters,
             session: &self.session,
+            history: &*self.history,
+            resolve_folder: self.resolve_folder,
         };
         let environment = Environment {
             home: PathBuf::from(HOME),

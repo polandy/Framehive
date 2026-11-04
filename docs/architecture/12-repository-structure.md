@@ -22,7 +22,7 @@ framehive/
 ├── schemas/                  # JSON Schemas for the YAML configuration (ADR 0011)
 ├── crates/
 │   ├── domain/  kernel/  ui-kit/
-│   ├── services/  catalog/  metadata/  volumes/  jobs/  previews/  naming/  files/  devices/  export/
+│   ├── services/  catalog/  metadata/  volumes/  jobs/  previews/  naming/  files/  history/  devices/  export/
 │   └── adapters/  sqlite/  fs/  blake3/  clock/  gphoto2/  mtp/  udisks/  macos-disks/  xmp/  raw/  ffmpeg/  onnx/  osm-tiles/  digikam-db/  immich-http/
 ├── modules/
 │   ├── import/  import-ui/

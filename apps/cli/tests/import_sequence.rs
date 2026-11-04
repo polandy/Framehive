@@ -14,7 +14,6 @@ use support::{Folders, has_line_starting_with, stderr};
 
 const COUNTERS_AT_250: &str = "format_version=1\nstored_last=250\n";
 const TEMPLATE: &str = "{seq_stored:4}.{ext}";
-const NOT_RECOGNIZED: &str = "warning: files already imported are not recognized, because the name template has a persisted sequence counter";
 
 fn folders_with_two_videos(counters: &str) -> Folders {
     let folders = Folders::new();
@@ -35,7 +34,7 @@ fn copied_files(folders: &Folders) -> usize {
 
 /// spec: CLI-004.1
 #[test]
-fn copies_with_reserved_numbers_and_warns() {
+fn copies_with_reserved_numbers_without_a_warning() {
     let folders = folders_with_two_videos(COUNTERS_AT_250);
 
     let output = folders.import(&["--template", TEMPLATE]);
@@ -45,11 +44,7 @@ fn copies_with_reserved_numbers_and_warns() {
     assert_eq!(fs::read(library.join("0251.MOV")).unwrap(), b"first video");
     assert_eq!(fs::read(library.join("0252.MOV")).unwrap(), b"second video");
     assert!(counters(&folders).contains("stored_last=252\n"));
-    assert!(
-        stderr(&output).lines().any(|line| line == NOT_RECOGNIZED),
-        "{}",
-        stderr(&output)
-    );
+    assert!(!stderr(&output).contains("warning"), "{}", stderr(&output));
 }
 
 /// spec: CLI-004.2

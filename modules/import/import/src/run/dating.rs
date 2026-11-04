@@ -5,7 +5,7 @@
 
 use std::path::Path;
 
-use domain::{LocalDateTime, Timestamp};
+use domain::{CaptureTime, LocalDateTime, Timestamp};
 use metadata::{CaptureTimeError, NoCaptureTime, read_capture_time};
 
 use super::ImportRun;
@@ -17,6 +17,9 @@ use crate::scan::FoundFile;
 pub(super) struct DatedFile {
     pub(super) asset_file: AssetFile,
     pub(super) no_capture_time: Option<NoCaptureTime>,
+    /// The capture time as the file records it, before camera time correction: what
+    /// the import history looks the file up by (IMPORT-009).
+    pub(super) recorded_capture_time: Option<LocalDateTime>,
 }
 
 impl ImportRun<'_> {
@@ -38,7 +41,11 @@ impl ImportRun<'_> {
         let modification_time = self
             .local_time(file.modification_time)
             .ok_or(FileError::ModificationTimeOutOfRange)?;
+        // No camera time correction exists yet (N15), so the capture time of the plan
+        // is the one the file records.
+        let recorded_capture_time = capture_time.map(|time: CaptureTime| time.date_time());
         Ok(DatedFile {
+            recorded_capture_time,
             asset_file: AssetFile {
                 file_name: file_name.to_owned(),
                 role: file.role,

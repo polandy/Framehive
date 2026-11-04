@@ -6,7 +6,7 @@
 #![allow(clippy::unwrap_used, reason = "test helpers may panic on bad fixtures")]
 
 use domain::{AssetFileRole, LocalDateTime};
-use import::{AssetFile, ImportPlan, PlanNotice, PlannedFile};
+use import::{AssetFile, ImportPlan, PlannedFile};
 use naming::{CompatibilityMode, NameTemplate, RenderError};
 
 fn time(text: &str) -> LocalDateTime {
@@ -107,34 +107,4 @@ fn the_range_starts_at_the_first_sequence_number() {
     let files = numbered("{seq_stored:4}.{ext}", &assets, 251);
 
     assert_eq!(targets(&files), [Ok("0251.RAF"), Ok("0252.RAF")]);
-}
-
-/// spec: IMPORT-002.15
-#[test]
-fn a_persisted_counter_puts_a_notice_on_the_plan() {
-    let raw = captured("A.RAF", AssetFileRole::Raw, "2026-10-17 10:00:00");
-    let notices = |text: &str| {
-        let template = NameTemplate::parse(text).unwrap();
-        let assets = [vec![raw.clone()]];
-        ImportPlan::new(
-            &assets,
-            &template,
-            CompatibilityMode::On,
-            import_time(),
-            None,
-            1,
-        )
-        .notices()
-        .to_vec()
-    };
-
-    assert_eq!(
-        notices("{seq_today:3}.{ext}"),
-        [PlanNotice::AlreadyImportedNotRecognized]
-    );
-    assert_eq!(
-        notices("{seq_stored:3}.{ext}"),
-        [PlanNotice::AlreadyImportedNotRecognized]
-    );
-    assert_eq!(notices("{seq_session:3}.{ext}"), []);
 }

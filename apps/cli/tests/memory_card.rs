@@ -118,10 +118,10 @@ fn a_memory_card_is_copied_once_and_left_unchanged() {
         assert_eq!(target, source, "{name} differs from its source");
     }
 
-    // The second import finds everything already imported and changes nothing.
+    // The second import finds everything imported before and changes nothing.
     assert_has_line(
         &second,
-        &copied_line("DSCF0001.RAF", false).replacen("copied", "already imported", 1),
+        &copied_line("DSCF0001.RAF", false).replacen("copied", "imported before", 1),
     );
     assert_eq!(
         summary_line(&second),

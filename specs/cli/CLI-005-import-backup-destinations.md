@@ -53,7 +53,8 @@ be created, stops the command before any file is copied, with exit code 2.
   `backup <backup>: 1 backed up, 0 already backed up, 0 failed`, and the exit code is 0
 
 ### CLI-005.2 – A re-run fills a new backup destination
-- **Given** the folders after CLI-005.1, and a second, empty backup folder
+- **Given** the folders after CLI-005.1 without its import history, and a second, empty
+  backup folder
 - **When** the user runs the command again with `--backup <backup> --backup <second>`
 - **Then** the output has `already imported  DSCF0001.RAF -> 2026/2026-10-17/DSCF0001.RAF`,
   then `  already backed up  <backup>` and `  backed up  <second>`, the second folder has
@@ -93,3 +94,4 @@ be created, stops the command before any file is copied, with exit code 2.
 |---|---|
 | 2026-11-04 | Initial draft for backup destinations (IMPORT-007); accepted by the owner |
 | 2026-11-04 | Implemented in `framehive-cli` |
+| 2026-11-04 | The import history recognizes a re-run (CLI-008): CLI-005.2 now runs without the history, so it still tests IMPORT-003 and IMPORT-007 |

@@ -4,7 +4,7 @@
 //! The template step and the job code prompt of the guided import (CLI-002).
 
 use devices::Device;
-use import::{JobCode, PlannedRun, SourceScan};
+use import::{FilePlan, JobCode, PlannedRun, SourceScan};
 use naming::{NameTemplate, TemplateError};
 
 use super::dialog::{Dialog, Stop};
@@ -104,7 +104,13 @@ impl Dialog<'_> {
         job_code: Option<&JobCode>,
     ) -> Result<bool, Stop> {
         let preview_job_code = JobCode::parse(PREVIEW_JOB_CODE).ok();
-        let destination = self.destination();
+        let destination = match (self.ports.resolve_folder)(&self.destination()) {
+            Ok(destination) => destination,
+            Err(error) => {
+                self.say(&format!("The template cannot be previewed: {error}"));
+                return self.ask_yes("Use this template? [Y/n]: ", Some(card));
+            }
+        };
         let settings = import::ImportSettings {
             source: card.mount_point(),
             destination: &destination,
@@ -131,14 +137,19 @@ impl Dialog<'_> {
             card.name()
         ));
         for file in plan.files() {
-            let target = match &file.planned {
-                Ok(planned) => match &planned.target {
-                    Ok(target) => target.clone(),
-                    Err(error) => format!("cannot be named: {error}"),
+            let source = file.found.path.display();
+            let line = match &file.planned {
+                Ok(FilePlan::Named(planned)) => match &planned.target {
+                    Ok(target) => format!("  {source} -> {target}"),
+                    Err(error) => format!("  {source} -> cannot be named: {error}"),
                 },
-                Err(error) => format!("cannot be named: {error}"),
+                // The line of the file list and of `framehive import` (CLI-008).
+                Ok(FilePlan::ImportedBefore { target }) => {
+                    format!("  imported before  {source} -> {target}")
+                }
+                Err(error) => format!("  {source} -> cannot be named: {error}"),
             };
-            self.say(&format!("  {} -> {target}", file.found.path.display()));
+            self.say(&line);
         }
     }
 

@@ -8,6 +8,7 @@
 
 mod backup;
 mod environment;
+mod history;
 mod import;
 mod naming;
 mod readiness;

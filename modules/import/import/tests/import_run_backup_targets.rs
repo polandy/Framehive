@@ -171,6 +171,7 @@ fn the_summary_counts_each_backup_destination() {
             destination: PathBuf::from(BACKUP),
             backed_up: 1,
             already_backed_up: 1,
+            backed_up_before: 0,
             failed: 1,
         }]
     );

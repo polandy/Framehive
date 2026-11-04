@@ -52,6 +52,26 @@ impl Folders {
             .join("state/framehive/sequence-counters.txt")
     }
 
+    /// The import history of the state folder (CLI-008).
+    pub(crate) fn history_file(&self) -> PathBuf {
+        self.root
+            .path()
+            .join("state/framehive/import-history.sqlite")
+    }
+
+    /// Deletes the import history, with the journal files SQLite may leave, so a
+    /// later run knows no earlier import, as on another machine.
+    pub(crate) fn forget_history(&self) {
+        let history = self.history_file();
+        for suffix in ["", "-wal", "-shm"] {
+            let mut file = history.clone().into_os_string();
+            file.push(suffix);
+            if Path::new(&file).exists() {
+                fs::remove_file(&file).unwrap();
+            }
+        }
+    }
+
     /// Writes `text` as the counter file.
     pub(crate) fn write_counters(&self, text: &str) {
         let file = self.counter_file();
@@ -79,18 +99,32 @@ impl Folders {
     }
 
     pub(crate) fn import_into(&self, destination: &Path, options: &[&str]) -> Output {
+        self.import_command(destination, options)
+            .env("XDG_STATE_HOME", self.root.path().join("state"))
+            .output()
+            .unwrap()
+    }
+
+    /// Runs the import of the source with `options`, with neither `XDG_STATE_HOME` nor
+    /// an absolute `HOME`, so no state folder can be found.
+    pub(crate) fn import_without_state_folder(&self, options: &[&str]) -> Output {
+        self.import_command(&self.destination(), options)
+            .env_remove("XDG_STATE_HOME")
+            .env("HOME", "not-absolute")
+            .output()
+            .unwrap()
+    }
+
+    fn import_command(&self, destination: &Path, options: &[&str]) -> Command {
         let mut arguments = vec![
             "import".to_owned(),
             self.source().display().to_string(),
             destination.display().to_string(),
         ];
         arguments.extend(options.iter().map(|option| (*option).to_owned()));
-        Command::new(env!("CARGO_BIN_EXE_framehive"))
-            .args(arguments)
-            .env("TZ", "UTC")
-            .env("XDG_STATE_HOME", self.root.path().join("state"))
-            .output()
-            .unwrap()
+        let mut command = Command::new(env!("CARGO_BIN_EXE_framehive"));
+        command.args(arguments).env("TZ", "UTC");
+        command
     }
 }
 

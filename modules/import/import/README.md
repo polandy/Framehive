@@ -78,15 +78,30 @@ Sequence numbers (IMPORT-002): the plan numbers assets, not files, in shooting o
 previews the range; `start` reserves it through the `naming::SequenceCounters` port, or
 from the `SessionSequence` for session and letter numbers, before the first file is
 copied, and names the files again if another import took the previewed numbers. A dry
-run reserves nothing. `run` is the scan, `plan`, `start` and `execute`. A template with
-a persisted counter puts `PlanNotice::AlreadyImportedNotRecognized` on the plan.
+run reserves nothing. `run` is the scan, `plan`, `start` and `execute`.
+
+Import history (IMPORT-009): `ImportRun` reads and writes the `history::ImportHistory`
+port. `plan` looks each file up by original file name, size and capture time (before
+camera time correction) at the import destination and at each backup destination, and
+reads its checksum only when a lookup finds a copy. A file whose most recent copy at the
+import destination has the same checksum is `FilePlan::ImportedBefore`: it is left out of
+the import plan, gets no sequence number, and is reported as `FileOutcome::ImportedBefore`
+with the recorded target, without looking at the destination. It is still backed up to
+each backup destination where it is not `BackupOutcome::BackedUpBefore`. `start` records
+the run, `execute` records each verified copy (copied, already imported, backed up,
+already backed up) right after it is verified and the end of the run, also when it is
+stopped. A dry run records nothing. A history that cannot be read stops the plan
+(`RunError::History`); one that cannot record stops the run after that file
+(`ImportSummary::history_error`), which format readiness treats like a stopped run.
+The run compares destinations exactly as `ImportSettings` gives them, so the caller
+passes their canonical absolute paths (IMPORT-009); `framehive-cli` does (CLI-008).
 
 Boundaries:
 
 - **Pure logic, I/O through ports.** Making an import plan does no I/O. The scan,
   conflict resolution and the import run read and write only through the `FileSystem`
-  and `Hasher` ports of `files`, the `Clock` of `domain` and the `SequenceCounters` of
-  `naming`; the app wires the
+  and `Hasher` ports of `files`, the `Clock` of `domain`, the `SequenceCounters` of
+  `naming` and the `ImportHistory` of `history`; the app wires the
   adapters. `ImportRun` runs synchronously on the caller's thread and reports to a
   `ProgressSink`, which it asks before each file whether to go on
   (`should_continue`, IMPORT-004.13); a stopped run sets `ImportSummary::stopped`. It
@@ -96,8 +111,7 @@ Boundaries:
 - **Grouping** of files into assets is defined by LIBRARY-001; the module uses it and
   does not redefine it. `ImportPlan::new` takes assets that are already grouped.
 - **Not covered yet:** metadata tokens,
-  camera time correction, sidecars (until grouping), resuming an
-  interrupted import, the import log, the live preview and block editor (a UI spec), and
+  camera time correction, sidecars (until grouping), the import log, the live preview and block editor (a UI spec), and
   where a profile stores its template (the profile spec).
 
 ## Public API
@@ -115,8 +129,7 @@ Boundaries:
 | `require_job_code`, `MissingJobCode` | Refuses an import whose template uses `{job}` without a job code (IMPORT-006) |
 | `ImportRun`, `ImportSettings` | Scans, plans, starts, resolves and copies, file by file (ADR 0020, IMPORT-004) |
 | `SessionSequence` | The session counter of one run of the application (IMPORT-002) |
-| `PlanNotice` | A notice the plan carries, such as a persisted counter that cannot recognize files already imported |
-| `PlannedRun`, `RunFile` | An import run planned and not yet executed: each selected file with its plan entry or dating failure |
+| `PlannedRun`, `RunFile`, `FilePlan` | An import run planned and not yet executed: each selected file with its plan entry, imported before, or its dating failure |
 | `ProgressSink`, `NoProgress` | Receives each step of an import run on the caller's thread |
 | `ImportSummary`, `FileReport`, `FileOutcome`, `FileError`, `RunError` | What a run reports per file, and why a run did not start |
 | `BackupReport`, `BackupOutcome`, `BackupError`, `BackupCounts` | What happened to a file at each backup destination, and the counts per backup destination (IMPORT-007) |

@@ -34,8 +34,12 @@ Each `--backup` folder (CLI-005) is resolved the same way and checked with
 dry run, it then creates the missing folders of the destination and of each backup
 destination and runs `import::ImportRun` with `adapter-fs`, `adapter-blake3` and `adapter-clock`, in
 compatibility mode. The persisted sequence counters (CLI-004, ADR 0029) come from
-`adapter-sequence-counters` in the state folder; without a home folder the command
-stops only when the template has a persisted counter.
+`adapter-sequence-counters`, and the import history (CLI-008, ADR 0031) from
+`adapter-sqlite`, both in the state folder; the command stops when the state folder is
+unknown (no absolute `XDG_STATE_HOME` and no home folder). The destinations it passes to
+the run are the resolved paths above: their existing part is canonical and the missing
+folders are created as named, so a destination has the same path in the first run and
+in later ones, which is how the history identifies it (IMPORT-009).
 
 ## Guided import
 
@@ -51,6 +55,10 @@ thread that reads standard input. Backup destinations (CLI-006) are chosen with 
 the plan summary and passed to the run; one on the card, or one that
 `import::check_backup_destinations` rejects, blocks Enter like a destination on the
 card, and the report adds the files with a failed backup and the backup summary lines.
+The import history is `adapter-sqlite` in the state folder; the destinations are resolved
+with `paths::canonical_folder` (through `Ports::resolve_folder`) before each plan, and a
+history that cannot be used is reported as `The import history <path> cannot be used:
+<reason>`.
 The destination, the backup destinations, the template and the recent job codes are
 remembered in `$XDG_STATE_HOME/framehive/guided-import.txt` (ADR 0025, format version 2
 of ADR 0030; version 1 is still read), written through the `FileSystem` port as
@@ -62,23 +70,24 @@ a terminal, or the home folder or the current folder is unknown.
 
 The report texts live here, not in the import module. Standard output gets one line
 per file as soon as it is done (`copied`, `would copy`, `already imported`,
-`duplicate`, `skipped`, `failed`), each followed by one indented line per backup
-destination (`backed up`, `already backed up`, `backup failed`) that names the folder
+`imported before`, `duplicate`, `skipped`, `failed`), each followed by one indented line
+per backup destination (`backed up`, `already backed up`, `backed up before`,
+`backup failed`) that names the folder
 as given, the files and folders the scan left out (`left out`), a summary line, and one
 `backup <folder>: …` line per backup destination; in a dry run `copied` reads
 `would copy`, in the summary as well, and there are no backup lines. The format
 readiness (CLI-007, `format_readiness_lines`) ends the report of a run that is not a
 dry run: `framehive import` says `source`, the guided import says `card` and prints it
 before the eject question. Errors that stop the command go to standard error as
-`error: <message>`. A job code that the template does not use is accepted and
-reported on standard error as `warning: <message>`, and so are the notices of the plan,
-such as the one for a persisted sequence counter; there is no other log output yet.
+`error: <message>`, and so does an import history that fails during the run, after the
+summary. A job code that the template does not use is accepted and reported on
+standard error as `warning: <message>`; there is no other log output yet.
 
 | Code | Meaning |
 |---|---|
-| 0 | Every file was copied, already imported, a duplicate, skipped or left out |
-| 1 | A file failed, or a folder could not be read (`ImportSummary::has_failures`), or a file failed at a backup destination |
-| 2 | The import did not start: invalid arguments, template or job code, missing source, destination inside the source or not creatable, an invalid or not creatable backup destination, sequence numbers that do not fit or counters that cannot be read or stored |
+| 0 | Every file was copied, already imported, imported before, a duplicate, skipped or left out |
+| 1 | A file failed, or a folder could not be read (`ImportSummary::has_failures`), a file failed at a backup destination, or the import history failed during the run |
+| 2 | The import did not start: invalid arguments, template or job code, missing source, destination inside the source or not creatable, an invalid or not creatable backup destination, sequence numbers that do not fit, counters that cannot be read or stored, an unknown state folder, or an import history that cannot be used |
 
 ## Modules
 
@@ -107,8 +116,9 @@ and a `ManualClock`; `tests/guided_import.rs` checks the binary without a termin
 
 ## Dependencies
 
-- `adapter-blake3`, `adapter-clock`, `adapter-fs`, `adapter-mounts`, `devices`, `domain`,
-  `files`, `import`, `naming`
+- `adapter-blake3`, `adapter-clock`, `adapter-fs`, `adapter-mounts`,
+  `adapter-sequence-counters`, `adapter-sqlite`, `devices`, `domain`, `files`, `history`,
+  `import`, `naming`
 
 - `clap` (ADR 0020 §6): `default-features = false`, features `std`, `help`, `usage`,
   `error-context`.

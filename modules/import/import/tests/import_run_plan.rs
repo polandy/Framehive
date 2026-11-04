@@ -11,6 +11,7 @@ use std::path::{Path, PathBuf};
 use domain::testing::ManualClock;
 use domain::{Timestamp, UtcOffset};
 use files::testing::{Fault, FnvHasher, MemoryFileSystem};
+use history::testing::MemoryImportHistory;
 use import::{
     ConflictPolicy, FileOutcome, FileReport, ImportRun, ImportSettings, NoProgress, PlannedRun,
     ProgressSink, SessionSequence, SourceScan, scan_source,
@@ -43,6 +44,7 @@ struct Ports {
     clock: ManualClock,
     counters: MemorySequenceCounters,
     session: SessionSequence,
+    history: MemoryImportHistory,
 }
 
 fn ports() -> Ports {
@@ -53,6 +55,7 @@ fn ports() -> Ports {
         ),
         counters: MemorySequenceCounters::new(),
         session: SessionSequence::new(),
+        history: MemoryImportHistory::new(),
     }
 }
 
@@ -64,6 +67,7 @@ impl Ports {
             &self.clock,
             &self.counters,
             &self.session,
+            &self.history,
         )
     }
 }
@@ -105,7 +109,16 @@ fn operations_to_plan(file_system: &MemoryFileSystem, count: usize) -> usize {
 fn targets(plan: &PlannedRun) -> Vec<&str> {
     plan.files()
         .iter()
-        .map(|file| file.planned.as_ref().unwrap().target.as_deref().unwrap())
+        .map(|file| {
+            file.planned
+                .as_ref()
+                .unwrap()
+                .named()
+                .unwrap()
+                .target
+                .as_deref()
+                .unwrap()
+        })
         .collect()
 }
 
@@ -183,15 +196,16 @@ fn executing_the_plan_of_all_files_is_a_run() {
     }
     let template = template();
     let settings = settings(&template);
-    let ports = ports();
+    // Each way has its own import history, so the second does not find the first.
+    let (run_ports, step_ports) = (ports(), ports());
 
     let mut run_progress = Recorder::default();
-    let summary = ports
+    let summary = run_ports
         .run(&by_run)
         .run(&settings, &mut run_progress)
         .unwrap();
     let mut step_progress = Recorder::default();
-    let run = ports.run(&by_steps);
+    let run = step_ports.run(&by_steps);
     let plan = run.plan(&settings, &scan(&by_steps)).unwrap();
     let executed = run.execute(&settings, plan, &mut step_progress);
 

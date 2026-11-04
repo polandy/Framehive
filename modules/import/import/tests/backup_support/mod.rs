@@ -16,6 +16,7 @@ use std::path::{Path, PathBuf};
 use domain::testing::ManualClock;
 use domain::{Timestamp, UtcOffset};
 use files::testing::{FnvHasher, MemoryFileSystem};
+use history::testing::MemoryImportHistory;
 use import::{
     BackupError, BackupOutcome, ConflictPolicy, FileOutcome, FileReport, ImportRun, ImportSettings,
     ImportSummary, NoProgress, RunError, SessionSequence,
@@ -99,8 +100,15 @@ impl<'a> Setup<'a> {
             dry_run: false,
         };
         let (counters, session) = (MemorySequenceCounters::new(), SessionSequence::new());
-        ImportRun::new(file_system, &FnvHasher, &clock, &counters, &session)
-            .run(&settings, &mut NoProgress)
+        ImportRun::new(
+            file_system,
+            &FnvHasher,
+            &clock,
+            &counters,
+            &session,
+            &MemoryImportHistory::new(),
+        )
+        .run(&settings, &mut NoProgress)
     }
 }
 

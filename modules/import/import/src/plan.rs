@@ -7,7 +7,7 @@
 use domain::{AssetFileRole, CaptureTime, LocalDateTime};
 use naming::{
     AssetDate, AssetValues, CompatibilityMode, DateSource, FileTimes, NameTemplate, RenderError,
-    SequenceKind, asset_date,
+    asset_date,
 };
 
 use crate::JobCode;
@@ -80,7 +80,6 @@ impl PlannedFile {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ImportPlan {
     files: Vec<PlannedFile>,
-    notices: Vec<PlanNotice>,
 }
 
 impl ImportPlan {
@@ -119,10 +118,7 @@ impl ImportPlan {
             })
             .flatten()
             .collect();
-        ImportPlan {
-            files,
-            notices: notices(template),
-        }
+        ImportPlan { files }
     }
 
     /// The number of assets the plan numbers: one sequence number each (IMPORT-002).
@@ -135,32 +131,6 @@ impl ImportPlan {
     #[must_use]
     pub fn files(&self) -> &[PlannedFile] {
         &self.files
-    }
-
-    /// What the person should know before the plan runs.
-    #[must_use]
-    pub fn notices(&self) -> &[PlanNotice] {
-        &self.notices
-    }
-}
-
-/// Something the person should know about an import plan before it runs.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum PlanNotice {
-    /// The template has a persisted sequence counter, so every import gives the same
-    /// files new names, and files already imported are not recognized (IMPORT-002,
-    /// "Files already imported").
-    AlreadyImportedNotRecognized,
-}
-
-fn notices(template: &NameTemplate) -> Vec<PlanNotice> {
-    let persisted = template
-        .sequence_kind()
-        .is_some_and(SequenceKind::is_persisted);
-    if persisted {
-        vec![PlanNotice::AlreadyImportedNotRecognized]
-    } else {
-        Vec::new()
     }
 }
 

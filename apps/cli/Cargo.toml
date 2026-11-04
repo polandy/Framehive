@@ -23,10 +23,12 @@ adapter-clock.workspace = true
 adapter-fs.workspace = true
 adapter-mounts.workspace = true
 adapter-sequence-counters.workspace = true
+adapter-sqlite.workspace = true
 clap.workspace = true
 devices.workspace = true
 domain.workspace = true
 files.workspace = true
+history.workspace = true
 import.workspace = true
 naming.workspace = true
 

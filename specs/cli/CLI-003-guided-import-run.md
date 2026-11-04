@@ -34,9 +34,8 @@ EOS_DIGITAL: 1024 files, 12.8 GB, captured 2026-10-17 to 2026-10-19
 - `j` asks for the job code, `t` runs the template step, and `d` asks for the
   destination, with the current one as default; each then plans again and shows the
   summary.
-- When the template has a persisted sequence counter (IMPORT-002), the summary says
-  `Files already imported are not recognized, because the template has a persisted sequence counter.`
-  The numbers the summary plans are reserved only when Enter starts the import.
+- With a persisted sequence counter (IMPORT-002), the numbers the summary plans are
+  reserved only when Enter starts the import; files imported before get none (CLI-008).
 - When the sequence numbers do not fit the template, the dialog prints
   `The template cannot number <card>: <reason>`, with the suggested template, and
   runs the template step instead of the summary.
@@ -166,8 +165,8 @@ the dialog goes on.
 - **Given** a card with two files and the template `{seq_stored:4}.{ext}`, with the
   stored counter at 250
 - **When** the plan summary is shown and the person presses Enter
-- **Then** the summary says that files already imported are not recognized, the files
-  are copied as `0251.RAF` and `0252.RAF`, and the stored counter is at 252
+- **Then** the files are copied as `0251.RAF` and `0252.RAF`, the stored counter is at
+  252, and the summary says nothing about files that are not recognized
 
 ### CLI-003.14 – Sequence numbers that do not fit
 - **Given** a card with two files and the template `{seq_stored:2}.{ext}`, with the
@@ -182,7 +181,7 @@ the dialog goes on.
 - Import profiles and the YAML settings (N8): later specs; they will supersede the
   remembered template and destination.
 - Backup destinations (I2): CLI-006. "Card can be formatted" (N5): CLI-007.
-- Resuming an interrupted import across program runs (N4): a later spec.
+- Resuming an interrupted import across program runs (N4): CLI-008.
 - Ctrl+C during a copy: the process ends, and the next import replaces the leftover
   `.part` file (IMPORT-004.10).
 
@@ -200,3 +199,4 @@ the dialog goes on.
 | 2026-11-01 | Split from CLI-002 to stay under the document size limit; criteria renumbered, content unchanged |
 | 2026-11-04 | Sequence numbers (IMPORT-002): CLI-003.13 and CLI-003.14 |
 | 2026-11-04 | Backup destinations (CLI-006): the summary example shows the `backup` line and `[b]` |
+| 2026-11-04 | The import history recognizes files imported before (CLI-008): the sentence about a persisted counter is removed from the summary and from CLI-003.13 |

@@ -17,7 +17,7 @@ mod tests;
 
 use std::ffi::OsStr;
 use std::io::{self, IsTerminal};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::time::Duration;
 
@@ -26,12 +26,15 @@ use adapter_clock::SystemClock;
 use adapter_fs::StdFileSystem;
 use adapter_mounts::MountsDeviceSource;
 use adapter_sequence_counters::FileSequenceCounters;
+use adapter_sqlite::SqliteImportHistory;
 use devices::DeviceSource;
 use domain::Clock;
 use files::{FileSystem, Hasher};
+use history::ImportHistory;
 use import::{ImportRun, SessionSequence};
 use naming::SequenceCounters;
 
+use crate::paths::{PathError, canonical_folder};
 use crate::{NOT_STARTED, report_error};
 use dialog::Dialog;
 use events::StdinEvents;
@@ -56,6 +59,11 @@ pub(crate) struct Ports<'a> {
     pub(crate) counters: &'a dyn SequenceCounters,
     /// The session counter, shared by the imports of all cards in this run.
     pub(crate) session: &'a SessionSequence,
+    /// The import history: what was copied where before (IMPORT-009).
+    pub(crate) history: &'a dyn ImportHistory,
+    /// Resolves a destination to the canonical absolute path that identifies it in the
+    /// import history (IMPORT-009).
+    pub(crate) resolve_folder: fn(&Path) -> Result<PathBuf, PathError>,
 }
 
 impl<'a> Ports<'a> {
@@ -67,6 +75,7 @@ impl<'a> Ports<'a> {
             self.clock,
             self.counters,
             self.session,
+            self.history,
         )
     }
 }
@@ -80,7 +89,8 @@ pub(crate) struct Environment {
     pub(crate) current_folder: PathBuf,
     /// The file the answers are remembered in (ADR 0025).
     pub(crate) state_file: PathBuf,
-    /// The folder of the state files, which holds the sequence counters (ADR 0029).
+    /// The folder of the state files, which holds the sequence counters (ADR 0029) and
+    /// the import history (ADR 0031).
     pub(crate) state_folder: PathBuf,
 }
 
@@ -104,6 +114,7 @@ pub(crate) fn run_guided() -> ExitCode {
     let devices = MountsDeviceSource::new();
     let counters = FileSequenceCounters::new(environment.state_folder.clone());
     let session = SessionSequence::new();
+    let history = SqliteImportHistory::new(&environment.state_folder);
     let ports = Ports {
         file_system: &file_system,
         hasher: &Blake3Hasher,
@@ -111,6 +122,8 @@ pub(crate) fn run_guided() -> ExitCode {
         devices: &devices,
         counters: &counters,
         session: &session,
+        history: &history,
+        resolve_folder: canonical_folder,
     };
     let mut events = StdinEvents::start(POLL_INTERVAL);
     let mut output = io::stdout().lock();

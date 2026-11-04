@@ -7,9 +7,10 @@
 use std::path::{Path, PathBuf};
 
 use devices::{Device, EjectError};
+use history::HistoryError;
 use import::{
     BackupOutcome, ConflictPolicy, FileOutcome, FileReport, FormatReadiness, ImportSettings,
-    JobCode, PlannedRun, RunError, SourceScan, scan_folder,
+    ImportSummary, JobCode, PlannedRun, RunError, SourceScan, scan_folder,
 };
 use naming::{CompatibilityMode, NameTemplate, SequenceError};
 
@@ -73,8 +74,9 @@ impl Dialog<'_> {
             job_code = Some(self.ask_job_code(card)?);
         }
         if resuming {
-            let destination = self.destination();
-            let backups = self.state.backups.clone();
+            let Some((destination, backups)) = self.resolved_folders() else {
+                return Ok(());
+            };
             let Some(template) = self.state.template.clone() else {
                 return Ok(());
             };
@@ -104,8 +106,9 @@ impl Dialog<'_> {
         let ports = self.ports;
         let run = ports.import_run();
         loop {
-            let destination = self.destination();
-            let backups = self.state.backups.clone();
+            let Some((destination, backups)) = self.resolved_folders() else {
+                return Ok(());
+            };
             let Some(template) = self.state.template.clone() else {
                 return Ok(());
             };
@@ -128,7 +131,7 @@ impl Dialog<'_> {
                     continue;
                 }
                 Err(error) => {
-                    self.say(&format!("Could not plan {}: {error}", card.name()));
+                    self.say(&plan_error_line(card, &error));
                     return Ok(());
                 }
             };
@@ -187,7 +190,7 @@ impl Dialog<'_> {
         match run.plan(settings, scan) {
             Ok(plan) => Some(plan),
             Err(error) => {
-                self.say(&format!("Could not plan {}: {error}", card.name()));
+                self.say(&plan_error_line(card, &error));
                 None
             }
         }
@@ -218,6 +221,10 @@ impl Dialog<'_> {
         let run = ports.import_run();
         let plan = match run.start(settings, plan) {
             Ok(plan) => plan,
+            Err(RunError::History(error)) => {
+                self.say(&history_line(&error));
+                return Ok(false);
+            }
             Err(error) => {
                 self.say(&format!("Could not import {}: {error}", card.name()));
                 return Ok(false);
@@ -245,20 +252,29 @@ impl Dialog<'_> {
             });
             return Ok(true);
         }
+        self.report(&summary);
+        self.offer_eject(card)?;
+        Ok(true)
+    }
+
+    /// Reports a finished import: the files that need attention, the summaries, a
+    /// history that could not record, and the format readiness.
+    fn report(&mut self, summary: &ImportSummary) {
         for report in &summary.files {
             self.report_file(report);
         }
-        self.say(&summary_line(&summary, false));
-        for line in backup_summary_lines(&summary, &[]) {
+        self.say(&summary_line(summary, false));
+        for line in backup_summary_lines(summary, &[]) {
             self.say(&line);
         }
-        // A card pulled meanwhile returned above and is imported again as a whole
-        // (CLI-003.8), so this summary covers every file of the card (CLI-007.10).
-        for line in format_readiness_lines(&FormatReadiness::of(&summary), "card") {
+        if let Some(error) = &summary.history_error {
+            self.say(&history_line(error));
+        }
+        // A card pulled meanwhile was imported again as a whole (CLI-003.8), so this
+        // summary covers every file of the card (CLI-007.10).
+        for line in format_readiness_lines(&FormatReadiness::of(summary), "card") {
             self.say(&line);
         }
-        self.offer_eject(card)?;
-        Ok(true)
     }
 
     /// Reports a file that failed or was skipped, or that failed at a backup
@@ -315,6 +331,27 @@ impl Dialog<'_> {
             .is_some_and(NameTemplate::uses_job_code)
     }
 
+    /// The destination and the backup destinations as the canonical absolute paths that
+    /// identify them in the import history (IMPORT-009), or `None` after saying why one
+    /// cannot be resolved.
+    pub(super) fn resolved_folders(&mut self) -> Option<(PathBuf, Vec<PathBuf>)> {
+        let folders: Vec<PathBuf> = std::iter::once(self.destination())
+            .chain(self.state.backups.iter().cloned())
+            .collect();
+        let mut resolved = Vec::with_capacity(folders.len());
+        for folder in &folders {
+            match (self.ports.resolve_folder)(folder) {
+                Ok(path) => resolved.push(path),
+                Err(error) => {
+                    self.say(&format!("Could not use {}: {error}", folder.display()));
+                    return None;
+                }
+            }
+        }
+        let backups = resolved.split_off(1);
+        resolved.pop().map(|destination| (destination, backups))
+    }
+
     /// The remembered destination, or `<home>/Pictures` before one is chosen.
     pub(super) fn destination(&self) -> PathBuf {
         self.state
@@ -322,4 +359,22 @@ impl Dialog<'_> {
             .clone()
             .unwrap_or_else(|| self.environment.home.join("Pictures"))
     }
+}
+
+/// The line for a plan that cannot be made; a history that cannot be used has its own
+/// line (CLI-008).
+fn plan_error_line(card: &Device, error: &RunError) -> String {
+    match error {
+        RunError::History(error) => history_line(error),
+        error => format!("Could not plan {}: {error}", card.name()),
+    }
+}
+
+/// The line for an import history that cannot be used (CLI-008).
+fn history_line(error: &HistoryError) -> String {
+    format!(
+        "The import history {} cannot be used: {}",
+        error.file.display(),
+        error.reason
+    )
 }

@@ -11,10 +11,12 @@ members = [
     "crates/adapters/libraw",
     "crates/adapters/mounts",
     "crates/adapters/sequence-counters",
+    "crates/adapters/sqlite",
     "crates/domain",
     "crates/kernel",
     "crates/services/devices",
     "crates/services/files",
+    "crates/services/history",
     "crates/services/metadata",
     "crates/services/naming",
     "crates/services/previews",
@@ -38,9 +40,11 @@ adapter-fs = { path = "crates/adapters/fs" }
 adapter-libraw = { path = "crates/adapters/libraw" }
 adapter-mounts = { path = "crates/adapters/mounts" }
 adapter-sequence-counters = { path = "crates/adapters/sequence-counters" }
+adapter-sqlite = { path = "crates/adapters/sqlite" }
 devices = { path = "crates/services/devices" }
 domain = { path = "crates/domain" }
 files = { path = "crates/services/files" }
+history = { path = "crates/services/history" }
 import = { path = "modules/import/import" }
 import-ui = { path = "modules/import/import-ui" }
 kernel = { path = "crates/kernel" }
@@ -49,6 +53,7 @@ naming = { path = "crates/services/naming" }
 previews = { path = "crates/services/previews" }
 blake3 = { version = "1", default-features = false, features = ["std"] }
 clap = { version = "4", default-features = false, features = ["std", "help", "usage", "error-context"] }
+rusqlite = { version = "0.41", default-features = false, features = ["bundled"] }
 jiff = { version = "0.2", default-features = false, features = ["std", "tz-system", "tzdb-zoneinfo"] }
 thiserror = { version = "2", default-features = false, features = ["std"] }
 unicode-normalization = { version = "0.1", default-features = false }
