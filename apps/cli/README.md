@@ -71,8 +71,10 @@ readiness (CLI-007, `format_readiness_lines`) ends the report of a run that is n
 dry run: `framehive import` says `source`, the guided import says `card` and prints it
 before the eject question. Errors that stop the command go to standard error as
 `error: <message>`. A job code that the template does not use is accepted and
-reported on standard error as `warning: <message>`, and so are the notices of the plan,
-such as the one for a persisted sequence counter; there is no other log output yet.
+reported on standard error as `warning: <message>`, and so is the warning that a
+persisted sequence counter does not recognize files already imported, because the import
+history is kept in memory for one process until it is stored in the state folder
+(CLI-008); there is no other log output yet.
 
 | Code | Meaning |
 |---|---|

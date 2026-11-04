@@ -9,8 +9,10 @@ use std::path::{Path, PathBuf};
 
 use domain::Checksum;
 use files::{CopyError, CopyErrorKind, CopyStep, checksum_file, copy_verified_to_all};
+use history::HistoryError;
 
-use super::{ImportRun, ImportSettings, RunFile};
+use super::recognition::Recognition;
+use super::{FilePlan, ImportRun, ImportSettings, RecordedRun, RunFile};
 use crate::backup::{
     BackupError, BackupOutcome, BackupReport, BackupTarget, inspect_backup_target,
 };
@@ -20,26 +22,83 @@ use crate::report::{FileError, FileOutcome, FileReport};
 use crate::scan::FoundFile;
 
 /// What one file gets: its outcome at the import destination and at each backup
-/// destination.
-type Imported = (FileOutcome, Vec<BackupReport>);
+/// destination, and the checksum of the source when the run read it.
+struct Imported {
+    outcome: FileOutcome,
+    backups: Vec<BackupReport>,
+    checksum: Option<Checksum>,
+}
+
+impl Imported {
+    fn without_backups(outcome: FileOutcome) -> Self {
+        Imported {
+            outcome,
+            backups: Vec::new(),
+            checksum: None,
+        }
+    }
+}
 
 impl ImportRun<'_> {
-    /// Imports one file of a planned run and reports what happened to it.
+    /// Imports one file of a planned run, records its verified copies in the import
+    /// history when the run is recorded, and reports what happened to it. The error
+    /// says that the history could not record a copy.
     pub(super) fn execute_file(
         &self,
         settings: &ImportSettings<'_>,
         resolver: &mut TargetResolver<'_>,
         file: RunFile,
-    ) -> FileReport {
-        let (outcome, backups) = match file.planned {
-            Ok(planned) => self.import_planned(settings, resolver, &file.found, &planned),
-            Err(error) => (FileOutcome::Failed(error), Vec::new()),
+        recorded: Option<RecordedRun>,
+    ) -> (FileReport, Result<(), HistoryError>) {
+        let recognition = file.recognition.as_ref();
+        let imported = match file.planned {
+            Ok(FilePlan::Named(planned)) => {
+                self.import_planned(settings, resolver, &file.found, &planned, recognition)
+            }
+            Ok(FilePlan::ImportedBefore { target }) => {
+                self.back_up_imported_before(settings, resolver, &file.found, target, recognition)
+            }
+            Err(error) => Imported::without_backups(FileOutcome::Failed(error)),
         };
-        FileReport {
+        let report = FileReport {
             path: file.found.path,
             dated_by_modification_time: file.no_capture_time,
-            outcome,
-            backups,
+            outcome: imported.outcome,
+            backups: imported.backups,
+        };
+        let recorded = match (recorded, recognition) {
+            (Some(run), Some(recognition)) => self.record_copies(
+                settings,
+                run,
+                recognition,
+                &report,
+                imported.checksum.as_ref(),
+            ),
+            _ => Ok(()),
+        };
+        (report, recorded)
+    }
+
+    /// Backs up a file imported before, at the target of its recorded copy, to each
+    /// backup destination it is not backed up before at (IMPORT-009, "Backed up
+    /// before"). The import destination is not looked at.
+    fn back_up_imported_before(
+        &self,
+        settings: &ImportSettings<'_>,
+        resolver: &mut TargetResolver<'_>,
+        file: &FoundFile,
+        target: String,
+        recognition: Option<&Recognition>,
+    ) -> Imported {
+        if settings.dry_run {
+            return Imported::without_backups(FileOutcome::ImportedBefore { target });
+        }
+        let copy = FileCopy::new(settings, file, &target, recognition);
+        let copied = self.copy_file(&copy, resolver, false);
+        Imported {
+            outcome: FileOutcome::ImportedBefore { target },
+            backups: copied.backups,
+            checksum: copied.source_checksum,
         }
     }
 
@@ -50,6 +109,7 @@ impl ImportRun<'_> {
         resolver: &mut TargetResolver<'_>,
         file: &FoundFile,
         planned: &PlannedFile,
+        recognition: Option<&Recognition>,
     ) -> Imported {
         let target = match &planned.target {
             Ok(target) => target,
@@ -66,33 +126,46 @@ impl ImportRun<'_> {
         };
         match outcome {
             ConflictOutcome::CopyTo { target } if settings.dry_run => {
-                (FileOutcome::WouldCopy { target }, Vec::new())
+                Imported::without_backups(FileOutcome::WouldCopy { target })
             }
             ConflictOutcome::CopyTo { target } => {
-                let copy = FileCopy::new(settings, file, &target);
-                let (copied, backups) = self.copy_file(&copy, resolver, true);
-                let outcome = match copied {
+                let copy = FileCopy::new(settings, file, &target, recognition);
+                let copied = self.copy_file(&copy, resolver, true);
+                let outcome = match copied.imported {
                     Some(Ok(checksum)) => FileOutcome::Copied { target, checksum },
                     Some(Err(error)) => FileOutcome::Failed(FileError::Copy(error)),
                     None => FileOutcome::Failed(FileError::Copy(unfinished(&copy.import_target))),
                 };
-                (outcome, backups)
+                Imported {
+                    outcome,
+                    backups: copied.backups,
+                    checksum: copied.source_checksum,
+                }
             }
             // A file already imported is backed up, so that a re-run fills a new or a
             // failed backup destination (IMPORT-007).
             ConflictOutcome::AlreadyImported { target } if !settings.dry_run => {
-                let copy = FileCopy::new(settings, file, &target);
-                let (_, backups) = self.copy_file(&copy, resolver, false);
-                (FileOutcome::AlreadyImported { target }, backups)
+                let copy = FileCopy::new(settings, file, &target, recognition);
+                let copied = self.copy_file(&copy, resolver, false);
+                // The resolver read the source to find it already imported, so its
+                // checksum is known without another read.
+                let checksum = copied
+                    .source_checksum
+                    .or_else(|| resolver.source_checksum(&file.path).ok());
+                Imported {
+                    outcome: FileOutcome::AlreadyImported { target },
+                    backups: copied.backups,
+                    checksum,
+                }
             }
             ConflictOutcome::AlreadyImported { target } => {
-                (FileOutcome::AlreadyImported { target }, Vec::new())
+                Imported::without_backups(FileOutcome::AlreadyImported { target })
             }
             ConflictOutcome::DuplicateOf { earlier } => {
-                (FileOutcome::DuplicateOf { earlier }, Vec::new())
+                Imported::without_backups(FileOutcome::DuplicateOf { earlier })
             }
             ConflictOutcome::SkippedNameConflict { target } => {
-                (FileOutcome::SkippedNameConflict { target }, Vec::new())
+                Imported::without_backups(FileOutcome::SkippedNameConflict { target })
             }
             ConflictOutcome::FailedNameConflict { target } => {
                 failed(FileError::NameConflict { target })
@@ -101,19 +174,25 @@ impl ImportRun<'_> {
     }
 
     /// Copies the file with one read of the source: to the import destination when
-    /// `to_import_destination`, and to each backup target that is free. Returns the
-    /// result at the import destination, if it was a target, and one report per
-    /// backup destination.
+    /// `to_import_destination`, and to each backup target that is free and not backed
+    /// up before.
     fn copy_file(
         &self,
         copy: &FileCopy<'_>,
         resolver: &mut TargetResolver<'_>,
         to_import_destination: bool,
-    ) -> (Option<Result<Checksum, CopyError>>, Vec<BackupReport>) {
+    ) -> FileCopied {
         let found: Vec<BackupTarget> = copy
-            .backup_targets
+            .destinations
             .iter()
-            .map(|path| inspect_backup_target(self.file_system, path, copy.size))
+            .zip(&copy.backup_targets)
+            .map(|(destination, path)| {
+                if copy.is_backed_up_before(destination) {
+                    BackupTarget::BackedUpBefore
+                } else {
+                    inspect_backup_target(self.file_system, path, copy.size)
+                }
+            })
             .collect();
         let mut targets: Vec<&Path> = Vec::new();
         if to_import_destination {
@@ -147,6 +226,7 @@ impl ImportRun<'_> {
                     BackupTarget::SameSize => {
                         self.compare_backup(copy, resolver, &mut source_checksum, path)
                     }
+                    BackupTarget::BackedUpBefore => BackupOutcome::BackedUpBefore,
                     BackupTarget::Failed(error) => BackupOutcome::Failed(error),
                 };
                 BackupReport {
@@ -155,7 +235,11 @@ impl ImportRun<'_> {
                 }
             })
             .collect();
-        (imported, backups)
+        FileCopied {
+            imported,
+            backups,
+            source_checksum,
+        }
     }
 
     /// Compares a file of the source's size at the backup target `path` with the
@@ -188,6 +272,15 @@ impl ImportRun<'_> {
     }
 }
 
+/// What [`ImportRun::copy_file`] did: the result at the import destination, if it was
+/// a target, one report per backup destination, and the source's checksum if it was
+/// read.
+struct FileCopied {
+    imported: Option<Result<Checksum, CopyError>>,
+    backups: Vec<BackupReport>,
+    source_checksum: Option<Checksum>,
+}
+
 /// The paths of one file's copy: its source, its import target and its backup
 /// targets, all for the same target path.
 struct FileCopy<'a> {
@@ -197,10 +290,16 @@ struct FileCopy<'a> {
     import_target: PathBuf,
     destinations: &'a [PathBuf],
     backup_targets: Vec<PathBuf>,
+    recognition: Option<&'a Recognition>,
 }
 
 impl<'a> FileCopy<'a> {
-    fn new(settings: &ImportSettings<'a>, file: &'a FoundFile, target: &str) -> Self {
+    fn new(
+        settings: &ImportSettings<'a>,
+        file: &'a FoundFile,
+        target: &str,
+        recognition: Option<&'a Recognition>,
+    ) -> Self {
         FileCopy {
             source_path: &file.path,
             source: settings.source.join(&file.path),
@@ -212,7 +311,15 @@ impl<'a> FileCopy<'a> {
                 .iter()
                 .map(|destination| destination.join(target))
                 .collect(),
+            recognition,
         }
+    }
+
+    /// Whether the import history holds the file at the backup destination
+    /// `destination` (IMPORT-009, "Backed up before").
+    fn is_backed_up_before(&self, destination: &Path) -> bool {
+        self.recognition
+            .is_some_and(|recognition| recognition.is_backed_up_before(destination))
     }
 }
 
@@ -230,5 +337,5 @@ fn unfinished(target: &Path) -> CopyError {
 }
 
 fn failed(error: FileError) -> Imported {
-    (FileOutcome::Failed(error), Vec::new())
+    Imported::without_backups(FileOutcome::Failed(error))
 }

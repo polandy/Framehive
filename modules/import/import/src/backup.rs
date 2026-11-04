@@ -105,6 +105,10 @@ pub enum BackupOutcome {
     BackedUp,
     /// The backup target already holds the file's content; it was not written.
     AlreadyBackedUp,
+    /// The import history holds a verified copy of the file at this backup
+    /// destination; nothing was written, and the backup target is not looked at
+    /// (IMPORT-009).
+    BackedUpBefore,
     /// The backup failed; nothing of it is left at the backup target.
     Failed(BackupError),
 }
@@ -136,6 +140,8 @@ pub struct BackupCounts {
     pub backed_up: usize,
     /// Files that were there already with the same content.
     pub already_backed_up: usize,
+    /// Files the import history holds a verified copy of there (IMPORT-009).
+    pub backed_up_before: usize,
     /// Files that failed there.
     pub failed: usize,
 }
@@ -154,6 +160,7 @@ impl BackupCounts {
             match report.outcome {
                 BackupOutcome::BackedUp => counts.backed_up += 1,
                 BackupOutcome::AlreadyBackedUp => counts.already_backed_up += 1,
+                BackupOutcome::BackedUpBefore => counts.backed_up_before += 1,
                 BackupOutcome::Failed(_) => counts.failed += 1,
             }
         }
@@ -167,6 +174,8 @@ pub(crate) enum BackupTarget {
     Free,
     /// A file of the source's size: compared by checksum once the source is read.
     SameSize,
+    /// The import history holds the file there: nothing is written or looked at.
+    BackedUpBefore,
     /// Decided without a copy: a conflict, or a target that cannot be checked.
     Failed(BackupError),
 }

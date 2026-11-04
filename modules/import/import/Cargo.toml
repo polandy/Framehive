@@ -16,6 +16,7 @@ layer = "module"
 [dependencies]
 domain.workspace = true
 files.workspace = true
+history.workspace = true
 kernel.workspace = true
 metadata.workspace = true
 naming.workspace = true

@@ -74,6 +74,12 @@ All user-visible changes are listed here. The format follows
   list each file that is not saved, with the number of locations it is verified at, and
   each unreadable or ungrouped entry the scan left out. The guided import shows it before
   the eject question; a dry run shows nothing, and exit codes are unchanged.
+- Import history in the import run (IMPORT-009): an import recognizes files it copied
+  before by name, size, capture time and checksum, even after they were renamed or
+  deleted in the library or the template changed. It does not copy them again, gives
+  them no sequence number, reports them as `imported before`, and completes their
+  missing backups. Each verified copy is recorded. For now the command line keeps the
+  history in memory, so it recognizes files imported earlier in the same process only.
 
 ### Fixed
 

@@ -235,6 +235,7 @@ dependencies = [
  "devices",
  "domain",
  "files",
+ "history",
  "import",
  "metadata",
  "naming",
@@ -254,6 +255,7 @@ version = "0.1.0"
 dependencies = [
  "domain",
  "files",
+ "history",
  "kernel",
  "metadata",
  "naming",

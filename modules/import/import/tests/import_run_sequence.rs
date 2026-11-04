@@ -12,9 +12,10 @@ use std::path::Path;
 use domain::testing::ManualClock;
 use domain::{Timestamp, UtcOffset};
 use files::testing::{FnvHasher, MemoryFileSystem};
+use history::testing::MemoryImportHistory;
 use import::{
-    ConflictPolicy, FileOutcome, ImportRun, ImportSettings, ImportSummary, NoProgress, PlanNotice,
-    PlannedRun, RunError, SessionSequence, SourceScan, scan_source,
+    ConflictPolicy, FileOutcome, ImportRun, ImportSettings, ImportSummary, NoProgress, PlannedRun,
+    RunError, SessionSequence, SourceScan, scan_source,
 };
 use naming::testing::MemorySequenceCounters;
 use naming::{
@@ -45,10 +46,7 @@ fn card() -> MemoryFileSystem {
 }
 
 fn clock() -> ManualClock {
-    ManualClock::new(
-        Timestamp::from_unix_seconds(NOW),
-        UtcOffset::from_seconds(0).unwrap(),
-    )
+    ManualClock::new(Timestamp::from_unix_seconds(NOW), UtcOffset::UTC)
 }
 
 fn stored_at(last: u32) -> MemorySequenceCounters {
@@ -80,7 +78,16 @@ fn scan(file_system: &MemoryFileSystem) -> SourceScan {
 fn planned(plan: &PlannedRun) -> Vec<&str> {
     plan.files()
         .iter()
-        .map(|file| file.planned.as_ref().unwrap().target.as_deref().unwrap())
+        .map(|file| {
+            file.planned
+                .as_ref()
+                .unwrap()
+                .named()
+                .unwrap()
+                .target
+                .as_deref()
+                .unwrap()
+        })
         .collect()
 }
 
@@ -102,7 +109,15 @@ fn copied(summary: &ImportSummary) -> Vec<&str> {
 fn a_dry_run_shows_the_numbers_and_reserves_nothing() {
     let file_system = card();
     let (clock, counters, session) = (clock(), stored_at(250), SessionSequence::new());
-    let run = ImportRun::new(&file_system, &FnvHasher, &clock, &counters, &session);
+    let history = MemoryImportHistory::new();
+    let run = ImportRun::new(
+        &file_system,
+        &FnvHasher,
+        &clock,
+        &counters,
+        &session,
+        &history,
+    );
     let template = NameTemplate::parse("{seq_stored:4}.{ext}").unwrap();
 
     let dry_run = run
@@ -124,7 +139,15 @@ fn a_dry_run_shows_the_numbers_and_reserves_nothing() {
 fn an_import_that_started_in_between_moves_the_numbers_on() {
     let file_system = card();
     let (clock, counters, session) = (clock(), stored_at(100), SessionSequence::new());
-    let run = ImportRun::new(&file_system, &FnvHasher, &clock, &counters, &session);
+    let history = MemoryImportHistory::new();
+    let run = ImportRun::new(
+        &file_system,
+        &FnvHasher,
+        &clock,
+        &counters,
+        &session,
+        &history,
+    );
     let template = NameTemplate::parse("{seq_stored:4}.{ext}").unwrap();
     let settings = settings(&template, false);
 
@@ -154,7 +177,15 @@ fn the_imported_today_counter_belongs_to_the_day_the_import_starts() {
         imported_today_last: 12,
         stored_last: 0,
     });
-    let run = ImportRun::new(&file_system, &FnvHasher, &clock, &counters, &session);
+    let history = MemoryImportHistory::new();
+    let run = ImportRun::new(
+        &file_system,
+        &FnvHasher,
+        &clock,
+        &counters,
+        &session,
+        &history,
+    );
     let template = NameTemplate::parse("{date:%Y%m%d}_{seq_today:3}.{ext}").unwrap();
 
     let summary = run
@@ -174,7 +205,15 @@ fn an_overflow_keeps_the_import_from_starting() {
     let file_system = card();
     let paths_before = file_system.paths();
     let (clock, counters, session) = (clock(), stored_at(98), SessionSequence::new());
-    let run = ImportRun::new(&file_system, &FnvHasher, &clock, &counters, &session);
+    let history = MemoryImportHistory::new();
+    let run = ImportRun::new(
+        &file_system,
+        &FnvHasher,
+        &clock,
+        &counters,
+        &session,
+        &history,
+    );
     let template = NameTemplate::parse("{seq_stored:2}.{ext}").unwrap();
 
     let error = run
@@ -196,7 +235,15 @@ fn broken_counters_keep_the_import_from_starting() {
     let paths_before = file_system.paths();
     let (clock, counters, session) = (clock(), stored_at(250), SessionSequence::new());
     counters.break_at("/state/framehive/sequence-counters.txt", 3);
-    let run = ImportRun::new(&file_system, &FnvHasher, &clock, &counters, &session);
+    let history = MemoryImportHistory::new();
+    let run = ImportRun::new(
+        &file_system,
+        &FnvHasher,
+        &clock,
+        &counters,
+        &session,
+        &history,
+    );
     let template = NameTemplate::parse("{seq_stored:4}.{ext}").unwrap();
 
     let error = run
@@ -222,7 +269,15 @@ fn a_session_counter_runs_with_broken_counters() {
     let file_system = card();
     let (clock, counters, session) = (clock(), stored_at(250), SessionSequence::new());
     counters.break_at("/state/framehive/sequence-counters.txt", 3);
-    let run = ImportRun::new(&file_system, &FnvHasher, &clock, &counters, &session);
+    let history = MemoryImportHistory::new();
+    let run = ImportRun::new(
+        &file_system,
+        &FnvHasher,
+        &clock,
+        &counters,
+        &session,
+        &history,
+    );
     let template = NameTemplate::parse("{seq_session:4}.{ext}").unwrap();
 
     let summary = run
@@ -242,12 +297,26 @@ fn imports_of_one_session_continue_its_numbers() {
     );
     let template = NameTemplate::parse("{seq_letters}.{ext}").unwrap();
 
-    let first = ImportRun::new(&first_card, &FnvHasher, &clock, &counters, &session)
-        .run(&settings(&template, false), &mut NoProgress)
-        .unwrap();
-    let second = ImportRun::new(&second_card, &FnvHasher, &clock, &counters, &session)
-        .run(&settings(&template, false), &mut NoProgress)
-        .unwrap();
+    let first = ImportRun::new(
+        &first_card,
+        &FnvHasher,
+        &clock,
+        &counters,
+        &session,
+        &MemoryImportHistory::new(),
+    )
+    .run(&settings(&template, false), &mut NoProgress)
+    .unwrap();
+    let second = ImportRun::new(
+        &second_card,
+        &FnvHasher,
+        &clock,
+        &counters,
+        &session,
+        &MemoryImportHistory::new(),
+    )
+    .run(&settings(&template, false), &mut NoProgress)
+    .unwrap();
 
     assert_eq!(copied(&first), ["a.MOV", "b.MOV", "c.MOV"]);
     assert_eq!(copied(&second), ["d.MOV", "e.MOV", "f.MOV"]);
@@ -262,9 +331,16 @@ fn a_session_counter_recognizes_files_imported_in_an_earlier_run() {
     let template = NameTemplate::parse("{date:%Y%m%d}_{seq_session:3}.{ext}").unwrap();
     let import_in_new_run = || {
         let session = SessionSequence::new();
-        ImportRun::new(&file_system, &FnvHasher, &clock, &counters, &session)
-            .run(&settings(&template, false), &mut NoProgress)
-            .unwrap()
+        ImportRun::new(
+            &file_system,
+            &FnvHasher,
+            &clock,
+            &counters,
+            &session,
+            &MemoryImportHistory::new(),
+        )
+        .run(&settings(&template, false), &mut NoProgress)
+        .unwrap()
     };
 
     let first = import_in_new_run();
@@ -284,25 +360,40 @@ fn a_session_counter_recognizes_files_imported_in_an_earlier_run() {
 
 /// spec: IMPORT-002.15
 #[test]
-fn the_plan_of_a_persisted_counter_carries_a_notice() {
+fn a_persisted_counter_recognizes_files_imported_before() {
     let file_system = card();
     let (clock, counters, session) = (
         clock(),
         MemorySequenceCounters::new(),
         SessionSequence::new(),
     );
-    let run = ImportRun::new(&file_system, &FnvHasher, &clock, &counters, &session);
-    let notices = |template: &str| {
-        let template = NameTemplate::parse(template).unwrap();
-        run.plan(&settings(&template, false), &scan(&file_system))
-            .unwrap()
-            .notices()
-            .to_vec()
-    };
-
-    assert_eq!(
-        notices("{seq_today:3}.{ext}"),
-        [PlanNotice::AlreadyImportedNotRecognized]
+    let history = MemoryImportHistory::new();
+    let run = ImportRun::new(
+        &file_system,
+        &FnvHasher,
+        &clock,
+        &counters,
+        &session,
+        &history,
     );
-    assert_eq!(notices("{seq_session:3}.{ext}"), []);
+    let template = NameTemplate::parse("{seq_today:3}.{ext}").unwrap();
+
+    let first = run
+        .run(&settings(&template, false), &mut NoProgress)
+        .unwrap();
+    let (counters_after_first, paths_after_first) = (counters.stored(), file_system.paths());
+    let again = run
+        .run(&settings(&template, false), &mut NoProgress)
+        .unwrap();
+
+    assert_eq!(copied(&first), ["001.MOV", "002.MOV", "003.MOV"]);
+    assert!(
+        again
+            .files
+            .iter()
+            .all(|report| matches!(report.outcome, FileOutcome::ImportedBefore { .. })),
+        "{again:?}"
+    );
+    assert_eq!(counters.stored(), counters_after_first);
+    assert_eq!(file_system.paths(), paths_after_first);
 }

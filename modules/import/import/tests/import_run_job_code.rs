@@ -10,6 +10,7 @@ use std::path::Path;
 use domain::testing::ManualClock;
 use domain::{Timestamp, UtcOffset};
 use files::testing::{FnvHasher, MemoryFileSystem};
+use history::testing::MemoryImportHistory;
 use import::{
     ConflictPolicy, FileOutcome, ImportRun, ImportSettings, ImportSummary, JobCode, MissingJobCode,
     NoProgress, RunError, SessionSequence,
@@ -56,8 +57,15 @@ fn import(
         dry_run: false,
     };
     let (counters, session) = (MemorySequenceCounters::new(), SessionSequence::new());
-    ImportRun::new(file_system, &FnvHasher, &clock, &counters, &session)
-        .run(&settings, &mut NoProgress)
+    ImportRun::new(
+        file_system,
+        &FnvHasher,
+        &clock,
+        &counters,
+        &session,
+        &MemoryImportHistory::new(),
+    )
+    .run(&settings, &mut NoProgress)
 }
 
 fn copied_target(summary: &ImportSummary) -> Option<&str> {

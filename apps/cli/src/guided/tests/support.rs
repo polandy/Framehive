@@ -23,6 +23,8 @@ use naming::testing::MemorySequenceCounters;
 use crate::guided::dialog::Dialog;
 use crate::guided::events::{Event, EventSource};
 use crate::guided::state::{RememberedState, load_state, save_state, state_file};
+use history::testing::MemoryImportHistory;
+
 use crate::guided::{Environment, Ports};
 
 /// The home folder of the tests.
@@ -160,6 +162,8 @@ impl Harness {
     /// Runs the dialog through `steps`; once they are used up, the input ends.
     pub(super) fn run(&self, steps: Vec<Step>) -> Transcript {
         let file_system = HookedFileSystem { harness: self };
+        // One history per dialog, as `run_guided` keeps it in memory.
+        let history = MemoryImportHistory::new();
         let ports = Ports {
             file_system: &file_system,
             hasher: &FnvHasher,
@@ -167,6 +171,7 @@ impl Harness {
             devices: &self.devices,
             counters: &self.counters,
             session: &self.session,
+            history: &history,
         };
         let environment = Environment {
             home: PathBuf::from(HOME),

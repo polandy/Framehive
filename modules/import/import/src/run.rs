@@ -9,23 +9,27 @@ use std::path::{Path, PathBuf};
 
 use domain::{Clock, LocalDateTime};
 use files::{FileSystem, Hasher};
+use history::ImportHistory;
 use metadata::NoCaptureTime;
-use naming::{CompatibilityMode, CounterDate, NameTemplate, SequenceCounters};
+use naming::{CompatibilityMode, NameTemplate, SequenceCounters};
 
 use crate::backup::{BackupCounts, check_backup_destinations};
 use crate::conflicts::{ConflictPolicy, TargetResolver};
 use crate::job_code::{JobCode, require_job_code};
-use crate::plan::{AssetFile, PlanNotice, PlannedFile};
+use crate::plan::PlannedFile;
 use crate::report::{FileError, ImportSummary, ProgressSink, RunError};
 use crate::scan::{FoundFile, LeftOut, SourceScan, scan_source};
-use crate::sequence::{Reservation, SessionSequence, sequence_range};
+use crate::sequence::{Reservation, SessionSequence};
 
 mod copy;
 mod dating;
+mod planning;
+mod recognition;
 mod rename;
 
-use dating::DatedFile;
-use rename::{import_plan, rename};
+use planning::PlanInputs;
+use recognition::{Recognition, RecordedRun};
+use rename::rename;
 
 /// What to import, from where to where, and how.
 #[derive(Debug, Clone, Copy)]
@@ -54,38 +58,32 @@ pub struct ImportSettings<'a> {
 /// It runs on the caller's thread, through the ports only, and reports each step to a
 /// [`ProgressSink`]. Each file the scan finds is its own asset until grouping
 /// (LIBRARY-001) exists. A file that fails is reported and the run goes on with the
-/// next one (IMPORT-004.11).
+/// next one (IMPORT-004.11). Each verified copy is recorded in the import history,
+/// which recognizes the files imported before when the plan is made (IMPORT-009).
 pub struct ImportRun<'a> {
     file_system: &'a dyn FileSystem,
     hasher: &'a dyn Hasher,
     clock: &'a dyn Clock,
     counters: &'a dyn SequenceCounters,
     session: &'a SessionSequence,
+    history: &'a dyn ImportHistory,
 }
 
 /// An import run that is planned and not yet executed: the selected files of a source
 /// scan, each dated and named by one import plan.
 ///
 /// [`ImportRun::plan`] and [`ImportRun::plan_first`] make it with the sequence
-/// numbers it would get; [`ImportRun::start`] reserves them, and
-/// [`ImportRun::execute`] executes it. Making it reads capture times, but resolves no
-/// conflicts and writes nothing.
+/// numbers it would get; [`ImportRun::start`] reserves them and records the start of
+/// the run in the import history, and [`ImportRun::execute`] executes it. Making it
+/// reads capture times and the import history, and the content of the files the
+/// history may hold, but resolves no conflicts and writes nothing.
 #[derive(Debug)]
 pub struct PlannedRun {
     files: Vec<RunFile>,
     left_out: Vec<LeftOut>,
-    notices: Vec<PlanNotice>,
     naming: PlanInputs,
-}
-
-/// What the import plan of a [`PlannedRun`] was made from, so that [`ImportRun::start`]
-/// can name its files again with the reserved numbers.
-#[derive(Debug)]
-struct PlanInputs {
-    /// The dated files, in scan order; each is its own asset until grouping exists.
-    assets: Vec<AssetFile>,
-    import_time: LocalDateTime,
-    first_sequence_number: u32,
+    /// The run in the import history, once it is started and not a dry run.
+    recorded: Option<RecordedRun>,
 }
 
 impl PlannedRun {
@@ -100,13 +98,6 @@ impl PlannedRun {
     pub fn left_out(&self) -> &[LeftOut] {
         &self.left_out
     }
-
-    /// What the person should know before the plan runs (IMPORT-002, "Files already
-    /// imported").
-    #[must_use]
-    pub fn notices(&self) -> &[PlanNotice] {
-        &self.notices
-    }
 }
 
 /// One file of a [`PlannedRun`].
@@ -116,14 +107,44 @@ pub struct RunFile {
     pub found: FoundFile,
     /// Why the file has no capture time, when it is dated by its modification time.
     pub no_capture_time: Option<NoCaptureTime>,
-    /// The file's entry in the import plan, or why the file could not be dated.
-    pub planned: Result<PlannedFile, FileError>,
+    /// The file's entry in the import plan, or that it is imported before, or why the
+    /// file could not be dated or looked up.
+    pub planned: Result<FilePlan, FileError>,
+    /// What the import history records the file by; `None` when it could not be
+    /// dated.
+    recognition: Option<Recognition>,
+}
+
+/// What the plan decided for one file of a [`PlannedRun`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FilePlan {
+    /// Named by the import plan; copied, or found at its target, when the run executes.
+    Named(PlannedFile),
+    /// The import history holds a verified copy at the import destination: the file
+    /// is not named, gets no sequence number and is not copied (IMPORT-009).
+    ImportedBefore {
+        /// The target of the most recent recorded copy, relative to the import
+        /// destination.
+        target: String,
+    },
+}
+
+impl FilePlan {
+    /// The file's entry in the import plan, unless it is imported before.
+    #[must_use]
+    pub fn named(&self) -> Option<&PlannedFile> {
+        match self {
+            FilePlan::Named(planned) => Some(planned),
+            FilePlan::ImportedBefore { .. } => None,
+        }
+    }
 }
 
 impl<'a> ImportRun<'a> {
     /// Creates a run that works through these ports. `counters` holds the persisted
     /// sequence counters, and `session` the session counter of this run of the
-    /// application (IMPORT-002).
+    /// application (IMPORT-002); `history` is the import history of this machine
+    /// (IMPORT-009).
     #[must_use]
     pub fn new(
         file_system: &'a dyn FileSystem,
@@ -131,6 +152,7 @@ impl<'a> ImportRun<'a> {
         clock: &'a dyn Clock,
         counters: &'a dyn SequenceCounters,
         session: &'a SessionSequence,
+        history: &'a dyn ImportHistory,
     ) -> Self {
         ImportRun {
             file_system,
@@ -138,6 +160,7 @@ impl<'a> ImportRun<'a> {
             clock,
             counters,
             session,
+            history,
         }
     }
 
@@ -149,8 +172,8 @@ impl<'a> ImportRun<'a> {
     ///
     /// Returns a [`RunError`] if the template uses `{job}` without a job code, a
     /// backup destination is invalid, the source cannot be scanned, the current time
-    /// cannot be shown in local time or the import cannot get its sequence numbers;
-    /// then nothing is copied. A file that
+    /// cannot be shown in local time, the import cannot get its sequence numbers or
+    /// the import history cannot be used; then nothing is copied. A file that
     /// fails is reported in the [`ImportSummary`] instead.
     pub fn run(
         &self,
@@ -185,8 +208,9 @@ impl<'a> ImportRun<'a> {
     /// Plans the first `count` files of `scan`, or all of them if it has fewer.
     ///
     /// It fixes the import time once, reads the capture time of each selected file
-    /// only, and makes one import plan from `settings.source`, `template`, `job_code`
-    /// and `mode`. Its sequence numbers are the ones the import would get if no other
+    /// only, looks each one up in the import history, and makes one import plan from
+    /// `settings.source`, `template`, `job_code` and `mode` for the files that are not
+    /// imported before (IMPORT-009). Its sequence numbers are the ones the import would get if no other
     /// import started before it (IMPORT-002, "Reservation"). It reserves no numbers,
     /// resolves no conflicts and writes nothing, so it also serves a preview of the
     /// targets.
@@ -195,8 +219,9 @@ impl<'a> ImportRun<'a> {
     ///
     /// Returns a [`RunError`] if the template uses `{job}` without a job code, the
     /// current time cannot be shown in local time, the persisted counters cannot be
-    /// read, or the numbers do not fit the template. A file that cannot be dated is
-    /// marked in the [`PlannedRun`] instead.
+    /// read, the numbers do not fit the template, or the import history cannot be
+    /// read. A file that cannot be dated or read is marked in the [`PlannedRun`]
+    /// instead.
     pub fn plan_first(
         &self,
         settings: &ImportSettings<'_>,
@@ -211,15 +236,18 @@ impl<'a> ImportRun<'a> {
 
     /// Starts the import of `plan`: reserves its sequence numbers before the first
     /// file is copied, and names its files again if another import took the numbers
-    /// the plan showed (IMPORT-002, "Reservation"). A dry run reserves nothing. It
-    /// checks the backup destinations first (IMPORT-007.11).
+    /// the plan showed (IMPORT-002, "Reservation"). Then it records the start of the
+    /// run in the import history (IMPORT-009). A dry run reserves and records nothing.
+    /// It checks the backup destinations first (IMPORT-007.11).
     ///
     /// # Errors
     ///
     /// Returns [`RunError::BackupDestination`] if a backup destination is invalid,
     /// and [`RunError::Sequence`] if the persisted counters cannot be read or
     /// stored, or the numbers do not fit the template; then nothing is reserved and
-    /// the import must not run.
+    /// the import must not run. Returns [`RunError::History`] if the import history
+    /// cannot record the start, and [`RunError::ImportTimeOutOfRange`] if the current
+    /// time cannot be recorded; then the import must not run either.
     pub fn start(
         &self,
         settings: &ImportSettings<'_>,
@@ -235,6 +263,7 @@ impl<'a> ImportRun<'a> {
             plan.naming.first_sequence_number = first;
             rename(&mut plan, settings);
         }
+        plan.recorded = Some(self.start_recorded_run(settings)?);
         Ok(plan)
     }
 
@@ -243,6 +272,9 @@ impl<'a> ImportRun<'a> {
     /// `settings.dry_run` only reports where it would go. Files run in plan order, and
     /// each is reported to `progress`. Before each file, `progress` is asked whether to
     /// go on; when it says stop, the remaining files are not started (IMPORT-004.13).
+    /// Each verified copy is recorded in the import history; when it cannot be
+    /// recorded, the run stops after that file (IMPORT-009.16). The end of a started
+    /// run is recorded, also when it stopped.
     ///
     /// `settings.source` must be the one the plan was made from.
     pub fn execute(
@@ -260,15 +292,26 @@ impl<'a> ImportRun<'a> {
         );
         let mut files = Vec::with_capacity(plan.files.len());
         let mut stopped = false;
+        let mut history_error = None;
         for file in plan.files {
             if !progress.should_continue() {
                 stopped = true;
                 break;
             }
             progress.file_started(&file.found.path);
-            let report = self.execute_file(settings, &mut resolver, file);
+            let (report, recorded) =
+                self.execute_file(settings, &mut resolver, file, plan.recorded);
             progress.file_finished(&report);
             files.push(report);
+            if let Err(error) = recorded {
+                history_error = Some(error);
+                break;
+            }
+        }
+        if let Some(run) = plan.recorded
+            && let Err(error) = self.finish_recorded_run(run)
+        {
+            history_error.get_or_insert(error);
         }
         let backups = settings
             .backup_destinations
@@ -282,7 +325,7 @@ impl<'a> ImportRun<'a> {
             left_out: plan.left_out,
             stopped,
             dry_run: settings.dry_run,
-            notices: plan.notices,
+            history_error,
             backups,
         }
     }
@@ -291,77 +334,6 @@ impl<'a> ImportRun<'a> {
     fn import_time(&self) -> Result<LocalDateTime, RunError> {
         self.local_time(self.clock.now())
             .ok_or(RunError::ImportTimeOutOfRange)
-    }
-
-    /// The first sequence number of the import of `naming`, shown or reserved.
-    fn first_sequence_number(
-        &self,
-        template: &NameTemplate,
-        naming: &PlanInputs,
-        reservation: Reservation,
-    ) -> Result<u32, RunError> {
-        let count = u32::try_from(naming.assets.len()).unwrap_or(u32::MAX);
-        let today = CounterDate::of(naming.import_time);
-        let range = sequence_range(
-            self.counters,
-            self.session,
-            template,
-            today,
-            count,
-            reservation,
-        )?;
-        Ok(range.map_or(1, |range| range.first))
-    }
-
-    /// Dates `files` and makes their import plan at `import_time`, with the sequence
-    /// numbers the import would get.
-    fn plan_at(
-        &self,
-        settings: &ImportSettings<'_>,
-        files: Vec<FoundFile>,
-        left_out: Vec<LeftOut>,
-        import_time: LocalDateTime,
-    ) -> Result<PlannedRun, RunError> {
-        let dated: Vec<Result<DatedFile, FileError>> = files
-            .iter()
-            .map(|file| self.date(settings.source, file))
-            .collect();
-        let mut naming = PlanInputs {
-            assets: dated
-                .iter()
-                .flatten()
-                .map(|file| file.asset_file.clone())
-                .collect(),
-            import_time,
-            first_sequence_number: 1,
-        };
-        naming.first_sequence_number =
-            self.first_sequence_number(settings.template, &naming, Reservation::Preview)?;
-        let plan = import_plan(&naming, settings);
-        // The plan has one entry for each dated file, in the same order.
-        let mut planned = plan.files().iter();
-        let files = files
-            .into_iter()
-            .zip(dated)
-            .map(|(found, dated)| match dated {
-                Ok(dated) => RunFile {
-                    found,
-                    no_capture_time: dated.no_capture_time,
-                    planned: planned.next().cloned().ok_or(FileError::NotPlanned),
-                },
-                Err(error) => RunFile {
-                    found,
-                    no_capture_time: None,
-                    planned: Err(error),
-                },
-            })
-            .collect();
-        Ok(PlannedRun {
-            files,
-            left_out,
-            notices: plan.notices().to_vec(),
-            naming,
-        })
     }
 }
 

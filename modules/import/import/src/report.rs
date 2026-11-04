@@ -9,13 +9,13 @@ use std::path::{Path, PathBuf};
 
 use domain::Checksum;
 use files::CopyError;
+use history::HistoryError;
 use metadata::NoCaptureTime;
 use naming::{RenderError, SequenceError};
 
 use crate::backup::{BackupCounts, BackupDestinationError, BackupReport};
 use crate::conflicts::ConflictError;
 use crate::job_code::MissingJobCode;
-use crate::plan::PlanNotice;
 use crate::scan::{LeftOut, LeftOutReason, ScanError, SourceScan};
 
 /// Receives the progress of an [`ImportRun`](crate::ImportRun) on the caller's thread,
@@ -83,6 +83,12 @@ pub enum FileOutcome {
         /// The existing file, relative to the destination.
         target: String,
     },
+    /// The import history holds a verified copy of the file at the import destination;
+    /// not copied, and the destination is not looked at (IMPORT-009).
+    ImportedBefore {
+        /// The target of the most recent recorded copy, relative to the destination.
+        target: String,
+    },
     /// An earlier file of the run has the same target and content; not copied.
     DuplicateOf {
         /// The earlier file, relative to the source.
@@ -100,7 +106,7 @@ pub enum FileOutcome {
 /// Why one file failed. The run goes on with the next file (IMPORT-004.11).
 #[derive(Debug, thiserror::Error)]
 pub enum FileError {
-    /// The file could not be read to find its capture time.
+    /// The file could not be read to find its capture time or its checksum.
     #[error("cannot be read: {error}")]
     CannotBeRead {
         /// The error of the file system.
@@ -153,6 +159,9 @@ pub enum RunError {
     /// A backup destination is invalid (IMPORT-007.11).
     #[error(transparent)]
     BackupDestination(#[from] BackupDestinationError),
+    /// The import history cannot be used (IMPORT-009).
+    #[error(transparent)]
+    History(#[from] HistoryError),
 }
 
 /// The result of a finished import run, in scan order.
@@ -168,19 +177,22 @@ pub struct ImportSummary {
     /// Whether the run was a dry run: it only reported where each file would go and
     /// wrote nothing (IMPORT-004).
     pub dry_run: bool,
-    /// The notices of the plan the run executed.
-    pub notices: Vec<PlanNotice>,
+    /// Why the import history could not record a copy or the end of the run. The run
+    /// stopped after the file whose copy it could not record (IMPORT-009.16); the
+    /// files it did not start are not in `files`.
+    pub history_error: Option<HistoryError>,
     /// What each backup destination got, in the order of the settings (IMPORT-007).
     pub backups: Vec<BackupCounts>,
 }
 
 impl ImportSummary {
-    /// Whether a file failed or the scan could not read a file or folder (CLI-001,
-    /// exit code 1).
+    /// Whether a file failed, the scan could not read a file or folder, or the import
+    /// history could not record (CLI-001, exit code 1).
     #[must_use]
     pub fn has_failures(&self) -> bool {
         let failed = |report: &FileReport| matches!(report.outcome, FileOutcome::Failed(_));
-        self.files.iter().any(failed)
+        self.history_error.is_some()
+            || self.files.iter().any(failed)
             || self
                 .left_out
                 .iter()

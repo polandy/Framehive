@@ -104,6 +104,7 @@ pub(crate) fn backup_line(backup: &BackupReport, names: &[BackupName]) -> String
     match &backup.outcome {
         BackupOutcome::BackedUp => format!("  backed up  {folder}"),
         BackupOutcome::AlreadyBackedUp => format!("  already backed up  {folder}"),
+        BackupOutcome::BackedUpBefore => format!("  backed up before  {folder}"),
         BackupOutcome::Failed(error) => {
             format!(
                 "  backup failed  {folder}: {}",
@@ -131,7 +132,8 @@ pub(crate) fn backup_summary_lines(summary: &ImportSummary, names: &[BackupName]
                 "backup {}: {} backed up, {} already backed up, {} failed",
                 shown(&counts.destination, names),
                 counts.backed_up,
-                counts.already_backed_up,
+                // Backed up before counts as already backed up (CLI-008).
+                counts.already_backed_up + counts.backed_up_before,
                 counts.failed
             )
         })
@@ -162,6 +164,9 @@ pub(crate) fn file_line(report: &FileReport) -> String {
         FileOutcome::WouldCopy { target } => format!("would copy  {source} -> {target}{dated}"),
         FileOutcome::AlreadyImported { target } => {
             format!("already imported  {source} -> {target}")
+        }
+        FileOutcome::ImportedBefore { target } => {
+            format!("imported before  {source} -> {target}")
         }
         FileOutcome::DuplicateOf { earlier } => {
             format!("duplicate  {source} = {}", earlier.display())
@@ -194,7 +199,10 @@ fn count(summary: &ImportSummary) -> Counts {
     for report in &summary.files {
         let counter = match report.outcome {
             FileOutcome::Copied { .. } | FileOutcome::WouldCopy { .. } => &mut counts.copied,
-            FileOutcome::AlreadyImported { .. } => &mut counts.already_imported,
+            // Imported before counts as already imported (CLI-008).
+            FileOutcome::AlreadyImported { .. } | FileOutcome::ImportedBefore { .. } => {
+                &mut counts.already_imported
+            }
             FileOutcome::DuplicateOf { .. } => &mut counts.duplicates,
             FileOutcome::SkippedNameConflict { .. } => &mut counts.skipped,
             FileOutcome::Failed(_) => &mut counts.failed,
@@ -275,7 +283,7 @@ mod tests {
             }],
             stopped: false,
             dry_run: true,
-            notices: Vec::new(),
+            history_error: None,
             backups: Vec::new(),
         };
 

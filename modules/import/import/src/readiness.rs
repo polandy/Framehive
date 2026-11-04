@@ -23,7 +23,8 @@ pub struct FormatReadiness {
     /// card: an unsupported type, hidden, or a symbolic link. They are not saved; the
     /// other left-out entries are listed in `blockers` instead.
     pub left_out_not_saved: usize,
-    /// Whether the progress sink stopped the run, so not every file was looked at.
+    /// Whether the progress sink or a failing import history stopped the run, so not
+    /// every file was looked at.
     pub stopped: bool,
     /// Whether the run was a dry run, which verifies nothing.
     pub dry_run: bool,
@@ -65,7 +66,7 @@ impl FormatReadiness {
                 .iter()
                 .filter(|left_out| !keeps_the_card(&left_out.reason))
                 .count(),
-            stopped: summary.stopped,
+            stopped: summary.stopped || summary.history_error.is_some(),
             dry_run: summary.dry_run,
             blockers,
         }
@@ -104,11 +105,14 @@ fn unsaved_files(files: &[FileReport], required_locations: usize) -> Vec<FormatB
 }
 
 /// At how many locations the file itself is verified: the import destination when it
-/// was copied or already imported, and each backup destination that has it.
+/// was copied, already imported or imported before, and each backup destination that
+/// has it or had it before (IMPORT-009, "Format readiness").
 fn verified_locations(file: &FileReport) -> usize {
     let at_import_destination = matches!(
         file.outcome,
-        FileOutcome::Copied { .. } | FileOutcome::AlreadyImported { .. }
+        FileOutcome::Copied { .. }
+            | FileOutcome::AlreadyImported { .. }
+            | FileOutcome::ImportedBefore { .. }
     );
     usize::from(at_import_destination) + file.backups.iter().filter(|b| is_backed_up(b)).count()
 }
@@ -116,7 +120,7 @@ fn verified_locations(file: &FileReport) -> usize {
 fn is_backed_up(backup: &BackupReport) -> bool {
     matches!(
         backup.outcome,
-        BackupOutcome::BackedUp | BackupOutcome::AlreadyBackedUp
+        BackupOutcome::BackedUp | BackupOutcome::AlreadyBackedUp | BackupOutcome::BackedUpBefore
     )
 }
 

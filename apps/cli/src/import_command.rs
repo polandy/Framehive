@@ -11,9 +11,10 @@ use adapter_blake3::Blake3Hasher;
 use adapter_clock::SystemClock;
 use adapter_fs::StdFileSystem;
 use adapter_sequence_counters::FileSequenceCounters;
+use history::testing::MemoryImportHistory;
 use import::{
     BackupDestinationError, ConflictPolicy, ImportRun, ImportSettings, ImportSummary, JobCode,
-    PlanNotice, SessionSequence, check_backup_destinations, require_job_code,
+    SessionSequence, check_backup_destinations, require_job_code,
 };
 use naming::{CompatibilityMode, NameTemplate, SequenceKind};
 
@@ -82,6 +83,9 @@ fn import(arguments: &ImportArguments) -> Result<ImportSummary, String> {
     let clock = SystemClock::new();
     let counters = sequence_counters(&template)?;
     let session = SessionSequence::new();
+    // The import history of this process only, until the history in the state folder
+    // is wired (CLI-008).
+    let history = MemoryImportHistory::new();
     let names = backups
         .iter()
         .map(|(backup, given)| BackupName {
@@ -91,12 +95,19 @@ fn import(arguments: &ImportArguments) -> Result<ImportSummary, String> {
         .collect();
     let mut printer =
         ReportPrinter::new(io::stdout().lock(), arguments.dry_run).with_backup_names(names);
-    let summary = ImportRun::new(&file_system, &Blake3Hasher, &clock, &counters, &session)
-        .run(&settings, &mut printer)
-        .map_err(|error| error.to_string())?;
+    let summary = ImportRun::new(
+        &file_system,
+        &Blake3Hasher,
+        &clock,
+        &counters,
+        &session,
+        &history,
+    )
+    .run(&settings, &mut printer)
+    .map_err(|error| error.to_string())?;
     printer.print_summary(&summary);
-    for notice in &summary.notices {
-        report_warning(notice_text(*notice));
+    if has_persisted_counter(&template) {
+        report_warning(NOT_RECOGNIZED);
     }
     Ok(summary)
 }
@@ -143,13 +154,15 @@ fn invalid_backup_message(
     )
 }
 
-/// The warning for a notice of the plan (CLI-001, "Sequence numbers").
-fn notice_text(notice: PlanNotice) -> &'static str {
-    match notice {
-        PlanNotice::AlreadyImportedNotRecognized => {
-            "files already imported are not recognized, because the name template has a persisted sequence counter"
-        }
-    }
+/// The warning of a persisted sequence counter (CLI-004): the import history of this
+/// process does not outlive it, so a later import does not recognize these files.
+const NOT_RECOGNIZED: &str = "files already imported are not recognized, because the name template has a persisted sequence counter";
+
+/// Whether `template` numbers files with a persisted sequence counter.
+pub(crate) fn has_persisted_counter(template: &NameTemplate) -> bool {
+    template
+        .sequence_kind()
+        .is_some_and(SequenceKind::is_persisted)
 }
 
 /// The persisted sequence counters in the state folder (ADR 0025, ADR 0029).

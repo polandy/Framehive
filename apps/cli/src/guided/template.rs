@@ -4,7 +4,7 @@
 //! The template step and the job code prompt of the guided import (CLI-002).
 
 use devices::Device;
-use import::{JobCode, PlannedRun, SourceScan};
+use import::{FilePlan, JobCode, PlannedRun, SourceScan};
 use naming::{NameTemplate, TemplateError};
 
 use super::dialog::{Dialog, Stop};
@@ -132,10 +132,11 @@ impl Dialog<'_> {
         ));
         for file in plan.files() {
             let target = match &file.planned {
-                Ok(planned) => match &planned.target {
+                Ok(FilePlan::Named(planned)) => match &planned.target {
                     Ok(target) => target.clone(),
                     Err(error) => format!("cannot be named: {error}"),
                 },
+                Ok(FilePlan::ImportedBefore { target }) => format!("{target} (imported before)"),
                 Err(error) => format!("cannot be named: {error}"),
             };
             self.say(&format!("  {} -> {target}", file.found.path.display()));

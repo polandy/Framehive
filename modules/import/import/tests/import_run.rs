@@ -10,6 +10,7 @@ use std::path::{Path, PathBuf};
 use domain::testing::ManualClock;
 use domain::{Timestamp, UtcOffset};
 use files::testing::{Fault, FnvHasher, MemoryFileSystem};
+use history::testing::MemoryImportHistory;
 use import::{
     ConflictPolicy, FileError, FileOutcome, FileReport, ImportRun, ImportSettings, ImportSummary,
     NoProgress, ProgressSink, RunError, ScanError, SessionSequence, SourceScan,
@@ -82,10 +83,8 @@ impl Setup {
         destination: &Path,
         progress: &mut dyn ProgressSink,
     ) -> Result<ImportSummary, RunError> {
-        let clock = ManualClock::new(
-            Timestamp::from_unix_seconds(NOW),
-            UtcOffset::from_seconds(self.offset).unwrap(),
-        );
+        let offset = UtcOffset::from_seconds(self.offset).unwrap();
+        let clock = ManualClock::new(Timestamp::from_unix_seconds(NOW), offset);
         let template = NameTemplate::parse(self.template).unwrap();
         let settings = ImportSettings {
             source: Path::new(SOURCE),
@@ -97,8 +96,9 @@ impl Setup {
             policy: self.policy,
             dry_run: self.dry_run,
         };
-        let (counters, session) = (MemorySequenceCounters::new(), SessionSequence::new());
-        ImportRun::new(file_system, &FnvHasher, &clock, &counters, &session)
+        let (counters, session) = (&MemorySequenceCounters::new(), &SessionSequence::new());
+        let history = &MemoryImportHistory::new();
+        ImportRun::new(file_system, &FnvHasher, &clock, counters, session, history)
             .run(&settings, progress)
     }
 }

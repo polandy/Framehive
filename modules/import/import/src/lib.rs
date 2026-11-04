@@ -31,13 +31,13 @@ pub use conflicts::{
 pub use job_code::{
     JobCode, JobCodeError, MAX_JOB_CODE_CHARACTERS, MissingJobCode, require_job_code,
 };
-pub use plan::{AssetFile, ImportPlan, PlanNotice, PlannedFile};
+pub use plan::{AssetFile, ImportPlan, PlannedFile};
 pub use readiness::{FormatBlocker, FormatReadiness};
 pub use recent_job_codes::{MAX_RECENT_JOB_CODES, RecentJobCodes};
 pub use report::{
     FileError, FileOutcome, FileReport, ImportSummary, NoProgress, ProgressSink, RunError,
 };
-pub use run::{ImportRun, ImportSettings, PlannedRun, RunFile};
+pub use run::{FilePlan, ImportRun, ImportSettings, PlannedRun, RunFile};
 pub use scan::{
     FoundFile, LeftOut, LeftOutReason, ScanError, SourceScan, scan_folder, scan_source,
 };

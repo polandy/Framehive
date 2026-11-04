@@ -7,9 +7,9 @@
 
 ## Purpose
 
-A card imported a second time must not fill the library with copies, also when the
-name template numbers files with a persisted counter, when the person has renamed or
-moved photos in the library, or when the first import was interrupted. The import
+A card imported a second time must not fill the library with copies, also with a
+persisted sequence counter, after photos were renamed or moved in the library, or after
+an interrupted import. The import
 therefore keeps a history of every verified copy and recognizes a file by its content
 before it is copied again.
 
@@ -28,7 +28,7 @@ copy is recorded as soon as it is verified, before the next file is read.
 |---|---|
 | copied (IMPORT-004), already imported (IMPORT-003) | yes, at the import destination |
 | backed up, already backed up (IMPORT-007) | yes, at that backup destination |
-| imported before, backed up before (this spec) | no, it is recorded already |
+| imported before, backed up before | no, it is recorded already |
 | duplicate, skipped, failed | no |
 
 A run's start and end are recorded too; a run that the progress sink stopped
@@ -38,7 +38,7 @@ A run's start and end are recorded too; a run that the progress sink stopped
 import destination. A file is *imported before* when the history holds a copy at the
 import destination with the same original file name and size, the same capture time
 when the file records one, and the same checksum. The checksum is computed only for a
-file that matches name, size and capture time, so a card without such matches is not
+file that matches name, size and capture time, so a card without matches is not
 read before the run. A file imported before:
 
 - is not named by the template and gets no sequence number (IMPORT-002);
@@ -46,20 +46,20 @@ read before the run. A file imported before:
   moved or deleted in the library stays imported before;
 - is reported at the target path of its most recent recorded copy.
 
-A file that is not imported before is planned as before, including the name conflicts of
+Any other file is planned as before, including the name conflicts of
 IMPORT-003. Recognition does not depend on the name template: changing the template does
 not make a file new.
 
-**Backed up before.** For each backup destination, a file is *backed up before* when the
-history holds a copy at that backup destination with the same name, size, capture time
-and checksum; nothing is written there. A file imported before that is not backed up
+**Backed up before.** A file is *backed up before* at a backup destination when the
+history holds a copy there with the same name, size, capture time and checksum; nothing
+is written there. A file imported before that is not backed up
 before at a backup destination is backed up from the source to its reported target path
 there, by the rules of IMPORT-007. So a re-run completes a backup that failed or was added
 later.
 
-**Resuming.** An interrupted import, whether stopped, failed or killed, is resumed by
-running the same import again: the files verified before are imported before or backed
-up before, and only the rest is copied. Sequence numbers reserved by the interrupted run
+**Resuming.** An interrupted import (stopped, failed or killed) is resumed by running it
+again: files verified before are imported before or backed up before, and only the rest
+is copied. Sequence numbers reserved by the interrupted run
 and not used stay unused (ADR 0029).
 
 **Format readiness.** A file imported before is verified at the import destination, and
@@ -187,12 +187,11 @@ a copy later stops the run after that file.
 ## Out of scope
 
 - How the history is stored, its location and its layout: ADR 0031.
-- How the command line reports files imported before and backed up before: CLI-008.
+- How the command line reports them: CLI-008.
 - Exporting the history as an import log (N6): a later spec.
-- Keeping files recognized when a camera time correction (N15) is set after their
-  import: the lookup already uses the capture time before correction; tested with the
-  camera time correction spec.
-- Importing a file imported before again on request: not planned until it is needed.
+- Files recognized after a camera time correction (N15) is set: the lookup uses the
+  capture time before correction; tested with the camera time correction spec.
+- Importing a file imported before again on request: not planned yet.
 - Sharing the history between machines: not planned (ADR 0003, ADR 0031).
 - Pairing RAW and JPEG files across separate import jobs through the history:
   LIBRARY-001.

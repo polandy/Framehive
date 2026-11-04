@@ -29,6 +29,8 @@ use adapter_sequence_counters::FileSequenceCounters;
 use devices::DeviceSource;
 use domain::Clock;
 use files::{FileSystem, Hasher};
+use history::ImportHistory;
+use history::testing::MemoryImportHistory;
 use import::{ImportRun, SessionSequence};
 use naming::SequenceCounters;
 
@@ -56,6 +58,8 @@ pub(crate) struct Ports<'a> {
     pub(crate) counters: &'a dyn SequenceCounters,
     /// The session counter, shared by the imports of all cards in this run.
     pub(crate) session: &'a SessionSequence,
+    /// The import history: what was copied where before (IMPORT-009).
+    pub(crate) history: &'a dyn ImportHistory,
 }
 
 impl<'a> Ports<'a> {
@@ -67,6 +71,7 @@ impl<'a> Ports<'a> {
             self.clock,
             self.counters,
             self.session,
+            self.history,
         )
     }
 }
@@ -104,6 +109,9 @@ pub(crate) fn run_guided() -> ExitCode {
     let devices = MountsDeviceSource::new();
     let counters = FileSequenceCounters::new(environment.state_folder.clone());
     let session = SessionSequence::new();
+    // The import history of this process only, until the history in the state folder
+    // is wired (CLI-008).
+    let history = MemoryImportHistory::new();
     let ports = Ports {
         file_system: &file_system,
         hasher: &Blake3Hasher,
@@ -111,6 +119,7 @@ pub(crate) fn run_guided() -> ExitCode {
         devices: &devices,
         counters: &counters,
         session: &session,
+        history: &history,
     };
     let mut events = StdinEvents::start(POLL_INTERVAL);
     let mut output = io::stdout().lock();

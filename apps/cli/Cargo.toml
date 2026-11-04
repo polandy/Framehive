@@ -27,6 +27,7 @@ clap.workspace = true
 devices.workspace = true
 domain.workspace = true
 files.workspace = true
+history.workspace = true
 import.workspace = true
 naming.workspace = true
 
