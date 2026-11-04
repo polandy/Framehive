@@ -13,8 +13,8 @@ use std::fs;
 
 use metadata::testing::raf;
 use support::{
-    COPIED_LINE, DEFAULT_TARGET, Folders, has_line, has_line_starting_with, lines, photo, set_mode,
-    stderr, stdout,
+    COPIED_LINE, DEFAULT_TARGET, Folders, has_line, has_line_starting_with, photo, set_mode,
+    stderr, stdout, summary_line,
 };
 
 /// spec: CLI-001.1
@@ -29,7 +29,8 @@ fn imports_with_the_defaults() {
         stdout(&output),
         format!(
             "{COPIED_LINE}\n\
-             1 copied, 0 already imported, 0 duplicates, 0 skipped, 0 failed, 0 left out\n"
+             1 copied, 0 already imported, 0 duplicates, 0 skipped, 0 failed, 0 left out\n\
+             The source can be formatted: every file is verified in 1 location.\n"
         )
     );
     assert_eq!(
@@ -197,7 +198,7 @@ fn a_file_that_fails_does_not_stop_the_import() {
             "{}",
             stdout(&output)
         );
-        let summary = lines(&output).last().cloned().unwrap_or_default();
+        let summary = summary_line(&output);
         assert!(summary.starts_with("2 copied,"), "{summary}");
         assert!(summary.contains(" 1 failed,"), "{summary}");
         assert_eq!(output.status.code(), Some(1));

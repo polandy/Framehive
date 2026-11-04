@@ -114,6 +114,14 @@ pub(crate) fn lines(output: &Output) -> Vec<String> {
     stdout(output).lines().map(str::to_owned).collect()
 }
 
+/// The summary line of a run (CLI-001); the format readiness (CLI-007) follows it.
+pub(crate) fn summary_line(output: &Output) -> String {
+    lines(output)
+        .into_iter()
+        .find(|line| line.contains(" already imported, "))
+        .unwrap_or_default()
+}
+
 pub(crate) fn has_line(output: &Output, line: &str) -> bool {
     lines(output).iter().any(|printed| printed == line)
 }

@@ -37,7 +37,8 @@ fn imports_to_the_destination_and_the_backup_destination() {
             "{COPIED_LINE}\n\
              \x20 backed up  {backup}\n\
              1 copied, 0 already imported, 0 duplicates, 0 skipped, 0 failed, 0 left out\n\
-             backup {backup}: 1 backed up, 0 already backed up, 0 failed\n"
+             backup {backup}: 1 backed up, 0 already backed up, 0 failed\n\
+             The source can be formatted: every file is verified in 2 locations.\n"
         )
     );
     for folder in [folders.destination(), PathBuf::from(&backup)] {
