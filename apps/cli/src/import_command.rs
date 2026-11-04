@@ -4,15 +4,21 @@
 //! `framehive import` (CLI-001): wires the adapters to an import run.
 
 use std::io;
+use std::path::PathBuf;
 use std::process::ExitCode;
 
 use adapter_blake3::Blake3Hasher;
 use adapter_clock::SystemClock;
 use adapter_fs::StdFileSystem;
-use import::{ConflictPolicy, ImportRun, ImportSettings, ImportSummary, JobCode, require_job_code};
-use naming::{CompatibilityMode, NameTemplate};
+use adapter_sequence_counters::FileSequenceCounters;
+use import::{
+    ConflictPolicy, ImportRun, ImportSettings, ImportSummary, JobCode, SessionSequence,
+    require_job_code,
+};
+use naming::{CompatibilityMode, NameTemplate, SequenceKind};
 
 use crate::arguments::{ImportArguments, OnConflict};
+use crate::guided::state_folder;
 use crate::paths::{check_outside, create_destination, resolve_destination, resolve_source};
 use crate::report::ReportPrinter;
 use crate::{FILES_FAILED, NOT_STARTED, report_error, report_warning};
@@ -58,12 +64,34 @@ fn import(arguments: &ImportArguments) -> Result<ImportSummary, String> {
         dry_run: arguments.dry_run,
     };
     let clock = SystemClock::new();
+    let counters = sequence_counters(&template)?;
+    let session = SessionSequence::new();
     let mut printer = ReportPrinter::new(io::stdout().lock(), arguments.dry_run);
-    let summary = ImportRun::new(&file_system, &Blake3Hasher, &clock)
+    let summary = ImportRun::new(&file_system, &Blake3Hasher, &clock, &counters, &session)
         .run(&settings, &mut printer)
         .map_err(|error| error.to_string())?;
     printer.print_summary(&summary);
     Ok(summary)
+}
+
+/// The persisted sequence counters in the state folder (ADR 0025, ADR 0029).
+///
+/// # Errors
+///
+/// Returns the message when the template needs them and the state folder is unknown.
+fn sequence_counters(template: &NameTemplate) -> Result<FileSequenceCounters, String> {
+    let home = std::env::home_dir().filter(|home| home.is_absolute());
+    let needed = template
+        .sequence_kind()
+        .is_some_and(SequenceKind::is_persisted);
+    let home = match home {
+        Some(home) => home,
+        None if needed => return Err("the home folder is unknown; set HOME".to_owned()),
+        // The counters are never read or written without a persisted counter.
+        None => PathBuf::new(),
+    };
+    let folder = state_folder(std::env::var_os("XDG_STATE_HOME").as_deref(), &home);
+    Ok(FileSequenceCounters::new(folder))
 }
 
 /// Checks `--job-code` against IMPORT-006 and the template (CLI-001, "Job code"), and

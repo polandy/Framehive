@@ -16,8 +16,9 @@ use domain::testing::ManualClock;
 use domain::{Timestamp, UtcOffset};
 use files::testing::{FnvHasher, MemoryFileSystem};
 use files::{EntryKind, FileSystem, FolderEntry, ReadSeek, WriteFile};
-use import::RecentJobCodes;
+use import::{RecentJobCodes, SessionSequence};
 use naming::NameTemplate;
+use naming::testing::MemorySequenceCounters;
 
 use crate::guided::dialog::Dialog;
 use crate::guided::events::{Event, EventSource};
@@ -71,6 +72,8 @@ pub(super) struct Harness {
     pub(super) memory: MemoryFileSystem,
     pub(super) clock: ManualClock,
     pub(super) devices: MemoryDeviceSource,
+    pub(super) counters: MemorySequenceCounters,
+    pub(super) session: SessionSequence,
     /// Each copy into the library advances the clock this much.
     pub(super) time_per_copy: Cell<Duration>,
     /// After this many copies, the next read of a card pulls it and fails.
@@ -93,6 +96,8 @@ impl Harness {
                 UtcOffset::UTC,
             ),
             devices: MemoryDeviceSource::new(),
+            counters: MemorySequenceCounters::new(),
+            session: SessionSequence::new(),
             time_per_copy: Cell::new(Duration::ZERO),
             pull_after_copies: Cell::new(None),
             copies: Cell::new(0),
@@ -152,11 +157,14 @@ impl Harness {
             hasher: &FnvHasher,
             clock: &self.clock,
             devices: &self.devices,
+            counters: &self.counters,
+            session: &self.session,
         };
         let environment = Environment {
             home: PathBuf::from(HOME),
             current_folder: PathBuf::from("/tmp/work"),
             state_file: Self::state_file(),
+            state_folder: PathBuf::from(HOME).join(".local/state/framehive"),
         };
         let screen = Rc::new(RefCell::new(Vec::new()));
         let mut events = ScriptedEvents {

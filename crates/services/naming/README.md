@@ -33,6 +33,13 @@ Boundaries:
   with a fixed number of digits or as letters `a`…`zz` (IMPORT-002). The caller
   reserves the numbers; `check_sequence_range` refuses a range whose last number does
   not fit, before the import starts, and suggests a template that fits.
+- **Sequence counters.** The persisted counters (`{seq_today:N}`, `{seq_stored:N}`)
+  sit behind the `SequenceCounters` port (ADR 0029); `adapter-sequence-counters`
+  stores them. `preview_range` shows the range an import would get, `reserve_range`
+  reserves it in one locked update and stores nothing when it does not fit. The
+  imported-today counter starts again on a new machine-local day.
+  `naming::testing` holds `MemorySequenceCounters` and the conformance suite
+  `check_sequence_counters`.
 - **Not here:** the import plan, which marks files that cannot be named or are dated
   by their modification time, belongs to the import module.
 
@@ -43,6 +50,10 @@ Boundaries:
 | `NameTemplate` | Validated name template; `parse`, `as_str`, `uses_job_code`, `sequence_kind`, `check_sequence_range`, `render` |
 | `SequenceKind` | Which counter a sequence token numbers from, and whether it is persisted |
 | `SequenceOverflow` | A range that does not fit the sequence token, with a suggested template |
+| `SequenceCounters`, `SequenceCountersError` | Port to the persisted counters, and why they cannot be read or stored |
+| `StoredCounters`, `CounterDate` | The stored values and the date the imported-today counter belongs to |
+| `SequenceRange`, `preview_range`, `reserve_range`, `SequenceError` | The range of one import, shown or reserved, and why it cannot be had |
+| `testing::MemorySequenceCounters`, `testing::check_sequence_counters`, `testing::SequenceCountersUnderTest` | Test double and conformance suite of the port |
 | `TemplateError`, `TemplateErrorKind` | Why and at which column a template was rejected |
 | `AssetValues` | The values all files of one asset are rendered from |
 | `CompatibilityMode` | Keep names valid on exFAT, SMB and macOS (`On` by default) or not |

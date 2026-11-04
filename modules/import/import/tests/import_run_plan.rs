@@ -13,8 +13,9 @@ use domain::{Timestamp, UtcOffset};
 use files::testing::{Fault, FnvHasher, MemoryFileSystem};
 use import::{
     ConflictPolicy, FileOutcome, FileReport, ImportRun, ImportSettings, NoProgress, PlannedRun,
-    ProgressSink, SourceScan, scan_source,
+    ProgressSink, SessionSequence, SourceScan, scan_source,
 };
+use naming::testing::MemorySequenceCounters;
 use naming::{CompatibilityMode, NameTemplate};
 
 const SOURCE: &str = "/media/card";
@@ -37,11 +38,34 @@ fn source_with(files: &[&str]) -> MemoryFileSystem {
     file_system
 }
 
-fn clock() -> ManualClock {
-    ManualClock::new(
-        Timestamp::from_unix_seconds(NOW),
-        UtcOffset::from_seconds(0).unwrap(),
-    )
+/// The ports of an import run besides the file system.
+struct Ports {
+    clock: ManualClock,
+    counters: MemorySequenceCounters,
+    session: SessionSequence,
+}
+
+fn ports() -> Ports {
+    Ports {
+        clock: ManualClock::new(
+            Timestamp::from_unix_seconds(NOW),
+            UtcOffset::from_seconds(0).unwrap(),
+        ),
+        counters: MemorySequenceCounters::new(),
+        session: SessionSequence::new(),
+    }
+}
+
+impl Ports {
+    fn run<'a>(&'a self, file_system: &'a MemoryFileSystem) -> ImportRun<'a> {
+        ImportRun::new(
+            file_system,
+            &FnvHasher,
+            &self.clock,
+            &self.counters,
+            &self.session,
+        )
+    }
 }
 
 fn settings(template: &NameTemplate) -> ImportSettings<'_> {
@@ -67,10 +91,11 @@ fn scan(file_system: &MemoryFileSystem) -> SourceScan {
 /// How many file system operations planning the first `count` files makes.
 fn operations_to_plan(file_system: &MemoryFileSystem, count: usize) -> usize {
     let template = template();
-    let clock = clock();
+    let ports = ports();
     let scan = scan(file_system);
     let before = file_system.operations();
-    ImportRun::new(file_system, &FnvHasher, &clock)
+    ports
+        .run(file_system)
         .plan_first(&settings(&template), &scan, count)
         .unwrap();
     file_system.operations() - before
@@ -113,9 +138,10 @@ fn planning_the_first_files_names_them_and_writes_nothing() {
     let file_system = source_with(&["a.JPG", "b.JPG", "c.JPG"]);
     let paths_before = file_system.paths();
     let template = template();
-    let clock = clock();
+    let ports = ports();
 
-    let plan = ImportRun::new(&file_system, &FnvHasher, &clock)
+    let plan = ports
+        .run(&file_system)
         .plan_first(&settings(&template), &scan(&file_system), 2)
         .unwrap();
 
@@ -127,9 +153,9 @@ fn planning_the_first_files_names_them_and_writes_nothing() {
 fn planning_more_files_than_the_scan_found_plans_all() {
     let file_system = source_with(&["a.JPG", "b.JPG"]);
     let template = template();
-    let clock = clock();
+    let ports = ports();
     let scan = scan(&file_system);
-    let run = ImportRun::new(&file_system, &FnvHasher, &clock);
+    let run = ports.run(&file_system);
 
     let first = run.plan_first(&settings(&template), &scan, 5).unwrap();
     let all = run.plan(&settings(&template), &scan).unwrap();
@@ -156,14 +182,15 @@ fn executing_the_plan_of_all_files_is_a_run() {
     }
     let template = template();
     let settings = settings(&template);
-    let clock = clock();
+    let ports = ports();
 
     let mut run_progress = Recorder::default();
-    let summary = ImportRun::new(&by_run, &FnvHasher, &clock)
+    let summary = ports
+        .run(&by_run)
         .run(&settings, &mut run_progress)
         .unwrap();
     let mut step_progress = Recorder::default();
-    let run = ImportRun::new(&by_steps, &FnvHasher, &clock);
+    let run = ports.run(&by_steps);
     let plan = run.plan(&settings, &scan(&by_steps)).unwrap();
     let executed = run.execute(&settings, plan, &mut step_progress);
 
@@ -193,8 +220,8 @@ impl ProgressSink for StopAfter {
 #[test]
 fn the_run_stops_between_files_when_asked() {
     let file_system = source_with(&["a.MOV", "b.MOV", "c.MOV"]);
-    let (template, clock) = (template(), clock());
-    let run = ImportRun::new(&file_system, &FnvHasher, &clock);
+    let (template, ports) = (template(), ports());
+    let run = ports.run(&file_system);
     let mut sink = StopAfter {
         files_before_stop: 1,
         finished: Vec::new(),

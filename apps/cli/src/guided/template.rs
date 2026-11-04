@@ -4,7 +4,7 @@
 //! The template step and the job code prompt of the guided import (CLI-002).
 
 use devices::Device;
-use import::{ImportRun, JobCode, PlannedRun, SourceScan};
+use import::{JobCode, PlannedRun, SourceScan};
 use naming::{NameTemplate, TemplateError};
 
 use super::dialog::{Dialog, Stop};
@@ -115,7 +115,7 @@ impl Dialog<'_> {
             dry_run: true,
         };
         let ports = self.ports;
-        let run = ImportRun::new(ports.file_system, ports.hasher, ports.clock);
+        let run = ports.import_run();
         match run.plan_first(&settings, scan, PREVIEW_FILES) {
             Ok(plan) => self.show_preview(card, &plan),
             Err(error) => self.say(&format!("The template cannot be previewed: {error}")),

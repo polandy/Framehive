@@ -12,10 +12,11 @@ use domain::{Timestamp, UtcOffset};
 use files::testing::{Fault, FnvHasher, MemoryFileSystem};
 use import::{
     ConflictPolicy, FileError, FileOutcome, FileReport, ImportRun, ImportSettings, ImportSummary,
-    NoProgress, ProgressSink, RunError, ScanError, SourceScan,
+    NoProgress, ProgressSink, RunError, ScanError, SessionSequence, SourceScan,
 };
 use metadata::NoCaptureTime;
 use metadata::testing::{ByteOrder, DATE_TIME_ORIGINAL, Tiff, jpeg};
+use naming::testing::MemorySequenceCounters;
 use naming::{CompatibilityMode, NameTemplate};
 
 const SOURCE: &str = "/media/card";
@@ -95,7 +96,9 @@ impl Setup {
             policy: self.policy,
             dry_run: self.dry_run,
         };
-        ImportRun::new(file_system, &FnvHasher, &clock).run(&settings, progress)
+        let (counters, session) = (MemorySequenceCounters::new(), SessionSequence::new());
+        ImportRun::new(file_system, &FnvHasher, &clock, &counters, &session)
+            .run(&settings, progress)
     }
 }
 

@@ -9,8 +9,7 @@ use std::path::{Path, PathBuf};
 use devices::{Device, EjectError};
 use domain::LocalDateTime;
 use import::{
-    ConflictPolicy, FileOutcome, ImportRun, ImportSettings, JobCode, PlannedRun, SourceScan,
-    scan_folder,
+    ConflictPolicy, FileOutcome, ImportSettings, JobCode, PlannedRun, SourceScan, scan_folder,
 };
 use naming::{CompatibilityMode, NameTemplate};
 
@@ -104,7 +103,7 @@ impl Dialog<'_> {
         mut job_code: Option<JobCode>,
     ) -> Result<(), Stop> {
         let ports = self.ports;
-        let run = ImportRun::new(ports.file_system, ports.hasher, ports.clock);
+        let run = ports.import_run();
         loop {
             let destination = self.destination();
             let Some(template) = self.state.template.clone() else {
@@ -155,7 +154,7 @@ impl Dialog<'_> {
         scan: &SourceScan,
     ) -> Option<PlannedRun> {
         let ports = self.ports;
-        let run = ImportRun::new(ports.file_system, ports.hasher, ports.clock);
+        let run = ports.import_run();
         match run.plan(settings, scan) {
             Ok(plan) => Some(plan),
             Err(error) => {
@@ -238,6 +237,14 @@ impl Dialog<'_> {
             self.state.job_codes.mark_used(job_code.clone());
             self.remember();
         }
+        let run = ports.import_run();
+        let plan = match run.start(settings, plan) {
+            Ok(plan) => plan,
+            Err(error) => {
+                self.say(&format!("Could not import {}: {error}", card.name()));
+                return Ok(false);
+            }
+        };
         let sizes = plan.files().iter().map(|file| file.found.size).collect();
         let context = ImportContext {
             output: &mut *self.output,
@@ -246,7 +253,6 @@ impl Dialog<'_> {
             clock: ports.clock,
         };
         let mut progress = ImportProgress::start(context, card, sizes);
-        let run = ImportRun::new(ports.file_system, ports.hasher, ports.clock);
         let summary = run.execute(settings, plan, &mut progress);
         let changes = progress.finish();
         self.show_changes(&changes);

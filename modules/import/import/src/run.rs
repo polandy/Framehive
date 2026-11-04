@@ -8,15 +8,21 @@
 use std::path::Path;
 
 use domain::{Clock, LocalDateTime, Timestamp};
-use files::{FileSystem, Hasher, copy_verified};
+use files::{FileSystem, Hasher};
 use metadata::{CaptureTimeError, NoCaptureTime, read_capture_time};
-use naming::{CompatibilityMode, NameTemplate};
+use naming::{CompatibilityMode, CounterDate, NameTemplate, SequenceCounters};
 
-use crate::conflicts::{ConflictOutcome, ConflictPolicy, TargetRequest, TargetResolver};
+use crate::conflicts::{ConflictPolicy, TargetResolver};
 use crate::job_code::{JobCode, require_job_code};
-use crate::plan::{AssetFile, ImportPlan, PlannedFile};
-use crate::report::{FileError, FileOutcome, FileReport, ImportSummary, ProgressSink, RunError};
+use crate::plan::{AssetFile, PlanNotice, PlannedFile};
+use crate::report::{FileError, ImportSummary, ProgressSink, RunError};
 use crate::scan::{FoundFile, LeftOut, SourceScan, scan_source};
+use crate::sequence::{Reservation, SessionSequence, sequence_range};
+
+mod copy;
+mod rename;
+
+use rename::{import_plan, rename};
 
 /// What to import, from where to where, and how.
 #[derive(Debug, Clone, Copy)]
@@ -47,18 +53,33 @@ pub struct ImportRun<'a> {
     file_system: &'a dyn FileSystem,
     hasher: &'a dyn Hasher,
     clock: &'a dyn Clock,
+    counters: &'a dyn SequenceCounters,
+    session: &'a SessionSequence,
 }
 
 /// An import run that is planned and not yet executed: the selected files of a source
 /// scan, each dated and named by one import plan.
 ///
-/// [`ImportRun::plan`] and [`ImportRun::plan_first`] make it; [`ImportRun::execute`]
-/// executes it. Making it reads capture times, but resolves no conflicts and writes
-/// nothing.
+/// [`ImportRun::plan`] and [`ImportRun::plan_first`] make it with the sequence
+/// numbers it would get; [`ImportRun::start`] reserves them, and
+/// [`ImportRun::execute`] executes it. Making it reads capture times, but resolves no
+/// conflicts and writes nothing.
 #[derive(Debug)]
 pub struct PlannedRun {
     files: Vec<RunFile>,
     left_out: Vec<LeftOut>,
+    notices: Vec<PlanNotice>,
+    naming: PlanInputs,
+}
+
+/// What the import plan of a [`PlannedRun`] was made from, so that [`ImportRun::start`]
+/// can name its files again with the reserved numbers.
+#[derive(Debug)]
+struct PlanInputs {
+    /// The dated files, in scan order; each is its own asset until grouping exists.
+    assets: Vec<AssetFile>,
+    import_time: LocalDateTime,
+    first_sequence_number: u32,
 }
 
 impl PlannedRun {
@@ -72,6 +93,13 @@ impl PlannedRun {
     #[must_use]
     pub fn left_out(&self) -> &[LeftOut] {
         &self.left_out
+    }
+
+    /// What the person should know before the plan runs (IMPORT-002, "Files already
+    /// imported").
+    #[must_use]
+    pub fn notices(&self) -> &[PlanNotice] {
+        &self.notices
     }
 }
 
@@ -93,29 +121,36 @@ struct DatedFile {
 }
 
 impl<'a> ImportRun<'a> {
-    /// Creates a run that works through these ports.
+    /// Creates a run that works through these ports. `counters` holds the persisted
+    /// sequence counters, and `session` the session counter of this run of the
+    /// application (IMPORT-002).
     #[must_use]
     pub fn new(
         file_system: &'a dyn FileSystem,
         hasher: &'a dyn Hasher,
         clock: &'a dyn Clock,
+        counters: &'a dyn SequenceCounters,
+        session: &'a SessionSequence,
     ) -> Self {
         ImportRun {
             file_system,
             hasher,
             clock,
+            counters,
+            session,
         }
     }
 
     /// Imports every file of `settings.source` that the scan finds, in scan order: the
-    /// composition of the scan, [`ImportRun::plan`] and [`ImportRun::execute`].
+    /// composition of the scan, [`ImportRun::plan`], [`ImportRun::start`] and
+    /// [`ImportRun::execute`].
     ///
     /// # Errors
     ///
     /// Returns a [`RunError`] if the template uses `{job}` without a job code, the
-    /// source cannot be scanned or the current time cannot be shown in local time;
-    /// then nothing is copied. A file that fails is
-    /// reported in the [`ImportSummary`] instead.
+    /// source cannot be scanned, the current time cannot be shown in local time or
+    /// the import cannot get its sequence numbers; then nothing is copied. A file that
+    /// fails is reported in the [`ImportSummary`] instead.
     pub fn run(
         &self,
         settings: &ImportSettings<'_>,
@@ -127,7 +162,8 @@ impl<'a> ImportRun<'a> {
         let import_time = self.import_time()?;
         let scan = scan_source(self.file_system, settings.source, settings.destination)?;
         progress.scan_finished(&scan);
-        let plan = self.plan_at(settings, scan.files, scan.left_out, import_time);
+        let plan = self.plan_at(settings, scan.files, scan.left_out, import_time)?;
+        let plan = self.start(settings, plan)?;
         Ok(self.execute(settings, plan, progress))
     }
 
@@ -148,13 +184,16 @@ impl<'a> ImportRun<'a> {
     ///
     /// It fixes the import time once, reads the capture time of each selected file
     /// only, and makes one import plan from `settings.source`, `template`, `job_code`
-    /// and `mode`. It resolves no conflicts and writes nothing, so it also serves a
-    /// preview of the targets.
+    /// and `mode`. Its sequence numbers are the ones the import would get if no other
+    /// import started before it (IMPORT-002, "Reservation"). It reserves no numbers,
+    /// resolves no conflicts and writes nothing, so it also serves a preview of the
+    /// targets.
     ///
     /// # Errors
     ///
-    /// Returns a [`RunError`] if the template uses `{job}` without a job code or the
-    /// current time cannot be shown in local time. A file that cannot be dated is
+    /// Returns a [`RunError`] if the template uses `{job}` without a job code, the
+    /// current time cannot be shown in local time, the persisted counters cannot be
+    /// read, or the numbers do not fit the template. A file that cannot be dated is
     /// marked in the [`PlannedRun`] instead.
     pub fn plan_first(
         &self,
@@ -165,7 +204,33 @@ impl<'a> ImportRun<'a> {
         require_job_code(settings.template, settings.job_code)?;
         let import_time = self.import_time()?;
         let selected = scan.files[..count.min(scan.files.len())].to_vec();
-        Ok(self.plan_at(settings, selected, scan.left_out.clone(), import_time))
+        self.plan_at(settings, selected, scan.left_out.clone(), import_time)
+    }
+
+    /// Starts the import of `plan`: reserves its sequence numbers before the first
+    /// file is copied, and names its files again if another import took the numbers
+    /// the plan showed (IMPORT-002, "Reservation"). A dry run reserves nothing.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RunError::Sequence`] if the persisted counters cannot be read or
+    /// stored, or the numbers do not fit the template; then nothing is reserved and
+    /// the import must not run.
+    pub fn start(
+        &self,
+        settings: &ImportSettings<'_>,
+        mut plan: PlannedRun,
+    ) -> Result<PlannedRun, RunError> {
+        if settings.dry_run {
+            return Ok(plan);
+        }
+        let first =
+            self.first_sequence_number(settings.template, &plan.naming, Reservation::Reserve)?;
+        if first != plan.naming.first_sequence_number {
+            plan.naming.first_sequence_number = first;
+            rename(&mut plan, settings);
+        }
+        Ok(plan)
     }
 
     /// Executes `plan`: resolves the conflicts of each planned file against
@@ -213,30 +278,51 @@ impl<'a> ImportRun<'a> {
             .ok_or(RunError::ImportTimeOutOfRange)
     }
 
-    /// Dates `files` and makes their import plan at `import_time`.
+    /// The first sequence number of the import of `naming`, shown or reserved.
+    fn first_sequence_number(
+        &self,
+        template: &NameTemplate,
+        naming: &PlanInputs,
+        reservation: Reservation,
+    ) -> Result<u32, RunError> {
+        let count = u32::try_from(naming.assets.len()).unwrap_or(u32::MAX);
+        let today = CounterDate::of(naming.import_time);
+        let range = sequence_range(
+            self.counters,
+            self.session,
+            template,
+            today,
+            count,
+            reservation,
+        )?;
+        Ok(range.map_or(1, |range| range.first))
+    }
+
+    /// Dates `files` and makes their import plan at `import_time`, with the sequence
+    /// numbers the import would get.
     fn plan_at(
         &self,
         settings: &ImportSettings<'_>,
         files: Vec<FoundFile>,
         left_out: Vec<LeftOut>,
         import_time: LocalDateTime,
-    ) -> PlannedRun {
+    ) -> Result<PlannedRun, RunError> {
         let dated: Vec<Result<DatedFile, FileError>> = files
             .iter()
             .map(|file| self.date(settings.source, file))
             .collect();
-        let assets: Vec<Vec<AssetFile>> = dated
-            .iter()
-            .flatten()
-            .map(|file| vec![file.asset_file.clone()])
-            .collect();
-        let plan = ImportPlan::new(
-            &assets,
-            settings.template,
-            settings.mode,
+        let mut naming = PlanInputs {
+            assets: dated
+                .iter()
+                .flatten()
+                .map(|file| file.asset_file.clone())
+                .collect(),
             import_time,
-            settings.job_code,
-        );
+            first_sequence_number: 1,
+        };
+        naming.first_sequence_number =
+            self.first_sequence_number(settings.template, &naming, Reservation::Preview)?;
+        let plan = import_plan(&naming, settings);
         // The plan has one entry for each dated file, in the same order.
         let mut planned = plan.files().iter();
         let files = files
@@ -255,25 +341,12 @@ impl<'a> ImportRun<'a> {
                 },
             })
             .collect();
-        PlannedRun { files, left_out }
-    }
-
-    /// Imports one file of a planned run and reports what happened to it.
-    fn execute_file(
-        &self,
-        settings: &ImportSettings<'_>,
-        resolver: &mut TargetResolver<'_>,
-        file: RunFile,
-    ) -> FileReport {
-        let outcome = match file.planned {
-            Ok(planned) => self.import_planned(settings, resolver, &file.found, &planned),
-            Err(error) => FileOutcome::Failed(error),
-        };
-        FileReport {
-            path: file.found.path,
-            dated_by_modification_time: file.no_capture_time,
-            outcome,
-        }
+        Ok(PlannedRun {
+            files,
+            left_out,
+            notices: plan.notices().to_vec(),
+            naming,
+        })
     }
 
     /// Reads the capture time and the local modification time of `file`.
@@ -307,59 +380,5 @@ impl<'a> ImportRun<'a> {
 
     fn local_time(&self, instant: Timestamp) -> Option<LocalDateTime> {
         LocalDateTime::from_timestamp(instant, self.clock.local_offset(instant))
-    }
-
-    /// Resolves the conflicts of one planned file and copies it.
-    fn import_planned(
-        &self,
-        settings: &ImportSettings<'_>,
-        resolver: &mut TargetResolver<'_>,
-        file: &FoundFile,
-        planned: &PlannedFile,
-    ) -> FileOutcome {
-        match self.try_import(settings, resolver, file, planned) {
-            Ok(outcome) => outcome,
-            Err(error) => FileOutcome::Failed(error),
-        }
-    }
-
-    fn try_import(
-        &self,
-        settings: &ImportSettings<'_>,
-        resolver: &mut TargetResolver<'_>,
-        file: &FoundFile,
-        planned: &PlannedFile,
-    ) -> Result<FileOutcome, FileError> {
-        let target = match &planned.target {
-            Ok(target) => target,
-            Err(error) => return Err(FileError::CannotBeNamed(error.clone())),
-        };
-        let request = TargetRequest {
-            source_path: &file.path,
-            size: file.size,
-            target,
-        };
-        Ok(match resolver.resolve(&request)? {
-            ConflictOutcome::CopyTo { target } if settings.dry_run => {
-                FileOutcome::WouldCopy { target }
-            }
-            ConflictOutcome::CopyTo { target } => {
-                let checksum = copy_verified(
-                    self.file_system,
-                    self.hasher,
-                    &settings.source.join(&file.path),
-                    &settings.destination.join(&target),
-                )?;
-                FileOutcome::Copied { target, checksum }
-            }
-            ConflictOutcome::AlreadyImported { target } => FileOutcome::AlreadyImported { target },
-            ConflictOutcome::DuplicateOf { earlier } => FileOutcome::DuplicateOf { earlier },
-            ConflictOutcome::SkippedNameConflict { target } => {
-                FileOutcome::SkippedNameConflict { target }
-            }
-            ConflictOutcome::FailedNameConflict { target } => {
-                return Err(FileError::NameConflict { target });
-            }
-        })
     }
 }

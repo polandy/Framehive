@@ -22,6 +22,7 @@ adapter-blake3.workspace = true
 adapter-clock.workspace = true
 adapter-fs.workspace = true
 adapter-mounts.workspace = true
+adapter-sequence-counters.workspace = true
 clap.workspace = true
 devices.workspace = true
 domain.workspace = true
