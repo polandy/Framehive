@@ -2,15 +2,18 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 //! The report of `framehive import` (CLI-001, CLI-005): one line per file as soon as
-//! it is done, each followed by its backup lines, then the summary.
+//! it is done, each followed by its backup lines, then the summary and the format
+//! readiness (CLI-007, in `format_readiness`).
 
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
 use import::{
-    BackupError, BackupOutcome, BackupReport, FileError, FileOutcome, FileReport, ImportSummary,
-    LeftOut, ProgressSink, SourceScan,
+    BackupError, BackupOutcome, BackupReport, FileError, FileOutcome, FileReport, FormatReadiness,
+    ImportSummary, LeftOut, ProgressSink, SourceScan,
 };
+
+use crate::format_readiness::format_readiness_lines;
 
 /// A backup destination as the import run knows it, and as the report names it.
 #[derive(Debug, Clone)]
@@ -45,7 +48,7 @@ impl<W: Write> ReportPrinter<W> {
     }
 
     /// Writes the summary line of a finished run, and after a run that wrote, the
-    /// line of each backup destination.
+    /// line of each backup destination and the format readiness of the source.
     pub(crate) fn print_summary(&mut self, summary: &ImportSummary) {
         let line = summary_line(summary, self.dry_run);
         self.write_line(&line);
@@ -53,6 +56,9 @@ impl<W: Write> ReportPrinter<W> {
             return;
         }
         for line in backup_summary_lines(summary, &self.backup_names) {
+            self.write_line(&line);
+        }
+        for line in format_readiness_lines(&FormatReadiness::of(summary), "source") {
             self.write_line(&line);
         }
     }
@@ -268,6 +274,7 @@ mod tests {
                 reason: LeftOutReason::UnsupportedType,
             }],
             stopped: false,
+            dry_run: true,
             notices: Vec::new(),
             backups: Vec::new(),
         };

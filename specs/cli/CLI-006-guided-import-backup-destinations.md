@@ -90,7 +90,7 @@ key `backup`, in their order (ADR 0030), whenever they change.
 
 ## Out of scope
 
-- The "card can be formatted" status (N5), and an eject that depends on it: a later spec.
+- The "card can be formatted" status (N5): CLI-007.
 - Backup drives recognized by a marker folder (I3): a later spec.
 
 ## Open questions

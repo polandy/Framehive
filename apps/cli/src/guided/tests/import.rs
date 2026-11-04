@@ -67,6 +67,7 @@ fn the_import_redraws_the_progress_and_reports() {
         output.contains(
             "  3/3 files  30.0/30.0 MB  10 MB/s  0:00 left\n\
          3 copied, 0 already imported, 0 duplicates, 0 skipped, 0 failed, 0 left out\n\
+         The card can be formatted: every file is verified in 1 location.\n\
          Eject EOS_DIGITAL? [Y/n]: n\n"
         ),
         "{output}"
@@ -142,6 +143,7 @@ fn a_card_pulled_during_the_import_is_imported_again_when_it_is_back() {
     assert!(
         output[stopped..].contains(
             "\n2 copied, 1 already imported, 0 duplicates, 0 skipped, 0 failed, 0 left out\n\
+         The card can be formatted: every file is verified in 1 location.\n\
          Eject EOS_DIGITAL? [Y/n]: n\n"
         ),
         "{output}"

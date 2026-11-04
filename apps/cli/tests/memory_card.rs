@@ -16,7 +16,7 @@ use std::process::Output;
 use std::time::SystemTime;
 
 use metadata::testing::raf;
-use support::{Folders, has_line, lines, photo, set_mode, stderr, stdout};
+use support::{Folders, has_line, photo, set_mode, stderr, stdout, summary_line};
 
 const FOLDER: &str = "DCIM/100_FUJI";
 const DAY: &str = "2026/2026-10-17";
@@ -64,10 +64,6 @@ fn copied_line(name: &str, dated_by_modification_time: bool) -> String {
     }
 }
 
-fn summary(output: &Output) -> String {
-    lines(output).last().cloned().unwrap_or_default()
-}
-
 fn assert_has_line(output: &Output, line: &str) {
     assert!(
         has_line(output, line),
@@ -109,7 +105,7 @@ fn a_memory_card_is_copied_once_and_left_unchanged() {
     assert_has_line(&first, "left out  .Trashes: hidden");
     let (copied, failed, exit_code) = if can_be_read { (4, 0, 0) } else { (3, 1, 1) };
     assert_eq!(
-        summary(&first),
+        summary_line(&first),
         format!(
             "{copied} copied, 0 already imported, 0 duplicates, 0 skipped, \
              {failed} failed, 1 left out"
@@ -128,7 +124,7 @@ fn a_memory_card_is_copied_once_and_left_unchanged() {
         &copied_line("DSCF0001.RAF", false).replacen("copied", "already imported", 1),
     );
     assert_eq!(
-        summary(&second),
+        summary_line(&second),
         format!(
             "0 copied, {copied} already imported, 0 duplicates, 0 skipped, \
              {failed} failed, 1 left out"

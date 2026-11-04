@@ -6,6 +6,7 @@
 #![forbid(unsafe_code)]
 
 mod arguments;
+mod format_readiness;
 mod guided;
 mod import_command;
 mod paths;

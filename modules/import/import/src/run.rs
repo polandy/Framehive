@@ -281,6 +281,7 @@ impl<'a> ImportRun<'a> {
             files,
             left_out: plan.left_out,
             stopped,
+            dry_run: settings.dry_run,
             notices: plan.notices,
             backups,
         }

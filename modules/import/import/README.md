@@ -57,6 +57,15 @@ import, and a failed import destination keeps the verified backups.
 `FileReport::backups` holds one `BackupReport` per backup destination, and
 `ImportSummary::backups` the `BackupCounts` of each.
 
+Format readiness (IMPORT-008): `FormatReadiness::of` reads an `ImportSummary` and tells
+whether the source can be formatted: every file the scan found is verified at the
+import destination and at every backup destination (a duplicate counts as its earlier
+file), nothing was left out as unreadable or as a sidecar that needs grouping, and the
+run was neither stopped nor a dry run (`ImportSummary::dry_run`). Otherwise
+`FormatReadiness::blockers` lists each file that is not saved, with the number of
+locations it is verified at, and each blocking left-out entry, in scan order.
+Unsupported, hidden and symbolic-link entries are only counted.
+
 `ImportRun::run` is the composition of two steps that callers can also use on their
 own. `plan` (all files of a scan) or `plan_first` (the first files only, for a preview)
 fixes the import time, dates only the selected files and returns a `PlannedRun`: each

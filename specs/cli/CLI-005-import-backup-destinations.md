@@ -49,7 +49,7 @@ be created, stops the command before any file is copied, with exit code 2.
 - **When** the user runs `framehive import <source> <destination> --backup <backup>`
 - **Then** both folders have `2026/2026-10-17/DSCF0001.RAF`, the output has the line
   `copied  DSCF0001.RAF -> 2026/2026-10-17/DSCF0001.RAF` followed by
-  `  backed up  <backup>`, the last line is
+  `  backed up  <backup>`, the summary line is followed by
   `backup <backup>: 1 backed up, 0 already backed up, 0 failed`, and the exit code is 0
 
 ### CLI-005.2 – A re-run fills a new backup destination

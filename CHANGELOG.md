@@ -68,6 +68,12 @@ All user-visible changes are listed here. The format follows
   import shows the backup destinations in the plan summary, adds or removes them with
   `b`, remembers them in the state file (now format version 2; version 1 is still
   read), refuses to start with one on the card, and reports failed backups.
+- Format readiness (IMPORT-008, CLI-007): after an import, `framehive import` and the
+  guided import say whether the source or card can be formatted, that is whether every
+  file is verified at the destination and at every backup destination. Otherwise they
+  list each file that is not saved, with the number of locations it is verified at, and
+  each unreadable or ungrouped entry the scan left out. The guided import shows it before
+  the eject question; a dry run shows nothing, and exit codes are unchanged.
 
 ### Fixed
 

@@ -165,6 +165,9 @@ pub struct ImportSummary {
     /// Whether the [`ProgressSink`] stopped the run before every file was done; the
     /// files it did not start are not in `files`.
     pub stopped: bool,
+    /// Whether the run was a dry run: it only reported where each file would go and
+    /// wrote nothing (IMPORT-004).
+    pub dry_run: bool,
     /// The notices of the plan the run executed.
     pub notices: Vec<PlanNotice>,
     /// What each backup destination got, in the order of the settings (IMPORT-007).
