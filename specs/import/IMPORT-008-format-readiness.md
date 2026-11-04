@@ -1,6 +1,6 @@
 # IMPORT-008 – Format readiness
 
-- Status: accepted
+- Status: implemented
 - Module: import
 - Origin: N5, T7
 - Depends on: IMPORT-003, IMPORT-004, IMPORT-005, IMPORT-007

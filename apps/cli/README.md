@@ -66,7 +66,10 @@ per file as soon as it is done (`copied`, `would copy`, `already imported`,
 destination (`backed up`, `already backed up`, `backup failed`) that names the folder
 as given, the files and folders the scan left out (`left out`), a summary line, and one
 `backup <folder>: …` line per backup destination; in a dry run `copied` reads
-`would copy`, in the summary as well, and there are no backup lines. Errors that stop the command go to standard error as
+`would copy`, in the summary as well, and there are no backup lines. The format
+readiness (CLI-007, `format_readiness_lines`) ends the report of a run that is not a
+dry run: `framehive import` says `source`, the guided import says `card` and prints it
+before the eject question. Errors that stop the command go to standard error as
 `error: <message>`. A job code that the template does not use is accepted and
 reported on standard error as `warning: <message>`, and so are the notices of the plan,
 such as the one for a persisted sequence counter; there is no other log output yet.
@@ -85,6 +88,7 @@ such as the one for a persisted sequence counter; there is no other log output y
 | `paths` | Source and destination resolution, the inside check, creating the destination |
 | `import_command` | Wires the adapters to the import run and maps the result to the exit code |
 | `report` | The `ProgressSink` that prints the report lines and the summary |
+| `format_readiness` | The format readiness lines (CLI-007), shared by `framehive import` and the guided import |
 | `guided` | The guided import (CLI-002, CLI-003): `dialog` (prompts, waiting, remembered answers), `card` (summary, import, eject), `template` (template step, job code), `progress` (progress line, stop on a pulled card), `format` (sizes, rate, time left), `state` (state file), `events` (input events) |
 
 ## Tests

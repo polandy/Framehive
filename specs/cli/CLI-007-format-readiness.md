@@ -1,6 +1,6 @@
 # CLI-007 – Format readiness in the command line
 
-- Status: accepted
+- Status: implemented
 - Module: cli (`apps/cli`)
 - Origin: N5, T7
 - Depends on: CLI-001, CLI-003, CLI-005, CLI-006, IMPORT-008
@@ -15,8 +15,11 @@ print the format readiness (IMPORT-008) as the last lines of their report.
 
 **Where.** `framehive import` (CLI-001) prints the format readiness on standard output
 after the summary line and the backup summary lines (CLI-005). The guided import
-(CLI-003, CLI-006) prints it after its report, before `Eject <name>? [Y/n]: `. A dry run
-prints no format readiness.
+(CLI-003, CLI-006) prints it after its report, before `Eject <name>? [Y/n]: `, and also
+when no eject is offered because the card is already gone. A dry run prints no format
+readiness. When the card is pulled during the import (CLI-003.8), the stopped run prints
+no report; the resumed run imports the whole card again, finds the files saved before
+as already imported, and its report carries the format readiness for the whole card.
 
 **The lines.** `<n>` is the number of required locations; `location` is singular when
 `<n>` is 1. `framehive import` says `source`, the guided import says `card`.
@@ -30,7 +33,10 @@ prints no format readiness.
 | `  <source path>: left out: <reason>` | After the `Do not format` line, for each file or folder left out for a reason that keeps the card |
 | `Not saved: <m> left out by the scan.` | Last, when files were left out as unsupported, hidden or symbolic links |
 
-Paths are relative to the source, as in CLI-001. `<reason>` is the left-out reason of
+After the `the import was stopped` line, the files the run reached that are not saved
+and the `Not saved` line still follow. Neither command prints that line today: the
+guided import prints no report for a stopped run, and `framehive import` is never
+stopped. Paths are relative to the source, as in CLI-001. `<reason>` is the left-out reason of
 CLI-001.
 
 **Unchanged.** The exit codes of CLI-001 and CLI-005 and the eject question of CLI-003
