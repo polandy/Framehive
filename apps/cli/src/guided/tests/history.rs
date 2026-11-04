@@ -3,6 +3,7 @@
 
 //! The import history in the guided import (CLI-008, IMPORT-009).
 
+use std::io;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
@@ -10,6 +11,7 @@ use adapter_sqlite::SqliteImportHistory;
 use files::testing::TempDir;
 
 use super::support::{Harness, OCTOBER_17, PICTURES, Step};
+use crate::paths::PathError;
 
 const MEGABYTES_10: usize = 10_000_000;
 
@@ -124,6 +126,58 @@ fn the_preview_shows_a_file_imported_before() {
         transcript
             .output
             .contains("\x20 imported before  DCIM/100_FUJI/DSCF0001.RAF -> DSCF0001.RAF\n"),
+        "{}",
+        transcript.output
+    );
+}
+
+/// A folder resolution that always fails, as for a destination that cannot be read.
+fn unresolvable(folder: &Path) -> Result<PathBuf, PathError> {
+    Err(PathError::DestinationCannotBeRead(
+        folder.to_path_buf(),
+        io::Error::from(io::ErrorKind::PermissionDenied),
+    ))
+}
+
+/// spec: CLI-008.8
+#[test]
+fn a_folder_that_cannot_be_resolved_keeps_the_card_from_being_imported() {
+    let mut harness = with_three_files("{name}.{ext}");
+    harness.resolve_folder = unresolvable;
+
+    let transcript = harness.run(vec![Step::Line("")]);
+
+    let expected = format!("\nCould not use {PICTURES}: ");
+    assert!(
+        transcript.output.contains(&expected),
+        "{}",
+        transcript.output
+    );
+    assert!(
+        library_files(&harness).is_empty(),
+        "{:?}",
+        library_files(&harness)
+    );
+}
+
+/// spec: CLI-008.9
+#[test]
+fn a_folder_that_cannot_be_resolved_skips_the_template_preview() {
+    let mut harness = with_three_files("{name}.{ext}");
+    harness.remember(Some(PICTURES), None, &[]);
+    harness.resolve_folder = unresolvable;
+
+    let transcript = harness.run(vec![Step::Line("1"), Step::Line("n")]);
+
+    assert!(
+        transcript
+            .output
+            .contains("The template cannot be previewed: "),
+        "{}",
+        transcript.output
+    );
+    assert!(
+        transcript.output.contains("Use this template? [Y/n]: "),
         "{}",
         transcript.output
     );

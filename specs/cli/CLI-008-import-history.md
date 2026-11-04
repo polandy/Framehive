@@ -45,6 +45,13 @@ nothing, and exits with code 2. The guided import prints
 history that fails while the import runs stops it after the current file; the command
 reports the files done so far, prints the error as above, and exits with code 1.
 
+**A folder that cannot be resolved.** The history identifies the import destination and
+each backup destination by its canonical absolute path (IMPORT-009). When the guided
+import cannot resolve one of them, it prints `Could not use <folder>: <reason>` and does
+not import the card. When it cannot resolve the import destination for the template
+preview, it prints `The template cannot be previewed: <reason>` and asks whether to use
+the template without a preview.
+
 **Resuming.** An import that was interrupted, by a crash, a pulled card or a cancelled
 command, is resumed by running the same command again, or by inserting the card again in
 the guided import.
@@ -100,6 +107,17 @@ the guided import.
 - **Then** the dialog prints `The import history <path> cannot be used: …`, and no file
   is copied
 
+### CLI-008.8 – The guided import with a folder that cannot be resolved
+- **Given** an import destination that cannot be resolved to a canonical path
+- **When** the person starts the import of a card
+- **Then** the dialog prints `Could not use <destination>: …`, and no file is copied
+
+### CLI-008.9 – The template preview with a folder that cannot be resolved
+- **Given** an import destination that cannot be resolved to a canonical path
+- **When** the person chooses a template
+- **Then** the dialog prints `The template cannot be previewed: …` and asks
+  `Use this template? [Y/n]: `
+
 ## Out of scope
 
 - Which files are imported before or backed up before: IMPORT-009.
@@ -117,3 +135,4 @@ the guided import.
 |---|---|
 | 2026-11-04 | Initial draft; owner decisions: the history in the state folder, resuming is running the import again, no override yet; accepted by the owner |
 | 2026-11-04 | Implemented in `framehive-cli`; the template preview shows a file imported before with the line of the file list, CLI-008.6 counts the resumed files in the summary; `implemented` |
+| 2026-11-04 | CLI-008.8 and CLI-008.9: the messages for a folder that cannot be resolved |
