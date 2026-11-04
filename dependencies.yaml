@@ -24,6 +24,15 @@ dependencies:
     allowed_crates: [adapter-blake3, adapter-libraw]
     features: [std]
 
+  - name: rusqlite
+    purpose: The import history in a SQLite database, in adapter-sqlite (IMPORT-009)
+    rationale: A crash-safe, concurrently used database file with indexed lookups is a deep problem ADR 0009 assigns to a library; ADR 0031 chooses SQLite
+    review: By the rusqlite organization, the standard SQLite binding of Rust, version 0.41, MIT; the bundled feature compiles the SQLite amalgamation (public domain) with the C compiler of the Nix shell, so no system library is needed (ADR 0031)
+    adr: "0031"
+    allowed_layers: [adapter]
+    allowed_crates: [adapter-sqlite]
+    features: [bundled]
+
   - name: jiff
     purpose: The system time and the local UTC offset of the system time zone, in adapter-clock
     rationale: Time zone rules and the system time zone database are a deep problem ADR 0009 assigns to a library; std has no time zones
