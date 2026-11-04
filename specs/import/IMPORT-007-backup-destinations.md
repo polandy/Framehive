@@ -151,7 +151,7 @@ import destination is.
 - How the command line takes backup destinations and reports them: CLI-005; the guided
   import: CLI-003.
 - The "card can be formatted" status once every file is verified in N locations (N5):
-  a later spec.
+  IMPORT-008.
 - Detecting backup drives by a marker folder, and fixed network paths (I3): a later spec.
 - Separate backup destinations for photos and videos (I4), and separate destinations
   (R7): later specs.
