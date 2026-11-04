@@ -9,8 +9,8 @@ Layer: `app` (architecture §3). Binary: `framehive`.
 
 ## Purpose
 
-The command line of Framehive: `framehive import` (CLI-001, CLI-004) and, without a
-subcommand, the guided import (CLI-002, CLI-003, ADR 0024). It parses the arguments
+The command line of Framehive: `framehive import` (CLI-001, CLI-004), `framehive
+import-log` (CLI-009) and, without a subcommand, the guided import (CLI-002, CLI-003, ADR 0024). It parses the arguments
 with `clap` (builder API, ADR 0020 §6) and is one of the two places, with
 `framehive-gui`, that know the concrete adapters and wire them to the ports.
 
@@ -21,6 +21,7 @@ framehive
 framehive import <source> <destination> [--backup <folder>]...
                  [--template <template>] [--job-code <text>]
                  [--on-conflict add_suffix|skip|fail] [--dry-run]
+framehive import-log [<run>|last] [--format text|json|csv]
 framehive --help
 framehive --version
 ```
@@ -40,6 +41,17 @@ unknown (no absolute `XDG_STATE_HOME` and no home folder). The destinations it p
 the run are the resolved paths above: their existing part is canonical and the missing
 folders are created as named, so a destination has the same path in the first run and
 in later ones, which is how the history identifies it (IMPORT-009).
+
+## Import log
+
+`framehive import-log` (CLI-009) opens the import history of the state folder with
+`SqliteImportHistory::read_only`, so it never creates the history or the state folder.
+Without `<run>` it prints one line per run from `ImportHistory::list_runs`; with a run
+number or `last` it prints `ImportHistory::read_run_log` as text, JSON or RFC 4180 CSV
+(`src/import_log/`). The JSON and CSV writers are own code (ADR 0009). Paths are printed
+lossy, with U+FFFD for each byte that is not valid UTF-8. `--format` without `<run>` is a
+usage error. A run that does not exist, `last` without runs, a history that cannot be
+used and an unknown state folder print `error: …` and exit with 2.
 
 ## Guided import
 
@@ -97,6 +109,7 @@ standard error as `warning: <message>`; there is no other log output yet.
 | `paths` | Source and destination resolution, the inside check, creating the destination |
 | `import_command` | Wires the adapters to the import run and maps the result to the exit code |
 | `report` | The `ProgressSink` that prints the report lines and the summary |
+| `import_log` | `framehive import-log` (CLI-009): reading the history, and the `text`, `json` and `csv` writers |
 | `format_readiness` | The format readiness lines (CLI-007), shared by `framehive import` and the guided import |
 | `guided` | The guided import (CLI-002, CLI-003): `dialog` (prompts, waiting, remembered answers), `card` (summary, import, eject), `template` (template step, job code), `progress` (progress line, stop on a pulled card), `format` (sizes, rate, time left), `state` (state file), `events` (input events) |
 
@@ -108,7 +121,8 @@ mode 000; when the tests run as root, which reads them anyway, the expectation
 follows what the file system allows. `tests/memory_card.rs` checks the milestone 1
 guarantees end to end on a folder laid out like a memory card: a dry run writes
 nothing, the import fails only the unreadable file, a second run copies nothing, and
-the source keeps its paths, bytes and modification times.
+the source keeps its paths, bytes and modification times. `tests/import_log.rs` reads
+the log after real imports, or of a history written with `adapter-sqlite`.
 
 The guided import is tested in the crate (`src/guided/tests/`) with golden transcripts:
 the dialog runs against scripted input steps, `MemoryFileSystem`, `MemoryDeviceSource`

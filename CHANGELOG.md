@@ -82,6 +82,10 @@ All user-visible changes are listed here. The format follows
   ADR 0031), so a card imported again is recognized across runs, and an interrupted
   import is resumed by running it again. A history that cannot be used stops the
   import before any file is copied.
+- `framehive import-log [<run>|last] [--format text|json|csv]` (CLI-009, IMPORT-010):
+  lists the recorded import runs, oldest first, or prints which file of one run went
+  where, with its checksum, as text, JSON or RFC 4180 CSV to redirect into a file. It
+  reads the import history without creating or changing it.
 
 ### Fixed
 

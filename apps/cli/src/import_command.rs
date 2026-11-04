@@ -157,14 +157,14 @@ fn invalid_backup_message(
     )
 }
 
-/// The state folder of CLI-004 and CLI-008, which holds the persisted sequence
+/// The state folder of CLI-004, CLI-008 and CLI-009, which holds the persisted sequence
 /// counters (ADR 0029) and the import history (ADR 0031).
 ///
 /// # Errors
 ///
 /// Returns the message when the state folder is unknown: `XDG_STATE_HOME` is not an
 /// absolute path and the home folder is unknown.
-fn process_state_folder() -> Result<PathBuf, String> {
+pub(crate) fn process_state_folder() -> Result<PathBuf, String> {
     let home = std::env::home_dir()
         .filter(|home| home.is_absolute())
         .unwrap_or_default();
