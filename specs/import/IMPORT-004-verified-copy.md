@@ -133,7 +133,7 @@ stopped. Callers that never stop are not affected (ADR 0024).
 - Which files are found in the source: IMPORT-005.
 - Backup destinations (I2): IMPORT-007. The "card can be formatted" status (N5):
   IMPORT-008.
-- Resuming an interrupted import (N4), and the import log (N6): later specs.
+- Resuming an interrupted import (N4): IMPORT-009. The import log (N6): a later spec.
 - Moving files (G1): not planned for the import; a later spec if ever.
 - How the command line reports results and exit codes: CLI-001.
 

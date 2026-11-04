@@ -156,7 +156,8 @@ by content comes with the import history (N3).
 
 - Template syntax and other tokens: IMPORT-001.
 - Conflict handling when a target name already exists on disk: IMPORT-003.
-- Recognizing files already imported by their content: the import history (N3).
+- Recognizing files already imported by their content: the import history
+  (IMPORT-009).
 - Sharing counters between machines: not planned, to avoid sync conflicts (ADR 0003,
   ADR 0029).
 - Letters beyond `zz`: not planned; RPD stops there too, and longer letter names would
