@@ -44,6 +44,21 @@ impl Folders {
         self.root.path().join("library")
     }
 
+    /// The counter file of the persisted sequence counters (ADR 0029). Every run gets
+    /// its state folder below the root, so no test touches the real home folder.
+    pub(crate) fn counter_file(&self) -> PathBuf {
+        self.root
+            .path()
+            .join("state/framehive/sequence-counters.txt")
+    }
+
+    /// Writes `text` as the counter file.
+    pub(crate) fn write_counters(&self, text: &str) {
+        let file = self.counter_file();
+        fs::create_dir_all(file.parent().unwrap()).unwrap();
+        fs::write(file, text).unwrap();
+    }
+
     /// Adds a file to the source, modified at [`MODIFIED`].
     pub(crate) fn add(&self, relative: &str, content: &[u8]) -> PathBuf {
         let path = self.source().join(relative);
@@ -73,6 +88,7 @@ impl Folders {
         Command::new(env!("CARGO_BIN_EXE_framehive"))
             .args(arguments)
             .env("TZ", "UTC")
+            .env("XDG_STATE_HOME", self.root.path().join("state"))
             .output()
             .unwrap()
     }

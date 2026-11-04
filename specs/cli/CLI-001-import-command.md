@@ -39,6 +39,9 @@ accepted and not used: the import runs as usual, standard error gets the line
 exit code is not affected. Accepting it keeps scripts that always pass a job code
 working with every template.
 
+**Sequence numbers.** A template with a sequence token numbers the assets of the
+import as CLI-004 describes.
+
 **Flow.** The command checks its arguments, the template and the job code, scans the
 source, makes the import plan with conflicts resolved, and copies each file with a
 verified copy (IMPORT-004), in scan order.
@@ -70,7 +73,7 @@ Errors that stop the command, and log messages, go to standard error.
 |---|---|
 | 0 | Every file was copied, already imported, a duplicate, skipped or left out |
 | 1 | The import ran, and at least one file failed or a folder could not be read |
-| 2 | The import did not start: invalid arguments, an invalid template, an invalid or missing job code, a missing source, a destination inside the source, or a destination that cannot be created |
+| 2 | The import did not start: invalid arguments, an invalid template, an invalid or missing job code, a missing source, a destination inside the source, a destination that cannot be created, sequence numbers that do not fit the template, or sequence counters that cannot be read or stored |
 
 ## Acceptance criteria
 
@@ -203,3 +206,4 @@ Errors that stop the command, and log messages, go to standard error.
 | 2026-11-01 | Implemented in `framehive-cli` |
 | 2026-11-01 | Added `--job-code` with CLI-001.14 to CLI-001.17 (IMPORT-006) |
 | 2026-11-02 | CLI-001.11 names the unknown subcommand, which clap already rejected |
+| 2026-11-04 | Sequence numbers (IMPORT-002), specified in CLI-004 |

@@ -269,6 +269,7 @@ impl<'a> ImportRun<'a> {
             files,
             left_out: plan.left_out,
             stopped,
+            notices: plan.notices,
         }
     }
 

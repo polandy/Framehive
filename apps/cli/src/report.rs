@@ -180,6 +180,7 @@ mod tests {
                 reason: LeftOutReason::UnsupportedType,
             }],
             stopped: false,
+            notices: Vec::new(),
         };
 
         assert_eq!(

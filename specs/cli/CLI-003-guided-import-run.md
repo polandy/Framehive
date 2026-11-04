@@ -33,6 +33,12 @@ EOS_DIGITAL: 1024 files, 12.8 GB, captured 2026-10-17 to 2026-10-19
 - `j` asks for the job code, `t` runs the template step, and `d` asks for the
   destination, with the current one as default; each then plans again and shows the
   summary.
+- When the template has a persisted sequence counter (IMPORT-002), the summary says
+  `Files already imported are not recognized, because the template has a persisted sequence counter.`
+  The numbers the summary plans are reserved only when Enter starts the import.
+- When the sequence numbers do not fit the template, the dialog prints
+  `The template cannot number <card>: <reason>`, with the suggested template, and
+  runs the template step instead of the summary.
 - When the destination lies inside the card, the summary says
   `The destination is on the card; type d to choose another.` and Enter does not start.
 
@@ -155,6 +161,20 @@ the dialog goes on.
 - **When** the state file is located
 - **Then** it is `<home>/.local/state/framehive/guided-import.txt` in both runs
 
+### CLI-003.13 – Persisted sequence counter
+- **Given** a card with two files and the template `{seq_stored:4}.{ext}`, with the
+  stored counter at 250
+- **When** the plan summary is shown and the person presses Enter
+- **Then** the summary says that files already imported are not recognized, the files
+  are copied as `0251.RAF` and `0252.RAF`, and the stored counter is at 252
+
+### CLI-003.14 – Sequence numbers that do not fit
+- **Given** a card with two files and the template `{seq_stored:2}.{ext}`, with the
+  stored counter at 98
+- **When** the card is planned
+- **Then** the dialog prints the reason with the suggestion `{seq_stored:3}.{ext}` and
+  runs the template step; with the template chosen there, it shows the summary
+
 ## Out of scope
 
 - The arguments, output and exit codes of `framehive import`: CLI-001.
@@ -177,3 +197,4 @@ the dialog goes on.
 | 2026-11-01 | Accepted by the owner as part of CLI-002 |
 | 2026-11-01 | Implemented in `apps/cli/src/guided`; `implemented` |
 | 2026-11-01 | Split from CLI-002 to stay under the document size limit; criteria renumbered, content unchanged |
+| 2026-11-04 | Sequence numbers (IMPORT-002): CLI-003.13 and CLI-003.14 |

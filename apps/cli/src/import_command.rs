@@ -12,7 +12,7 @@ use adapter_clock::SystemClock;
 use adapter_fs::StdFileSystem;
 use adapter_sequence_counters::FileSequenceCounters;
 use import::{
-    ConflictPolicy, ImportRun, ImportSettings, ImportSummary, JobCode, SessionSequence,
+    ConflictPolicy, ImportRun, ImportSettings, ImportSummary, JobCode, PlanNotice, SessionSequence,
     require_job_code,
 };
 use naming::{CompatibilityMode, NameTemplate, SequenceKind};
@@ -71,7 +71,19 @@ fn import(arguments: &ImportArguments) -> Result<ImportSummary, String> {
         .run(&settings, &mut printer)
         .map_err(|error| error.to_string())?;
     printer.print_summary(&summary);
+    for notice in &summary.notices {
+        report_warning(notice_text(*notice));
+    }
     Ok(summary)
+}
+
+/// The warning for a notice of the plan (CLI-001, "Sequence numbers").
+fn notice_text(notice: PlanNotice) -> &'static str {
+    match notice {
+        PlanNotice::AlreadyImportedNotRecognized => {
+            "files already imported are not recognized, because the name template has a persisted sequence counter"
+        }
+    }
 }
 
 /// The persisted sequence counters in the state folder (ADR 0025, ADR 0029).
