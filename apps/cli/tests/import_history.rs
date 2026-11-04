@@ -133,6 +133,19 @@ fn the_history_is_kept_in_the_state_folder() {
     assert!(folders.history_file().is_file());
 }
 
+/// spec: IMPORT-009.14
+#[test]
+fn a_dry_run_creates_no_history_file() {
+    let folders = Folders::new();
+    folders.add_raf();
+
+    let output = folders.import(&["--dry-run"]);
+
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    assert!(!folders.history_file().exists());
+    assert!(!folders.history_file().parent().unwrap().exists());
+}
+
 /// spec: CLI-008.5
 #[test]
 fn a_history_that_is_not_a_database_stops_the_import() {
