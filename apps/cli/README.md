@@ -47,9 +47,14 @@ summary, reserves the sequence numbers with `ImportRun::start` on Enter (numbers
 do not fit lead back to the template step), and runs `ImportRun::execute` with a progress sink that redraws one line and
 stops the run between files when the card is pulled (IMPORT-004.13). The dialog is a
 loop over input events (a line, a tick per poll interval, the end of input) from a
-thread that reads standard input. The destination, the template and the recent job
-codes are remembered in `$XDG_STATE_HOME/framehive/guided-import.txt` (ADR 0025),
-written through the `FileSystem` port as `<file>.part`, then renamed. It exits with 0
+thread that reads standard input. Backup destinations (CLI-006) are chosen with `b` at
+the plan summary and passed to the run; one on the card, or one that
+`import::check_backup_destinations` rejects, blocks Enter like a destination on the
+card, and the report adds the files with a failed backup and the backup summary lines.
+The destination, the backup destinations, the template and the recent job codes are
+remembered in `$XDG_STATE_HOME/framehive/guided-import.txt` (ADR 0025, format version 2
+of ADR 0030; version 1 is still read), written through the `FileSystem` port as
+`<file>.part`, then renamed. It exits with 0
 when the person quits, and with 2 when it cannot start: standard input or output is not
 a terminal, or the home folder or the current folder is unknown.
 

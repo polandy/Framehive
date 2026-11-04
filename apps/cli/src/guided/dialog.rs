@@ -14,6 +14,10 @@ use super::events::{Event, EventSource};
 use super::state::{RememberedState, load_state, save_state};
 use super::{Environment, Ports};
 
+/// The question of the `b` choice at the plan summary (CLI-006).
+const BACKUP_PROMPT: &str =
+    "Backup folder to add, or the number of one to remove [Enter keeps them]: ";
+
 /// Why a prompt did not return an answer.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum Stop {
@@ -189,6 +193,35 @@ impl<'a> Dialog<'a> {
             resolve_answer(&answer, &self.environment)
         };
         self.state.destination = Some(destination);
+        self.remember();
+        Ok(())
+    }
+
+    /// Lists the backup destinations and asks for one to add or remove, and remembers
+    /// a change (CLI-006, "Choosing backup destinations"). An answer of digits is the
+    /// number of a backup destination; a folder named by digits is typed as `./<n>`.
+    pub(super) fn ask_backups(&mut self) -> Result<(), Stop> {
+        for (index, backup) in self.state.backups.clone().iter().enumerate() {
+            self.say(&format!("  {}  {}", index + 1, backup.display()));
+        }
+        loop {
+            let answer = self.prompt(BACKUP_PROMPT, None)?;
+            if answer.is_empty() {
+                return Ok(());
+            }
+            if !answer.bytes().all(|byte| byte.is_ascii_digit()) {
+                let backup = resolve_answer(&answer, &self.environment);
+                self.state.backups.push(backup);
+                break;
+            }
+            match answer.parse::<usize>() {
+                Ok(number) if (1..=self.state.backups.len()).contains(&number) => {
+                    self.state.backups.remove(number - 1);
+                    break;
+                }
+                _ => self.say(&format!("There is no backup folder {answer}.")),
+            }
+        }
         self.remember();
         Ok(())
     }

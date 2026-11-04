@@ -6,6 +6,7 @@
 
 #![allow(clippy::unwrap_used, reason = "test helpers may panic on bad fixtures")]
 
+mod backup;
 mod environment;
 mod import;
 mod naming;

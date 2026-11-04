@@ -46,9 +46,10 @@ fn the_summary_shows_files_size_dates_destination_template_and_job_code() {
             "Choose 1 or type a job code [1]: \n\
          EOS_DIGITAL: 2 files, 3.0 GB, captured 2026-10-17 to 2026-10-19\n\
          \x20 to        /home/ada/Pictures\n\
+         \x20 backup    none\n\
          \x20 named     {date:%Y}/{date:%Y-%m-%d}_{job}/{name}.{ext}\n\
          \x20 job code  Smith wedding\n\
-         [Enter] import  [l] list  [j] job code  [t] template  [d] destination  [q] quit: \n"
+         [Enter] import  [l] list  [j] job code  [t] template  [d] destination  [b] backup  [q] quit: \n"
         ),
         "{}",
         transcript.output
@@ -121,7 +122,7 @@ fn a_destination_on_the_card_does_not_start() {
     let transcript = harness.run(vec![Step::Line("")]);
 
     assert!(transcript.output.contains(&format!(
-        "\x20 named     {PRESET_1}\n{ON_CARD}[Enter] import  [l] list  [t] template  [d] destination  [q] quit: \n{ON_CARD}"
+        "\x20 named     {PRESET_1}\n{ON_CARD}[Enter] import  [l] list  [t] template  [d] destination  [b] backup  [q] quit: \n{ON_CARD}"
     )), "{}", transcript.output);
     assert!(
         !harness

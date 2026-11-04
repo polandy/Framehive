@@ -1,6 +1,6 @@
 # CLI-006 – Backup destinations in the guided import
 
-- Status: accepted
+- Status: implemented
 - Module: cli (`apps/cli`)
 - Origin: I2, I5
 - Depends on: CLI-003, CLI-005, IMPORT-007
@@ -102,3 +102,4 @@ key `backup`, in their order (ADR 0030), whenever they change.
 | Date | Change |
 |---|---|
 | 2026-11-04 | Initial draft for backup destinations (IMPORT-007, ADR 0030); accepted by the owner |
+| 2026-11-04 | Implemented in `apps/cli/src/guided` |
