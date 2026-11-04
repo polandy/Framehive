@@ -1,32 +1,60 @@
 // SPDX-FileCopyrightText: 2026 Framehive contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//! The report of `framehive import` (CLI-001): one line per file as soon as it is
-//! done, then the summary.
+//! The report of `framehive import` (CLI-001, CLI-005): one line per file as soon as
+//! it is done, each followed by its backup lines, then the summary.
 
 use std::io::Write;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use import::{
-    FileError, FileOutcome, FileReport, ImportSummary, LeftOut, ProgressSink, SourceScan,
+    BackupError, BackupOutcome, BackupReport, FileError, FileOutcome, FileReport, ImportSummary,
+    LeftOut, ProgressSink, SourceScan,
 };
+
+/// A backup destination as the import run knows it, and as the report names it.
+#[derive(Debug, Clone)]
+pub(crate) struct BackupName {
+    /// The resolved path, as in the settings of the run.
+    pub(crate) path: PathBuf,
+    /// The folder as the person gave it (CLI-005).
+    pub(crate) shown: PathBuf,
+}
 
 /// A [`ProgressSink`] that writes the report lines to `output` as the run goes.
 pub(crate) struct ReportPrinter<W: Write> {
     output: W,
     dry_run: bool,
+    backup_names: Vec<BackupName>,
 }
 
 impl<W: Write> ReportPrinter<W> {
     /// Creates a printer; `dry_run` turns `copied` into `would copy`.
     pub(crate) fn new(output: W, dry_run: bool) -> Self {
-        ReportPrinter { output, dry_run }
+        ReportPrinter {
+            output,
+            dry_run,
+            backup_names: Vec::new(),
+        }
     }
 
-    /// Writes the summary line of a finished run.
+    /// Names the backup destinations in the backup lines as `names` say.
+    pub(crate) fn with_backup_names(mut self, names: Vec<BackupName>) -> Self {
+        self.backup_names = names;
+        self
+    }
+
+    /// Writes the summary line of a finished run, and after a run that wrote, the
+    /// line of each backup destination.
     pub(crate) fn print_summary(&mut self, summary: &ImportSummary) {
         let line = summary_line(summary, self.dry_run);
         self.write_line(&line);
+        if self.dry_run {
+            return;
+        }
+        for line in backup_summary_lines(summary, &self.backup_names) {
+            self.write_line(&line);
+        }
     }
 
     fn write_line(&mut self, line: &str) {
@@ -48,7 +76,66 @@ impl<W: Write> ProgressSink for ReportPrinter<W> {
 
     fn file_finished(&mut self, report: &FileReport) {
         self.write_line(&file_line(report));
+        for backup in &report.backups {
+            let line = backup_line(backup, &self.backup_names);
+            self.write_line(&line);
+        }
     }
+}
+
+/// The folder a backup destination is named by in the report: as given, if known.
+fn shown<'n>(path: &'n Path, names: &'n [BackupName]) -> std::path::Display<'n> {
+    names
+        .iter()
+        .find(|name| name.path == path)
+        .map_or(path, |name| name.shown.as_path())
+        .display()
+}
+
+/// The indented line of one backup of a file (CLI-005, "Report").
+pub(crate) fn backup_line(backup: &BackupReport, names: &[BackupName]) -> String {
+    let folder = shown(&backup.destination, names);
+    match &backup.outcome {
+        BackupOutcome::BackedUp => format!("  backed up  {folder}"),
+        BackupOutcome::AlreadyBackedUp => format!("  already backed up  {folder}"),
+        BackupOutcome::Failed(error) => {
+            format!(
+                "  backup failed  {folder}: {}",
+                backup_failure_reason(error)
+            )
+        }
+    }
+}
+
+/// The reason of a failed backup; a name conflict reads as for a failed file.
+fn backup_failure_reason(error: &BackupError) -> String {
+    match error {
+        BackupError::NameConflict { .. } => "name conflict".to_owned(),
+        error => error.to_string(),
+    }
+}
+
+/// The line of each backup destination after the summary line (CLI-005).
+pub(crate) fn backup_summary_lines(summary: &ImportSummary, names: &[BackupName]) -> Vec<String> {
+    summary
+        .backups
+        .iter()
+        .map(|counts| {
+            format!(
+                "backup {}: {} backed up, {} already backed up, {} failed",
+                shown(&counts.destination, names),
+                counts.backed_up,
+                counts.already_backed_up,
+                counts.failed
+            )
+        })
+        .collect()
+}
+
+/// Whether a file failed at a backup destination, which makes the exit code 1
+/// (CLI-005); `ImportSummary::has_failures` counts only the import destination.
+pub(crate) fn has_backup_failures(summary: &ImportSummary) -> bool {
+    summary.backups.iter().any(|counts| counts.failed > 0)
 }
 
 /// The line for a file the scan left out.
@@ -139,6 +226,7 @@ mod tests {
             path: PathBuf::from(path),
             dated_by_modification_time: None,
             outcome,
+            backups: Vec::new(),
         }
     }
 
@@ -181,6 +269,7 @@ mod tests {
             }],
             stopped: false,
             notices: Vec::new(),
+            backups: Vec::new(),
         };
 
         assert_eq!(

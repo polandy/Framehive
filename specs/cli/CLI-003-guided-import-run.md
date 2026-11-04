@@ -18,14 +18,15 @@ needs only Enter (ADR 0024, ADR 0025).
 ```
 EOS_DIGITAL: 1024 files, 12.8 GB, captured 2026-10-17 to 2026-10-19
   to        /home/ada/Pictures
+  backup    none
   named     {date:%Y}/{date:%Y-%m-%d}_{job}/{name}.{ext}
   job code  Smith wedding
-[Enter] import  [l] list  [j] job code  [t] template  [d] destination  [q] quit: 
+[Enter] import  [l] list  [j] job code  [t] template  [d] destination  [b] backup  [q] quit: 
 ```
 
 - The capture dates are the first and the last local date of the planned files; one day
   is written `captured 2026-10-17`. The `job code` line and `[j]` appear only when the
-  template has `{job}`.
+  template has `{job}`. The `backup` lines and `[b]` are those of CLI-006.
 - Sizes are decimal: `12.8 GB` from one gigabyte (10⁹ bytes) on, otherwise `<n.n> MB`.
 - Enter starts the import.
 - `l` prints the lines of `framehive import --dry-run` (CLI-001) for the planned files,
@@ -180,8 +181,8 @@ the dialog goes on.
 - The arguments, output and exit codes of `framehive import`: CLI-001.
 - Import profiles and the YAML settings (N8): later specs; they will supersede the
   remembered template and destination.
-- Backup destinations (I2), "card can be formatted" (N5) and resuming an interrupted
-  import across program runs (N4): later specs.
+- Backup destinations (I2): CLI-006. "Card can be formatted" (N5) and resuming an
+  interrupted import across program runs (N4): later specs.
 - Ctrl+C during a copy: the process ends, and the next import replaces the leftover
   `.part` file (IMPORT-004.10).
 
@@ -198,3 +199,4 @@ the dialog goes on.
 | 2026-11-01 | Implemented in `apps/cli/src/guided`; `implemented` |
 | 2026-11-01 | Split from CLI-002 to stay under the document size limit; criteria renumbered, content unchanged |
 | 2026-11-04 | Sequence numbers (IMPORT-002): CLI-003.13 and CLI-003.14 |
+| 2026-11-04 | Backup destinations (CLI-006): the summary example shows the `backup` line and `[b]` |

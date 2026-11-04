@@ -4,7 +4,7 @@
 //! `framehive import` (CLI-001): wires the adapters to an import run.
 
 use std::io;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use adapter_blake3::Blake3Hasher;
@@ -12,21 +12,25 @@ use adapter_clock::SystemClock;
 use adapter_fs::StdFileSystem;
 use adapter_sequence_counters::FileSequenceCounters;
 use import::{
-    ConflictPolicy, ImportRun, ImportSettings, ImportSummary, JobCode, PlanNotice, SessionSequence,
-    require_job_code,
+    BackupDestinationError, ConflictPolicy, ImportRun, ImportSettings, ImportSummary, JobCode,
+    PlanNotice, SessionSequence, check_backup_destinations, require_job_code,
 };
 use naming::{CompatibilityMode, NameTemplate, SequenceKind};
 
 use crate::arguments::{ImportArguments, OnConflict};
 use crate::guided::state_folder;
-use crate::paths::{check_outside, create_destination, resolve_destination, resolve_source};
-use crate::report::ReportPrinter;
+use crate::paths::{
+    Destination, PathError, check_outside, create_destination, resolve_destination, resolve_source,
+};
+use crate::report::{BackupName, ReportPrinter, has_backup_failures};
 use crate::{FILES_FAILED, NOT_STARTED, report_error, report_warning};
 
 /// Runs the import and returns the exit code of CLI-001.
 pub(crate) fn run_import(arguments: &ImportArguments) -> ExitCode {
     match import(arguments) {
-        Ok(summary) if summary.has_failures() => ExitCode::from(FILES_FAILED),
+        Ok(summary) if summary.has_failures() || has_backup_failures(&summary) => {
+            ExitCode::from(FILES_FAILED)
+        }
         Ok(_) => ExitCode::SUCCESS,
         Err(message) => {
             report_error(&message);
@@ -49,14 +53,26 @@ fn import(arguments: &ImportArguments) -> Result<ImportSummary, String> {
     let destination =
         resolve_destination(&arguments.destination).map_err(|error| error.to_string())?;
     check_outside(&source, &destination).map_err(|error| error.to_string())?;
+    let backups = resolve_backups(&arguments.backups)?;
+    let backup_paths: Vec<PathBuf> = backups
+        .iter()
+        .map(|(backup, _)| backup.path.clone())
+        .collect();
+    check_backup_destinations(&source, &destination.path, &backup_paths)
+        .map_err(|error| invalid_backup_message(&error, &backups))?;
 
     let file_system = StdFileSystem::new();
     if !arguments.dry_run {
         create_destination(&file_system, &destination).map_err(|error| error.to_string())?;
+        for (backup, given) in &backups {
+            create_destination(&file_system, backup)
+                .map_err(|error| backup_message(given, &error))?;
+        }
     }
     let settings = ImportSettings {
         source: &source,
         destination: &destination.path,
+        backup_destinations: &backup_paths,
         template: &template,
         job_code: job_code.as_ref(),
         mode: CompatibilityMode::On,
@@ -66,7 +82,15 @@ fn import(arguments: &ImportArguments) -> Result<ImportSummary, String> {
     let clock = SystemClock::new();
     let counters = sequence_counters(&template)?;
     let session = SessionSequence::new();
-    let mut printer = ReportPrinter::new(io::stdout().lock(), arguments.dry_run);
+    let names = backups
+        .iter()
+        .map(|(backup, given)| BackupName {
+            path: backup.path.clone(),
+            shown: given.clone(),
+        })
+        .collect();
+    let mut printer =
+        ReportPrinter::new(io::stdout().lock(), arguments.dry_run).with_backup_names(names);
     let summary = ImportRun::new(&file_system, &Blake3Hasher, &clock, &counters, &session)
         .run(&settings, &mut printer)
         .map_err(|error| error.to_string())?;
@@ -75,6 +99,48 @@ fn import(arguments: &ImportArguments) -> Result<ImportSummary, String> {
         report_warning(notice_text(*notice));
     }
     Ok(summary)
+}
+
+/// Resolves each backup destination as the destination is resolved, so that the
+/// checks of IMPORT-007.11 compare absolute paths without `..` or symbolic links.
+///
+/// # Errors
+///
+/// Returns the message for the first backup destination that cannot be resolved.
+fn resolve_backups(backups: &[PathBuf]) -> Result<Vec<(Destination, PathBuf)>, String> {
+    backups
+        .iter()
+        .map(|given| {
+            resolve_destination(given)
+                .map(|backup| (backup, given.clone()))
+                .map_err(|error| backup_message(given, &error))
+        })
+        .collect()
+}
+
+/// The message for a backup destination that cannot be resolved or created.
+fn backup_message(given: &Path, error: &PathError) -> String {
+    format!(
+        "the backup destination {} cannot be used: {error}",
+        given.display()
+    )
+}
+
+/// The message for a backup destination that IMPORT-007.11 rejects, naming the folder
+/// as given.
+fn invalid_backup_message(
+    error: &BackupDestinationError,
+    backups: &[(Destination, PathBuf)],
+) -> String {
+    let given = backups
+        .iter()
+        .find(|(backup, _)| backup.path == error.path)
+        .map_or(error.path.as_path(), |(_, given)| given.as_path());
+    format!(
+        "invalid backup destination {}: {}",
+        given.display(),
+        error.problem
+    )
 }
 
 /// The warning for a notice of the plan (CLI-001, "Sequence numbers").

@@ -119,7 +119,7 @@ fn a_template_without_job_asks_for_no_job_code() {
     assert!(
         output.ends_with(
             "\n  named     {date:%Y}/{date:%Y-%m-%d}/{name}.{ext}\n\
-         [Enter] import  [l] list  [t] template  [d] destination  [q] quit: \n"
+         [Enter] import  [l] list  [t] template  [d] destination  [b] backup  [q] quit: \n"
         ),
         "{output}"
     );

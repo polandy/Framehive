@@ -14,8 +14,10 @@ use naming::NameTemplate;
 
 /// The first line of the state file, which says what it is.
 const HEADER: &str = "# Framehive remembers the answers of the guided import here.";
-/// The only format version this program reads and writes.
-const FORMAT_VERSION: &str = "1";
+/// The format version this program writes (ADR 0030 §3).
+const FORMAT_VERSION: &str = "2";
+/// The format versions this program reads: version 1 has no backup destinations.
+const READABLE_VERSIONS: [&str; 2] = ["1", "2"];
 
 /// The answers the guided import remembers between runs.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -26,6 +28,8 @@ pub(crate) struct RememberedState {
     pub(crate) template: Option<NameTemplate>,
     /// The job codes used before, the most recent first (IMPORT-006).
     pub(crate) job_codes: RecentJobCodes,
+    /// The backup destinations, absolute, in their order (CLI-006).
+    pub(crate) backups: Vec<PathBuf>,
 }
 
 /// A state file that is read: the state, and one warning per value that was dropped.
@@ -101,7 +105,7 @@ pub(crate) fn parse_state(text: &str) -> Result<LoadedState, String> {
         .map(|(index, line)| (index + 1, line))
         .filter(|(_, line)| !line.trim().is_empty() && !line.starts_with('#'));
     match lines.next() {
-        Some((_, line)) if line == format!("format_version={FORMAT_VERSION}") => {}
+        Some((_, line)) if is_readable_version(line) => {}
         Some((number, line)) => {
             return Err(format!(
                 "line {number} is {line:?}, not format_version={FORMAT_VERSION}"
@@ -116,12 +120,19 @@ pub(crate) fn parse_state(text: &str) -> Result<LoadedState, String> {
     Ok(values.into_state())
 }
 
+/// Whether `line` is the `format_version` line of a version this program reads.
+fn is_readable_version(line: &str) -> bool {
+    line.strip_prefix("format_version=")
+        .is_some_and(|version| READABLE_VERSIONS.contains(&version))
+}
+
 /// The values of a state file, as written, before they are checked.
 #[derive(Default)]
 struct StoredValues {
     destination: Option<String>,
     template: Option<String>,
     job_codes: Vec<String>,
+    backups: Vec<String>,
 }
 
 impl StoredValues {
@@ -133,6 +144,10 @@ impl StoredValues {
             "template" => &mut self.template,
             "job_code" => {
                 self.job_codes.push(value.to_owned());
+                return Ok(());
+            }
+            "backup" => {
+                self.backups.push(value.to_owned());
                 return Ok(());
             }
             _ => return Err(not_understood()),
@@ -157,6 +172,21 @@ impl StoredValues {
                 None
             }
         });
+        let backups = self
+            .backups
+            .iter()
+            .filter_map(|text| {
+                let path = PathBuf::from(text);
+                if path.is_absolute() {
+                    Some(path)
+                } else {
+                    warnings.push(format!(
+                        "the remembered backup folder {text:?} is not an absolute path; it is dropped"
+                    ));
+                    None
+                }
+            })
+            .collect();
         let template = self
             .template
             .and_then(|text| match NameTemplate::parse(&text) {
@@ -180,19 +210,25 @@ impl StoredValues {
                 destination,
                 template,
                 job_codes: RecentJobCodes::from_stored(&self.job_codes),
+                backups,
             },
             warnings,
         }
     }
 }
 
-/// Writes `state` in the format of ADR 0025 §2. A destination that is not valid UTF-8
-/// or contains a line break is left out, and so is a template with a line break.
+/// Writes `state` in the format of ADR 0025 §2 and ADR 0030 §3. A destination or
+/// backup destination that is not valid UTF-8 or contains a line break is left out, and
+/// so is a template with a line break.
 pub(crate) fn format_state(state: &RememberedState) -> String {
     let mut text = format!("{HEADER}\nformat_version={FORMAT_VERSION}\n");
     let destination = state.destination.as_deref().and_then(Path::to_str);
     if let Some(destination) = destination.filter(|text| fits_on_a_line(text)) {
         push_entry(&mut text, "destination", destination);
+    }
+    let backups = state.backups.iter().filter_map(|backup| backup.to_str());
+    for backup in backups.filter(|text| fits_on_a_line(text)) {
+        push_entry(&mut text, "backup", backup);
     }
     let template = state.template.as_ref().map(NameTemplate::as_str);
     if let Some(template) = template.filter(|text| fits_on_a_line(text)) {

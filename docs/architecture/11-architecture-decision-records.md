@@ -36,3 +36,4 @@ acceptance (a change means a new ADR that supersedes the old one).
 | [0027](../adr/0027-test-data-fetch.md) | Test data fetch with the tools of the Nix shell | accepted |
 | [0028](../adr/0028-libraw-build-and-reference-decode.md) | LibRaw build and reference decode, from the phase 0 prototype | accepted |
 | [0029](../adr/0029-persisted-sequence-counters.md) | Persisted sequence counters | accepted |
+| [0030](../adr/0030-backup-destinations.md) | Backup destinations: one read to several verified targets | accepted |

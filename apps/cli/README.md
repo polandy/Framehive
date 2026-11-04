@@ -18,9 +18,9 @@ with `clap` (builder API, ADR 0020 §6) and is one of the two places, with
 
 ```
 framehive
-framehive import <source> <destination> [--template <template>]
-                 [--job-code <text>] [--on-conflict add_suffix|skip|fail]
-                 [--dry-run]
+framehive import <source> <destination> [--backup <folder>]...
+                 [--template <template>] [--job-code <text>]
+                 [--on-conflict add_suffix|skip|fail] [--dry-run]
 framehive --help
 framehive --version
 ```
@@ -29,8 +29,10 @@ framehive --version
 `import::JobCode` and `import::require_job_code` (IMPORT-006), resolves the source without symbolic
 links, resolves the longest existing part of the destination and appends the missing
 folders (rejecting `..` among them), and rejects a destination inside the source.
-Unless it is a dry run, it then creates the missing folders of the destination and
-runs `import::ImportRun` with `adapter-fs`, `adapter-blake3` and `adapter-clock`, in
+Each `--backup` folder (CLI-005) is resolved the same way and checked with
+`import::check_backup_destinations` (IMPORT-007.11), also in a dry run. Unless it is a
+dry run, it then creates the missing folders of the destination and of each backup
+destination and runs `import::ImportRun` with `adapter-fs`, `adapter-blake3` and `adapter-clock`, in
 compatibility mode. The persisted sequence counters (CLI-004, ADR 0029) come from
 `adapter-sequence-counters` in the state folder; without a home folder the command
 stops only when the template has a persisted counter.
@@ -45,9 +47,14 @@ summary, reserves the sequence numbers with `ImportRun::start` on Enter (numbers
 do not fit lead back to the template step), and runs `ImportRun::execute` with a progress sink that redraws one line and
 stops the run between files when the card is pulled (IMPORT-004.13). The dialog is a
 loop over input events (a line, a tick per poll interval, the end of input) from a
-thread that reads standard input. The destination, the template and the recent job
-codes are remembered in `$XDG_STATE_HOME/framehive/guided-import.txt` (ADR 0025),
-written through the `FileSystem` port as `<file>.part`, then renamed. It exits with 0
+thread that reads standard input. Backup destinations (CLI-006) are chosen with `b` at
+the plan summary and passed to the run; one on the card, or one that
+`import::check_backup_destinations` rejects, blocks Enter like a destination on the
+card, and the report adds the files with a failed backup and the backup summary lines.
+The destination, the backup destinations, the template and the recent job codes are
+remembered in `$XDG_STATE_HOME/framehive/guided-import.txt` (ADR 0025, format version 2
+of ADR 0030; version 1 is still read), written through the `FileSystem` port as
+`<file>.part`, then renamed. It exits with 0
 when the person quits, and with 2 when it cannot start: standard input or output is not
 a terminal, or the home folder or the current folder is unknown.
 
@@ -55,9 +62,11 @@ a terminal, or the home folder or the current folder is unknown.
 
 The report texts live here, not in the import module. Standard output gets one line
 per file as soon as it is done (`copied`, `would copy`, `already imported`,
-`duplicate`, `skipped`, `failed`), the files and folders the scan left out
-(`left out`), and a summary line; in a dry run `copied` reads `would copy`, in the
-summary as well. Errors that stop the command go to standard error as
+`duplicate`, `skipped`, `failed`), each followed by one indented line per backup
+destination (`backed up`, `already backed up`, `backup failed`) that names the folder
+as given, the files and folders the scan left out (`left out`), a summary line, and one
+`backup <folder>: …` line per backup destination; in a dry run `copied` reads
+`would copy`, in the summary as well, and there are no backup lines. Errors that stop the command go to standard error as
 `error: <message>`. A job code that the template does not use is accepted and
 reported on standard error as `warning: <message>`, and so are the notices of the plan,
 such as the one for a persisted sequence counter; there is no other log output yet.
@@ -65,8 +74,8 @@ such as the one for a persisted sequence counter; there is no other log output y
 | Code | Meaning |
 |---|---|
 | 0 | Every file was copied, already imported, a duplicate, skipped or left out |
-| 1 | A file failed, or a folder could not be read (`ImportSummary::has_failures`) |
-| 2 | The import did not start: invalid arguments, template or job code, missing source, destination inside the source or not creatable, sequence numbers that do not fit or counters that cannot be read or stored |
+| 1 | A file failed, or a folder could not be read (`ImportSummary::has_failures`), or a file failed at a backup destination |
+| 2 | The import did not start: invalid arguments, template or job code, missing source, destination inside the source or not creatable, an invalid or not creatable backup destination, sequence numbers that do not fit or counters that cannot be read or stored |
 
 ## Modules
 

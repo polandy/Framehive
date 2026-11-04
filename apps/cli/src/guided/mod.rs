@@ -10,6 +10,7 @@ mod events;
 mod format;
 mod progress;
 mod state;
+mod summary;
 mod template;
 #[cfg(test)]
 mod tests;

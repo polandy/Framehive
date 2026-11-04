@@ -45,6 +45,18 @@ import plan, resolves each target and copies the file with `files::copy_verified
 that fails is reported with the reason and the run goes on (IMPORT-004.11). A dry run
 resolves everything and writes nothing.
 
+Backup destinations (IMPORT-007, ADR 0030): `ImportSettings::backup_destinations`
+lists them. `start` (and so `run`) refuses one that is the import destination, lies
+inside it or the source, contains it, or is given twice (`check_backup_destinations`).
+A file copied to the import destination, or already imported there, goes to the same
+target path below each backup destination, with one read of the source through
+`files::copy_verified_to_all`. A backup target holding the same content is "already
+backed up"; one holding other content is a name conflict there and is never
+overwritten. Each destination fails on its own: a failed backup does not undo the
+import, and a failed import destination keeps the verified backups.
+`FileReport::backups` holds one `BackupReport` per backup destination, and
+`ImportSummary::backups` the `BackupCounts` of each.
+
 `ImportRun::run` is the composition of two steps that callers can also use on their
 own. `plan` (all files of a scan) or `plan_first` (the first files only, for a preview)
 fixes the import time, dates only the selected files and returns a `PlannedRun`: each
@@ -75,7 +87,7 @@ Boundaries:
 - **Grouping** of files into assets is defined by LIBRARY-001; the module uses it and
   does not redefine it. `ImportPlan::new` takes assets that are already grouped.
 - **Not covered yet:** metadata tokens,
-  camera time correction, sidecars (until grouping), backup destinations, resuming an
+  camera time correction, sidecars (until grouping), resuming an
   interrupted import, the import log, the live preview and block editor (a UI spec), and
   where a profile stores its template (the profile spec).
 
@@ -98,6 +110,8 @@ Boundaries:
 | `PlannedRun`, `RunFile` | An import run planned and not yet executed: each selected file with its plan entry or dating failure |
 | `ProgressSink`, `NoProgress` | Receives each step of an import run on the caller's thread |
 | `ImportSummary`, `FileReport`, `FileOutcome`, `FileError`, `RunError` | What a run reports per file, and why a run did not start |
+| `BackupReport`, `BackupOutcome`, `BackupError`, `BackupCounts` | What happened to a file at each backup destination, and the counts per backup destination (IMPORT-007) |
+| `check_backup_destinations`, `BackupDestinationError`, `BackupDestinationProblem` | Refuses invalid backup destinations before a run starts (IMPORT-007.11) |
 | `ExampleViewModel` | Example ViewModel from the template; replace it |
 
 ## Events

@@ -189,7 +189,7 @@ Errors that stop the command, and log messages, go to standard error.
 
 - Profiles and the configuration file (N8, N25), `--profile` (N18): later specs.
 - Devices: detecting and naming cards and cameras as sources (Q1, Q2): the device spec.
-- Backup destinations (I2), the import log (N6) and resuming (N4): later specs.
+- Backup destinations (I2): CLI-005. The import log (N6) and resuming (N4): later specs.
 - Progress with throughput and remaining time (N12): the TUI concept and the GUI.
 - Translated output (X2): text is English until a spec for languages exists.
 

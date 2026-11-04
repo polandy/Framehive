@@ -22,7 +22,7 @@ use naming::testing::MemorySequenceCounters;
 
 use crate::guided::dialog::Dialog;
 use crate::guided::events::{Event, EventSource};
-use crate::guided::state::{RememberedState, save_state, state_file};
+use crate::guided::state::{RememberedState, load_state, save_state, state_file};
 use crate::guided::{Environment, Ports};
 
 /// The home folder of the tests.
@@ -140,7 +140,15 @@ impl Harness {
             destination: destination.map(PathBuf::from),
             template: template.map(|text| NameTemplate::parse(text).unwrap()),
             job_codes: RecentJobCodes::from_stored(job_codes),
+            ..RememberedState::default()
         };
+        save_state(&self.memory, &Self::state_file(), &state).unwrap();
+    }
+
+    /// Adds the backup destinations `backups` to the remembered answers (CLI-006).
+    pub(super) fn remember_backups(&self, backups: &[&str]) {
+        let mut state = load_state(&self.memory, &Self::state_file()).state;
+        state.backups = backups.iter().map(PathBuf::from).collect();
         save_state(&self.memory, &Self::state_file(), &state).unwrap();
     }
 

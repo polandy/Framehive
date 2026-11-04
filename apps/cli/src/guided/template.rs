@@ -108,6 +108,7 @@ impl Dialog<'_> {
         let settings = import::ImportSettings {
             source: card.mount_point(),
             destination: &destination,
+            backup_destinations: &[],
             template,
             job_code: job_code.or(preview_job_code.as_ref()),
             mode: naming::CompatibilityMode::On,

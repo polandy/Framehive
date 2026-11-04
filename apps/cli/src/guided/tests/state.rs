@@ -22,6 +22,7 @@ fn example_state() -> RememberedState {
         destination: Some(PathBuf::from("/home/ada/Pictures")),
         template: Some(NameTemplate::parse(PRESET_2).unwrap()),
         job_codes: RecentJobCodes::from_stored(["Smith wedding", "Harbour"]),
+        backups: vec![PathBuf::from("/run/media/ada/Backup/Pictures")],
     }
 }
 
@@ -41,8 +42,9 @@ fn the_state_file_has_the_lines_of_adr_0025_and_reads_back() {
     assert_eq!(
         text,
         "# Framehive remembers the answers of the guided import here.\n\
-         format_version=1\n\
+         format_version=2\n\
          destination=/home/ada/Pictures\n\
+         backup=/run/media/ada/Backup/Pictures\n\
          template={date:%Y}/{date:%Y-%m-%d}_{job}/{name}.{ext}\n\
          job_code=Smith wedding\n\
          job_code=Harbour\n"

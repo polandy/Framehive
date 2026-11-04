@@ -58,6 +58,16 @@ All user-visible changes are listed here. The format follows
   import with a suggested template, and in the guided import lead back to the
   template step. With a persisted counter, files already imported are not recognized,
   and both imports say so.
+- Backup destinations (IMPORT-007, CLI-005, CLI-006): `framehive import --backup <folder>`,
+  repeatable, writes each copied or already imported file to the same path below every
+  backup destination as well. The card is read once, every copy is verified on its
+  own, and a backup target is never overwritten. The report has one line per backup
+  destination for each file and a summary line for each; a failed backup makes the
+  exit code 1, and a backup destination that is, contains or lies inside the
+  destination, lies inside the source or is given twice stops the command. The guided
+  import shows the backup destinations in the plan summary, adds or removes them with
+  `b`, remembers them in the state file (now format version 2; version 1 is still
+  read), refuses to start with one on the card, and reports failed backups.
 
 ### Fixed
 
