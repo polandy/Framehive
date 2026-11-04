@@ -180,6 +180,7 @@ fn the_import_writes_to_the_backup_destination() {
         output.contains(
             "\n2 copied, 0 already imported, 0 duplicates, 0 skipped, 0 failed, 0 left out\n\
              backup /mnt/backup: 2 backed up, 0 already backed up, 0 failed\n\
+             The card can be formatted: every file is verified in 2 locations.\n\
              Eject EOS_DIGITAL? [Y/n]: n\n"
         ),
         "{output}"

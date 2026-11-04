@@ -8,8 +8,8 @@ use std::path::{Path, PathBuf};
 
 use devices::{Device, EjectError};
 use import::{
-    BackupOutcome, ConflictPolicy, FileOutcome, FileReport, ImportSettings, JobCode, PlannedRun,
-    RunError, SourceScan, scan_folder,
+    BackupOutcome, ConflictPolicy, FileOutcome, FileReport, FormatReadiness, ImportSettings,
+    JobCode, PlannedRun, RunError, SourceScan, scan_folder,
 };
 use naming::{CompatibilityMode, NameTemplate, SequenceError};
 
@@ -17,6 +17,7 @@ use super::dialog::{Dialog, Interrupted, Stop};
 use super::progress::{ImportContext, ImportProgress};
 use super::state::create_folders;
 use super::summary::{Action, blockers};
+use crate::format_readiness::format_readiness_lines;
 use crate::report::{ReportPrinter, backup_line, backup_summary_lines, file_line, summary_line};
 
 /// The settings of a guided import: compatibility mode on, `add_suffix` (CLI-003).
@@ -193,8 +194,8 @@ impl Dialog<'_> {
     }
 
     /// Creates the destination and the backup destinations and imports `plan` with the
-    /// progress line, then reports and offers the eject. Returns `false` when the import
-    /// could not start.
+    /// progress line, then reports with the format readiness (CLI-007) and offers the
+    /// eject. Returns `false` when the import could not start.
     fn import(
         &mut self,
         card: &Device,
@@ -249,6 +250,11 @@ impl Dialog<'_> {
         }
         self.say(&summary_line(&summary, false));
         for line in backup_summary_lines(&summary, &[]) {
+            self.say(&line);
+        }
+        // A card pulled meanwhile returned above and is imported again as a whole
+        // (CLI-003.8), so this summary covers every file of the card (CLI-007.10).
+        for line in format_readiness_lines(&FormatReadiness::of(&summary), "card") {
             self.say(&line);
         }
         self.offer_eject(card)?;
