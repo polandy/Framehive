@@ -32,6 +32,8 @@ pub(crate) struct ImportArguments {
     pub(crate) source: PathBuf,
     /// The folder to import into, as given.
     pub(crate) destination: PathBuf,
+    /// The backup destinations, as given, in the order of the command line (CLI-005).
+    pub(crate) backups: Vec<PathBuf>,
     /// The name template text, not yet parsed.
     pub(crate) template: String,
     /// The job code text, if given, not yet checked (IMPORT-006).
@@ -94,6 +96,14 @@ fn import_command() -> Command {
                 .help("Folder to import into; created with its parents when missing"),
         )
         .arg(
+            Arg::new("backup")
+                .long("backup")
+                .value_name("folder")
+                .action(ArgAction::Append)
+                .value_parser(value_parser!(PathBuf))
+                .help("Folder to back up each imported file to; can be given more than once"),
+        )
+        .arg(
             Arg::new("template")
                 .long("template")
                 .value_name("template")
@@ -126,6 +136,10 @@ fn import_arguments(matches: &ArgMatches) -> ImportArguments {
     ImportArguments {
         source: path(matches, "source"),
         destination: path(matches, "destination"),
+        backups: matches
+            .get_many::<PathBuf>("backup")
+            .map(|backups| backups.cloned().collect())
+            .unwrap_or_default(),
         template: matches
             .get_one::<String>("template")
             .cloned()

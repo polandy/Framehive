@@ -1,6 +1,6 @@
 # CLI-005 – Backup destinations in `framehive import`
 
-- Status: accepted
+- Status: implemented
 - Module: cli (`apps/cli`)
 - Origin: I2, I5, N18
 - Depends on: CLI-001, IMPORT-007
@@ -92,3 +92,4 @@ be created, stops the command before any file is copied, with exit code 2.
 | Date | Change |
 |---|---|
 | 2026-11-04 | Initial draft for backup destinations (IMPORT-007); accepted by the owner |
+| 2026-11-04 | Implemented in `framehive-cli` |
