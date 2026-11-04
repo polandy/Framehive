@@ -268,6 +268,7 @@ mod tests {
                 reason: LeftOutReason::UnsupportedType,
             }],
             stopped: false,
+            dry_run: true,
             notices: Vec::new(),
             backups: Vec::new(),
         };
