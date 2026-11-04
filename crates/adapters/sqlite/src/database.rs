@@ -161,6 +161,7 @@ mod tests {
     #![allow(clippy::unwrap_used, reason = "tests may panic on bad fixtures")]
 
     use super::*;
+    use crate::support::TempDir;
 
     fn pragma(database: &Database, name: &str) -> i64 {
         database
@@ -172,10 +173,8 @@ mod tests {
     /// spec: IMPORT-009.1
     #[test]
     fn a_connection_waits_five_seconds_and_syncs_fully() {
-        let folder =
-            std::env::temp_dir().join(format!("framehive-sqlite-unit-{}", std::process::id()));
-        let _ = fs::remove_dir_all(&folder);
-        let file = folder.join("import-history.sqlite");
+        let folder = TempDir::new();
+        let file = folder.path().join("import-history.sqlite");
         let mut database = Database::open(&file, Access::Write).unwrap().unwrap();
         database.create_schema().unwrap();
 
@@ -188,7 +187,5 @@ mod tests {
             .unwrap();
         assert_eq!(journal, "wal");
         assert_eq!(pragma(&database, "user_version"), SCHEMA_VERSION);
-        drop(database);
-        fs::remove_dir_all(&folder).unwrap();
     }
 }

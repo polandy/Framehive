@@ -9,6 +9,10 @@
 
 mod database;
 mod rows;
+// The unit tests share the temporary folder of the integration tests.
+#[cfg(test)]
+#[path = "../tests/support/mod.rs"]
+mod support;
 
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, MutexGuard, PoisonError};
