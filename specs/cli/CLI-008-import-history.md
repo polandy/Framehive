@@ -1,6 +1,6 @@
 # CLI-008 – Import history in the command line
 
-- Status: accepted
+- Status: implemented
 - Module: cli (`apps/cli`)
 - Origin: N3, N4
 - Depends on: CLI-001, CLI-003, CLI-004, CLI-005, CLI-006, IMPORT-009
@@ -116,3 +116,4 @@ the guided import.
 | Date | Change |
 |---|---|
 | 2026-11-04 | Initial draft; owner decisions: the history in the state folder, resuming is running the import again, no override yet; accepted by the owner |
+| 2026-11-04 | Implemented in `framehive-cli`; the template preview shows a file imported before with the line of the file list, CLI-008.6 counts the resumed files in the summary; `implemented` |

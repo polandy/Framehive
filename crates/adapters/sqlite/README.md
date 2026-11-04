@@ -12,6 +12,7 @@ Layer: `adapter`, port `history` (architecture §3)
 Implements the `ImportHistory` port of `history` with a SQLite database,
 `import-history.sqlite` in the state folder, through `rusqlite` with the bundled SQLite
 (ADR 0031). It knows the layout of the database and nothing about the import.
+`framehive-cli` uses it for `framehive import` and the guided import (CLI-008).
 
 - **Created on first write.** A missing database reads as empty; the first write creates
   the state folder and the database, so a dry run creates nothing.

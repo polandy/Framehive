@@ -17,7 +17,7 @@ before it copies it again, and confirms the match by checksum.
 Boundaries:
 
 - **A port, no storage.** `ImportHistory` is implemented by `adapter-sqlite`; only apps
-  choose it. The service reads no files and no clock: the caller passes every time as a
+  choose it, as `framehive-cli` does for both imports (CLI-008). The service reads no files and no clock: the caller passes every time as a
   `RecordedTime`.
 - **The key.** `CopyKey` matches a recorded copy with the same destination, original
   file name and size. The capture time is compared only when the key has one; it is the

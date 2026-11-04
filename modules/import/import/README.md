@@ -93,6 +93,8 @@ already backed up) right after it is verified and the end of the run, also when 
 stopped. A dry run records nothing. A history that cannot be read stops the plan
 (`RunError::History`); one that cannot record stops the run after that file
 (`ImportSummary::history_error`), which format readiness treats like a stopped run.
+The run compares destinations exactly as `ImportSettings` gives them, so the caller
+passes their canonical absolute paths (IMPORT-009); `framehive-cli` does (CLI-008).
 
 Boundaries:
 

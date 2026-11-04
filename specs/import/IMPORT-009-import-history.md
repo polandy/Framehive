@@ -1,6 +1,6 @@
 # IMPORT-009 – Import history
 
-- Status: accepted
+- Status: implemented
 - Module: import
 - Origin: N3, N4, T1, T8
 - Depends on: IMPORT-002, IMPORT-003, IMPORT-004, IMPORT-007, IMPORT-008
@@ -186,15 +186,14 @@ a copy later stops the run after that file.
 
 ## Out of scope
 
-- How the history is stored, its location and its layout: ADR 0031.
+- How and where the history is stored: ADR 0031.
 - How the command line reports them: CLI-008.
 - Exporting the history as an import log (N6): a later spec.
-- Files recognized after a camera time correction (N15) is set: the lookup uses the
-  capture time before correction; tested with the camera time correction spec.
-- Importing a file imported before again on request: not planned yet.
+- Camera time correction (N15): the lookup uses the capture time before it; tested in
+  that spec.
+- Importing a file imported before again: not planned.
 - Sharing the history between machines: not planned (ADR 0003, ADR 0031).
-- Pairing RAW and JPEG files across separate import jobs through the history:
-  LIBRARY-001.
+- Pairing RAW and JPEG across import jobs through the history: LIBRARY-001.
 
 ## Open questions
 
@@ -205,3 +204,4 @@ a copy later stops the run after that file.
 | Date | Change |
 |---|---|
 | 2026-11-04 | Initial draft; owner decisions: SQLite in the state folder, name, size and capture time first and the checksum last, files deleted from the library stay imported before and count as saved, resuming is running the import again, no override yet; accepted by the owner |
+| 2026-11-04 | Implemented in `history`, `adapter-sqlite`, `import` and `framehive-cli`; `implemented` |
