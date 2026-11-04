@@ -53,7 +53,7 @@ fn plan_with(
     assets: &[Vec<AssetFile>],
 ) -> Vec<PlannedFile> {
     let template = NameTemplate::parse(template).unwrap();
-    ImportPlan::new(assets, &template, mode, import_time(), None)
+    ImportPlan::new(assets, &template, mode, import_time(), None, 1)
         .files()
         .to_vec()
 }
@@ -206,6 +206,7 @@ fn job_code_is_part_of_the_path() {
         CompatibilityMode::On,
         import_time(),
         Some(&job_code),
+        1,
     );
 
     assert_eq!(

@@ -6,7 +6,8 @@
 
 use domain::{AssetFileRole, CaptureTime, LocalDateTime};
 use naming::{
-    AssetValues, CompatibilityMode, DateSource, FileTimes, NameTemplate, RenderError, asset_date,
+    AssetDate, AssetValues, CompatibilityMode, DateSource, FileTimes, NameTemplate, RenderError,
+    SequenceKind, asset_date,
 };
 
 use crate::JobCode;
@@ -71,7 +72,7 @@ impl PlannedFile {
 /// let template = NameTemplate::parse("{date:%Y-%m-%d}/{name}.{ext}")?;
 /// let import_time = LocalDateTime::new(2026, 10, 31, 9, 0, 0)?;
 ///
-/// let plan = ImportPlan::new(&[vec![raw]], &template, CompatibilityMode::On, import_time, None);
+/// let plan = ImportPlan::new(&[vec![raw]], &template, CompatibilityMode::On, import_time, None, 1);
 ///
 /// assert_eq!(plan.files()[0].target.as_deref(), Ok("2026-10-17/DSC_0042.RAF"));
 /// # Ok::<(), Box<dyn std::error::Error>>(())
@@ -79,6 +80,7 @@ impl PlannedFile {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ImportPlan {
     files: Vec<PlannedFile>,
+    notices: Vec<PlanNotice>,
 }
 
 impl ImportPlan {
@@ -87,7 +89,9 @@ impl ImportPlan {
     ///
     /// `import_time` is the time the import was queued, in the machine's local time.
     /// `job_code` gives `{job}` (IMPORT-006); without one, a template with `{job}` marks
-    /// every file as not nameable. An asset without files adds nothing to the plan.
+    /// every file as not nameable. The assets are numbered in shooting order from
+    /// `first_sequence_number` on, for the sequence token (IMPORT-002, "Order"). An
+    /// asset without files adds nothing to the plan.
     #[must_use]
     pub fn new(
         assets: &[Vec<AssetFile>],
@@ -95,6 +99,7 @@ impl ImportPlan {
         mode: CompatibilityMode,
         import_time: LocalDateTime,
         job_code: Option<&JobCode>,
+        first_sequence_number: u32,
     ) -> Self {
         let shared = SharedValues {
             template,
@@ -102,17 +107,60 @@ impl ImportPlan {
             import_time,
             job_code,
         };
+        let dated: Vec<Option<DatedAsset<'_>>> =
+            assets.iter().map(|files| dated_asset(files)).collect();
+        let numbers = shooting_order_numbers(&dated, first_sequence_number);
         let files = assets
             .iter()
-            .flat_map(|asset| plan_asset(asset, &shared))
+            .zip(&dated)
+            .zip(numbers)
+            .filter_map(|((files, dated), number)| {
+                Some(plan_asset(files, dated.as_ref()?, number, &shared))
+            })
+            .flatten()
             .collect();
-        ImportPlan { files }
+        ImportPlan {
+            files,
+            notices: notices(template),
+        }
+    }
+
+    /// The number of assets the plan numbers: one sequence number each (IMPORT-002).
+    #[must_use]
+    pub fn asset_count(assets: &[Vec<AssetFile>]) -> usize {
+        assets.iter().filter(|files| !files.is_empty()).count()
     }
 
     /// One planned file per input file, in the order of the input.
     #[must_use]
     pub fn files(&self) -> &[PlannedFile] {
         &self.files
+    }
+
+    /// What the person should know before the plan runs.
+    #[must_use]
+    pub fn notices(&self) -> &[PlanNotice] {
+        &self.notices
+    }
+}
+
+/// Something the person should know about an import plan before it runs.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PlanNotice {
+    /// The template has a persisted sequence counter, so every import gives the same
+    /// files new names, and files already imported are not recognized (IMPORT-002,
+    /// "Files already imported").
+    AlreadyImportedNotRecognized,
+}
+
+fn notices(template: &NameTemplate) -> Vec<PlanNotice> {
+    let persisted = template
+        .sequence_kind()
+        .is_some_and(SequenceKind::is_persisted);
+    if persisted {
+        vec![PlanNotice::AlreadyImportedNotRecognized]
+    } else {
+        Vec::new()
     }
 }
 
@@ -124,17 +172,55 @@ struct SharedValues<'a> {
     job_code: Option<&'a JobCode>,
 }
 
-fn plan_asset(files: &[AssetFile], shared: &SharedValues<'_>) -> Vec<PlannedFile> {
+/// The time and base name of an asset with files.
+struct DatedAsset<'a> {
+    date: AssetDate,
+    base_name: &'a str,
+}
+
+fn dated_asset(files: &[AssetFile]) -> Option<DatedAsset<'_>> {
     let times: Vec<FileTimes> = files.iter().map(file_times).collect();
     // `asset_date` is `None` only for an asset without files, which plans nothing.
-    let (Some(date), Some(base_name)) = (asset_date(&times), base_name(files)) else {
-        return Vec::new();
-    };
+    Some(DatedAsset {
+        date: asset_date(&times)?,
+        base_name: base_name(files)?,
+    })
+}
+
+/// The sequence number of each asset: in shooting order, by time and then by base
+/// name byte by byte (IMPORT-002, "Order"). Assets without files get none.
+fn shooting_order_numbers(dated: &[Option<DatedAsset<'_>>], first: u32) -> Vec<u32> {
+    let mut order: Vec<(usize, &DatedAsset<'_>)> = dated
+        .iter()
+        .enumerate()
+        .filter_map(|(index, asset)| Some((index, asset.as_ref()?)))
+        .collect();
+    order.sort_by(|(_, a), (_, b)| {
+        (a.date.time, a.base_name.as_bytes()).cmp(&(b.date.time, b.base_name.as_bytes()))
+    });
+    let mut numbers = vec![0; dated.len()];
+    let mut next = first;
+    for (index, _) in order {
+        if let Some(number) = numbers.get_mut(index) {
+            *number = next;
+        }
+        next = next.saturating_add(1);
+    }
+    numbers
+}
+
+fn plan_asset(
+    files: &[AssetFile],
+    asset: &DatedAsset<'_>,
+    sequence_number: u32,
+    shared: &SharedValues<'_>,
+) -> Vec<PlannedFile> {
     let values = AssetValues {
-        base_name: base_name.to_owned(),
-        capture_time: date.time,
+        base_name: asset.base_name.to_owned(),
+        capture_time: asset.date.time,
         import_time: shared.import_time,
         job_code: shared.job_code.map(|job_code| job_code.as_str().to_owned()),
+        sequence_number: Some(sequence_number),
     };
     files
         .iter()
@@ -143,8 +229,8 @@ fn plan_asset(files: &[AssetFile], shared: &SharedValues<'_>) -> Vec<PlannedFile
             target: shared
                 .template
                 .render(&values, &file.file_name, shared.mode),
-            date: date.time,
-            date_source: date.source,
+            date: asset.date.time,
+            date_source: asset.date.source,
         })
         .collect()
 }

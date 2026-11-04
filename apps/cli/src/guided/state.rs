@@ -40,11 +40,17 @@ pub(crate) struct LoadedState {
 /// Where the state file is (ADR 0025 §1): below `XDG_STATE_HOME` when it is set and
 /// absolute, otherwise below `<home>/.local/state`, on Linux and macOS alike.
 pub(crate) fn state_file(xdg_state_home: Option<&OsStr>, home: &Path) -> PathBuf {
+    state_folder(xdg_state_home, home).join("guided-import.txt")
+}
+
+/// The folder of Framehive's state files (ADR 0025 §1), which also holds the sequence
+/// counters (ADR 0029).
+pub(crate) fn state_folder(xdg_state_home: Option<&OsStr>, home: &Path) -> PathBuf {
     let state_home = xdg_state_home
         .map(Path::new)
         .filter(|path| path.is_absolute())
         .map_or_else(|| home.join(".local/state"), Path::to_path_buf);
-    state_home.join("framehive").join("guided-import.txt")
+    state_home.join("framehive")
 }
 
 /// Reads the state file. A missing file is the first-run state without a warning; a

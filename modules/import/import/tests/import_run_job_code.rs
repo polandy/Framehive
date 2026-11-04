@@ -12,8 +12,9 @@ use domain::{Timestamp, UtcOffset};
 use files::testing::{FnvHasher, MemoryFileSystem};
 use import::{
     ConflictPolicy, FileOutcome, ImportRun, ImportSettings, ImportSummary, JobCode, MissingJobCode,
-    NoProgress, RunError,
+    NoProgress, RunError, SessionSequence,
 };
+use naming::testing::MemorySequenceCounters;
 use naming::{CompatibilityMode, NameTemplate};
 
 const SOURCE: &str = "/media/card";
@@ -53,7 +54,9 @@ fn import(
         policy: ConflictPolicy::AddSuffix,
         dry_run: false,
     };
-    ImportRun::new(file_system, &FnvHasher, &clock).run(&settings, &mut NoProgress)
+    let (counters, session) = (MemorySequenceCounters::new(), SessionSequence::new());
+    ImportRun::new(file_system, &FnvHasher, &clock, &counters, &session)
+        .run(&settings, &mut NoProgress)
 }
 
 fn copied_target(summary: &ImportSummary) -> Option<&str> {

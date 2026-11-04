@@ -9,6 +9,7 @@
 mod environment;
 mod import;
 mod naming;
+mod sequence;
 mod start;
 mod state;
 mod summary;

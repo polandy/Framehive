@@ -10,6 +10,7 @@ members = [
     "crates/adapters/fs",
     "crates/adapters/libraw",
     "crates/adapters/mounts",
+    "crates/adapters/sequence-counters",
     "crates/domain",
     "crates/kernel",
     "crates/services/devices",
@@ -36,6 +37,7 @@ adapter-clock = { path = "crates/adapters/clock" }
 adapter-fs = { path = "crates/adapters/fs" }
 adapter-libraw = { path = "crates/adapters/libraw" }
 adapter-mounts = { path = "crates/adapters/mounts" }
+adapter-sequence-counters = { path = "crates/adapters/sequence-counters" }
 devices = { path = "crates/services/devices" }
 domain = { path = "crates/domain" }
 files = { path = "crates/services/files" }

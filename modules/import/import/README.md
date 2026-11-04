@@ -52,11 +52,20 @@ file with its planned target, or why it could not be dated. It resolves no confl
 and writes nothing. `execute` takes a `PlannedRun`, resolves conflicts and copies, with
 the same progress steps and summary as `run`.
 
+Sequence numbers (IMPORT-002): the plan numbers assets, not files, in shooting order
+(capture time, then base name byte by byte), from one contiguous range. `plan` only
+previews the range; `start` reserves it through the `naming::SequenceCounters` port, or
+from the `SessionSequence` for session and letter numbers, before the first file is
+copied, and names the files again if another import took the previewed numbers. A dry
+run reserves nothing. `run` is the scan, `plan`, `start` and `execute`. A template with
+a persisted counter puts `PlanNotice::AlreadyImportedNotRecognized` on the plan.
+
 Boundaries:
 
 - **Pure logic, I/O through ports.** Making an import plan does no I/O. The scan,
   conflict resolution and the import run read and write only through the `FileSystem`
-  and `Hasher` ports of `files` and the `Clock` of `domain`; the app wires the
+  and `Hasher` ports of `files`, the `Clock` of `domain` and the `SequenceCounters` of
+  `naming`; the app wires the
   adapters. `ImportRun` runs synchronously on the caller's thread and reports to a
   `ProgressSink`, which it asks before each file whether to go on
   (`should_continue`, IMPORT-004.13); a stopped run sets `ImportSummary::stopped`. It
@@ -65,7 +74,7 @@ Boundaries:
   (ADR 0020 §2).
 - **Grouping** of files into assets is defined by LIBRARY-001; the module uses it and
   does not redefine it. `ImportPlan::new` takes assets that are already grouped.
-- **Not covered yet:** sequence numbers (IMPORT-002), metadata tokens,
+- **Not covered yet:** metadata tokens,
   camera time correction, sidecars (until grouping), backup destinations, resuming an
   interrupted import, the import log, the live preview and block editor (a UI spec), and
   where a profile stores its template (the profile spec).
@@ -83,7 +92,9 @@ Boundaries:
 | `JobCode`, `JobCodeError`, `MAX_JOB_CODE_CHARACTERS` | A validated job code and why a text is not one (IMPORT-006) |
 | `RecentJobCodes`, `MAX_RECENT_JOB_CODES` | The job codes used before, most recent first (IMPORT-006) |
 | `require_job_code`, `MissingJobCode` | Refuses an import whose template uses `{job}` without a job code (IMPORT-006) |
-| `ImportRun`, `ImportSettings` | Scans, plans, resolves and copies, file by file (ADR 0020, IMPORT-004) |
+| `ImportRun`, `ImportSettings` | Scans, plans, starts, resolves and copies, file by file (ADR 0020, IMPORT-004) |
+| `SessionSequence` | The session counter of one run of the application (IMPORT-002) |
+| `PlanNotice` | A notice the plan carries, such as a persisted counter that cannot recognize files already imported |
 | `PlannedRun`, `RunFile` | An import run planned and not yet executed: each selected file with its plan entry or dating failure |
 | `ProgressSink`, `NoProgress` | Receives each step of an import run on the caller's thread |
 | `ImportSummary`, `FileReport`, `FileOutcome`, `FileError`, `RunError` | What a run reports per file, and why a run did not start |

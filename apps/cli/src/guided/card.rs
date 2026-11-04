@@ -9,10 +9,10 @@ use std::path::{Path, PathBuf};
 use devices::{Device, EjectError};
 use domain::LocalDateTime;
 use import::{
-    ConflictPolicy, FileOutcome, ImportRun, ImportSettings, JobCode, PlannedRun, SourceScan,
-    scan_folder,
+    ConflictPolicy, FileOutcome, ImportSettings, JobCode, PlanNotice, PlannedRun, RunError,
+    SourceScan, scan_folder,
 };
-use naming::{CompatibilityMode, NameTemplate};
+use naming::{CompatibilityMode, NameTemplate, SequenceError};
 
 use super::dialog::{Dialog, Interrupted, Stop};
 use super::format::size_text;
@@ -22,6 +22,8 @@ use crate::report::{ReportPrinter, file_line, summary_line};
 
 /// The line under a summary whose destination lies inside the card.
 const ON_CARD: &str = "The destination is on the card; type d to choose another.";
+/// The plan notice of a persisted sequence counter (CLI-003, IMPORT-002).
+const NOT_RECOGNIZED: &str = "Files already imported are not recognized, because the template has a persisted sequence counter.";
 
 /// What the person chose at the plan summary.
 enum Action {
@@ -104,15 +106,27 @@ impl Dialog<'_> {
         mut job_code: Option<JobCode>,
     ) -> Result<(), Stop> {
         let ports = self.ports;
-        let run = ImportRun::new(ports.file_system, ports.hasher, ports.clock);
+        let run = ports.import_run();
         loop {
             let destination = self.destination();
             let Some(template) = self.state.template.clone() else {
                 return Ok(());
             };
             let settings = settings(card, &destination, &template, job_code.as_ref(), false);
-            let Some(plan) = self.plan(card, &settings, scan) else {
-                return Ok(());
+            let plan = match run.plan(&settings, scan) {
+                Ok(plan) => plan,
+                Err(RunError::Sequence(SequenceError::Overflow(overflow))) => {
+                    self.say(&format!(
+                        "The template cannot number {}: {overflow}",
+                        card.name()
+                    ));
+                    self.retemplate(card, scan, &mut job_code)?;
+                    continue;
+                }
+                Err(error) => {
+                    self.say(&format!("Could not plan {}: {error}", card.name()));
+                    return Ok(());
+                }
             };
             self.show_summary(card, &plan, &settings);
             let on_card = destination.starts_with(card.mount_point());
@@ -136,15 +150,24 @@ impl Dialog<'_> {
                     printer.print_summary(&summary);
                 }
                 Action::JobCode => job_code = Some(self.ask_job_code(card)?),
-                Action::Template => {
-                    self.template_step(card, scan, job_code.as_ref())?;
-                    if job_code.is_none() && self.uses_job_code() {
-                        job_code = Some(self.ask_job_code(card)?);
-                    }
-                }
+                Action::Template => self.retemplate(card, scan, &mut job_code)?,
                 Action::Destination => self.ask_destination(&destination)?,
             }
         }
+    }
+
+    /// Runs the template step, and asks for a job code if the new template needs one.
+    fn retemplate(
+        &mut self,
+        card: &Device,
+        scan: &SourceScan,
+        job_code: &mut Option<JobCode>,
+    ) -> Result<(), Stop> {
+        self.template_step(card, scan, job_code.as_ref())?;
+        if job_code.is_none() && self.uses_job_code() {
+            *job_code = Some(self.ask_job_code(card)?);
+        }
+        Ok(())
     }
 
     /// Plans every file of `scan`, or prints why it cannot be planned.
@@ -155,7 +178,7 @@ impl Dialog<'_> {
         scan: &SourceScan,
     ) -> Option<PlannedRun> {
         let ports = self.ports;
-        let run = ImportRun::new(ports.file_system, ports.hasher, ports.clock);
+        let run = ports.import_run();
         match run.plan(settings, scan) {
             Ok(plan) => Some(plan),
             Err(error) => {
@@ -184,6 +207,12 @@ impl Dialog<'_> {
             && let Some(job_code) = settings.job_code
         {
             self.say(&format!("  job code  {}", job_code.as_str()));
+        }
+        if plan
+            .notices()
+            .contains(&PlanNotice::AlreadyImportedNotRecognized)
+        {
+            self.say(NOT_RECOGNIZED);
         }
     }
 
@@ -238,6 +267,14 @@ impl Dialog<'_> {
             self.state.job_codes.mark_used(job_code.clone());
             self.remember();
         }
+        let run = ports.import_run();
+        let plan = match run.start(settings, plan) {
+            Ok(plan) => plan,
+            Err(error) => {
+                self.say(&format!("Could not import {}: {error}", card.name()));
+                return Ok(false);
+            }
+        };
         let sizes = plan.files().iter().map(|file| file.found.size).collect();
         let context = ImportContext {
             output: &mut *self.output,
@@ -246,7 +283,6 @@ impl Dialog<'_> {
             clock: ports.clock,
         };
         let mut progress = ImportProgress::start(context, card, sizes);
-        let run = ImportRun::new(ports.file_system, ports.hasher, ports.clock);
         let summary = run.execute(settings, plan, &mut progress);
         let changes = progress.finish();
         self.show_changes(&changes);

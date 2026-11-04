@@ -10,10 +10,11 @@ use std::path::{Path, PathBuf};
 use domain::Checksum;
 use files::CopyError;
 use metadata::NoCaptureTime;
-use naming::RenderError;
+use naming::{RenderError, SequenceError};
 
 use crate::conflicts::ConflictError;
 use crate::job_code::MissingJobCode;
+use crate::plan::PlanNotice;
 use crate::scan::{LeftOut, LeftOutReason, ScanError, SourceScan};
 
 /// Receives the progress of an [`ImportRun`](crate::ImportRun) on the caller's thread,
@@ -141,6 +142,9 @@ pub enum RunError {
     /// The clock shows a time outside the years 0 to 9999 in local time.
     #[error("the current time cannot be shown as a local date and time")]
     ImportTimeOutOfRange,
+    /// The import cannot get its sequence numbers (IMPORT-002).
+    #[error(transparent)]
+    Sequence(#[from] SequenceError),
 }
 
 /// The result of a finished import run, in scan order.
@@ -153,6 +157,8 @@ pub struct ImportSummary {
     /// Whether the [`ProgressSink`] stopped the run before every file was done; the
     /// files it did not start are not in `files`.
     pub stopped: bool,
+    /// The notices of the plan the run executed.
+    pub notices: Vec<PlanNotice>,
 }
 
 impl ImportSummary {

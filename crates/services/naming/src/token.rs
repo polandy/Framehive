@@ -4,10 +4,11 @@
 //! The tokens of a name template (IMPORT-001, token table).
 
 use crate::date_format::DateFormat;
+use crate::sequence::{SequenceFormat, SequenceKind, SequenceToken};
 use crate::{TemplateError, TemplateErrorKind};
 
 /// Most digits `{number:N}` and the sequence tokens may ask for.
-const MAX_DIGITS: usize = 6;
+pub(crate) const MAX_DIGITS: usize = 6;
 
 /// A token between braces.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -27,8 +28,8 @@ pub(crate) enum Token {
         /// The token as written, for the error that names it.
         text: String,
     },
-    /// A sequence token (IMPORT-002), kept as written.
-    Sequence { text: String },
+    /// A sequence token (IMPORT-002).
+    Sequence(SequenceToken),
     /// `{job}`: the job code of the import (IMPORT-006).
     JobCode,
 }
@@ -83,10 +84,18 @@ impl Token {
                 Ok(Token::ImageNumber { digits, text })
             }
             ("seq_today" | "seq_stored" | "seq_session", Some(option)) => {
-                digit_count(option).ok_or_else(unknown_option)?;
-                Ok(Token::Sequence { text })
+                let width = digit_count(option).ok_or_else(unknown_option)?;
+                Ok(Token::Sequence(SequenceToken {
+                    kind: sequence_kind(name),
+                    format: SequenceFormat::Digits(width),
+                    text,
+                }))
             }
-            ("seq_letters", None) => Ok(Token::Sequence { text }),
+            ("seq_letters", None) => Ok(Token::Sequence(SequenceToken {
+                kind: SequenceKind::Letters,
+                format: SequenceFormat::Letters,
+                text,
+            })),
             ("job", None) => Ok(Token::JobCode),
             _ => Err(TemplateError::new(
                 column,
@@ -101,6 +110,14 @@ fn date_token(name: &str, format: DateFormat) -> Token {
         Token::CaptureTime(format)
     } else {
         Token::ImportTime(format)
+    }
+}
+
+fn sequence_kind(name: &str) -> SequenceKind {
+    match name {
+        "seq_today" => SequenceKind::ImportedToday,
+        "seq_stored" => SequenceKind::Stored,
+        _ => SequenceKind::Session,
     }
 }
 

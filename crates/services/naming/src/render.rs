@@ -7,6 +7,7 @@ use domain::LocalDateTime;
 use thiserror::Error;
 
 use crate::NameTemplate;
+use crate::sequence::SequenceToken;
 use crate::template::Part;
 use crate::token::Token;
 
@@ -30,6 +31,9 @@ pub struct AssetValues {
     pub import_time: LocalDateTime,
     /// The job code of the import, already validated (IMPORT-006). It gives `{job}`.
     pub job_code: Option<String>,
+    /// The asset's number from the import's reserved range (IMPORT-002). It gives the
+    /// sequence token.
+    pub sequence_number: Option<u32>,
 }
 
 /// Whether rendered names are kept valid on exFAT, SMB and macOS.
@@ -72,12 +76,20 @@ pub enum RenderError {
     /// The template has `{job}`, but the import has no job code (IMPORT-006).
     #[error("{{job}} needs a job code, but none was given")]
     NoJobCode,
-    /// The template has a sequence token; sequence numbers are specified by IMPORT-002
-    /// and not available yet.
-    #[error("{token} cannot be rendered yet; sequence numbers are not available")]
-    SequenceUnavailable {
+    /// The template has a sequence token, but the asset has no sequence number.
+    #[error("{token} needs a sequence number, but none was given")]
+    NoSequenceNumber {
         /// The sequence token as written in the template.
         token: String,
+    },
+    /// The sequence number is 0 or does not fit the sequence token; the import
+    /// checks its range before it starts (IMPORT-002, "Overflow").
+    #[error("{token} cannot show the sequence number {number}")]
+    SequenceNumberOutOfRange {
+        /// The sequence token as written in the template.
+        token: String,
+        /// The number that does not fit.
+        number: u32,
     },
 }
 
@@ -99,6 +111,7 @@ impl NameTemplate {
     ///     capture_time: LocalDateTime::new(2026, 10, 17, 14, 5, 9)?,
     ///     import_time: LocalDateTime::new(2026, 10, 19, 9, 0, 0)?,
     ///     job_code: None,
+    ///     sequence_number: None,
     /// };
     /// let path = template.render(&values, "DSC_0042.RAF.xmp", CompatibilityMode::On)?;
     /// assert_eq!(path, "2026-10-17/DSC_0042.RAF.xmp");
@@ -156,13 +169,24 @@ fn render_part(
         Part::Token(Token::JobCode) => {
             output.push_str(values.job_code.as_deref().ok_or(RenderError::NoJobCode)?);
         }
-        Part::Token(Token::Sequence { text }) => {
-            return Err(RenderError::SequenceUnavailable {
-                token: text.clone(),
-            });
+        Part::Token(Token::Sequence(token)) => {
+            output.push_str(&sequence_number(token, values.sequence_number)?);
         }
     }
     Ok(())
+}
+
+fn sequence_number(token: &SequenceToken, number: Option<u32>) -> Result<String, RenderError> {
+    let number = number.ok_or_else(|| RenderError::NoSequenceNumber {
+        token: token.text.clone(),
+    })?;
+    token
+        .format
+        .format(number)
+        .ok_or_else(|| RenderError::SequenceNumberOutOfRange {
+            token: token.text.clone(),
+            number,
+        })
 }
 
 /// The trailing digits of `base_name`, or their last `digits`, padded with zeros.
@@ -227,19 +251,39 @@ mod tests {
             capture_time: time,
             import_time: time,
             job_code: None,
+            sequence_number: None,
         }
     }
 
     #[test]
-    fn sequence_tokens_are_not_rendered_yet() {
+    fn sequence_token_without_a_number_cannot_be_rendered() {
         let template = NameTemplate::parse("{seq_today:3}.{ext}").unwrap();
 
         let error = template.render(&values(), "DSC_0042.RAF", CompatibilityMode::On);
 
         assert_eq!(
             error,
-            Err(RenderError::SequenceUnavailable {
+            Err(RenderError::NoSequenceNumber {
                 token: "{seq_today:3}".to_owned()
+            })
+        );
+    }
+
+    #[test]
+    fn sequence_number_that_does_not_fit_cannot_be_rendered() {
+        let template = NameTemplate::parse("{seq_stored:2}.{ext}").unwrap();
+        let values = AssetValues {
+            sequence_number: Some(100),
+            ..values()
+        };
+
+        let error = template.render(&values, "DSC_0042.RAF", CompatibilityMode::On);
+
+        assert_eq!(
+            error,
+            Err(RenderError::SequenceNumberOutOfRange {
+                token: "{seq_stored:2}".to_owned(),
+                number: 100
             })
         );
     }

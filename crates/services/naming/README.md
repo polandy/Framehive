@@ -17,7 +17,7 @@ destination.
 Boundaries:
 
 - **Pure.** Rendering is a function of the values it is given: capture time, import
-  time, base name, job code and file name. The service reads no files and no clock; the caller
+  time, base name, job code, sequence number and file name. The service reads no files and no clock; the caller
   passes times as `LocalDateTime` and `CaptureTime` values of `domain` (architecture §3,
   ADR 0021).
 - **Asset values.** All files of one asset are rendered from one `AssetValues`.
@@ -29,16 +29,31 @@ Boundaries:
   import module's job (IMPORT-006). Without a job code, a file of a template with
   `{job}` cannot be named (`RenderError::NoJobCode`); `uses_job_code` lets the caller
   refuse such an import before it starts.
-- **Not covered yet:** sequence tokens are validated, but rendering them returns
-  `RenderError::SequenceUnavailable` until IMPORT-002. The import plan, which marks
-  files that cannot be named or are dated by their modification time, belongs to the
-  import module.
+- **Sequence numbers.** A sequence token renders `AssetValues::sequence_number`
+  with a fixed number of digits or as letters `a`…`zz` (IMPORT-002). The caller
+  reserves the numbers; `check_sequence_range` refuses a range whose last number does
+  not fit, before the import starts, and suggests a template that fits.
+- **Sequence counters.** The persisted counters (`{seq_today:N}`, `{seq_stored:N}`)
+  sit behind the `SequenceCounters` port (ADR 0029); `adapter-sequence-counters`
+  stores them. `preview_range` shows the range an import would get, `reserve_range`
+  reserves it in one locked update and stores nothing when it does not fit. The
+  imported-today counter starts again on a new machine-local day.
+  `naming::testing` holds `MemorySequenceCounters` and the conformance suite
+  `check_sequence_counters`.
+- **Not here:** the import plan, which marks files that cannot be named or are dated
+  by their modification time, belongs to the import module.
 
 ## Public API
 
 | Item | Meaning |
 |---|---|
-| `NameTemplate` | Validated name template; `parse`, `as_str`, `uses_job_code`, `render` |
+| `NameTemplate` | Validated name template; `parse`, `as_str`, `uses_job_code`, `sequence_kind`, `check_sequence_range`, `render` |
+| `SequenceKind` | Which counter a sequence token numbers from, and whether it is persisted |
+| `SequenceOverflow` | A range that does not fit the sequence token, with a suggested template |
+| `SequenceCounters`, `SequenceCountersError` | Port to the persisted counters, and why they cannot be read or stored |
+| `StoredCounters`, `CounterDate` | The stored values and the date the imported-today counter belongs to |
+| `SequenceRange`, `preview_range`, `reserve_range`, `SequenceError` | The range of one import, shown or reserved, and why it cannot be had |
+| `testing::MemorySequenceCounters`, `testing::check_sequence_counters`, `testing::SequenceCountersUnderTest` | Test double and conformance suite of the port |
 | `TemplateError`, `TemplateErrorKind` | Why and at which column a template was rejected |
 | `AssetValues` | The values all files of one asset are rendered from |
 | `CompatibilityMode` | Keep names valid on exFAT, SMB and macOS (`On` by default) or not |

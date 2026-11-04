@@ -14,6 +14,7 @@ mod report;
 mod roles;
 mod run;
 mod scan;
+mod sequence;
 mod view_model;
 
 use kernel::{ModuleId, ModuleIdError};
@@ -24,7 +25,7 @@ pub use conflicts::{
 pub use job_code::{
     JobCode, JobCodeError, MAX_JOB_CODE_CHARACTERS, MissingJobCode, require_job_code,
 };
-pub use plan::{AssetFile, ImportPlan, PlannedFile};
+pub use plan::{AssetFile, ImportPlan, PlanNotice, PlannedFile};
 pub use recent_job_codes::{MAX_RECENT_JOB_CODES, RecentJobCodes};
 pub use report::{
     FileError, FileOutcome, FileReport, ImportSummary, NoProgress, ProgressSink, RunError,
@@ -33,6 +34,7 @@ pub use run::{ImportRun, ImportSettings, PlannedRun, RunFile};
 pub use scan::{
     FoundFile, LeftOut, LeftOutReason, ScanError, SourceScan, scan_folder, scan_source,
 };
+pub use sequence::SessionSequence;
 pub use view_model::ExampleViewModel;
 
 /// Stable, unique id of this module (architecture §4.2).
