@@ -131,7 +131,8 @@ stopped. Callers that never stop are not affected (ADR 0024).
 - A target name that already exists, or two files with the same target, and files
   already imported: IMPORT-003.
 - Which files are found in the source: IMPORT-005.
-- Backup destinations (I2) and the "card can be formatted" status (N5): later specs.
+- Backup destinations (I2): IMPORT-007. The "card can be formatted" status (N5): a
+  later spec.
 - Resuming an interrupted import (N4), and the import log (N6): later specs.
 - Moving files (G1): not planned for the import; a later spec if ever.
 - How the command line reports results and exit codes: CLI-001.
