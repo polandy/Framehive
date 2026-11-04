@@ -7,6 +7,14 @@ retries = 0
 fail-fast = false
 slow-timeout = { period = "30s", terminate-after = 4 }
 
+# A reference decode of an X-Trans RAF takes about 20 s (ADR 0028), and the LibRaw
+# conformance test runs three of them: 42 s alone on a 16-core Linux machine, and more
+# than 120 s on the 3-core macOS runner while other tests run beside it. The limit for
+# the LibRaw tests alone is therefore 300 s; everything else keeps 120 s.
+[[profile.default.overrides]]
+filter = "package(adapter-libraw)"
+slow-timeout = { period = "30s", terminate-after = 10 }
+
 [profile.ci]
 retries = 0
 fail-fast = false
