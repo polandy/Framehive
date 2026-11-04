@@ -1,6 +1,6 @@
 # IMPORT-002 – Sequence numbers
 
-- Status: accepted
+- Status: implemented
 - Module: import
 - Origin: R4, R5, J3
 - Depends on: IMPORT-001 (file name templates), IMPORT-003 (conflicts)
@@ -172,3 +172,4 @@ by content comes with the import history (N3).
 | 2026-10-17 | Initial draft |
 | 2026-10-19 | Example templates end with `.{ext}`, as IMPORT-001 requires |
 | 2026-11-04 | Accepted: counters in the state folder (ADR 0029); reserved when an import starts, as there is no queue yet; assets from the grouping, numbered in shooting order; letters end at `zz`; broken counter file stops the import; notice that persisted counters cannot recognize files already imported; criteria 9–15 |
+| 2026-11-04 | Implemented in `naming`, `import`, `adapter-sequence-counters` and `framehive-cli` (CLI-003, CLI-004) |

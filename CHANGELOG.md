@@ -49,6 +49,15 @@ All user-visible changes are listed here. The format follows
   eject the card, and stops between files when the card is pulled, going on when it
   is inserted again. The library folder, the template and the recent job codes are
   remembered in `$XDG_STATE_HOME/framehive` (IMPORT-006).
+- Sequence numbers (IMPORT-002, CLI-004): name templates number assets in shooting
+  order with `{seq_session:N}`, `{seq_letters}`, `{seq_today:N}` and
+  `{seq_stored:N}`. The imported-today and stored counters are kept in
+  `$XDG_STATE_HOME/framehive/sequence-counters.txt` and reserved when an import
+  starts, so two imports never share a number; a dry run and the plan summary show the
+  numbers without reserving them. Numbers that do not fit the template stop the
+  import with a suggested template, and in the guided import lead back to the
+  template step. With a persisted counter, files already imported are not recognized,
+  and both imports say so.
 
 ### Fixed
 

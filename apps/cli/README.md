@@ -9,7 +9,7 @@ Layer: `app` (architecture §3). Binary: `framehive`.
 
 ## Purpose
 
-The command line of Framehive: `framehive import` (CLI-001) and, without a
+The command line of Framehive: `framehive import` (CLI-001, CLI-004) and, without a
 subcommand, the guided import (CLI-002, CLI-003, ADR 0024). It parses the arguments
 with `clap` (builder API, ADR 0020 §6) and is one of the two places, with
 `framehive-gui`, that know the concrete adapters and wire them to the ports.
@@ -31,7 +31,9 @@ links, resolves the longest existing part of the destination and appends the mis
 folders (rejecting `..` among them), and rejects a destination inside the source.
 Unless it is a dry run, it then creates the missing folders of the destination and
 runs `import::ImportRun` with `adapter-fs`, `adapter-blake3` and `adapter-clock`, in
-compatibility mode.
+compatibility mode. The persisted sequence counters (CLI-004, ADR 0029) come from
+`adapter-sequence-counters` in the state folder; without a home folder the command
+stops only when the template has a persisted counter.
 
 ## Guided import
 
@@ -39,7 +41,8 @@ compatibility mode.
 `src/guided/`: it waits for a memory card (`devices::DeviceWatch` over `adapter-mounts`, polled once a second
 while it waits for a line), reads the card with `import::scan_folder`, asks for the
 template (with a preview from `ImportRun::plan_first`) and the job code, shows the plan
-summary, and runs `ImportRun::execute` with a progress sink that redraws one line and
+summary, reserves the sequence numbers with `ImportRun::start` on Enter (numbers that
+do not fit lead back to the template step), and runs `ImportRun::execute` with a progress sink that redraws one line and
 stops the run between files when the card is pulled (IMPORT-004.13). The dialog is a
 loop over input events (a line, a tick per poll interval, the end of input) from a
 thread that reads standard input. The destination, the template and the recent job
@@ -56,14 +59,14 @@ per file as soon as it is done (`copied`, `would copy`, `already imported`,
 (`left out`), and a summary line; in a dry run `copied` reads `would copy`, in the
 summary as well. Errors that stop the command go to standard error as
 `error: <message>`. A job code that the template does not use is accepted and
-reported on standard error as `warning: <message>`; there is no other log output
-yet.
+reported on standard error as `warning: <message>`, and so are the notices of the plan,
+such as the one for a persisted sequence counter; there is no other log output yet.
 
 | Code | Meaning |
 |---|---|
 | 0 | Every file was copied, already imported, a duplicate, skipped or left out |
 | 1 | A file failed, or a folder could not be read (`ImportSummary::has_failures`) |
-| 2 | The import did not start: invalid arguments, template or job code, missing source, destination inside the source or not creatable |
+| 2 | The import did not start: invalid arguments, template or job code, missing source, destination inside the source or not creatable, sequence numbers that do not fit or counters that cannot be read or stored |
 
 ## Modules
 
