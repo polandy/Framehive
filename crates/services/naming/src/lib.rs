@@ -13,10 +13,12 @@ mod date_format;
 mod dating;
 mod error;
 mod render;
+mod sequence;
 mod template;
 mod token;
 
 pub use dating::{AssetDate, DateSource, FileTimes, asset_date};
 pub use error::{TemplateError, TemplateErrorKind};
 pub use render::{AssetValues, CompatibilityMode, RenderError};
+pub use sequence::{SequenceKind, SequenceOverflow};
 pub use template::NameTemplate;

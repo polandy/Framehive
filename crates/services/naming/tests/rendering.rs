@@ -30,6 +30,7 @@ fn values(base_name: &str, capture_time: &str) -> AssetValues {
         capture_time: time(capture_time),
         import_time: time("2026-10-19 09:00:00"),
         job_code: None,
+        sequence_number: None,
     }
 }
 

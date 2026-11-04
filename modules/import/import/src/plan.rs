@@ -135,6 +135,7 @@ fn plan_asset(files: &[AssetFile], shared: &SharedValues<'_>) -> Vec<PlannedFile
         capture_time: date.time,
         import_time: shared.import_time,
         job_code: shared.job_code.map(|job_code| job_code.as_str().to_owned()),
+        sequence_number: None,
     };
     files
         .iter()
