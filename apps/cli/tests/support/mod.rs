@@ -99,18 +99,32 @@ impl Folders {
     }
 
     pub(crate) fn import_into(&self, destination: &Path, options: &[&str]) -> Output {
+        self.import_command(destination, options)
+            .env("XDG_STATE_HOME", self.root.path().join("state"))
+            .output()
+            .unwrap()
+    }
+
+    /// Runs the import of the source with `options`, with neither `XDG_STATE_HOME` nor
+    /// an absolute `HOME`, so no state folder can be found.
+    pub(crate) fn import_without_state_folder(&self, options: &[&str]) -> Output {
+        self.import_command(&self.destination(), options)
+            .env_remove("XDG_STATE_HOME")
+            .env("HOME", "not-absolute")
+            .output()
+            .unwrap()
+    }
+
+    fn import_command(&self, destination: &Path, options: &[&str]) -> Command {
         let mut arguments = vec![
             "import".to_owned(),
             self.source().display().to_string(),
             destination.display().to_string(),
         ];
         arguments.extend(options.iter().map(|option| (*option).to_owned()));
-        Command::new(env!("CARGO_BIN_EXE_framehive"))
-            .args(arguments)
-            .env("TZ", "UTC")
-            .env("XDG_STATE_HOME", self.root.path().join("state"))
-            .output()
-            .unwrap()
+        let mut command = Command::new(env!("CARGO_BIN_EXE_framehive"));
+        command.args(arguments).env("TZ", "UTC");
+        command
     }
 }
 

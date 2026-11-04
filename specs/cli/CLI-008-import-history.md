@@ -16,7 +16,11 @@ interrupted import by running it again.
 **Where the history is.** Both commands keep the history in `import-history.sqlite` in
 the state folder of CLI-004: `$XDG_STATE_HOME/framehive/` when `XDG_STATE_HOME` is set
 and absolute, otherwise `~/.local/state/framehive/` (ADR 0031). The folder is created
-when it is missing.
+when it is missing. `framehive import` always needs the state folder, also with
+`--dry-run` and with a template without a persisted counter: when `XDG_STATE_HOME` is
+not an absolute path and the home folder is unknown, it prints
+`error: the home folder is unknown; set HOME` to standard error, copies nothing, and
+exits with code 2.
 
 **The lines.** A file imported before gets its own line on standard output, in the
 place of the lines of CLI-001, and a backup destination it is backed up before at gets
@@ -118,6 +122,12 @@ the guided import.
 - **Then** the dialog prints `The template cannot be previewed: …` and asks
   `Use this template? [Y/n]: `
 
+### CLI-008.10 – No state folder
+- **Given** `XDG_STATE_HOME` unset and `HOME` not an absolute path
+- **When** `framehive import <source> <destination> --dry-run` runs
+- **Then** standard error has `error: the home folder is unknown; set HOME`, nothing is
+  written, and the exit code is 2
+
 ## Out of scope
 
 - Which files are imported before or backed up before: IMPORT-009.
@@ -136,3 +146,4 @@ the guided import.
 | 2026-11-04 | Initial draft; owner decisions: the history in the state folder, resuming is running the import again, no override yet; accepted by the owner |
 | 2026-11-04 | Implemented in `framehive-cli`; the template preview shows a file imported before with the line of the file list, CLI-008.6 counts the resumed files in the summary; `implemented` |
 | 2026-11-04 | CLI-008.8 and CLI-008.9: the messages for a folder that cannot be resolved |
+| 2026-11-04 | CLI-008.10: `framehive import` always needs the state folder; owner decision |

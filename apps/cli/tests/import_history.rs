@@ -146,6 +146,22 @@ fn a_dry_run_creates_no_history_file() {
     assert!(!folders.history_file().parent().unwrap().exists());
 }
 
+/// spec: CLI-008.10
+#[test]
+fn an_import_without_a_state_folder_stops() {
+    let folders = Folders::new();
+    folders.add_raf();
+
+    let output = folders.import_without_state_folder(&["--dry-run"]);
+
+    assert_eq!(
+        stderr(&output),
+        "error: the home folder is unknown; set HOME\n"
+    );
+    assert!(files_below(&folders.destination()).is_empty());
+    assert_eq!(output.status.code(), Some(2));
+}
+
 /// spec: CLI-008.5
 #[test]
 fn a_history_that_is_not_a_database_stops_the_import() {
