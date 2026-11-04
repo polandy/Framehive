@@ -81,10 +81,20 @@ pub(crate) struct Database {
 }
 
 impl Database {
-    /// Opens `file` for `access`. `None` for [`Access::Read`] when the file does not
-    /// exist. Nothing is written to a database with another layout.
-    pub(crate) fn open(file: &Path, access: Access) -> Result<Option<Self>, OpenError> {
-        let mut flags = OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_NO_MUTEX;
+    /// Opens `file` for `access`, with a read-only connection when `read_only`.
+    /// `None` for [`Access::Read`] when the file does not exist. Nothing is written to
+    /// a database with another layout.
+    pub(crate) fn open(
+        file: &Path,
+        access: Access,
+        read_only: bool,
+    ) -> Result<Option<Self>, OpenError> {
+        let mode = if read_only {
+            OpenFlags::SQLITE_OPEN_READ_ONLY
+        } else {
+            OpenFlags::SQLITE_OPEN_READ_WRITE
+        };
+        let mut flags = mode | OpenFlags::SQLITE_OPEN_NO_MUTEX;
         if access == Access::Write {
             if let Some(folder) = file.parent() {
                 fs::create_dir_all(folder).map_err(OpenError::Folder)?;
@@ -175,7 +185,9 @@ mod tests {
     fn a_connection_waits_five_seconds_and_syncs_fully() {
         let folder = TempDir::new();
         let file = folder.path().join("import-history.sqlite");
-        let mut database = Database::open(&file, Access::Write).unwrap().unwrap();
+        let mut database = Database::open(&file, Access::Write, false)
+            .unwrap()
+            .unwrap();
         database.create_schema().unwrap();
 
         assert_eq!(pragma(&database, "busy_timeout"), 5_000);

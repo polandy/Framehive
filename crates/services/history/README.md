@@ -24,6 +24,11 @@ Boundaries:
   capture time as the file records it, before camera time correction.
 - **Oldest first.** `find_copies` returns the matches in the order they were recorded,
   so the last one is the most recent copy.
+- **The import log.** `list_runs` returns every run, oldest first, with the number of
+  its copies; `read_run_log` returns the run and its copies, the import destination
+  first, then each backup destination in the order of its first copy, or `None` for a
+  run that does not exist (IMPORT-010). `RunLog::new` does that ordering for every
+  implementation.
 - **Not here:** deciding that a file is imported before or backed up before, which
   needs the checksum, belongs to the import module.
 
@@ -35,6 +40,7 @@ Boundaries:
 | `RunStart`, `RunId` | The start of a run, and the id the history gives it |
 | `CopyRecord` | One verified copy at one destination |
 | `CopyKey`, `FoundCopy` | What a file is looked up by, and the target and checksum of a match |
+| `LoggedRun`, `RunLog` | A run as the import log lists it, and the log of one run (IMPORT-010) |
 | `RecordedTime` | A machine-local time with its offset, written as RFC 3339 |
 | `testing::MemoryImportHistory`, `testing::RecordedRun` | Test double that can be broken or fail to record |
 | `testing::check_import_history`, `testing::ImportHistoryUnderTest` | Conformance suite of the port |
