@@ -104,11 +104,11 @@ a copy later stops the run after that file.
 - **When** the plan is made
 - **Then** no file of the source is read to compute a checksum
 
-### IMPORT-009.6 – Camera time correction does not hide a file
-- **Given** the import of IMPORT-009.1, and a camera time correction of one hour that is
-  set afterwards
+### IMPORT-009.6 – A file without a capture time
+- **Given** a recorded copy of `notes.png`, which records no capture time, and the same
+  `notes.png` on the source with a new modification time
 - **When** the same source is imported again
-- **Then** the file is imported before
+- **Then** the file is imported before, matched by its name, size and checksum
 
 ### IMPORT-009.7 – Another import destination
 - **Given** the import of IMPORT-009.1 into one import destination
@@ -189,6 +189,9 @@ a copy later stops the run after that file.
 - How the history is stored, its location and its layout: ADR 0031.
 - How the command line reports files imported before and backed up before: CLI-008.
 - Exporting the history as an import log (N6): a later spec.
+- Keeping files recognized when a camera time correction (N15) is set after their
+  import: the lookup already uses the capture time before correction; tested with the
+  camera time correction spec.
 - Importing a file imported before again on request: not planned until it is needed.
 - Sharing the history between machines: not planned (ADR 0003, ADR 0031).
 - Pairing RAW and JPEG files across separate import jobs through the history:
