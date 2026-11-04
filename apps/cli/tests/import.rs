@@ -46,6 +46,7 @@ fn a_second_run_copies_nothing() {
     let folders = Folders::new();
     folders.add_raf();
     folders.import(&[]);
+    folders.forget_history();
     let target = folders.destination().join(DEFAULT_TARGET);
     let modified_before = fs::metadata(&target).unwrap().modified().unwrap();
 

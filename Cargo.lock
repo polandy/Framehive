@@ -231,6 +231,7 @@ dependencies = [
  "adapter-fs",
  "adapter-mounts",
  "adapter-sequence-counters",
+ "adapter-sqlite",
  "clap",
  "devices",
  "domain",

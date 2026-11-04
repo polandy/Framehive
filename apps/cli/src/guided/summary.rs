@@ -10,13 +10,9 @@ use import::{BackupDestinationProblem, ImportSettings, PlannedRun, check_backup_
 
 use super::dialog::{Dialog, Stop};
 use super::format::size_text;
-use crate::import_command::has_persisted_counter;
 
 /// The line under a summary whose destination lies inside the card.
 const ON_CARD: &str = "The destination is on the card; type d to choose another.";
-/// The sentence of a persisted sequence counter (CLI-003): the import history of this
-/// process does not outlive it.
-const NOT_RECOGNIZED: &str = "Files already imported are not recognized, because the template has a persisted sequence counter.";
 
 /// What the person chose at the plan summary.
 pub(super) enum Action {
@@ -59,9 +55,6 @@ impl Dialog<'_> {
             && let Some(job_code) = settings.job_code
         {
             self.say(&format!("  job code  {}", job_code.as_str()));
-        }
-        if has_persisted_counter(settings.template) {
-            self.say(NOT_RECOGNIZED);
         }
     }
 

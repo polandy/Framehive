@@ -28,7 +28,8 @@ its own line below it, in the place of the lines of CLI-005:
 | `  backed up before  <backup>` | Recorded at that backup destination; nothing written |
 
 With `--dry-run`, and in the file list of the guided import (CLI-003.2), the lines read
-the same. The summary of CLI-001 counts files imported before as `already imported`,
+the same. The template preview of the guided import (CLI-002) shows a file imported
+before as `  imported before  <source path> -> <target path>`. The summary of CLI-001 counts files imported before as `already imported`,
 and the backup summary of CLI-005 counts files backed up before as `already backed up`:
 in both cases the file is in the library and nothing is copied. Exit codes count them as
 they count those.
@@ -42,7 +43,7 @@ longer printed: the history recognizes them.
 nothing, and exits with code 2. The guided import prints
 `The import history <path> cannot be used: <reason>` and does not import the card. A
 history that fails while the import runs stops it after the current file; the command
-reports the files done so far and exits with code 1.
+reports the files done so far, prints the error as above, and exits with code 1.
 
 **Resuming.** An import that was interrupted, by a crash, a pulled card or a cancelled
 command, is resumed by running the same command again, or by inserting the card again in
@@ -89,9 +90,9 @@ the guided import.
 - **Given** the card pulled during the import of CLI-003.8, with a template that has a
   persisted counter
 - **When** the card is inserted again and its import finishes
-- **Then** the files copied before the card was pulled are reported `imported before`,
-  only the others are copied, and the plan summary says nothing about files that are not
-  recognized
+- **Then** the summary counts the files copied before the card was pulled as
+  `already imported`, only the others are copied, and the plan summary says nothing
+  about files that are not recognized
 
 ### CLI-008.7 – The guided import with a history that cannot be used
 - **Given** an `import-history.sqlite` that is not a SQLite database

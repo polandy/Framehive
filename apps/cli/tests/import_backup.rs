@@ -58,6 +58,7 @@ fn a_rerun_fills_a_new_backup_destination() {
     let backup = text(&backup(&folders, "backup"));
     let second = text(&self::backup(&folders, "second"));
     folders.import(&["--backup", &backup]);
+    folders.forget_history();
 
     let output = folders.import(&["--backup", &backup, "--backup", &second]);
 

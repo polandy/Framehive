@@ -52,6 +52,26 @@ impl Folders {
             .join("state/framehive/sequence-counters.txt")
     }
 
+    /// The import history of the state folder (CLI-008).
+    pub(crate) fn history_file(&self) -> PathBuf {
+        self.root
+            .path()
+            .join("state/framehive/import-history.sqlite")
+    }
+
+    /// Deletes the import history, with the journal files SQLite may leave, so a
+    /// later run knows no earlier import, as on another machine.
+    pub(crate) fn forget_history(&self) {
+        let history = self.history_file();
+        for suffix in ["", "-wal", "-shm"] {
+            let mut file = history.clone().into_os_string();
+            file.push(suffix);
+            if Path::new(&file).exists() {
+                fs::remove_file(&file).unwrap();
+            }
+        }
+    }
+
     /// Writes `text` as the counter file.
     pub(crate) fn write_counters(&self, text: &str) {
         let file = self.counter_file();

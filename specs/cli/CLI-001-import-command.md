@@ -87,7 +87,7 @@ Errors that stop the command, and log messages, go to standard error.
   the exit code is 0
 
 ### CLI-001.2 – A second run copies nothing
-- **Given** the import of CLI-001.1 has run
+- **Given** the import of CLI-001.1 has run, and its import history was deleted since
 - **When** the same command runs again
 - **Then** the output has `already imported  DSCF0001.RAF -> 2026/2026-10-17/DSCF0001.RAF`,
   no file is changed, and the exit code is 0
@@ -207,3 +207,4 @@ Errors that stop the command, and log messages, go to standard error.
 | 2026-11-01 | Added `--job-code` with CLI-001.14 to CLI-001.17 (IMPORT-006) |
 | 2026-11-02 | CLI-001.11 names the unknown subcommand, which clap already rejected |
 | 2026-11-04 | Sequence numbers (IMPORT-002), specified in CLI-004 |
+| 2026-11-04 | The import history recognizes a re-run (CLI-008): CLI-001.2 now runs without the history, so it still tests IMPORT-003 |

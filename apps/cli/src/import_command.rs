@@ -11,12 +11,12 @@ use adapter_blake3::Blake3Hasher;
 use adapter_clock::SystemClock;
 use adapter_fs::StdFileSystem;
 use adapter_sequence_counters::FileSequenceCounters;
-use history::testing::MemoryImportHistory;
+use adapter_sqlite::SqliteImportHistory;
 use import::{
     BackupDestinationError, ConflictPolicy, ImportRun, ImportSettings, ImportSummary, JobCode,
     SessionSequence, check_backup_destinations, require_job_code,
 };
-use naming::{CompatibilityMode, NameTemplate, SequenceKind};
+use naming::{CompatibilityMode, NameTemplate};
 
 use crate::arguments::{ImportArguments, OnConflict};
 use crate::guided::state_folder;
@@ -61,6 +61,7 @@ fn import(arguments: &ImportArguments) -> Result<ImportSummary, String> {
         .collect();
     check_backup_destinations(&source, &destination.path, &backup_paths)
         .map_err(|error| invalid_backup_message(&error, &backups))?;
+    let state_folder = process_state_folder()?;
 
     let file_system = StdFileSystem::new();
     if !arguments.dry_run {
@@ -81,20 +82,11 @@ fn import(arguments: &ImportArguments) -> Result<ImportSummary, String> {
         dry_run: arguments.dry_run,
     };
     let clock = SystemClock::new();
-    let counters = sequence_counters(&template)?;
+    let counters = FileSequenceCounters::new(state_folder.clone());
     let session = SessionSequence::new();
-    // The import history of this process only, until the history in the state folder
-    // is wired (CLI-008).
-    let history = MemoryImportHistory::new();
-    let names = backups
-        .iter()
-        .map(|(backup, given)| BackupName {
-            path: backup.path.clone(),
-            shown: given.clone(),
-        })
-        .collect();
-    let mut printer =
-        ReportPrinter::new(io::stdout().lock(), arguments.dry_run).with_backup_names(names);
+    let history = SqliteImportHistory::new(&state_folder);
+    let mut printer = ReportPrinter::new(io::stdout().lock(), arguments.dry_run)
+        .with_backup_names(backup_names(&backups));
     let summary = ImportRun::new(
         &file_system,
         &Blake3Hasher,
@@ -106,8 +98,8 @@ fn import(arguments: &ImportArguments) -> Result<ImportSummary, String> {
     .run(&settings, &mut printer)
     .map_err(|error| error.to_string())?;
     printer.print_summary(&summary);
-    if has_persisted_counter(&template) {
-        report_warning(NOT_RECOGNIZED);
+    if let Some(error) = &summary.history_error {
+        report_error(&error.to_string());
     }
     Ok(summary)
 }
@@ -125,6 +117,17 @@ fn resolve_backups(backups: &[PathBuf]) -> Result<Vec<(Destination, PathBuf)>, S
             resolve_destination(given)
                 .map(|backup| (backup, given.clone()))
                 .map_err(|error| backup_message(given, &error))
+        })
+        .collect()
+}
+
+/// The backup destinations as the report names them: as given (CLI-005).
+fn backup_names(backups: &[(Destination, PathBuf)]) -> Vec<BackupName> {
+    backups
+        .iter()
+        .map(|(backup, given)| BackupName {
+            path: backup.path.clone(),
+            shown: given.clone(),
         })
         .collect()
 }
@@ -154,35 +157,22 @@ fn invalid_backup_message(
     )
 }
 
-/// The warning of a persisted sequence counter (CLI-004): the import history of this
-/// process does not outlive it, so a later import does not recognize these files.
-const NOT_RECOGNIZED: &str = "files already imported are not recognized, because the name template has a persisted sequence counter";
-
-/// Whether `template` numbers files with a persisted sequence counter.
-pub(crate) fn has_persisted_counter(template: &NameTemplate) -> bool {
-    template
-        .sequence_kind()
-        .is_some_and(SequenceKind::is_persisted)
-}
-
-/// The persisted sequence counters in the state folder (ADR 0025, ADR 0029).
+/// The state folder of CLI-004 and CLI-008, which holds the persisted sequence
+/// counters (ADR 0029) and the import history (ADR 0031).
 ///
 /// # Errors
 ///
-/// Returns the message when the template needs them and the state folder is unknown.
-fn sequence_counters(template: &NameTemplate) -> Result<FileSequenceCounters, String> {
-    let home = std::env::home_dir().filter(|home| home.is_absolute());
-    let needed = template
-        .sequence_kind()
-        .is_some_and(SequenceKind::is_persisted);
-    let home = match home {
-        Some(home) => home,
-        None if needed => return Err("the home folder is unknown; set HOME".to_owned()),
-        // The counters are never read or written without a persisted counter.
-        None => PathBuf::new(),
-    };
+/// Returns the message when the state folder is unknown: `XDG_STATE_HOME` is not an
+/// absolute path and the home folder is unknown.
+fn process_state_folder() -> Result<PathBuf, String> {
+    let home = std::env::home_dir()
+        .filter(|home| home.is_absolute())
+        .unwrap_or_default();
     let folder = state_folder(std::env::var_os("XDG_STATE_HOME").as_deref(), &home);
-    Ok(FileSequenceCounters::new(folder))
+    if !folder.is_absolute() {
+        return Err("the home folder is unknown; set HOME".to_owned());
+    }
+    Ok(folder)
 }
 
 /// Checks `--job-code` against IMPORT-006 and the template (CLI-001, "Job code"), and

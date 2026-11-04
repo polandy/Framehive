@@ -3,7 +3,7 @@
 - Status: implemented
 - Module: cli (`apps/cli`)
 - Origin: N18, R9
-- Depends on: CLI-001, IMPORT-002
+- Depends on: CLI-001, IMPORT-002, IMPORT-009
 
 ## Purpose
 
@@ -18,8 +18,7 @@ numbers of `{seq_today:N}` and `{seq_stored:N}` are reserved after
 the scan and before the first file is copied, in the counter file of the state folder
 (ADR 0029): `$XDG_STATE_HOME/framehive/` when `XDG_STATE_HOME` is set and absolute,
 otherwise `~/.local/state/framehive/`. `--dry-run` shows the numbers and reserves none.
-With such a template, standard error gets the line
-`warning: files already imported are not recognized, because the name template has a persisted sequence counter`, and the exit code is not affected.
+Files imported before get no number (IMPORT-009, CLI-008).
 Session and letter numbers start at 1 in every run and are never stored.
 
 Sequence numbers that do not fit the template, and counters that cannot be read or
@@ -33,9 +32,7 @@ stored, stop the import before any file is copied, with exit code 2 (CLI-001,
   `a.MOV` and `b.MOV`
 - **When** the user runs `framehive import <source> <destination> --template '{seq_stored:4}.{ext}'`
 - **Then** the files are copied as `0251.MOV` and `0252.MOV`, the counter file holds
-  `stored_last=252`, standard error has the line
-  `warning: files already imported are not recognized, because the name template has a persisted sequence counter`, and the
-  exit code is 0
+  `stored_last=252`, standard error has no warning, and the exit code is 0
 
 ### CLI-004.2 – A dry run reserves no sequence number
 - **Given** the counter file and source of CLI-004.1
@@ -63,3 +60,4 @@ stored, stop the import before any file is copied, with exit code 2 (CLI-001,
 | Date | Change |
 |---|---|
 | 2026-11-04 | Split from CLI-001, which reached the size limit; implemented in `framehive-cli` |
+| 2026-11-04 | The import history recognizes files imported before (CLI-008): the warning about a persisted counter is removed; CLI-004.1 now checks that no warning is printed |

@@ -36,16 +36,13 @@ fn with_card(template: &str, stored_last: u32) -> Harness {
 
 /// spec: CLI-003.13
 #[test]
-fn the_summary_warns_and_enter_reserves_the_numbers() {
+fn enter_reserves_the_numbers_without_a_sentence_about_recognition() {
     let harness = with_card("{seq_stored:4}.{ext}", 250);
 
     let transcript = harness.run(vec![Step::Line("")]);
 
     assert!(
-        transcript.output.contains(
-            "\x20 named     {seq_stored:4}.{ext}\n\
-             Files already imported are not recognized, because the template has a persisted sequence counter.\n"
-        ),
+        !transcript.output.contains("not recognized"),
         "{}",
         transcript.output
     );
