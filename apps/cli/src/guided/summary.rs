@@ -6,10 +6,13 @@
 
 use devices::Device;
 use domain::LocalDateTime;
-use import::{BackupDestinationProblem, ImportSettings, PlannedRun, check_backup_destinations};
+use import::{
+    BackupDestinationProblem, ImportRun, ImportSettings, PlannedRun, SpaceShortage,
+    check_backup_destinations,
+};
 
 use super::dialog::{Dialog, Stop};
-use super::format::size_text;
+use super::format::{size_text, space_text};
 
 /// The line under a summary whose destination lies inside the card.
 const ON_CARD: &str = "The destination is on the card; type d to choose another.";
@@ -58,6 +61,23 @@ impl Dialog<'_> {
         }
     }
 
+    /// The lines that keep the import of `plan` from starting, and a warning for each
+    /// destination whose free space is unknown (CLI-003, CLI-006, CLI-011).
+    pub(super) fn blockers(
+        &mut self,
+        run: &ImportRun<'_>,
+        settings: &ImportSettings<'_>,
+        plan: &PlannedRun,
+    ) -> Vec<String> {
+        let mut lines = blockers(settings);
+        let space = run.check_free_space(settings, plan);
+        lines.extend(space_blockers(&space.shortages));
+        for unknown in &space.unknown {
+            self.warn(&unknown.to_string());
+        }
+        lines
+    }
+
     /// Asks what to do at the plan summary.
     pub(super) fn summary_action(
         &mut self,
@@ -96,8 +116,9 @@ impl Dialog<'_> {
 }
 
 /// The lines that keep the import from starting: a destination on the card, and a
-/// backup destination that is invalid (CLI-003, CLI-006).
-pub(super) fn blockers(settings: &ImportSettings<'_>) -> Vec<String> {
+/// backup destination that is invalid (CLI-003, CLI-006). The free space is checked
+/// apart, in [`space_blockers`].
+fn blockers(settings: &ImportSettings<'_>) -> Vec<String> {
     let mut blockers = Vec::new();
     if settings.destination.starts_with(settings.source) {
         blockers.push(ON_CARD.to_owned());
@@ -117,6 +138,26 @@ pub(super) fn blockers(settings: &ImportSettings<'_>) -> Vec<String> {
         ));
     }
     blockers
+}
+
+/// The line under a summary for each file system that cannot hold what the import
+/// writes to it (CLI-011).
+fn space_blockers(shortages: &[SpaceShortage]) -> Vec<String> {
+    shortages
+        .iter()
+        .map(|shortage| {
+            let folders = shortage
+                .destinations
+                .iter()
+                .map(|folder| folder.display().to_string())
+                .collect::<Vec<_>>()
+                .join(", ");
+            format!(
+                "Not enough space at {folders}: {}; type d or b to change a folder.",
+                space_text(shortage)
+            )
+        })
+        .collect()
 }
 
 /// `2026-10-17 to 2026-10-19`, or one date, for the planned files with a date.

@@ -17,7 +17,7 @@ use naming::{CompatibilityMode, NameTemplate, SequenceError};
 use super::dialog::{Dialog, Interrupted, Stop};
 use super::progress::{ImportContext, ImportProgress};
 use super::state::create_folders;
-use super::summary::{Action, blockers};
+use super::summary::Action;
 use crate::format_readiness::format_readiness_lines;
 use crate::report::{ReportPrinter, backup_line, backup_summary_lines, file_line, summary_line};
 
@@ -136,7 +136,7 @@ impl Dialog<'_> {
                 }
             };
             self.show_summary(card, &plan, &settings);
-            let blockers = blockers(&settings);
+            let blockers = self.blockers(&run, &settings, &plan);
             for blocker in &blockers {
                 self.say(blocker);
             }

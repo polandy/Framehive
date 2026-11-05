@@ -39,6 +39,7 @@ use crate::paths::{PathError, canonical_folder};
 use crate::{NOT_STARTED, report_error};
 use dialog::Dialog;
 use events::StdinEvents;
+pub(crate) use format::space_text;
 use state::state_file;
 pub(crate) use state::{create_folders, state_folder};
 

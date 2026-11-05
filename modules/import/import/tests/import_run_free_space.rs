@@ -26,13 +26,19 @@ const FILES: [(&str, usize); 2] = [("DSCF0001.RAF", 400), ("DSCF0002.RAF", 600)]
 /// A file system with the files of IMPORT-012.1 in the source, the backup
 /// destination, and the import destination if `destination_exists`.
 fn two_files(destination_exists: bool) -> MemoryFileSystem {
+    files_of(&FILES, destination_exists)
+}
+
+/// A file system with `files` of different content in the source, the backup
+/// destination, and the import destination if `destination_exists`.
+fn files_of(files: &[(&str, usize)], destination_exists: bool) -> MemoryFileSystem {
     let file_system = MemoryFileSystem::new();
     file_system.add_folder(Path::new(SOURCE));
     file_system.add_folder(Path::new(BACKUP));
     if destination_exists {
         file_system.add_folder(Path::new(DESTINATION));
     }
-    for (index, (name, size)) in FILES.iter().enumerate() {
+    for (index, (name, size)) in files.iter().enumerate() {
         let content = vec![u8::try_from(index).unwrap(); *size];
         file_system.add_file(&at(SOURCE, name), &content, modified());
     }
@@ -174,12 +180,12 @@ fn files_not_written_do_not_count() {
 /// spec: IMPORT-012.6
 #[test]
 fn files_already_at_a_backup_target_do_not_count_there() {
-    let file_system = two_files(true);
-    let first = file_system.content(&at(SOURCE, FILES[0].0)).unwrap();
-    file_system.add_file(&at(BACKUP, FILES[0].0), &first, modified());
+    let file_system = files_of(&[("DSCF0001.RAF", 500), ("DSCF0002.RAF", 500)], true);
+    let first = file_system.content(&at(SOURCE, "DSCF0001.RAF")).unwrap();
+    file_system.add_file(&at(BACKUP, "DSCF0001.RAF"), &first, modified());
 
     let summary = Setup::new(FLAT, &[BACKUP])
-        .with_free_space(two_file_systems(1000, 600))
+        .with_free_space(two_file_systems(1000, 500))
         .on(&file_system);
 
     assert_eq!(copied(&summary), ["DSCF0001.RAF", "DSCF0002.RAF"]);

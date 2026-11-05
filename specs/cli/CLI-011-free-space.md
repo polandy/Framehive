@@ -77,6 +77,12 @@ unknown free space is shown in the summary as on standard error, and Enter start
 - **When** the person types `d`, enters the other destination, and presses Enter
 - **Then** the summary has no shortage line, and the file is copied
 
+### CLI-011.7 – Unknown free space in the guided import warns
+- **Given** a card with `DSCF0001.RAF`, and a destination whose free space cannot be read
+- **When** the plan summary is shown and the person presses Enter
+- **Then** standard error has `cannot tell the free space at <destination>: <reason>`,
+  and the file is copied
+
 ## Out of scope
 
 - Which bytes count and how file systems are told apart: IMPORT-012.
@@ -91,3 +97,4 @@ unknown free space is shown in the summary as on standard error, and Enter start
 | Date | Change |
 |---|---|
 | 2026-11-05 | Initial draft for I1 (IMPORT-012, ADR 0033); accepted by the owner |
+| 2026-11-05 | Add CLI-011.7: the guided import warns about unknown free space, as the behaviour says |

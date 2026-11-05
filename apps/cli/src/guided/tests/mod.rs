@@ -8,6 +8,7 @@
 
 mod backup;
 mod environment;
+mod free_space;
 mod history;
 mod import;
 mod naming;
