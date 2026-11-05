@@ -9,9 +9,7 @@ use std::path::PathBuf;
 
 use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command, value_parser};
-
-/// The name template of CLI-001 when `--template` is not given.
-const DEFAULT_TEMPLATE: &str = "{date:%Y}/{date:%Y-%m-%d}/{name}.{ext}";
+use import::DEFAULT_NAME_TEMPLATE;
 
 /// The values of `--on-conflict`, as the policies of IMPORT-003 are named.
 const CONFLICT_POLICIES: [&str; 3] = ["add_suffix", "skip", "fail"];
@@ -28,6 +26,8 @@ pub(crate) enum Invocation {
     Import(ImportArguments),
     /// `framehive import-log` (CLI-009).
     ImportLog(ImportLogArguments),
+    /// `framehive config init` (CLI-010).
+    ConfigInit,
 }
 
 /// The arguments of `framehive import-log` (CLI-009), checked by the parser.
@@ -64,16 +64,18 @@ pub(crate) enum LogFormat {
 pub(crate) struct ImportArguments {
     /// The folder to import from, as given.
     pub(crate) source: PathBuf,
-    /// The folder to import into, as given.
-    pub(crate) destination: PathBuf,
+    /// The folder to import into, as given; `None` only with `--profile` (CLI-010).
+    pub(crate) destination: Option<PathBuf>,
     /// The backup destinations, as given, in the order of the command line (CLI-005).
     pub(crate) backups: Vec<PathBuf>,
-    /// The name template text, not yet parsed.
-    pub(crate) template: String,
+    /// The name template text, if given, not yet parsed.
+    pub(crate) template: Option<String>,
     /// The job code text, if given, not yet checked (IMPORT-006).
     pub(crate) job_code: Option<String>,
-    /// The conflict policy.
-    pub(crate) on_conflict: OnConflict,
+    /// The conflict policy, if given.
+    pub(crate) on_conflict: Option<OnConflict>,
+    /// The name of the import profile, if given, not yet checked (CLI-010).
+    pub(crate) profile: Option<String>,
     /// Plan and print, copy nothing.
     pub(crate) dry_run: bool,
 }
@@ -102,6 +104,7 @@ pub(crate) fn parse(
     // clap rejects any other subcommand before this point.
     Ok(match matches.subcommand() {
         Some(("import", import)) => Invocation::Import(import_arguments(import)),
+        Some(("config", _)) => Invocation::ConfigInit,
         Some((_, import_log)) => Invocation::ImportLog(import_log_arguments(import_log)),
         None => Invocation::Guided,
     })
@@ -113,6 +116,18 @@ fn command() -> Command {
         .about("Framehive photo library; without a subcommand, the guided import of a memory card")
         .subcommand(import_command())
         .subcommand(import_log_command())
+        .subcommand(config_command())
+}
+
+/// `framehive config`; `init` is its only subcommand so far (CLI-010).
+fn config_command() -> Command {
+    Command::new("config")
+        .about("Manage the configuration files")
+        .subcommand_required(true)
+        .subcommand(
+            Command::new("init")
+                .about("Write the example import profile profiles/example.yaml, if it is missing"),
+        )
 }
 
 fn import_log_command() -> Command {
@@ -170,9 +185,16 @@ fn import_command() -> Command {
         )
         .arg(
             Arg::new("destination")
-                .required(true)
+                // A profile can name the destination instead (CLI-010).
+                .required_unless_present("profile")
                 .value_parser(value_parser!(PathBuf))
                 .help("Folder to import into; created with its parents when missing"),
+        )
+        .arg(
+            Arg::new("profile")
+                .long("profile")
+                .value_name("name")
+                .help("Import profile whose settings to use; an option given here replaces its value"),
         )
         .arg(
             Arg::new("backup")
@@ -186,8 +208,9 @@ fn import_command() -> Command {
             Arg::new("template")
                 .long("template")
                 .value_name("template")
-                .default_value(DEFAULT_TEMPLATE)
-                .help("Name template for the folders and name of each imported file"),
+                .help(format!(
+                    "Name template for the folders and name of each imported file [default: {DEFAULT_NAME_TEMPLATE}]"
+                )),
         )
         .arg(
             Arg::new("job-code")
@@ -200,8 +223,7 @@ fn import_command() -> Command {
                 .long("on-conflict")
                 .value_name("policy")
                 .value_parser(PossibleValuesParser::new(CONFLICT_POLICIES))
-                .default_value("add_suffix")
-                .help("What to do when a target name holds a different file"),
+                .help("What to do when a target name holds a different file [default: add_suffix]"),
         )
         .arg(
             Arg::new("dry-run")
@@ -214,17 +236,17 @@ fn import_command() -> Command {
 fn import_arguments(matches: &ArgMatches) -> ImportArguments {
     ImportArguments {
         source: path(matches, "source"),
-        destination: path(matches, "destination"),
+        destination: matches.get_one::<PathBuf>("destination").cloned(),
         backups: matches
             .get_many::<PathBuf>("backup")
             .map(|backups| backups.cloned().collect())
             .unwrap_or_default(),
-        template: matches
-            .get_one::<String>("template")
-            .cloned()
-            .unwrap_or_else(|| DEFAULT_TEMPLATE.to_owned()),
+        template: matches.get_one::<String>("template").cloned(),
         job_code: matches.get_one::<String>("job-code").cloned(),
-        on_conflict: on_conflict(matches.get_one::<String>("on-conflict").map(String::as_str)),
+        on_conflict: matches
+            .get_one::<String>("on-conflict")
+            .map(|value| on_conflict(value)),
+        profile: matches.get_one::<String>("profile").cloned(),
         dry_run: matches.get_flag("dry-run"),
     }
 }
@@ -235,10 +257,10 @@ fn path(matches: &ArgMatches, id: &str) -> PathBuf {
 }
 
 /// Maps a value that clap has already checked against [`CONFLICT_POLICIES`].
-fn on_conflict(value: Option<&str>) -> OnConflict {
+fn on_conflict(value: &str) -> OnConflict {
     match value {
-        Some("skip") => OnConflict::Skip,
-        Some("fail") => OnConflict::Fail,
+        "skip" => OnConflict::Skip,
+        "fail" => OnConflict::Fail,
         _ => OnConflict::AddSuffix,
     }
 }

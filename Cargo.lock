@@ -255,6 +255,7 @@ dependencies = [
  "adapter-sqlite",
  "adapter-yaml",
  "clap",
+ "config",
  "devices",
  "domain",
  "files",

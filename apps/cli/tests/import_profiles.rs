@@ -8,6 +8,8 @@
 
 #![allow(clippy::unwrap_used, reason = "tests may panic on bad fixtures")]
 
+mod support;
+
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -15,6 +17,7 @@ use adapter_yaml::SaphyrParser;
 use import::{
     ConflictPolicy, DEFAULT_NAME_TEMPLATE, IMPORT_PROFILE_SCHEMA_ID, ImportProfile, JobCode,
 };
+use support::{Folders, stderr};
 
 const FILE: &str = "wedding.yaml";
 const HOME: &str = "/home/ada";
@@ -79,12 +82,24 @@ fn yaml_blocks(markdown: &str) -> Vec<String> {
     blocks
 }
 
-/// Every import profile the project shows its users. CLI-010 adds the output of
-/// `framehive config init` here.
+/// The example profile that `framehive config init` writes (CLI-010).
+fn config_init_example() -> (String, String) {
+    let folders = Folders::new();
+    let output = folders.framehive(&["config", "init"]);
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    let path = folders.profiles_folder().join("example.yaml");
+    (
+        "framehive config init".to_owned(),
+        fs::read_to_string(path).unwrap(),
+    )
+}
+
+/// Every import profile the project shows its users.
 fn shown_profiles() -> Vec<(String, String)> {
     let root = repository_root();
     let mut profiles = profiles_in_markdown(&root.join("docs"));
     profiles.extend(profiles_in_markdown(&root.join("specs")));
+    profiles.push(config_init_example());
     profiles
 }
 

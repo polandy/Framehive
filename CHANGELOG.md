@@ -86,6 +86,16 @@ All user-visible changes are listed here. The format follows
   lists the recorded import runs, oldest first, or prints which file of one run went
   where, with its checksum, as text, JSON or RFC 4180 CSV to redirect into a file. It
   reads the import history without creating or changing it.
+- Import profiles (IMPORT-011, CLI-010, ADR 0032): `framehive import <source>
+  --profile <name>` takes the destination, the backup destinations, the name template,
+  the conflict policy and the job code from the YAML file `profiles/<name>.yaml` in the
+  configuration folder (`$XDG_CONFIG_HOME/framehive` or `~/.config/framehive` on Linux,
+  `~/Library/Application Support/framehive` on macOS). An option given on the command
+  line replaces the profile's value, also for lists. A profile is read strictly: an
+  unknown key, a wrong type or an invalid value stops the command with the file, line
+  and column. `framehive config init` writes a commented example,
+  `profiles/example.yaml`, and never replaces an existing one. The JSON Schema
+  `schemas/import-profile-v1.json` gives completion in editors.
 
 ### Fixed
 

@@ -1,6 +1,6 @@
 # CLI-010 – Import profiles in `framehive import`
 
-- Status: accepted
+- Status: implemented
 - Module: cli (`apps/cli`)
 - Origin: N8, N18, N25
 - Depends on: CLI-001, CLI-005, IMPORT-011
@@ -204,3 +204,4 @@ The guided import (CLI-002) does not use profiles.
 | Date | Change |
 |---|---|
 | 2026-11-05 | Initial draft (N8, N18, N25, ADR 0032); accepted by the owner |
+| 2026-11-05 | Implemented in `framehive-cli` |

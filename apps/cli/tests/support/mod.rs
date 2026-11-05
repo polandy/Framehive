@@ -127,6 +127,52 @@ impl Folders {
             .unwrap()
     }
 
+    /// The home folder of the profile runs (CLI-010), below the root, so no test reads
+    /// the real home folder.
+    pub(crate) fn home(&self) -> PathBuf {
+        self.root.path().join("home")
+    }
+
+    /// The configuration folder of CLI-010 for [`Folders::home`] on this platform, with
+    /// `XDG_CONFIG_HOME` not set.
+    pub(crate) fn configuration_folder(&self) -> PathBuf {
+        if cfg!(target_os = "macos") {
+            self.home().join("Library/Application Support/framehive")
+        } else {
+            self.home().join(".config/framehive")
+        }
+    }
+
+    pub(crate) fn profiles_folder(&self) -> PathBuf {
+        self.configuration_folder().join("profiles")
+    }
+
+    /// Writes `text` as the profile `<name>.yaml` and returns its path.
+    pub(crate) fn write_profile(&self, name: &str, text: &[u8]) -> PathBuf {
+        let path = self.profiles_folder().join(format!("{name}.yaml"));
+        fs::create_dir_all(self.profiles_folder()).unwrap();
+        fs::write(&path, text).unwrap();
+        path
+    }
+
+    /// Runs `framehive` with `arguments`, [`Folders::home`] as `HOME`, no
+    /// `XDG_CONFIG_HOME` and the state folder below the root.
+    pub(crate) fn framehive(&self, arguments: &[&str]) -> Output {
+        self.framehive_command(arguments).output().unwrap()
+    }
+
+    /// The command of [`Folders::framehive`], for a test that changes its environment.
+    pub(crate) fn framehive_command(&self, arguments: &[&str]) -> Command {
+        let mut command = Command::new(env!("CARGO_BIN_EXE_framehive"));
+        command
+            .args(arguments)
+            .env("TZ", "UTC")
+            .env("HOME", self.home())
+            .env_remove("XDG_CONFIG_HOME")
+            .env("XDG_STATE_HOME", self.root.path().join("state"));
+        command
+    }
+
     fn import_command(&self, destination: &Path, options: &[&str]) -> Command {
         let mut arguments = vec![
             "import".to_owned(),
