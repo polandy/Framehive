@@ -285,6 +285,7 @@ mod tests {
             dry_run: true,
             history_error: None,
             backups: Vec::new(),
+            free_space_unknown: Vec::new(),
         };
 
         assert_eq!(

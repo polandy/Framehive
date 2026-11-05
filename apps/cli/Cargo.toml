@@ -20,6 +20,7 @@ path = "src/main.rs"
 [dependencies]
 adapter-blake3.workspace = true
 adapter-clock.workspace = true
+adapter-free-space.workspace = true
 adapter-fs.workspace = true
 adapter-mounts.workspace = true
 adapter-sequence-counters.workspace = true

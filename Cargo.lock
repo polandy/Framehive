@@ -257,6 +257,7 @@ version = "0.1.0"
 dependencies = [
  "adapter-blake3",
  "adapter-clock",
+ "adapter-free-space",
  "adapter-fs",
  "adapter-mounts",
  "adapter-sequence-counters",

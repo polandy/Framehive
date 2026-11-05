@@ -9,6 +9,7 @@ use std::process::ExitCode;
 
 use adapter_blake3::Blake3Hasher;
 use adapter_clock::SystemClock;
+use adapter_free_space::StatvfsFreeSpace;
 use adapter_fs::StdFileSystem;
 use adapter_sequence_counters::FileSequenceCounters;
 use adapter_sqlite::SqliteImportHistory;
@@ -101,6 +102,7 @@ fn import(arguments: &ImportArguments) -> Result<ImportSummary, String> {
         &counters,
         &session,
         &history,
+        &StatvfsFreeSpace::new(),
     )
     .run(&settings, &mut printer)
     .map_err(|error| error.to_string())?;

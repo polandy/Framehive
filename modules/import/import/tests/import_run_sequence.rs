@@ -8,10 +8,11 @@
 #![allow(clippy::unwrap_used, reason = "test helpers may panic on bad fixtures")]
 
 use std::path::Path;
+use std::sync::LazyLock;
 
 use domain::testing::ManualClock;
 use domain::{Timestamp, UtcOffset};
-use files::testing::{FnvHasher, MemoryFileSystem};
+use files::testing::{FnvHasher, MemoryFileSystem, MemoryFreeSpace};
 use history::testing::MemoryImportHistory;
 use import::{
     ConflictPolicy, FileOutcome, ImportRun, ImportSettings, ImportSummary, NoProgress, PlannedRun,
@@ -29,6 +30,26 @@ const DESTINATION: &str = "/library";
 const MODIFIED: i64 = 1_792_245_909;
 /// 2026-10-31 09:00:00 UTC.
 const NOW: i64 = 1_793_437_200;
+
+/// An import run through the memory ports, on a file system with space for any import.
+fn import_run<'a>(
+    file_system: &'a MemoryFileSystem,
+    clock: &'a ManualClock,
+    counters: &'a MemorySequenceCounters,
+    session: &'a SessionSequence,
+    history: &'a MemoryImportHistory,
+) -> ImportRun<'a> {
+    static UNLIMITED: LazyLock<MemoryFreeSpace> = LazyLock::new(MemoryFreeSpace::unlimited);
+    ImportRun::new(
+        file_system,
+        &FnvHasher,
+        clock,
+        counters,
+        session,
+        history,
+        &*UNLIMITED,
+    )
+}
 
 /// Videos are dated by their modification time, so all three share one time and are
 /// numbered by base name.
@@ -110,14 +131,7 @@ fn a_dry_run_shows_the_numbers_and_reserves_nothing() {
     let file_system = card();
     let (clock, counters, session) = (clock(), stored_at(250), SessionSequence::new());
     let history = MemoryImportHistory::new();
-    let run = ImportRun::new(
-        &file_system,
-        &FnvHasher,
-        &clock,
-        &counters,
-        &session,
-        &history,
-    );
+    let run = import_run(&file_system, &clock, &counters, &session, &history);
     let template = NameTemplate::parse("{seq_stored:4}.{ext}").unwrap();
 
     let dry_run = run
@@ -140,14 +154,7 @@ fn an_import_that_started_in_between_moves_the_numbers_on() {
     let file_system = card();
     let (clock, counters, session) = (clock(), stored_at(100), SessionSequence::new());
     let history = MemoryImportHistory::new();
-    let run = ImportRun::new(
-        &file_system,
-        &FnvHasher,
-        &clock,
-        &counters,
-        &session,
-        &history,
-    );
+    let run = import_run(&file_system, &clock, &counters, &session, &history);
     let template = NameTemplate::parse("{seq_stored:4}.{ext}").unwrap();
     let settings = settings(&template, false);
 
@@ -178,14 +185,7 @@ fn the_imported_today_counter_belongs_to_the_day_the_import_starts() {
         stored_last: 0,
     });
     let history = MemoryImportHistory::new();
-    let run = ImportRun::new(
-        &file_system,
-        &FnvHasher,
-        &clock,
-        &counters,
-        &session,
-        &history,
-    );
+    let run = import_run(&file_system, &clock, &counters, &session, &history);
     let template = NameTemplate::parse("{date:%Y%m%d}_{seq_today:3}.{ext}").unwrap();
 
     let summary = run
@@ -206,14 +206,7 @@ fn an_overflow_keeps_the_import_from_starting() {
     let paths_before = file_system.paths();
     let (clock, counters, session) = (clock(), stored_at(98), SessionSequence::new());
     let history = MemoryImportHistory::new();
-    let run = ImportRun::new(
-        &file_system,
-        &FnvHasher,
-        &clock,
-        &counters,
-        &session,
-        &history,
-    );
+    let run = import_run(&file_system, &clock, &counters, &session, &history);
     let template = NameTemplate::parse("{seq_stored:2}.{ext}").unwrap();
 
     let error = run
@@ -236,14 +229,7 @@ fn broken_counters_keep_the_import_from_starting() {
     let (clock, counters, session) = (clock(), stored_at(250), SessionSequence::new());
     counters.break_at("/state/framehive/sequence-counters.txt", 3);
     let history = MemoryImportHistory::new();
-    let run = ImportRun::new(
-        &file_system,
-        &FnvHasher,
-        &clock,
-        &counters,
-        &session,
-        &history,
-    );
+    let run = import_run(&file_system, &clock, &counters, &session, &history);
     let template = NameTemplate::parse("{seq_stored:4}.{ext}").unwrap();
 
     let error = run
@@ -270,14 +256,7 @@ fn a_session_counter_runs_with_broken_counters() {
     let (clock, counters, session) = (clock(), stored_at(250), SessionSequence::new());
     counters.break_at("/state/framehive/sequence-counters.txt", 3);
     let history = MemoryImportHistory::new();
-    let run = ImportRun::new(
-        &file_system,
-        &FnvHasher,
-        &clock,
-        &counters,
-        &session,
-        &history,
-    );
+    let run = import_run(&file_system, &clock, &counters, &session, &history);
     let template = NameTemplate::parse("{seq_session:4}.{ext}").unwrap();
 
     let summary = run
@@ -297,9 +276,8 @@ fn imports_of_one_session_continue_its_numbers() {
     );
     let template = NameTemplate::parse("{seq_letters}.{ext}").unwrap();
 
-    let first = ImportRun::new(
+    let first = import_run(
         &first_card,
-        &FnvHasher,
         &clock,
         &counters,
         &session,
@@ -307,9 +285,8 @@ fn imports_of_one_session_continue_its_numbers() {
     )
     .run(&settings(&template, false), &mut NoProgress)
     .unwrap();
-    let second = ImportRun::new(
+    let second = import_run(
         &second_card,
-        &FnvHasher,
         &clock,
         &counters,
         &session,
@@ -331,9 +308,8 @@ fn a_session_counter_recognizes_files_imported_in_an_earlier_run() {
     let template = NameTemplate::parse("{date:%Y%m%d}_{seq_session:3}.{ext}").unwrap();
     let import_in_new_run = || {
         let session = SessionSequence::new();
-        ImportRun::new(
+        import_run(
             &file_system,
-            &FnvHasher,
             &clock,
             &counters,
             &session,
@@ -368,14 +344,7 @@ fn a_persisted_counter_recognizes_files_imported_before() {
         SessionSequence::new(),
     );
     let history = MemoryImportHistory::new();
-    let run = ImportRun::new(
-        &file_system,
-        &FnvHasher,
-        &clock,
-        &counters,
-        &session,
-        &history,
-    );
+    let run = import_run(&file_system, &clock, &counters, &session, &history);
     let template = NameTemplate::parse("{seq_today:3}.{ext}").unwrap();
 
     let first = run

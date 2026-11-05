@@ -8,6 +8,7 @@
 
 mod backup;
 mod conflicts;
+mod free_space;
 mod job_code;
 mod plan;
 mod profile;
@@ -29,6 +30,7 @@ pub use backup::{
 pub use conflicts::{
     ConflictError, ConflictOutcome, ConflictPolicy, TargetRequest, TargetResolver,
 };
+pub use free_space::{FreeSpaceCheck, FreeSpaceUnknown, NotEnoughSpace, SpaceShortage};
 pub use job_code::{
     JobCode, JobCodeError, MAX_JOB_CODE_CHARACTERS, MissingJobCode, require_job_code,
 };
