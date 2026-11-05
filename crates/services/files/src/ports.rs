@@ -179,3 +179,49 @@ pub trait HashState {
     /// Returns the checksum of all bytes added, with the hasher's algorithm id.
     fn finish(self: Box<Self>) -> Checksum;
 }
+
+/// The identity of a file system: two folders with the same identity share one free
+/// space (IMPORT-012, ADR 0033). On Unix it is the device number `st_dev`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct FileSystemId(u64);
+
+impl FileSystemId {
+    /// The file system with the identity `id`.
+    #[must_use]
+    pub const fn new(id: u64) -> Self {
+        FileSystemId(id)
+    }
+
+    /// The identity as a number.
+    #[must_use]
+    pub const fn get(self) -> u64 {
+        self.0
+    }
+}
+
+/// What [`FreeSpace::free_space`] answers for a folder.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct SpaceOnFileSystem {
+    /// The file system the folder lies on.
+    pub file_system: FileSystemId,
+    /// The bytes an unprivileged process may still write there.
+    pub available_bytes: u64,
+}
+
+/// Port for the free space of the file system a folder lies on (ADR 0033).
+///
+/// `adapter-free-space` implements it with `statvfs`; tests use
+/// [`testing::MemoryFreeSpace`](crate::testing::MemoryFreeSpace). Every
+/// implementation must pass
+/// [`testing::check_free_space`](crate::testing::check_free_space).
+pub trait FreeSpace {
+    /// Returns the free space and the identity of the file system `folder` lies on.
+    /// A folder that does not exist yet is answered for its nearest existing parent
+    /// folder, because the import creates missing destinations itself.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the free space cannot be read, for example on a file
+    /// system that does not report it.
+    fn free_space(&self, folder: &Path) -> io::Result<SpaceOnFileSystem>;
+}

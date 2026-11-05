@@ -5,16 +5,21 @@
 //!
 //! Adapters run the conformance suites in their tests: `adapter-fs` runs
 //! [`check_file_system`] in a [`TempDir`], `adapter-blake3` runs [`check_hasher`] with
-//! the reference checksums of BLAKE3.
+//! the reference checksums of BLAKE3, `adapter-free-space` runs [`check_free_space`]
+//! in a [`TempDir`].
 
 mod file_system_conformance;
 mod fnv;
+mod free_space_conformance;
 mod hasher_conformance;
 mod memory;
+mod memory_free_space;
 mod temp_dir;
 
 pub use file_system_conformance::{FileSystemUnderTest, MakeSymbolicLink, check_file_system};
 pub use fnv::FnvHasher;
+pub use free_space_conformance::{FreeSpaceUnderTest, check_free_space};
 pub use hasher_conformance::{HasherUnderTest, check_hasher};
 pub use memory::{Fault, MemoryFileSystem};
+pub use memory_free_space::MemoryFreeSpace;
 pub use temp_dir::TempDir;

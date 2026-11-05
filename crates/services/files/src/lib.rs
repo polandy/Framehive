@@ -19,4 +19,7 @@ pub mod testing;
 pub use checksum::checksum_file;
 pub use copy::{VerifiedCopies, copy_verified, copy_verified_to_all};
 pub use copy_error::{CleanupFailure, CopyError, CopyErrorKind, CopyStep};
-pub use ports::{EntryKind, FileSystem, FolderEntry, HashState, Hasher, ReadSeek, WriteFile};
+pub use ports::{
+    EntryKind, FileSystem, FileSystemId, FolderEntry, FreeSpace, HashState, Hasher, ReadSeek,
+    SpaceOnFileSystem, WriteFile,
+};
