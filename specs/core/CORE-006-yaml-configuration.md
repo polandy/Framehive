@@ -1,6 +1,6 @@
 # CORE-006 – Reading YAML configuration files
 
-- Status: accepted
+- Status: implemented
 - Module: core (`config` service, `adapter-yaml`)
 - Origin: N25
 - Depends on: –
@@ -39,8 +39,7 @@ a top level that is a sequence or a scalar is an error at line 1, column 1:
 missing key is an error at line 1, column 1. A value that is not a positive integer is
 an error at the value. A version above the highest version the file type knows is an
 error at the value: `schema_version <n> is newer than this Framehive supports
-(<highest>); update Framehive`. Migrating older versions (ADR 0011, rule 7) begins
-with the first file type that has a version 2.
+(<highest>); update Framehive`.
 
 **Keys.** A key is a plain or quoted string. A key that the file type does not know is
 an error at the key: `unknown key <key>`, followed by `; did you mean <known>?` when a
@@ -54,7 +53,8 @@ it: `missing key <key>`.
 error at the key: `<key> has no value; leave the key out to use the default`. A value of
 the wrong kind is an error at the value that names what was expected: `expected
 <expected>, found <found>`, where each is one of `text`, `a whole number`, `true or
-false`, `a list` and `a mapping`.
+false`, `a list` and `a mapping`. A null list entry is an error at it: `<key> has
+an entry with no value`.
 
 | Expected | Accepted |
 |---|---|
@@ -70,10 +70,11 @@ plain scalar that is an integer, a float, a boolean, or starts with a date
 `YYYY-MM-DD`, in a place that expects text, is an error at the value: `write "<value>"
 in quotes to use it as text`.
 
-**Errors.** Reading stops at the first error in file order. Its message is
-`<file>:<line>:<column>: <message>`, with line and column counted from 1, the column in
-characters. A syntax error of the YAML parser is reported in the same form, with the
-parser's position and description.
+**Errors.** Reading stops at the first error: the parser's (syntax, YAML subset), then
+`schema_version`, which decides the known keys, then keys and values in file order,
+then each mapping's missing keys. Its message is `<file>:<line>:<column>: <message>`,
+line and column from 1, the column in characters. A syntax error has the
+YAML parser's position and description.
 
 **JSON Schema.** For each file type, the service generates a JSON Schema (draft
 2020-12) from the description: an object per mapping, with every key as a property with
@@ -219,3 +220,4 @@ text is the same on every run.
 | Date | Change |
 |---|---|
 | 2026-11-05 | Initial draft with the import profiles (N8, N25, ADR 0032); accepted by the owner |
+| 2026-11-05 | Implemented; error order and null list entries made explicit |

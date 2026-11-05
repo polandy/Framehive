@@ -23,6 +23,7 @@ Part of the [architecture](README.md).
 │  naming     template language for file and folder names                                 │
 │  files      file system and hashing, verified copy (ports: FileSystem, Hasher)          │
 │  history    import history of every verified copy (port: ImportHistory)                 │
+│  config     strict reading of YAML configuration files (port: YamlParser)               │
 └───────────────┬─────────────────────────────────────────────────────────────────────────┘
                 │
 ┌───────────────▼───────────────── Domain (pure, no I/O) ─────────────────────────────────┐
@@ -32,7 +33,7 @@ Part of the [architecture](README.md).
 
 ┌──────────────────────── Adapters (implementations of the ports) ────────────────────────┐
 │  adapter-sqlite   adapter-fs   adapter-blake3   adapter-clock   adapter-gphoto2         │
-│  adapter-mtp   adapter-udisks                                                           │
+│  adapter-mtp   adapter-udisks   adapter-yaml                                            │
 │  adapter-macos-disks   adapter-xmp   adapter-raw   adapter-ffmpeg                       │
 │  adapter-onnx   adapter-osm-tiles   adapter-digikam-db   adapter-immich-http            │
 └─────────────────────────────────────────────────────────────────────────────────────────┘
