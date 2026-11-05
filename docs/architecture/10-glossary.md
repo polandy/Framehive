@@ -40,6 +40,7 @@ Names in the code follow this glossary.
 | Sequence counter | `SequenceCounters` | The stored values of the persisted sequence kinds (`imported_today`, `stored`), from which an import reserves a contiguous range of numbers when it starts (IMPORT-002, ADR 0029) |
 | Backup destination | `BackupDestination` | A folder that receives each imported file as well, at the same target path as the import destination, verified against the source checksum and never overwritten (IMPORT-007, ADR 0030) |
 | Format readiness | `FormatReadiness` | Whether a finished import run verified every file of the source at the import destination and at each backup destination, so the card can be formatted, and which files keep it from being formatted (IMPORT-008) |
+| Free space | `FreeSpace` | The bytes an unprivileged process may still write on the file system of a folder, with that file system's identity; the import checks it per file system before the first copy (IMPORT-012, ADR 0033) |
 | Verified copy | `copy_verified` | A copy through a `.part` file whose content is checked against the source checksum before it counts as copied (IMPORT-004) |
 | Checksum | `Checksum` | Hash of a file's content with its algorithm, written `blake3:<hex>` (architecture §8) |
 | File system | `FileSystem` | Port of the `files` service for files and folders on a storage device, with explicit syncing; implemented by `adapter-fs` |

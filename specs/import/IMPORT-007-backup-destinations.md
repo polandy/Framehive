@@ -157,7 +157,7 @@ import destination is.
   (R7): later specs.
 - Overwriting a file at a backup target: not offered, because the import never
   overwrites (IMPORT-004).
-- Enough free space at each destination (I1): a later spec.
+- Enough free space at each destination (I1): IMPORT-012.
 
 ## Open questions
 
