@@ -1,6 +1,6 @@
 # CLI-011 – Free space in `framehive import` and the guided import
 
-- Status: accepted
+- Status: implemented
 - Module: cli (`apps/cli`)
 - Origin: I1, N18
 - Depends on: CLI-001, CLI-003, CLI-005, CLI-006, IMPORT-012
@@ -98,3 +98,4 @@ unknown free space is shown in the summary as on standard error, and Enter start
 |---|---|
 | 2026-11-05 | Initial draft for I1 (IMPORT-012, ADR 0033); accepted by the owner |
 | 2026-11-05 | Add CLI-011.7: the guided import warns about unknown free space, as the behaviour says |
+| 2026-11-05 | Implemented in `framehive-cli`; `implemented` |

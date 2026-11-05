@@ -1,6 +1,6 @@
 # IMPORT-012 – Free space at the destinations
 
-- Status: accepted
+- Status: implemented
 - Module: import
 - Origin: I1
 - Depends on: IMPORT-003, IMPORT-004, IMPORT-007, IMPORT-009
@@ -120,3 +120,4 @@ goes on, and the result has a warning that names the destination and the reason.
 | Date | Change |
 |---|---|
 | 2026-11-05 | Initial draft for I1 (ADR 0033); accepted by the owner |
+| 2026-11-05 | Implemented in `files`, `adapter-free-space`, `import` and `framehive-cli`; `implemented` |

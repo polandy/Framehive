@@ -96,6 +96,13 @@ All user-visible changes are listed here. The format follows
   and column. `framehive config init` writes a commented example,
   `profiles/example.yaml`, and never replaces an existing one. The JSON Schema
   `schemas/import-profile-v1.json` gives completion in editors.
+- Free-space check (IMPORT-012, CLI-011, ADR 0033): `framehive import` and the guided
+  import check, before the first folder is created, that each file system can hold
+  what the import writes to the destinations on it, counting only the files that are
+  not there yet. A short file system is reported with what it needs and has free, and
+  the import does not start (exit code 2; in the guided import, Enter does not start
+  until `d` or `b` changes a folder). A dry run checks too. When the free space cannot
+  be read, a warning says so and the import goes on.
 
 ### Fixed
 
