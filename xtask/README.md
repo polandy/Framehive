@@ -8,8 +8,9 @@ SPDX-License-Identifier: GPL-3.0-or-later
 ## Purpose
 
 Repository automation. It enforces the rules in `CLAUDE.md` mechanically, so quality
-does not depend on human review. Besides `kernel`, for the module id rules, it uses
-only the standard library: it reads `cargo metadata` output with its own small JSON
+does not depend on human review. Besides `kernel`, for the module id rules, and `import`, whose
+import profile description `schemas` turns into a JSON Schema, it uses only the
+standard library: it reads `cargo metadata` output with its own small JSON
 reader and `dependencies.yaml` with a strict reader for the subset of YAML that file
 uses. Both are replaced by the YAML
 adapter once ADR 0011 is implemented.
@@ -22,8 +23,10 @@ Run them as `cargo xtask <command>`, inside `nix develop`.
 
 | Command | Checks |
 |---|---|
-| `ci` | Everything, in CI order: format, clippy, the five checks below, `testdata check`, the spec report, `testdata fetch`, nextest, doc tests, `cargo deny`, `reuse lint`. Quiet: one `ok` line per step plus warnings from our own checks, and the full output of the failing step only |
+| `ci` | Everything, in CI order: format, clippy, the six checks below, `testdata check`, the spec report, `testdata fetch`, nextest, doc tests, `cargo deny`, `reuse lint`. Quiet: one `ok` line per step plus warnings from our own checks, and the full output of the failing step only |
 | `check-files` | Every file Git tracks or would track is UTF-8 text without NUL bytes and at most 256 KiB (ADR 0017); Rust files have at most 400 lines; Markdown outside `docs/adr/` and `CHANGELOG.md` has at most 10 KiB (architecture §7) |
+| `check-schemas` | Every JSON Schema in `schemas/` is the one generated from its file type's description (ADR 0032, decision 6), such as `schemas/import-profile-v1.json` from the import profile |
+| `schemas` | Not a check: writes the JSON Schemas of the configuration files to `schemas/`; run it after changing a file type's description |
 | `check-architecture` | Every crate declares a valid layer; dependencies follow architecture §3; adapters use only their port service; module UIs use only their module and `ui-kit`; crate roots contain `#![forbid(unsafe_code)]` unless `ffi = true`; every README has the required sections |
 | `check-dependencies` | Every external dependency is listed in `dependencies.yaml`, used only by allowed layers and crates, with allowed features (`default` counts as a feature), and pinned in `[workspace.dependencies]`; no unused entries |
 | `check-specs` | Spec headers, IDs, status and fields; origins exist in `docs/requirements/`; dependencies exist (a warning for drafts); unique criteria; no open questions in binding specs; every `/// spec: <ID>.<n>` points to an existing, non-draft criterion; every criterion of an implemented spec has a test |

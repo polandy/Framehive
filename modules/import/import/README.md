@@ -110,9 +110,8 @@ Boundaries:
   (ADR 0020 §2).
 - **Grouping** of files into assets is defined by LIBRARY-001; the module uses it and
   does not redefine it. `ImportPlan::new` takes assets that are already grouped.
-- **Not covered yet:** metadata tokens,
-  camera time correction, sidecars (until grouping), the import log, the live preview and block editor (a UI spec), and
-  where a profile stores its template (the profile spec).
+- **Not covered yet:** metadata tokens, camera time correction, sidecars (until
+  grouping), the import log, and the live preview and block editor (a UI spec).
 
 ## Public API
 
@@ -134,6 +133,7 @@ Boundaries:
 | `ImportSummary`, `FileReport`, `FileOutcome`, `FileError`, `RunError` | What a run reports per file, and why a run did not start |
 | `BackupReport`, `BackupOutcome`, `BackupError`, `BackupCounts` | What happened to a file at each backup destination, and the counts per backup destination (IMPORT-007) |
 | `check_backup_destinations`, `BackupDestinationError`, `BackupDestinationProblem` | Refuses invalid backup destinations before a run starts (IMPORT-007.11) |
+| `ImportProfile`, `IMPORT_PROFILE`, `DEFAULT_NAME_TEMPLATE`, `import_profile_json_schema`, `IMPORT_PROFILE_SCHEMA_ID` | An import profile read through `config`, checked, with defaults; its JSON Schema (IMPORT-011; tested end to end in `apps/cli`) |
 | `ExampleViewModel` | Example ViewModel from the template; replace it |
 
 ## Events
@@ -155,6 +155,7 @@ None yet.
 
 ## Dependencies
 
+- `config`
 - `domain`
 - `files`
 - `kernel`

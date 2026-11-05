@@ -38,7 +38,7 @@ Boundaries:
 | Item | Meaning |
 |---|---|
 | `FileType::new(name, highest_version, keys)` | A file type; `schema_version` is implicit |
-| `Key::text`, `whole_number`, `boolean`, `list_of_text`, `mapping(name, description, keys)` | `const` key descriptions; `.required()`, `.with_default(DefaultValue)` |
+| `Key::text`, `whole_number`, `boolean`, `list_of_text`, `choice(name, description, choices)`, `mapping(name, description, keys)` | `const` key descriptions; `.required()`, `.with_default(DefaultValue)` |
 | `KeyKind`, `DefaultValue` | What a key holds, and its documented default |
 | `read(parser, file_type, file, text)` | Reads one file into `ConfigFile`, or the first `ConfigError` |
 | `ConfigFile` | `schema_version()`, `values()`, `file()`, `error_at(position, message)` |

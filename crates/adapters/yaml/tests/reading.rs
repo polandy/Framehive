@@ -251,3 +251,25 @@ fn columns_count_characters() {
         "2:32: write \"2026\" in quotes to use it as text"
     );
 }
+
+/// spec: CORE-006.20
+#[test]
+fn a_choice_accepts_only_its_texts() {
+    const CHOICE: FileType = FileType::new(
+        "test",
+        1,
+        &[Key::choice(
+            "on_conflict",
+            "Conflict policy",
+            &["add_suffix", "skip", "fail"],
+        )],
+    );
+    let read_choice = |text| read(&SaphyrParser::new(), &CHOICE, FILE, text);
+    let file = read_choice("schema_version: 1\non_conflict: skip\n").unwrap();
+    assert_eq!(file.values().text("on_conflict").unwrap().value, "skip");
+    let error = read_choice("schema_version: 1\non_conflict: overwrite\n").unwrap_err();
+    assert_eq!(
+        format!("{}: {}", error.position, error.problem),
+        "2:14: expected add_suffix, skip or fail, found overwrite"
+    );
+}

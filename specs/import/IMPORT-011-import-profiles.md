@@ -1,6 +1,6 @@
 # IMPORT-011 – Import profiles
 
-- Status: accepted
+- Status: implemented
 - Module: import
 - Origin: N8, N25, R9
 - Depends on: CORE-006, IMPORT-001, IMPORT-003, IMPORT-006, IMPORT-007
@@ -145,3 +145,4 @@ The schema's descriptions are the "Meaning" column above.
 | Date | Change |
 |---|---|
 | 2026-11-05 | Initial draft (N8, N25, ADR 0032); accepted by the owner |
+| 2026-11-05 | Implemented (reading and schema); the conflict policy is a choice of CORE-006 (CORE-006.20); value errors are at the start of the value |

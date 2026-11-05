@@ -253,6 +253,7 @@ dependencies = [
  "adapter-mounts",
  "adapter-sequence-counters",
  "adapter-sqlite",
+ "adapter-yaml",
  "clap",
  "devices",
  "domain",
@@ -275,6 +276,7 @@ dependencies = [
 name = "import"
 version = "0.1.0"
 dependencies = [
+ "config",
  "domain",
  "files",
  "history",
@@ -557,5 +559,6 @@ checksum = "f0805222e57f7521d6a62e36fa9163bc891acd422f971defe97d64e70d0a4fe5"
 name = "xtask"
 version = "0.1.0"
 dependencies = [
+ "import",
  "kernel",
 ]

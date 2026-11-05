@@ -22,6 +22,7 @@ mod files;
 mod json;
 mod new_adapter;
 mod new_module;
+mod schemas;
 mod specs;
 mod testdata;
 mod workspace;
@@ -40,6 +41,8 @@ commands:
   check-spec-trailers  Spec-Unchanged/Spec-Only trailers of the commits since the base (ADR 0010)
   spec-report          write target/spec-report.md: requirement, spec, criteria, tests
   check-files          only text files, no binaries (ADR 0017)
+  check-schemas        the committed JSON Schemas are the generated ones (ADR 0032)
+  schemas              write the JSON Schemas of the configuration files to schemas/
   testdata check       testdata.lock is valid (ADR 0027)
   testdata fetch       download and verify the pinned test data (ADR 0017)
   ci-failures [<pr>]   only the failures of a red CI run (needs gh)
@@ -59,6 +62,8 @@ fn main() -> ExitCode {
         Some("check-spec-trailers") => check_spec_trailers(&root),
         Some("spec-report") => spec_report(&root),
         Some("check-files") => check_files(&root),
+        Some("check-schemas") => finish("schemas", &schemas::check(&root)),
+        Some("schemas") => schemas::write(&root),
         Some("testdata") => testdata::run(&root, arguments.get(1).map(String::as_str)),
         Some("new-module") => new_module::run(&root, arguments.get(1).map(String::as_str)),
         Some("new-adapter") => new_adapter::run(

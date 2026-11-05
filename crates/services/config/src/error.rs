@@ -69,6 +69,14 @@ pub enum Problem {
         /// What the file holds.
         found: Kind,
     },
+    /// Text that is none of the texts of a choice.
+    #[error("expected {}, found {found}", list_choices(choices))]
+    NotAChoice {
+        /// The texts the key accepts, in the order of the description.
+        choices: &'static [&'static str],
+        /// The text as written.
+        found: String,
+    },
     /// A plain scalar where text is expected that YAML would read as something else.
     #[error("write \"{0}\" in quotes to use it as text")]
     QuoteText(String),
@@ -91,6 +99,15 @@ pub enum Problem {
     /// A check of the file type's owner, such as an invalid path; its message.
     #[error("{0}")]
     Invalid(String),
+}
+
+/// The choices as `a, b or c` (CORE-006, "Values").
+fn list_choices(choices: &[&str]) -> String {
+    match choices.split_last() {
+        Some((last, [])) => (*last).to_owned(),
+        Some((last, rest)) => format!("{} or {last}", rest.join(", ")),
+        None => String::new(),
+    }
 }
 
 /// The kinds of values of CORE-006, named as the messages name them.
@@ -117,5 +134,30 @@ impl fmt::Display for Kind {
             Kind::List => "a list",
             Kind::Mapping => "a mapping",
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn names_the_choices_in_order() {
+        let not_a_choice = |choices| Problem::NotAChoice {
+            choices,
+            found: "overwrite".to_owned(),
+        };
+        assert_eq!(
+            not_a_choice(&["add_suffix", "skip", "fail"]).to_string(),
+            "expected add_suffix, skip or fail, found overwrite"
+        );
+        assert_eq!(
+            not_a_choice(&["skip", "fail"]).to_string(),
+            "expected skip or fail, found overwrite"
+        );
+        assert_eq!(
+            not_a_choice(&["skip"]).to_string(),
+            "expected skip, found overwrite"
+        );
     }
 }

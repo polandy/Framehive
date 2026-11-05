@@ -14,6 +14,7 @@ publish.workspace = true
 layer = "module"
 
 [dependencies]
+config.workspace = true
 domain.workspace = true
 files.workspace = true
 history.workspace = true

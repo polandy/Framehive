@@ -224,6 +224,7 @@ impl Reader<'_> {
             KeyKind::WholeNumber => self.whole_number(node).map(Value::WholeNumber),
             KeyKind::Boolean => self.boolean(node).map(Value::Boolean),
             KeyKind::ListOfText => self.list_of_text(key.name(), node),
+            KeyKind::Choice(choices) => self.choice(node, choices).map(Value::Text),
             KeyKind::Mapping(keys) => match &node.value {
                 YamlValue::Mapping(entries) => self
                     .mapping(node.position, entries, keys, Level::Nested)
@@ -244,6 +245,24 @@ impl Reader<'_> {
             value: text.clone(),
             position: node.position,
         })
+    }
+
+    fn choice(
+        &self,
+        node: &YamlNode,
+        choices: &'static [&'static str],
+    ) -> Result<Located<String>, ConfigError> {
+        let text = self.text(node)?;
+        if choices.contains(&text.value.as_str()) {
+            return Ok(text);
+        }
+        Err(self.error(
+            node.position,
+            Problem::NotAChoice {
+                choices,
+                found: text.value,
+            },
+        ))
     }
 
     fn whole_number(&self, node: &YamlNode) -> Result<Located<i64>, ConfigError> {

@@ -7,20 +7,19 @@
 
 ## Purpose
 
-Users write Framehive's configuration files by hand (ADR 0011). A mistake in such a file
-must stop with a message that says where it is and what was expected, rather than
-being guessed around, and YAML's surprises (`no` meaning false, aliases, tags) must not
-change what a file means.
+Users write configuration files by hand (ADR 0011). A mistake must stop with a message
+that says where it is and what was expected, and YAML's surprises (`no` meaning false,
+aliases, tags) must not change what a file means.
 
 ## Behaviour
 
-The `config` service reads the text of one configuration file into the typed values of
-its file type. A file type (for example the import profile, IMPORT-011) describes its
-keys: name, type, whether it is required, its default and a one-line description. The
-caller passes the text and the file's name for messages.
+The `config` service reads the text of one configuration file into the values of its
+file type, which describes its keys (name, type, required, default, one-line
+description), such as the import profile (IMPORT-011). The caller passes the text and
+the file's name for messages.
 
-**YAML subset.** The text is YAML 1.2 with the core schema. The following are errors,
-with the position of the first character of the offending construct:
+**YAML subset.** The text is YAML 1.2 with the core schema. These are errors at the
+first character of the construct:
 
 | Construct | Message |
 |---|---|
@@ -64,11 +63,10 @@ an entry with no value`.
 | a list | a block or flow sequence |
 | a mapping | a block or flow mapping |
 
-So `no`, `yes`, `on` and `off` are text. Text that the core schema would read as
-something else, or that looks like a date, is an error when it is written plain: a
-plain scalar that is an integer, a float, a boolean, or starts with a date
-`YYYY-MM-DD`, in a place that expects text, is an error at the value: `write "<value>"
-in quotes to use it as text`.
+So `no`, `yes`, `on` and `off` are text. A plain scalar that is an integer, a float, a
+boolean, or starts with a date `YYYY-MM-DD`, where text is expected, is an error at the
+value: `write "<value>" in quotes to use it as text`. A choice is text from a fixed
+list; other text is an error at the value: `expected <a>, <b> or <c>, found <value>`.
 
 **Errors.** Reading stops at the first error: the parser's (syntax, YAML subset), then
 `schema_version`, which decides the known keys, then keys and values in file order,
@@ -79,8 +77,8 @@ YAML parser's position and description.
 **JSON Schema.** For each file type, the service generates a JSON Schema (draft
 2020-12) from the description: an object per mapping, with every key as a property with
 its type and description, `additionalProperties: false`, the required keys in
-`required`, and `schema_version` as a constant of the highest version. The generated
-text is the same on every run.
+`required`, a choice's texts in `enum`, and `schema_version` as a constant of the
+highest version. The generated text is the same on every run.
 
 ## Acceptance criteria
 
@@ -130,8 +128,7 @@ text is the same on every run.
   the second is valid
 
 ### CORE-006.9 – `no` is text
-- **Given** a file type with a text key `destination`, and the text
-  `schema_version: 1\ndestination: no\n`
+- **Given** the text `schema_version: 1\ndestination: no\n`
 - **When** it is read
 - **Then** it is valid, and `destination` is the text `no`
 
@@ -143,8 +140,7 @@ text is the same on every run.
   as text`; with `job_codes: ["2026"]` the job code is the text `2026`
 
 ### CORE-006.11 – Wrong kind of value
-- **Given** a file type with a text key `destination`, and the text
-  `schema_version: 1\ndestination: [/a, /b]\n`
+- **Given** the text `schema_version: 1\ndestination: [/a, /b]\n`
 - **When** it is read
 - **Then** the error is at line 2, column 14: `expected text, found a list`
 
@@ -200,16 +196,19 @@ text is the same on every run.
 - **When** it is read
 - **Then** the error is at line 2, column 32, counting `ü` as one character
 
+### CORE-006.20 – A choice accepts only its texts
+- **Given** a choice `on_conflict` of `add_suffix`, `skip` and `fail`, and the text
+  `schema_version: 1\non_conflict: overwrite\n`
+- **When** it is read, and the JSON Schema is generated
+- **Then** the error is at line 2, column 14: `expected add_suffix, skip or fail, found
+  overwrite`; the schema has `"enum": ["add_suffix", "skip", "fail"]`
+
 ## Out of scope
 
-- The keys of a particular file type: the import profile is IMPORT-011.
 - Finding and reading the file, and the configuration folder: CLI-010.
-- Migrating older versions (ADR 0011, rule 7): with the first file type that has a
-  version 2.
-- Writing a file the user may have edited (ADR 0011, rule 9): with the first file
-  Framehive writes, such as a profile saved from the UI.
-- Units such as `20 GiB` or `15 min` (ADR 0011, rule 3): with the first key that needs
-  one.
+- Migrating older versions, writing a file the user may have edited, and units such as
+  `20 GiB` (ADR 0011, rules 7, 9 and 3): with the first file type, file and key that
+  needs one.
 
 ## Open questions
 
@@ -221,3 +220,4 @@ text is the same on every run.
 |---|---|
 | 2026-11-05 | Initial draft with the import profiles (N8, N25, ADR 0032); accepted by the owner |
 | 2026-11-05 | Implemented; error order and null list entries made explicit |
+| 2026-11-05 | Choices (CORE-006.20) |

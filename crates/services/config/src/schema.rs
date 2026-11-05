@@ -61,6 +61,11 @@ fn property(key: &Key) -> Json {
         KeyKind::Text => members.push(("type", Json::text("string"))),
         KeyKind::WholeNumber => members.push(("type", Json::text("integer"))),
         KeyKind::Boolean => members.push(("type", Json::text("boolean"))),
+        KeyKind::Choice(choices) => {
+            members.push(("type", Json::text("string")));
+            let texts = choices.iter().map(|choice| Json::text(choice)).collect();
+            members.push(("enum", Json::Array(texts)));
+        }
         KeyKind::ListOfText => {
             members.push(("type", Json::text("array")));
             members.push(("items", Json::Object(vec![("type", Json::text("string"))])));
@@ -241,6 +246,25 @@ mod tests {
             schema.matches(r#""additionalProperties": false"#).count(),
             2
         );
+    }
+
+    /// spec: CORE-006.20
+    #[test]
+    fn lists_the_texts_of_a_choice() {
+        const FILE_TYPE: FileType = FileType::new(
+            "test",
+            1,
+            &[
+                Key::choice("on_conflict", "Policy", &["add_suffix", "skip", "fail"])
+                    .with_default(DefaultValue::Text("add_suffix")),
+            ],
+        );
+        let schema = json_schema(&FILE_TYPE, ID);
+        let expected = "\"on_conflict\": {\n      \"description\": \"Policy\",\n      \
+                        \"type\": \"string\",\n      \
+                        \"enum\": [\"add_suffix\", \"skip\", \"fail\"],\n      \
+                        \"default\": \"add_suffix\"\n    }";
+        assert!(schema.contains(expected), "{expected} missing in\n{schema}");
     }
 
     #[test]

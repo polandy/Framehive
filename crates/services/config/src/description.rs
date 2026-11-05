@@ -87,6 +87,8 @@ pub enum KeyKind {
     Boolean,
     /// A list of text, such as job codes or paths.
     ListOfText,
+    /// Text that must be one of these texts, such as a conflict policy.
+    Choice(&'static [&'static str]),
     /// A nested mapping with these keys.
     Mapping(&'static [Key]),
 }
@@ -135,6 +137,17 @@ impl Key {
     #[must_use]
     pub const fn list_of_text(name: &'static str, description: &'static str) -> Self {
         Self::new(name, KeyKind::ListOfText, description)
+    }
+
+    /// An optional text key whose value must be one of `choices`, listed in this order
+    /// in messages and in the JSON Schema.
+    #[must_use]
+    pub const fn choice(
+        name: &'static str,
+        description: &'static str,
+        choices: &'static [&'static str],
+    ) -> Self {
+        Self::new(name, KeyKind::Choice(choices), description)
     }
 
     /// An optional nested mapping with `keys`.

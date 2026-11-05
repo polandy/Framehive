@@ -33,6 +33,7 @@ import.workspace = true
 naming.workspace = true
 
 [dev-dependencies]
+adapter-yaml.workspace = true
 files.workspace = true
 metadata.workspace = true
 
