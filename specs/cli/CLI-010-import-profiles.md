@@ -8,8 +8,7 @@
 ## Purpose
 
 `framehive import --profile holiday /run/media/ada/CARD` imports a card with the
-settings of a named import profile (IMPORT-011), so neither a user nor a script repeats
-the destination, backup destinations, template and conflict policy on every run.
+settings of a named import profile (IMPORT-011), so nobody repeats them on every run.
 `framehive config init` writes a commented example to start from.
 
 ## Behaviour
@@ -19,7 +18,7 @@ framehive import <source> [<destination>] [--profile <name>] [other arguments]
 framehive config init
 ```
 
-**Configuration folder** (ADR 0032, decision 3):
+**Configuration folder** (ADR 0032):
 
 | Platform | Configuration folder |
 |---|---|
@@ -29,6 +28,9 @@ framehive config init
 When `HOME` is not set or not absolute and the configuration folder needs it, a command
 that needs the folder stops with exit code 2 and `error: the configuration folder is
 unknown: set HOME to an absolute path`.
+
+`--profile` also needs `HOME` for `~`; without an absolute one the command stops with
+exit code 2 and `error: the home folder is unknown: set HOME to an absolute path`.
 
 **Finding the profile.** `--profile <name>` reads `<configuration folder>/profiles/<name>.yaml`
 as an import profile, with `HOME` as the home folder for `~`. A name that breaks the
@@ -45,11 +47,12 @@ with exit code 2 and one line on standard error:
 | Invalid profile | `error: ` followed by the message of CORE-006 or IMPORT-011, with the file's full path as the file |
 
 Known profiles are the files `*.yaml` in the profiles folder whose names are valid
-profile names, sorted, without `.yaml`.
+profile names, sorted, without `.yaml`. Symbolic links count as files. A profiles folder that does not exist or
+cannot be listed has no known profiles.
 
 **Settings.** Each setting of the import comes from the first of: the option on the
 command line, the profile, the default of CLI-001. An option given on the command line
-replaces the profile's value, also for lists (ADR 0032, decision 5):
+replaces the profile's value, also for lists (ADR 0032):
 
 | Setting | Option | Profile key |
 |---|---|---|
@@ -75,7 +78,8 @@ shown as its path with `~` already replaced.
 comment that explains it and names its default, and the `yaml-language-server` line of
 IMPORT-011. When the file exists, nothing is written, standard error gets `error: <path>
 exists already; nothing was written`, and the exit code is 1. A folder or the file that
-cannot be written gives exit code 1 and the reason.
+cannot be written gives exit code 1 and `error: the folder <path> cannot be created:
+<reason>` or `error: <path> cannot be written: <reason>`.
 
 The guided import (CLI-002) does not use profiles.
 
@@ -187,12 +191,17 @@ The guided import (CLI-002) does not use profiles.
 - **When** `framehive import <source>` runs
 - **Then** it is an invalid argument as in CLI-001.11, and the exit code is 2
 
+### CLI-010.18 – Unknown home folder with `XDG_CONFIG_HOME`
+- **Given** Linux, an absolute `XDG_CONFIG_HOME` with the profile, and `HOME` not set
+- **When** the command runs with `--profile holiday`
+- **Then** standard error has `error: the home folder is unknown: set HOME to an absolute
+  path`, and the exit code is 2
+
 ## Out of scope
 
-- The keys and checks of a profile: IMPORT-011. Reading YAML: CORE-006.
-- Choosing a profile and offering its job codes in the guided import: a later CLI-002
-  change.
-- Binding a profile to a device so that it is chosen automatically (N8, Q9).
+- Profile keys and checks: IMPORT-011. Reading YAML: CORE-006.
+- Profiles in the guided import: a later CLI-002 change.
+- Binding a profile to a device (N8, Q9).
 - Application settings and `framehive config` subcommands other than `init`.
 
 ## Open questions
@@ -205,3 +214,4 @@ The guided import (CLI-002) does not use profiles.
 |---|---|
 | 2026-11-05 | Initial draft (N8, N18, N25, ADR 0032); accepted by the owner |
 | 2026-11-05 | Implemented in `framehive-cli` |
+| 2026-11-05 | Added CLI-010.18 (unknown home folder) |

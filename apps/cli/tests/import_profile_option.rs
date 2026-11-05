@@ -310,6 +310,29 @@ fn an_unknown_configuration_folder_stops_the_command() {
     );
 }
 
+/// spec: CLI-010.18
+#[cfg(target_os = "linux")]
+#[test]
+fn an_unknown_home_folder_stops_the_command_even_with_xdg_config_home() {
+    let folders = Folders::new();
+    folders.add_raf();
+    let source = text(&folders.source());
+    let destination = text(&folders.destination());
+    let config_home = folders.root.path().join("config");
+
+    let output = folders
+        .framehive_command(&["import", &source, &destination, "--profile", "holiday"])
+        .env_remove("HOME")
+        .env("XDG_CONFIG_HOME", &config_home)
+        .output()
+        .unwrap();
+
+    assert_not_started(
+        &output,
+        "error: the home folder is unknown: set HOME to an absolute path",
+    );
+}
+
 /// spec: CLI-010.17
 #[test]
 fn without_profile_the_destination_stays_required() {
