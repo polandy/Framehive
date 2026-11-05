@@ -1,16 +1,18 @@
 // SPDX-FileCopyrightText: 2026 Framehive contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//! `framehive`, the command line of Framehive (CLI-001, CLI-002, CLI-003, CLI-009). See `README.md`.
+//! `framehive`, the command line of Framehive (CLI-001, CLI-002, CLI-003, CLI-009, CLI-010). See `README.md`.
 
 #![forbid(unsafe_code)]
 
 mod arguments;
+mod config_init;
 mod format_readiness;
 mod guided;
 mod import_command;
 mod import_log;
 mod paths;
+mod profiles;
 mod report;
 
 use std::io::{self, Write};
@@ -36,6 +38,7 @@ fn run(invocation: &Invocation) -> ExitCode {
         Invocation::Guided => guided::run_guided(),
         Invocation::Import(arguments) => import_command::run_import(arguments),
         Invocation::ImportLog(arguments) => import_log::run_import_log(*arguments),
+        Invocation::ConfigInit => config_init::run_config_init(),
     }
 }
 

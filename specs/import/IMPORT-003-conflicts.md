@@ -175,7 +175,7 @@ that appears at a target path after the plan was made is handled by IMPORT-004.9
 - Recognizing files already imported after they were renamed or moved, through the
   import history: IMPORT-009.
 - Conflicts at backup destinations (I5, overwrite or skip): the backup spec.
-- Where the policy is set: CLI-001 for the command line, the profile spec (N8) later.
+- Where the policy is set: CLI-001 for the command line, IMPORT-011 in a profile.
 
 ## Open questions
 

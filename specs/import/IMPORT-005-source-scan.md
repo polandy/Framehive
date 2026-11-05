@@ -124,7 +124,8 @@ files it imported before. Such an import is refused before the scan starts.
 
 - Detecting cards, cameras and phones (Q1, Q2): the device spec; this spec scans a
   folder.
-- Configurable scanned folders and ignore patterns (Q6), as part of a profile (N8).
+- Configurable scanned folders and ignore patterns (Q6), as part of a later version of
+  the import profile (IMPORT-011).
 - Grouping files into assets (LIBRARY-001); until it is implemented, each file is its
   own asset and sidecars are left out (IMPORT-005.12).
 - The capture time of a file: CORE-005.

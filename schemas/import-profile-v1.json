@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://polandy.github.io/framehive/schemas/import-profile-v1.json",
+  "title": "import-profile",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "description": "Version of the format, 1",
+      "type": "integer",
+      "const": 1
+    },
+    "destination": {
+      "description": "Folder to import into",
+      "type": "string"
+    },
+    "naming": {
+      "description": "How imported files are named",
+      "type": "object",
+      "properties": {
+        "template": {
+          "description": "Name template (IMPORT-001)",
+          "type": "string",
+          "default": "{date:%Y}/{date:%Y-%m-%d}/{name}.{ext}"
+        },
+        "on_conflict": {
+          "description": "Conflict policy (IMPORT-003): add_suffix, skip or fail",
+          "type": "string",
+          "enum": ["add_suffix", "skip", "fail"],
+          "default": "add_suffix"
+        }
+      },
+      "additionalProperties": false
+    },
+    "job_codes": {
+      "description": "Job codes of the profile (IMPORT-006), the one to use first",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "backup": {
+      "description": "Backup copies of the import",
+      "type": "object",
+      "properties": {
+        "destinations": {
+          "description": "Backup destinations (IMPORT-007), in this order",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": ["schema_version"],
+  "additionalProperties": false
+}

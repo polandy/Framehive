@@ -39,7 +39,7 @@ use crate::{NOT_STARTED, report_error};
 use dialog::Dialog;
 use events::StdinEvents;
 use state::state_file;
-pub(crate) use state::state_folder;
+pub(crate) use state::{create_folders, state_folder};
 
 /// How often the devices are polled while the dialog waits for a line (CLI-002).
 pub(crate) const POLL_INTERVAL: Duration = Duration::from_secs(1);

@@ -10,6 +10,7 @@ mod backup;
 mod conflicts;
 mod job_code;
 mod plan;
+mod profile;
 mod readiness;
 mod recent_job_codes;
 mod report;
@@ -32,6 +33,10 @@ pub use job_code::{
     JobCode, JobCodeError, MAX_JOB_CODE_CHARACTERS, MissingJobCode, require_job_code,
 };
 pub use plan::{AssetFile, ImportPlan, PlannedFile};
+pub use profile::{
+    DEFAULT_NAME_TEMPLATE, IMPORT_PROFILE, IMPORT_PROFILE_SCHEMA_ID, ImportProfile,
+    import_profile_json_schema,
+};
 pub use readiness::{FormatBlocker, FormatReadiness};
 pub use recent_job_codes::{MAX_RECENT_JOB_CODES, RecentJobCodes};
 pub use report::{

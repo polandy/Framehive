@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Framehive contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//! `framehive import` (CLI-001): wires the adapters to an import run.
+//! `framehive import` (CLI-001, CLI-010): wires the adapters to an import run.
 
 use std::io;
 use std::path::{Path, PathBuf};
@@ -12,9 +12,11 @@ use adapter_clock::SystemClock;
 use adapter_fs::StdFileSystem;
 use adapter_sequence_counters::FileSequenceCounters;
 use adapter_sqlite::SqliteImportHistory;
+use adapter_yaml::SaphyrParser;
 use import::{
-    BackupDestinationError, ConflictPolicy, ImportRun, ImportSettings, ImportSummary, JobCode,
-    SessionSequence, check_backup_destinations, require_job_code,
+    BackupDestinationError, ConflictPolicy, DEFAULT_NAME_TEMPLATE, ImportProfile, ImportRun,
+    ImportSettings, ImportSummary, JobCode, SessionSequence, check_backup_destinations,
+    require_job_code,
 };
 use naming::{CompatibilityMode, NameTemplate};
 
@@ -22,6 +24,10 @@ use crate::arguments::{ImportArguments, OnConflict};
 use crate::guided::state_folder;
 use crate::paths::{
     Destination, PathError, check_outside, create_destination, resolve_destination, resolve_source,
+};
+use crate::profiles::{
+    check_profile_name, process_configuration_folder, process_home_folder, profiles_folder,
+    read_profile,
 };
 use crate::report::{BackupName, ReportPrinter, has_backup_failures};
 use crate::{FILES_FAILED, NOT_STARTED, report_error, report_warning};
@@ -47,14 +53,15 @@ pub(crate) fn run_import(arguments: &ImportArguments) -> ExitCode {
 ///
 /// Returns the message of the error that kept the import from starting.
 fn import(arguments: &ImportArguments) -> Result<ImportSummary, String> {
-    let template = NameTemplate::parse(&arguments.template)
-        .map_err(|error| format!("invalid name template {}: {error}", arguments.template))?;
-    let job_code = job_code(arguments.job_code.as_deref(), &template)?;
+    let profile = arguments.profile.as_deref().map(load_profile).transpose()?;
+    let chosen = choose_settings(arguments, profile)?;
+    let template = chosen.template;
+    let job_code = chosen.job_code;
     let source = resolve_source(&arguments.source).map_err(|error| error.to_string())?;
     let destination =
-        resolve_destination(&arguments.destination).map_err(|error| error.to_string())?;
+        resolve_destination(&chosen.destination).map_err(|error| error.to_string())?;
     check_outside(&source, &destination).map_err(|error| error.to_string())?;
-    let backups = resolve_backups(&arguments.backups)?;
+    let backups = resolve_backups(&chosen.backups)?;
     let backup_paths: Vec<PathBuf> = backups
         .iter()
         .map(|(backup, _)| backup.path.clone())
@@ -78,7 +85,7 @@ fn import(arguments: &ImportArguments) -> Result<ImportSummary, String> {
         template: &template,
         job_code: job_code.as_ref(),
         mode: CompatibilityMode::On,
-        policy: conflict_policy(arguments.on_conflict),
+        policy: chosen.policy,
         dry_run: arguments.dry_run,
     };
     let clock = SystemClock::new();
@@ -102,6 +109,99 @@ fn import(arguments: &ImportArguments) -> Result<ImportSummary, String> {
         report_error(&error.to_string());
     }
     Ok(summary)
+}
+
+/// The settings of the import, each from the command line, else the profile, else the
+/// default of CLI-001 (CLI-010, "Settings").
+struct ChosenSettings {
+    destination: PathBuf,
+    template: NameTemplate,
+    job_code: Option<JobCode>,
+    policy: ConflictPolicy,
+    /// As given on the command line, or the profile's paths with `~` replaced.
+    backups: Vec<PathBuf>,
+}
+
+/// Takes each setting from the command line, else from `profile`, else the default. An
+/// option replaces the profile's value, lists included (ADR 0032, decision 5).
+///
+/// # Errors
+///
+/// Returns the message for a missing destination, an invalid template or job code, or
+/// a template with `{job}` and no job code.
+fn choose_settings(
+    arguments: &ImportArguments,
+    profile: Option<ImportProfile>,
+) -> Result<ChosenSettings, String> {
+    let (profile_destination, profile_template, profile_policy, profile_job_code, profile_backups) =
+        match profile {
+            Some(profile) => (
+                profile.destination,
+                Some(profile.template),
+                Some(profile.on_conflict),
+                profile.job_codes.into_iter().next(),
+                profile.backup_destinations,
+            ),
+            None => (None, None, None, None, Vec::new()),
+        };
+    let destination = arguments
+        .destination
+        .clone()
+        .or(profile_destination)
+        .ok_or_else(|| missing_destination_message(arguments.profile.as_deref()))?;
+    let template = match (&arguments.template, profile_template) {
+        (Some(text), _) => NameTemplate::parse(text)
+            .map_err(|error| format!("invalid name template {text}: {error}"))?,
+        (None, Some(template)) => template,
+        (None, None) => NameTemplate::parse(DEFAULT_NAME_TEMPLATE)
+            .map_err(|error| format!("invalid name template {DEFAULT_NAME_TEMPLATE}: {error}"))?,
+    };
+    let job_code = job_code(arguments.job_code.as_deref(), profile_job_code, &template)?;
+    let policy = arguments
+        .on_conflict
+        .map(conflict_policy)
+        .or(profile_policy)
+        .unwrap_or(ConflictPolicy::AddSuffix);
+    let backups = if arguments.backups.is_empty() {
+        profile_backups
+    } else {
+        arguments.backups.clone()
+    };
+    Ok(ChosenSettings {
+        destination,
+        template,
+        job_code,
+        policy,
+        backups,
+    })
+}
+
+/// The message when neither the command line nor the profile names a destination;
+/// without a profile, clap has already required one.
+fn missing_destination_message(profile: Option<&str>) -> String {
+    format!(
+        "no destination: give one, or set destination in the profile {}",
+        profile.unwrap_or_default()
+    )
+}
+
+/// Checks the name of `--profile`, finds the configuration folder and reads the
+/// profile (CLI-010, "Finding the profile"), before anything is scanned.
+///
+/// # Errors
+///
+/// Returns the message of CLI-010 for each way this fails.
+fn load_profile(name: &str) -> Result<ImportProfile, String> {
+    check_profile_name(name)?;
+    let folder = process_configuration_folder()?;
+    let home = process_home_folder()?;
+    read_profile(
+        &StdFileSystem::new(),
+        &SaphyrParser::new(),
+        &profiles_folder(&folder),
+        name,
+        &home,
+    )
 }
 
 /// Resolves each backup destination as the destination is resolved, so that the
@@ -176,23 +276,29 @@ pub(crate) fn process_state_folder() -> Result<PathBuf, String> {
 }
 
 /// Checks `--job-code` against IMPORT-006 and the template (CLI-001, "Job code"), and
-/// warns when the template does not use it.
+/// warns when the template does not use it. Without `--job-code`, the profile's first
+/// job code, already checked against IMPORT-006, is used without a warning (CLI-010).
 ///
 /// # Errors
 ///
 /// Returns the message for an invalid job code, or for a template with `{job}` and no
 /// job code.
-fn job_code(text: Option<&str>, template: &NameTemplate) -> Result<Option<JobCode>, String> {
-    let job_code = text
+fn job_code(
+    text: Option<&str>,
+    profile_job_code: Option<JobCode>,
+    template: &NameTemplate,
+) -> Result<Option<JobCode>, String> {
+    let given = text
         .map(|text| {
             JobCode::parse(text).map_err(|error| format!("invalid job code {text:?}: {error}"))
         })
         .transpose()?;
-    require_job_code(template, job_code.as_ref())
-        .map_err(|error| format!("{error}; give one with --job-code <text>"))?;
-    if job_code.is_some() && !template.uses_job_code() {
+    if given.is_some() && !template.uses_job_code() {
         report_warning("--job-code is not used, because the name template has no {job}");
     }
+    let job_code = given.or(profile_job_code);
+    require_job_code(template, job_code.as_ref())
+        .map_err(|error| format!("{error}; give one with --job-code <text>"))?;
     Ok(job_code)
 }
 

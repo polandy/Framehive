@@ -208,7 +208,8 @@ can never contain `/`.
 - Photo and video metadata tokens (R2, R3): later specs.
 - What a valid job code is, and an import whose template needs one: IMPORT-006.
 - The live preview and block editor (N9, R10): a UI spec.
-- Where a profile stores its template and the mode: the profile spec (N8).
+- Where a profile stores its template: IMPORT-011. The mode stays on (compatibility
+  mode) until a profile key for it is specified.
 
 ## Open questions
 

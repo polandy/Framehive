@@ -59,3 +59,12 @@ dependencies:
     allowed_layers: [module]
     allowed_crates: [import]
     features: []
+
+  - name: saphyr-parser
+    purpose: The event parser for YAML configuration files, in adapter-yaml (CORE-006)
+    rationale: A YAML 1.2 parser with positions for every event is a deep problem ADR 0009 assigns to a library; std has none, and our own code builds the tree and does the strict checks (ADR 0032)
+    review: The parser of the maintained saphyr-rs line that succeeded yaml-rust, pure Rust, MIT OR Apache-2.0, tested against the official yaml-test-suite in its repository; version 0.3 before 1.0 is an accepted exception, confined to one adapter (ADR 0032)
+    adr: "0032"
+    allowed_layers: [adapter]
+    allowed_crates: [adapter-yaml]
+    features: []

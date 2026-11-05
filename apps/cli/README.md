@@ -9,8 +9,8 @@ Layer: `app` (architecture §3). Binary: `framehive`.
 
 ## Purpose
 
-The command line of Framehive: `framehive import` (CLI-001, CLI-004), `framehive
-import-log` (CLI-009) and, without a subcommand, the guided import (CLI-002, CLI-003, ADR 0024). It parses the arguments
+The command line of Framehive: `framehive import` (CLI-001, CLI-004, CLI-010), `framehive
+import-log` (CLI-009), `framehive config init` (CLI-010) and, without a subcommand, the guided import (CLI-002, CLI-003, ADR 0024). It parses the arguments
 with `clap` (builder API, ADR 0020 §6) and is one of the two places, with
 `framehive-gui`, that know the concrete adapters and wire them to the ports.
 
@@ -21,7 +21,9 @@ framehive
 framehive import <source> <destination> [--backup <folder>]...
                  [--template <template>] [--job-code <text>]
                  [--on-conflict add_suffix|skip|fail] [--dry-run]
+framehive import <source> [<destination>] --profile <name> [other options]
 framehive import-log [<run>|last] [--format text|json|csv]
+framehive config init
 framehive --help
 framehive --version
 ```
@@ -41,6 +43,19 @@ unknown (no absolute `XDG_STATE_HOME` and no home folder). The destinations it p
 the run are the resolved paths above: their existing part is canonical and the missing
 folders are created as named, so a destination has the same path in the first run and
 in later ones, which is how the history identifies it (IMPORT-009).
+
+## Import profiles
+
+`framehive import --profile <name>` (CLI-010, `src/profiles.rs`) checks the name
+(ADR 0032), finds the configuration folder (a pure function of the platform,
+`XDG_CONFIG_HOME` and `HOME`, tested for Linux and macOS) and reads
+`profiles/<name>.yaml` through the `FileSystem` port with `import::ImportProfile::read`
+and `adapter-yaml`, with `HOME` for `~`, before anything is scanned. Each setting comes
+from the command line, else the profile, else the default of CLI-001; `--backup`
+replaces the profile's list. Only `--job-code` gets the unused job code warning. Every
+failure is `error: …` with exit code 2. `framehive config init` (`src/config_init.rs`)
+writes `profiles/example.yaml` as `<file>.part` renamed without replacing, so an
+existing file is kept (exit code 1).
 
 ## Import log
 
@@ -99,7 +114,7 @@ standard error as `warning: <message>`; there is no other log output yet.
 |---|---|
 | 0 | Every file was copied, already imported, imported before, a duplicate, skipped or left out |
 | 1 | A file failed, or a folder could not be read (`ImportSummary::has_failures`), a file failed at a backup destination, or the import history failed during the run |
-| 2 | The import did not start: invalid arguments, template or job code, missing source, destination inside the source or not creatable, an invalid or not creatable backup destination, sequence numbers that do not fit, counters that cannot be read or stored, an unknown state folder, or an import history that cannot be used |
+| 2 | The import did not start: invalid arguments, template or job code, missing source, destination inside the source or not creatable, an invalid or not creatable backup destination, sequence numbers that do not fit, counters that cannot be read or stored, an unknown state folder, an import history that cannot be used, or a profile that cannot be found, read or used (CLI-010) |
 
 ## Modules
 
@@ -109,6 +124,8 @@ standard error as `warning: <message>`; there is no other log output yet.
 | `paths` | Source and destination resolution, the inside check, creating the destination |
 | `import_command` | Wires the adapters to the import run and maps the result to the exit code |
 | `report` | The `ProgressSink` that prints the report lines and the summary |
+| `profiles` | The configuration folder, profile names, and reading the profile of `--profile` (CLI-010) |
+| `config_init` | `framehive config init`: the example profile (CLI-010) |
 | `import_log` | `framehive import-log` (CLI-009): reading the history, and the `text`, `json` and `csv` writers |
 | `format_readiness` | The format readiness lines (CLI-007), shared by `framehive import` and the guided import |
 | `guided` | The guided import (CLI-002, CLI-003): `dialog` (prompts, waiting, remembered answers), `card` (summary, import, eject), `template` (template step, job code), `progress` (progress line, stop on a pulled card), `format` (sizes, rate, time left), `state` (state file), `events` (input events) |
@@ -118,7 +135,10 @@ standard error as `warning: <message>`; there is no other log output yet.
 `tests/` runs the real binary (`CARGO_BIN_EXE_framehive`) in a temporary folder with
 `TZ=UTC`, with test files from `metadata::testing`. Unreadable files and folders use
 mode 000; when the tests run as root, which reads them anyway, the expectation
-follows what the file system allows. `tests/memory_card.rs` checks the milestone 1
+follows what the file system allows. `tests/import_profiles.rs` reads import profiles (IMPORT-011) with the real YAML
+parser, including every profile shown in `docs/` and `specs/` and the example of
+`framehive config init`. `tests/import_profile_option.rs` and `tests/config_init.rs`
+(CLI-010) set `HOME` to a temporary folder and unset `XDG_CONFIG_HOME`. `tests/memory_card.rs` checks the milestone 1
 guarantees end to end on a folder laid out like a memory card: a dry run writes
 nothing, the import fails only the unreadable file, a second run copies nothing, and
 the source keeps its paths, bytes and modification times. `tests/import_log.rs` reads
@@ -131,8 +151,8 @@ and a `ManualClock`; `tests/guided_import.rs` checks the binary without a termin
 ## Dependencies
 
 - `adapter-blake3`, `adapter-clock`, `adapter-fs`, `adapter-mounts`,
-  `adapter-sequence-counters`, `adapter-sqlite`, `devices`, `domain`, `files`, `history`,
-  `import`, `naming`
+  `adapter-sequence-counters`, `adapter-sqlite`, `adapter-yaml`, `config`, `devices`,
+  `domain`, `files`, `history`, `import`, `naming`
 
 - `clap` (ADR 0020 §6): `default-features = false`, features `std`, `help`, `usage`,
   `error-context`.
