@@ -224,8 +224,9 @@ has none.
 ## Out of scope
 
 - The arguments, output and exit codes of `framehive import`: CLI-001.
-- Import profiles and the YAML settings (N8): later specs; they will supersede the
-  remembered template and destination.
+- Import profiles (N8): IMPORT-011 and CLI-010 for `framehive import`; choosing a
+  profile in the guided import is a later change, and will supersede the remembered
+  template and destination.
 - Cameras over PTP or MTP (Q2): further device sources.
 - A graphical template editor with live preview (N9, R10): the GUI.
 

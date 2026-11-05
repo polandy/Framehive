@@ -135,7 +135,8 @@ formatted: a stopped run has not looked at every file, and a dry run verifies no
 ## Out of scope
 
 - How the command line and the guided import show the format readiness: CLI-007.
-- A configurable number of required locations: with import profiles (N8, R9).
+- A configurable number of required locations: a later version of the import profile
+  (IMPORT-011).
 - Formatting the card, or deleting the imported files from it (move mode, G1).
 - Checking the destinations again later, for example after a reboot: the result holds
   for the run that produced it.

@@ -22,6 +22,8 @@ Names in the code follow this glossary.
 | Name template | `NameTemplate` | Text that derives an imported file's folders and name (IMPORT-001) |
 | Job code | `JobCode` | A short label the user gives an import, inserted by the `{job}` token of a name template (IMPORT-006). Not to be confused with a job |
 | Recent job codes | `RecentJobCodes` | The job codes used before, most recently used first, each at most once, at most 10 (IMPORT-006) |
+| Import profile | `ImportProfile` | A named set of import settings in a YAML file, one file per profile, named after it: destination, template, conflict policy, job codes, backup destinations (IMPORT-011, ADR 0032) |
+| Configuration folder | `config_folder` | The folder of the files a user edits: `$XDG_CONFIG_HOME/framehive` on Linux, `~/Library/Application Support/framehive` on macOS (CLI-010, ADR 0032). Not to be confused with the state folder of ADR 0025 |
 | Capture time | `CaptureTime` | The wall-clock time the camera recorded, from EXIF `DateTimeOriginal`, with optional sub-seconds and UTC offset (CORE-005) |
 | Full decode | `PreviewDecoder::decode_full`, `DecodedImage` | Decoding a RAW at full resolution into 16-bit sRGB samples, for 100% zoom and comparison (PREVIEWS-001) |
 | Reference decode | `DecodeMode::Reference` | Full decode with one thread, bit-identical between runs; its pixel hashes pin the decoder version (PREVIEWS-001, ADR 0028) |

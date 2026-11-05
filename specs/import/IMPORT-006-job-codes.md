@@ -113,7 +113,7 @@ their order, and job codes that are invalid or repeated are left out when it is 
   import: the guided import (CLI-003, ADR 0025).
 - Writing the job code to XMP as IPTC Job Id (`photoshop:TransmissionReference`, N16):
   the XMP milestone.
-- Job codes stored in profiles (N8): the profile spec.
+- Job codes stored in profiles (N8): IMPORT-011.
 - The `--job-code` argument: CLI-001.
 
 ## Open questions

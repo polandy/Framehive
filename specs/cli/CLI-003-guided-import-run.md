@@ -178,8 +178,9 @@ the dialog goes on.
 ## Out of scope
 
 - The arguments, output and exit codes of `framehive import`: CLI-001.
-- Import profiles and the YAML settings (N8): later specs; they will supersede the
-  remembered template and destination.
+- Import profiles (N8): IMPORT-011 and CLI-010 for `framehive import`; choosing a
+  profile in the guided import is a later change, and will supersede the remembered
+  template and destination.
 - Backup destinations (I2): CLI-006. "Card can be formatted" (N5): CLI-007.
 - Resuming an interrupted import across program runs (N4): CLI-008.
 - Ctrl+C during a copy: the process ends, and the next import replaces the leftover
