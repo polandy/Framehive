@@ -7,6 +7,7 @@
 //! `adapter-sqlite` runs [`check_import_history`] against a temporary state folder.
 
 mod conformance;
+mod log_conformance;
 mod memory;
 
 pub use conformance::{ImportHistoryUnderTest, check_import_history};

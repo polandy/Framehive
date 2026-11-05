@@ -16,6 +16,9 @@ const DEFAULT_TEMPLATE: &str = "{date:%Y}/{date:%Y-%m-%d}/{name}.{ext}";
 /// The values of `--on-conflict`, as the policies of IMPORT-003 are named.
 const CONFLICT_POLICIES: [&str; 3] = ["add_suffix", "skip", "fail"];
 
+/// The values of `--format` of `framehive import-log` (CLI-009).
+const LOG_FORMATS: [&str; 3] = ["text", "json", "csv"];
+
 /// What the user asked `framehive` to do.
 #[derive(Debug)]
 pub(crate) enum Invocation {
@@ -23,6 +26,37 @@ pub(crate) enum Invocation {
     Guided,
     /// `framehive import`.
     Import(ImportArguments),
+    /// `framehive import-log` (CLI-009).
+    ImportLog(ImportLogArguments),
+}
+
+/// The arguments of `framehive import-log` (CLI-009), checked by the parser.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct ImportLogArguments {
+    /// The run whose log to print; `None` lists the runs.
+    pub(crate) run: Option<RunSelection>,
+    /// How to print the log of one run.
+    pub(crate) format: LogFormat,
+}
+
+/// The value of `<run>` of `framehive import-log`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum RunSelection {
+    /// A run number.
+    Number(i64),
+    /// `last`: the run with the highest number.
+    Last,
+}
+
+/// The value of `--format` of `framehive import-log`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum LogFormat {
+    /// `text`, the default.
+    Text,
+    /// `json`.
+    Json,
+    /// `csv`.
+    Csv,
 }
 
 /// The arguments of `framehive import`, checked by the parser.
@@ -65,12 +99,12 @@ pub(crate) fn parse(
     arguments: impl IntoIterator<Item = OsString>,
 ) -> Result<Invocation, clap::Error> {
     let matches = command().try_get_matches_from(arguments)?;
-    // `import` is the only subcommand; clap rejects any other before this point.
-    Ok(matches
-        .subcommand_matches("import")
-        .map_or(Invocation::Guided, |import| {
-            Invocation::Import(import_arguments(import))
-        }))
+    // clap rejects any other subcommand before this point.
+    Ok(match matches.subcommand() {
+        Some(("import", import)) => Invocation::Import(import_arguments(import)),
+        Some((_, import_log)) => Invocation::ImportLog(import_log_arguments(import_log)),
+        None => Invocation::Guided,
+    })
 }
 
 fn command() -> Command {
@@ -78,6 +112,51 @@ fn command() -> Command {
         .version(env!("CARGO_PKG_VERSION"))
         .about("Framehive photo library; without a subcommand, the guided import of a memory card")
         .subcommand(import_command())
+        .subcommand(import_log_command())
+}
+
+fn import_log_command() -> Command {
+    Command::new("import-log")
+        .about("Print the import runs, or which file of one run went where, with its checksum")
+        .arg(
+            Arg::new("run")
+                .value_name("run")
+                .value_parser(run_selection)
+                .help("Run number, or last; without it, the runs are listed"),
+        )
+        .arg(
+            Arg::new("format")
+                .long("format")
+                .value_name("format")
+                .value_parser(PossibleValuesParser::new(LOG_FORMATS))
+                // `--format` applies only to the log of one run (CLI-009).
+                .requires("run")
+                .help("How to print the log of one run [default: text]"),
+        )
+}
+
+/// Reads `<run>`: a run number or `last`.
+fn run_selection(value: &str) -> Result<RunSelection, String> {
+    if value == "last" {
+        return Ok(RunSelection::Last);
+    }
+    value
+        .parse::<u64>()
+        .ok()
+        .and_then(|number| i64::try_from(number).ok())
+        .map(RunSelection::Number)
+        .ok_or_else(|| "expected a run number or last".to_owned())
+}
+
+fn import_log_arguments(matches: &ArgMatches) -> ImportLogArguments {
+    ImportLogArguments {
+        run: matches.get_one::<RunSelection>("run").copied(),
+        format: match matches.get_one::<String>("format").map(String::as_str) {
+            Some("json") => LogFormat::Json,
+            Some("csv") => LogFormat::Csv,
+            _ => LogFormat::Text,
+        },
+    }
 }
 
 fn import_command() -> Command {

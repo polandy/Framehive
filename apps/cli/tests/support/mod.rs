@@ -115,6 +115,18 @@ impl Folders {
             .unwrap()
     }
 
+    /// Runs `framehive import-log` with `arguments` on the state folder of the imports
+    /// (CLI-009).
+    pub(crate) fn import_log(&self, arguments: &[&str]) -> Output {
+        Command::new(env!("CARGO_BIN_EXE_framehive"))
+            .arg("import-log")
+            .args(arguments)
+            .env("TZ", "UTC")
+            .env("XDG_STATE_HOME", self.root.path().join("state"))
+            .output()
+            .unwrap()
+    }
+
     fn import_command(&self, destination: &Path, options: &[&str]) -> Command {
         let mut arguments = vec![
             "import".to_owned(),

@@ -45,29 +45,30 @@ pub fn check_import_history<T: ImportHistoryUnderTest>(
     check_runs_are_numbered(&fresh(), &mut failures);
     check_paths_are_bytes(&fresh(), &mut failures);
     check_broken_storage(&mut fresh(), &mut failures);
+    super::log_conformance::check_import_log(fresh, &mut failures);
     failures
 }
 
-const DESTINATION: &str = "/library";
-const BACKUP: &str = "/backup";
+pub(super) const DESTINATION: &str = "/library";
+pub(super) const BACKUP: &str = "/backup";
 
 // The fixtures are fixed, valid values; a failure is a bug of this suite.
 #[allow(clippy::expect_used, reason = "fixed, valid fixture values")]
-fn now() -> RecordedTime {
+pub(super) fn now() -> RecordedTime {
     let offset = UtcOffset::from_seconds(7_200).expect("a valid offset");
     RecordedTime::at(Timestamp::from_unix_seconds(1_793_437_200), offset).expect("a valid time")
 }
 
-fn captured() -> Option<LocalDateTime> {
+pub(super) fn captured() -> Option<LocalDateTime> {
     LocalDateTime::new(2026, 10, 17, 14, 5, 9).ok()
 }
 
 #[allow(clippy::expect_used, reason = "fixed, valid fixture values")]
-fn checksum(byte: u8) -> Checksum {
+pub(super) fn checksum(byte: u8) -> Checksum {
     Checksum::new(Checksum::BLAKE3, vec![byte; 32]).expect("a non-empty digest")
 }
 
-fn start(
+pub(super) fn start(
     history: &dyn ImportHistory,
     check: &str,
     failures: &mut Vec<String>,
@@ -87,7 +88,7 @@ fn start(
 }
 
 /// A copy of `DSCF0001.RAF`, 10 bytes, captured 2026-10-17 14:05:09, at `destination`.
-fn copy(run: crate::RunId, destination: &Path, byte: u8, target: &str) -> CopyRecord {
+pub(super) fn copy(run: crate::RunId, destination: &Path, byte: u8, target: &str) -> CopyRecord {
     CopyRecord {
         run,
         destination: destination.to_path_buf(),
@@ -110,7 +111,12 @@ fn key(destination: &Path) -> CopyKey<'_> {
     }
 }
 
-fn record(history: &dyn ImportHistory, copy: &CopyRecord, check: &str, failures: &mut Vec<String>) {
+pub(super) fn record(
+    history: &dyn ImportHistory,
+    copy: &CopyRecord,
+    check: &str,
+    failures: &mut Vec<String>,
+) {
     if let Err(error) = history.record_copy(copy) {
         failures.push(format!("{check}: recording a copy fails: {error}"));
     }
@@ -356,6 +362,11 @@ fn check_broken_storage(under_test: &mut dyn ImportHistoryUnderTest, failures: &
         (
             "finding copies",
             history.find_copies(&key(Path::new(DESTINATION))).map(drop),
+        ),
+        ("listing the runs", history.list_runs().map(drop)),
+        (
+            "reading the log of a run",
+            history.read_run_log(crate::RunId::new(1)).map(drop),
         ),
         ("starting a run", history.start_run(&run_start).map(drop)),
         (

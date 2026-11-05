@@ -97,6 +97,16 @@ section 3 to 6, and only `apps/cli` knows that adapter. The service is not part 
 import module because the library module needs the same history (LIBRARY-001), and a
 module never depends on another module.
 
+Addendum (2026-11-04, IMPORT-010): the import log reads the history back through two
+more operations of the port: list the runs, oldest first, with the number of their
+copies at every destination, and read the log of one run, its copies ordered by
+destination as IMPORT-010 says, or nothing when there is no such run. For the import
+log, `adapter-sqlite` opens the database with a read-only connection: a missing database
+is an empty history and is not created, nor is its folder; a broken one or one with
+another layout is the error of section 6. SQLite may leave its empty `-wal` and `-shm`
+side files next to a database in WAL mode; they hold no data. The layout of section 3,
+its `user_version` and the dependencies stay as they are.
+
 ## Alternatives
 
 - **An append-only text file of our own:** no new dependency, but every lookup reads the

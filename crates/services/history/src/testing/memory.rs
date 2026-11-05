@@ -7,7 +7,8 @@ use std::path::PathBuf;
 use std::sync::{Mutex, MutexGuard, PoisonError};
 
 use crate::{
-    CopyKey, CopyRecord, FoundCopy, HistoryError, ImportHistory, RecordedTime, RunId, RunStart,
+    CopyKey, CopyRecord, FoundCopy, HistoryError, ImportHistory, LoggedRun, RecordedTime, RunId,
+    RunLog, RunStart,
 };
 
 /// The name [`MemoryImportHistory`] gives in its errors.
@@ -73,6 +74,19 @@ struct State {
     broken: bool,
     /// The number of further copies to record before recording fails, if it fails.
     records_before_failure: Option<usize>,
+}
+
+impl State {
+    /// `run` as the import log lists it, with the number of its copies.
+    fn logged(&self, run: &RecordedRun) -> LoggedRun {
+        let copies = self.copies.iter().filter(|copy| copy.run == run.id).count();
+        LoggedRun {
+            id: run.id,
+            start: run.start.clone(),
+            finished_at: run.finished_at,
+            copy_count: u64::try_from(copies).unwrap_or(u64::MAX),
+        }
+    }
 }
 
 impl MemoryImportHistory {
@@ -172,6 +186,25 @@ impl ImportHistory for MemoryImportHistory {
                 checksum: copy.checksum.clone(),
             })
             .collect())
+    }
+
+    fn list_runs(&self) -> Result<Vec<LoggedRun>, HistoryError> {
+        let state = self.usable()?;
+        Ok(state.runs.iter().map(|run| state.logged(run)).collect())
+    }
+
+    fn read_run_log(&self, run: RunId) -> Result<Option<RunLog>, HistoryError> {
+        let state = self.usable()?;
+        let Some(recorded) = state.runs.iter().find(|recorded| recorded.id == run) else {
+            return Ok(None);
+        };
+        let copies = state
+            .copies
+            .iter()
+            .filter(|copy| copy.run == run)
+            .cloned()
+            .collect();
+        Ok(Some(RunLog::new(state.logged(recorded), copies)))
     }
 }
 

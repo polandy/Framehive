@@ -17,3 +17,4 @@ feature live in its spec, decisions in `docs/adr/`. Add items with `/todo`.
 - [ ] Test or drop the JPEG XL DNG example for `UnsupportedFormat` in PREVIEWS-001 — no CC0 sample yet, and LibRaw may report a data error that the adapter maps to `Corrupt` (ADR 0028, PR #34 review) (2026-11-03)
 - [ ] Store reference pixel hashes for aarch64-darwin in the LibRaw version test — on macOS it compares only sizes until the hashes are measured on a Mac (PREVIEWS-001, ADR 0028) (2026-11-03)
 - [ ] Merge the duplicated `unfinished()` helper — it exists in both `crates/services/files/src/copy/target.rs` and `modules/import/import/src/run/copy.rs` (IMPORT-007, PR #36 review) (2026-11-04)
+- [ ] Add an index on `copies.run_id` at the next import history schema change — the import log reads copies by run; not worth its own migration now (IMPORT-010, PR import-log review) (2026-11-05)

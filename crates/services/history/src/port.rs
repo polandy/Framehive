@@ -7,7 +7,7 @@ use std::path::PathBuf;
 
 use thiserror::Error;
 
-use crate::{CopyKey, CopyRecord, FoundCopy, RecordedTime, RunId, RunStart};
+use crate::{CopyKey, CopyRecord, FoundCopy, LoggedRun, RecordedTime, RunId, RunLog, RunStart};
 
 /// Why the import history cannot be used: it cannot be opened, read or written, or has
 /// an unknown layout. The history is not changed (ADR 0031, section 6).
@@ -54,4 +54,20 @@ pub trait ImportHistory {
     ///
     /// Returns a [`HistoryError`] when the history cannot be read.
     fn find_copies(&self, key: &CopyKey<'_>) -> Result<Vec<FoundCopy>, HistoryError>;
+
+    /// Every recorded run, oldest first, with the number of its copies at every
+    /// destination (IMPORT-010).
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`HistoryError`] when the history cannot be read.
+    fn list_runs(&self) -> Result<Vec<LoggedRun>, HistoryError>;
+
+    /// The log of the run `run` (IMPORT-010), or `None` when the history has no such
+    /// run.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`HistoryError`] when the history cannot be read.
+    fn read_run_log(&self, run: RunId) -> Result<Option<RunLog>, HistoryError>;
 }

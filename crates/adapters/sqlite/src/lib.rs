@@ -9,6 +9,7 @@
 
 mod database;
 mod rows;
+mod text;
 // The unit tests share the temporary folder of the integration tests.
 #[cfg(test)]
 #[path = "../tests/support/mod.rs"]
@@ -18,7 +19,8 @@ use std::path::{Path, PathBuf};
 use std::sync::{Mutex, MutexGuard, PoisonError};
 
 use history::{
-    CopyKey, CopyRecord, FoundCopy, HistoryError, ImportHistory, RecordedTime, RunId, RunStart,
+    CopyKey, CopyRecord, FoundCopy, HistoryError, ImportHistory, LoggedRun, RecordedTime, RunId,
+    RunLog, RunStart,
 };
 
 use database::{Access, Database};
@@ -31,10 +33,12 @@ pub const HISTORY_FILE_NAME: &str = "import-history.sqlite";
 /// The database is opened on first use. A missing database reads as empty and is
 /// created, with its folder, by the first write; a dry run therefore creates nothing.
 /// A database that is broken or has another layout is never changed (ADR 0031,
-/// section 6).
+/// section 6). [`SqliteImportHistory::read_only`] opens it for the import log
+/// (IMPORT-010), which never writes.
 #[derive(Debug)]
 pub struct SqliteImportHistory {
     file: PathBuf,
+    read_only: bool,
     database: Mutex<Option<Database>>,
 }
 
@@ -44,7 +48,19 @@ impl SqliteImportHistory {
     pub fn new(folder: &Path) -> Self {
         SqliteImportHistory {
             file: folder.join(HISTORY_FILE_NAME),
+            read_only: false,
             database: Mutex::new(None),
+        }
+    }
+
+    /// The history in `folder`, opened read-only: it never creates the database or
+    /// its folder, never changes the database, and every write fails with a
+    /// `HistoryError`.
+    #[must_use]
+    pub fn read_only(folder: &Path) -> Self {
+        SqliteImportHistory {
+            read_only: true,
+            ..SqliteImportHistory::new(folder)
         }
     }
 
@@ -61,9 +77,13 @@ impl SqliteImportHistory {
         access: Access,
         work: impl FnOnce(&Database) -> rusqlite::Result<T>,
     ) -> Result<Option<T>, HistoryError> {
+        if self.read_only && access == Access::Write {
+            return Err(self.error(&"the history is opened read-only"));
+        }
         let mut guard = self.database();
         if guard.is_none() {
-            *guard = Database::open(&self.file, access).map_err(|error| self.error(&error))?;
+            *guard = Database::open(&self.file, access, self.read_only)
+                .map_err(|error| self.error(&error))?;
         }
         let Some(database) = guard.as_mut() else {
             return Ok(None);
@@ -113,5 +133,15 @@ impl ImportHistory for SqliteImportHistory {
         let found =
             self.with_database(Access::Read, |database| rows::find_copies(database, key))?;
         Ok(found.unwrap_or_default())
+    }
+
+    fn list_runs(&self) -> Result<Vec<LoggedRun>, HistoryError> {
+        let runs = self.with_database(Access::Read, rows::list_runs)?;
+        Ok(runs.unwrap_or_default())
+    }
+
+    fn read_run_log(&self, run: RunId) -> Result<Option<RunLog>, HistoryError> {
+        let log = self.with_database(Access::Read, |database| rows::read_run_log(database, run))?;
+        Ok(log.flatten())
     }
 }
