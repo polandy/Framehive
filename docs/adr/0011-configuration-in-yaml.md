@@ -47,6 +47,9 @@ settings, import profiles, `.framehive/library.yaml`, albums and saved searches 
 
 ### Example
 
+This example predates the import profile format. ADR 0032 and IMPORT-011 define the
+actual keys and schema URL of import profiles; the example only shows the style.
+
 ```yaml
 # yaml-language-server: $schema=https://framehive.example/schemas/profile-v1.json
 schema_version: 1
