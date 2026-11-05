@@ -35,10 +35,20 @@ impl YamlParser for SaphyrParser {
         while let Some(next) = parser.next_event() {
             let (event, span) = next.map_err(|error| YamlParseError {
                 position: position(*error.marker()),
-                kind: YamlParseErrorKind::Syntax(error.info().to_owned()),
+                kind: syntax_error_kind(text, error.marker().index(), error.info()),
             })?;
             builder.push(event, span)?;
         }
         Ok(builder.finish())
+    }
+}
+
+/// The kind of a parser error. An alias without an anchor fails in the parser before
+/// it becomes an event, but it is still an alias and gets the same error (CORE-006).
+fn syntax_error_kind(text: &str, index: usize, info: &str) -> YamlParseErrorKind {
+    if text.chars().nth(index) == Some('*') {
+        YamlParseErrorKind::AnchorOrAlias
+    } else {
+        YamlParseErrorKind::Syntax(info.to_owned())
     }
 }

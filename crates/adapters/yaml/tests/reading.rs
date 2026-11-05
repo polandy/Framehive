@@ -82,6 +82,15 @@ fn anchors_and_aliases_are_rejected_at_the_anchor() {
     );
 }
 
+/// spec: CORE-006.5
+#[test]
+fn an_alias_without_an_anchor_is_rejected_at_the_alias() {
+    assert_eq!(
+        located_message("schema_version: 1\ndestination: [*target]\n"),
+        "2:15: anchors and aliases are not allowed"
+    );
+}
+
 /// spec: CORE-006.6
 #[test]
 fn merge_keys_are_rejected_at_the_key() {
