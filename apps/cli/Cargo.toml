@@ -33,6 +33,7 @@ devices.workspace = true
 domain.workspace = true
 files.workspace = true
 history.workspace = true
+jobs.workspace = true
 import.workspace = true
 naming.workspace = true
 

@@ -7,7 +7,10 @@
 use std::path::{Path, PathBuf};
 
 use devices::Device;
-use import::{ImportRun, ScanError, SourceScan, scan_camera, scan_folder};
+use import::{
+    ImportJob, ImportJobReports, ImportJobSettings, ImportPorts, ImportRun, ImportSettings,
+    ScanError, SourceScan, scan_camera, scan_folder,
+};
 
 use super::Ports;
 use crate::cameras::OpenedCamera;
@@ -71,8 +74,8 @@ impl Source {
     /// Returns the scan error; [`ScanError::NoStorage`] for a camera without a storage.
     pub(super) fn scan(&self, ports: &Ports<'_>) -> Result<SourceScan, ScanError> {
         match &self.camera {
-            Some(camera) => scan_camera(camera.file_system.as_ref(), &self.root),
-            None => scan_folder(ports.file_system, &self.root),
+            Some(camera) => scan_camera(&camera.file_system, &self.root),
+            None => scan_folder(ports.file_system(), &self.root),
         }
     }
 
@@ -82,9 +85,26 @@ impl Source {
         let run = ports.import_run();
         match &self.camera {
             Some(camera) => run
-                .with_source(camera.file_system.as_ref())
+                .with_source(&camera.file_system)
                 .with_source_name(&camera.name),
             None => run,
         }
+    }
+
+    /// An import job through `ports` with `settings` that reads this source as
+    /// [`Source::run`] does, and the receiver of its reports (IMPORT-015).
+    pub(super) fn import_job(
+        &self,
+        ports: &ImportPorts,
+        settings: &ImportSettings<'_>,
+    ) -> (ImportJob, ImportJobReports) {
+        let (job, reports) = ImportJob::new(ports.clone(), ImportJobSettings::of(settings));
+        let job = match &self.camera {
+            Some(camera) => {
+                job.with_source(Box::new(camera.file_system.clone()), camera.name.clone())
+            }
+            None => job,
+        };
+        (job, reports)
     }
 }

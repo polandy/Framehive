@@ -9,10 +9,14 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use adapter_gphoto2::Gphoto2Cameras;
-use files::{Camera, CameraError, Cameras, ReadOnlyFileSystem};
+use files::{Camera, CameraError, Cameras};
 use import::{ScanError, SourceScan, scan_camera};
 
 use crate::{NOT_STARTED, report_error};
+
+mod shared;
+
+pub(crate) use shared::SharedCamera;
 
 /// What a source that names a camera starts with.
 const CAMERA_PREFIX: &str = "camera:";
@@ -36,7 +40,7 @@ pub(crate) enum CameraChoice {
 /// Dropping it releases the camera.
 pub(crate) struct OpenedCamera {
     /// The camera's file system, with the root `/` and one folder per storage.
-    pub(crate) file_system: Box<dyn ReadOnlyFileSystem>,
+    pub(crate) file_system: SharedCamera,
     /// `camera:<model>`, as the import log shows the source (CLI-013).
     pub(crate) name: PathBuf,
     /// `the camera <model> at <port>`, or `the camera at <port>` for a camera that is
@@ -52,7 +56,7 @@ impl OpenedCamera {
     /// Returns the message of the scan error; for a camera without a storage, the
     /// line of CLI-013.15 that names the camera.
     pub(crate) fn scan(&self, root: &Path) -> Result<SourceScan, String> {
-        scan_camera(self.file_system.as_ref(), root).map_err(|error| match error {
+        scan_camera(&self.file_system, root).map_err(|error| match error {
             ScanError::NoStorage => self.no_storage_message(),
             error => error.to_string(),
         })
@@ -104,7 +108,7 @@ pub(crate) fn open_camera(
     };
     match cameras.open(&port) {
         Ok(file_system) => Ok(OpenedCamera {
-            file_system,
+            file_system: SharedCamera::new(file_system),
             name: PathBuf::from(format!(
                 "{CAMERA_PREFIX}{}",
                 model.as_deref().unwrap_or(&port)
@@ -138,7 +142,7 @@ pub(crate) fn open_listed_camera(
 ) -> Result<OpenedCamera, OpenFailure> {
     match cameras.open(port) {
         Ok(file_system) => Ok(OpenedCamera {
-            file_system,
+            file_system: SharedCamera::new(file_system),
             name: PathBuf::from(format!("{CAMERA_PREFIX}{model}")),
             described: described_camera(Some(model), port),
         }),

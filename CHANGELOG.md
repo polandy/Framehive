@@ -129,6 +129,9 @@ All user-visible changes are listed here. The format follows
   `Release <model>?`. A camera disconnected during the import, or one that stops
   answering, stops the import like a pulled card; connected again, it is imported
   where it stopped without a question.
+- Job queue (CORE-007, IMPORT-015, ADR 0035): imports now run as jobs in a job queue
+  with one worker thread, first in, first out. `framehive import` and the guided import
+  show the same output as before; a pulled card or camera still stops the import.
 
 ### Fixed
 

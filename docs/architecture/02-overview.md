@@ -18,7 +18,7 @@ Part of the [architecture](README.md).
 │  catalog    index & queries over all assets (read model, port: CatalogStore)            │
 │  metadata   XMP/EXIF/IPTC model, read/write/merge, own EXIF reader (port: MetadataCodec)│
 │  volumes    storage locations, volume IDs, path mapping, online/offline                 │
-│  jobs       queue, scheduler, priorities, resume (port: JobStore)                       │
+│  jobs       job queue: one worker, first in, first out (later: priorities, resume)      │
 │  previews   thumbnails & previews, cache (port: PreviewDecoder)                         │
 │  naming     template language for file and folder names                                 │
 │  files      file system and hashing, verified copy (ports: FileSystem, Hasher)          │

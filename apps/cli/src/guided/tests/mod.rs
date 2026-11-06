@@ -16,6 +16,7 @@ mod import;
 mod naming;
 mod readiness;
 mod sequence;
+mod shared;
 mod start;
 mod state;
 mod summary;

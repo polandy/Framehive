@@ -8,7 +8,7 @@ Part of the [architecture](README.md).
 | Camera source | `files::Cameras` | libgphoto2 (PTP, MTP; ADR 0034) |
 | Metadata format | `metadata::MetadataCodec` | XMP sidecar, embedded XMP, EXIF, IPTC-IIM |
 | Preview decoder | `previews::PreviewDecoder` | Embedded JPEG, RAW (LibRaw), HEIF, video (ffmpeg), Immich thumbnails |
-| Job kind | `jobs::JobKind` | Import, writing XMP, hashing, faces |
+| Job kind | `jobs::Job` | Import (IMPORT-015); later writing XMP, hashing, faces |
 | Search provider | `catalog::SearchProvider` | Full text, filters, Immich smart search, local CLIP similarity |
 | Face provider | `catalog::FaceProvider` | Immich faces and people (ADR 0013), later local recognition (ONNX) |
 | Export target | `export::Exporter` | JPEG/AVIF, folder, hook |

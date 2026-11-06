@@ -18,6 +18,7 @@ config.workspace = true
 domain.workspace = true
 files.workspace = true
 history.workspace = true
+jobs.workspace = true
 kernel.workspace = true
 metadata.workspace = true
 naming.workspace = true

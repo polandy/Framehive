@@ -50,7 +50,11 @@ Names in the code follow this glossary.
 | Cameras | `Cameras` | Port of the `files` service that lists the connected cameras and opens one; implemented by `adapter-gphoto2` with libgphoto2 (ADR 0034) |
 | Hasher | `Hasher` | Port of the `files` service that computes a checksum; implemented by `adapter-blake3` |
 | Part file | `.part` file | `<target>.part` next to the target path; a verified copy writes it and renames it to the target only when it is complete (IMPORT-004) |
-| Job | `Job` | Background work in the queue |
+| Job | `Job` | Background work in the job queue; it runs on the queue's worker thread and ends `Finished`, `Stopped` or `Failed` (CORE-007, ADR 0035) |
+| Job queue | `JobQueue` | Runs jobs one at a time on one worker thread, first in, first out; stops the running job, removes a queued one, and reports each job's state over a channel of its own (CORE-007, ADR 0035) |
+| Job ID | `JobId` | Names a job in its job queue; numbered from 1 per queue in the order the jobs were enqueued (CORE-007) |
+| Job state | `JobState` | Where a job is: `Queued`, `Running`, `Finished`, `Stopped`, `Failed` with a message, or `Removed` (CORE-007) |
+| Import job | `ImportJob` | An import run as a job: it owns its settings, ports and source, reports each step to whoever enqueued it, and hands an opened camera back when it ends (IMPORT-015) |
 | Index | `Index` | Machine-local database, reconstructible from files |
 | Rating | `Rating` | 0–5 stars |
 | Pick state | `PickState` | Keep / pending / rejected |

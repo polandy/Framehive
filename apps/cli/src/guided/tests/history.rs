@@ -5,6 +5,7 @@
 
 use std::io;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::time::Duration;
 
 use adapter_sqlite::SqliteImportHistory;
@@ -95,7 +96,7 @@ fn a_history_that_cannot_be_used_keeps_the_card_from_being_imported() {
     std::fs::write(history.file(), b"not a SQLite database".repeat(100)).unwrap();
     let file = history.file().display().to_string();
     let mut harness = with_three_files("{name}.{ext}");
-    harness.history = Box::new(history);
+    harness.history = Arc::new(history);
 
     let transcript = harness.run(vec![Step::Line("")]);
 

@@ -7,6 +7,7 @@
 
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use adapter_blake3::Blake3Hasher;
 use adapter_clock::SystemClock;
@@ -15,9 +16,11 @@ use adapter_sequence_counters::FileSequenceCounters;
 use adapter_sqlite::SqliteImportHistory;
 use files::{Cameras, FileSystem, FreeSpace};
 use import::{
-    CAMERA_FORMAT_READINESS_NOTE, ImportProfile, ImportRun, ImportSettings, ImportSummary,
-    PlannedRun, ProgressSink, SessionSequence, SpaceShortage, scan_source,
+    CAMERA_FORMAT_READINESS_NOTE, ImportJob, ImportJobReports, ImportJobSettings, ImportPorts,
+    ImportProfile, ImportRun, ImportSettings, ImportSummary, PlannedRun, ProgressSink,
+    SessionSequence, SpaceShortage, scan_source,
 };
+use jobs::JobQueue;
 use naming::CompatibilityMode;
 
 use super::folders::{Folders, backup_names, resolve_folders, unusable_message};
@@ -27,14 +30,14 @@ use crate::cameras::{OpenedCamera, camera_choice, open_camera};
 use crate::guided::space_text;
 use crate::paths::create_destination;
 use crate::report::ReportPrinter;
-use crate::{write_error, write_warning};
+use crate::{JOB_ENDED_UNEXPECTEDLY, write_error, write_warning};
 
 /// What the import takes from the process: the tests give their own.
 pub(super) struct Surroundings<'a> {
     /// The state folder of CLI-004, with the sequence counters and the import history.
     pub(super) state_folder: &'a Path,
     /// The free space of the destinations (IMPORT-012).
-    pub(super) free_space: &'a dyn FreeSpace,
+    pub(super) free_space: Arc<dyn FreeSpace + Send + Sync>,
     /// The connected cameras, for a `camera:` source (CLI-013).
     pub(super) cameras: &'a dyn Cameras,
     /// Standard output, for the report.
@@ -117,31 +120,23 @@ pub(super) fn import_with(
         (&backup_paths, &video_backup_paths),
         arguments.dry_run,
     );
-    let file_system = StdFileSystem::new();
-    let clock = SystemClock::new();
-    let counters = FileSequenceCounters::new(surroundings.state_folder.to_path_buf());
-    let session = SessionSequence::new();
-    let history = SqliteImportHistory::new(surroundings.state_folder);
-    let mut run = ImportRun::new(
-        &file_system,
-        &Blake3Hasher,
-        &clock,
-        &counters,
-        &session,
-        &history,
-        surroundings.free_space,
-    );
+    let ports = import_ports(surroundings.state_folder, surroundings.free_space);
+    let mut run = ports.import_run();
     let mut printer = ReportPrinter::new(surroundings.output, arguments.dry_run)
         .with_backup_names(backup_names(&folders));
     let scan = if let Some(camera) = &camera {
         run = run
-            .with_source(camera.file_system.as_ref())
+            .with_source(&camera.file_system)
             .with_source_name(&camera.name);
         printer = printer.with_format_readiness_note(CAMERA_FORMAT_READINESS_NOTE);
         camera.scan(&folders.source)
     } else {
-        scan_source(&file_system, &folders.source, &folders.destination.path)
-            .map_err(|error| error.to_string())
+        scan_source(
+            &*ports.file_system,
+            &folders.source,
+            &folders.destination.path,
+        )
+        .map_err(|error| error.to_string())
     }?;
     printer.scan_finished(&scan);
     let plan = run
@@ -156,17 +151,53 @@ pub(super) fn import_with(
         return Err(shortages);
     }
     if !arguments.dry_run {
-        create_destinations(&file_system, &folders)?;
+        create_destinations(&*ports.file_system, &folders)?;
     }
-    let plan = run
-        .start(&settings, plan)
-        .map_err(|error| error.to_string())?;
-    let summary = run.execute(&settings, plan, &mut printer);
+    let (job, reports) = ImportJob::new(ports.clone(), ImportJobSettings::of(&settings));
+    let mut job = job.with_plan(plan);
+    if let Some(camera) = &camera {
+        job = job.with_source(Box::new(camera.file_system.clone()), camera.name.clone());
+    }
+    let summary = run_job(job, reports, &mut printer)?;
     printer.print_summary(&summary);
     if let Some(error) = &summary.history_error {
         write_error(surroundings.errors, &error.to_string());
     }
     Ok(summary)
+}
+
+/// The ports of the import: the library on this machine, the state in `state_folder`.
+fn import_ports(state_folder: &Path, free_space: Arc<dyn FreeSpace + Send + Sync>) -> ImportPorts {
+    ImportPorts {
+        file_system: Arc::new(StdFileSystem::new()),
+        hasher: Arc::new(Blake3Hasher),
+        clock: Arc::new(SystemClock::new()),
+        counters: Arc::new(FileSequenceCounters::new(state_folder.to_path_buf())),
+        session: Arc::new(SessionSequence::new()),
+        history: Arc::new(SqliteImportHistory::new(state_folder)),
+        free_space,
+    }
+}
+
+/// Runs `job` in a job queue of its own (IMPORT-015) and shows its reports with
+/// `printer` as they come.
+///
+/// # Errors
+///
+/// Returns the message of the run error when the planned run cannot start.
+fn run_job(
+    job: ImportJob,
+    reports: ImportJobReports,
+    printer: &mut dyn ProgressSink,
+) -> Result<ImportSummary, NotStarted> {
+    let (mut queue, _updates) = JobQueue::start();
+    queue.enqueue(Box::new(job));
+    let end = reports
+        .follow(printer)
+        .ok_or_else(|| JOB_ENDED_UNEXPECTEDLY.to_owned())?;
+    // An opened camera comes back with the end report; the caller still holds it.
+    end.result
+        .map_err(|error| NotStarted::from(error.to_string()))
 }
 
 /// Checks that each file system can hold what the run writes to it, before any folder

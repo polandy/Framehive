@@ -21,6 +21,7 @@ members = [
     "crates/services/devices",
     "crates/services/files",
     "crates/services/history",
+    "crates/services/jobs",
     "crates/services/metadata",
     "crates/services/naming",
     "crates/services/previews",
@@ -55,6 +56,7 @@ files = { path = "crates/services/files" }
 history = { path = "crates/services/history" }
 import = { path = "modules/import/import" }
 import-ui = { path = "modules/import/import-ui" }
+jobs = { path = "crates/services/jobs" }
 kernel = { path = "crates/kernel" }
 metadata = { path = "crates/services/metadata" }
 naming = { path = "crates/services/naming" }

@@ -5,19 +5,18 @@
 //! copies each file with a verified copy (ADR 0020 §1, IMPORT-004). Planning and
 //! execution are separate steps, so a caller can preview a plan before it runs.
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use domain::{Clock, LocalDateTime};
 use files::{FileSystem, FreeSpace, Hasher, ReadOnlyFileSystem};
 use history::ImportHistory;
 use metadata::NoCaptureTime;
-use naming::{CompatibilityMode, NameTemplate, SequenceCounters};
+use naming::SequenceCounters;
 
 use crate::backup::BackupCounts;
-use crate::conflicts::ConflictPolicy;
 use crate::destinations::check_destinations;
 use crate::free_space::{FreeSpaceUnknown, NotEnoughSpace};
-use crate::job_code::{JobCode, require_job_code};
+use crate::job_code::require_job_code;
 use crate::plan::PlannedFile;
 use crate::report::{FileError, ImportSummary, ProgressSink, RunError};
 use crate::scan::{FoundFile, LeftOut, SourceScan, scan_source};
@@ -30,41 +29,17 @@ mod planning;
 mod recognition;
 mod rename;
 mod resolvers;
+mod settings;
 mod source;
+mod steps;
 
 use planning::PlanInputs;
 use recognition::{Recognition, RecordedRun};
 use rename::rename;
 use resolvers::Resolvers;
-
-/// What to import, from where to where, and how.
-#[derive(Debug, Clone, Copy)]
-pub struct ImportSettings<'a> {
-    /// The folder to import from, absolute and without `..`.
-    pub source: &'a Path,
-    /// The import destination, absolute and without `..`.
-    pub destination: &'a Path,
-    /// The backup destinations, absolute and without `..`, in the order they are
-    /// used (IMPORT-007). Each file goes to the same target path below each of them.
-    pub backup_destinations: &'a [PathBuf],
-    /// The video destination, absolute and without `..`: where videos are copied to
-    /// (IMPORT-013). `None` copies them to the import destination.
-    pub video_destination: Option<&'a Path>,
-    /// The video backup destinations, absolute and without `..`, in the order they
-    /// are used (IMPORT-013). Empty backs videos up to the backup destinations, so
-    /// videos are never left without a backup while photos have one.
-    pub video_backup_destinations: &'a [PathBuf],
-    /// The name template for the target paths (IMPORT-001).
-    pub template: &'a NameTemplate,
-    /// The job code for `{job}` (IMPORT-006); required when the template uses it.
-    pub job_code: Option<&'a JobCode>,
-    /// Whether target names are kept compatible with every file system (IMPORT-001).
-    pub mode: CompatibilityMode,
-    /// What happens when a target name holds a different file (IMPORT-003).
-    pub policy: ConflictPolicy,
-    /// Plan and resolve conflicts, but write nothing (CLI-001, `--dry-run`).
-    pub dry_run: bool,
-}
+pub use settings::ImportSettings;
+use steps::Keeping;
+pub(crate) use steps::RunSteps;
 
 /// The execution of an import plan (glossary: Import run).
 ///
@@ -214,6 +189,18 @@ impl<'a> ImportRun<'a> {
         settings: &ImportSettings<'_>,
         progress: &mut dyn ProgressSink,
     ) -> Result<ImportSummary, RunError> {
+        let mut keeping = Keeping::new(progress);
+        let summary = self.run_steps(settings, &mut keeping)?;
+        Ok(keeping.into_summary(summary))
+    }
+
+    /// [`ImportRun::run`], handing each file report over to `steps` by value; the
+    /// summary it returns holds no file reports.
+    pub(crate) fn run_steps(
+        &self,
+        settings: &ImportSettings<'_>,
+        steps: &mut dyn RunSteps,
+    ) -> Result<ImportSummary, RunError> {
         // The job code and the import time are checked before the scan, so a run that
         // cannot start does not scan the source.
         require_job_code(settings.template, settings.job_code)?;
@@ -224,10 +211,10 @@ impl<'a> ImportRun<'a> {
             settings.source,
             settings.destination,
         )?;
-        progress.scan_finished(&scan);
+        steps.scan_finished(&scan);
         let plan = self.plan_at(settings, scan.files, scan.left_out, import_time)?;
         let plan = self.start(settings, plan)?;
-        Ok(self.execute(settings, plan, progress))
+        Ok(self.execute_steps(settings, plan, steps))
     }
 
     /// Plans every file of `scan`: see [`ImportRun::plan_first`].
@@ -334,20 +321,39 @@ impl<'a> ImportRun<'a> {
         plan: PlannedRun,
         progress: &mut dyn ProgressSink,
     ) -> ImportSummary {
+        let mut keeping = Keeping::new(progress);
+        let summary = self.execute_steps(settings, plan, &mut keeping);
+        keeping.into_summary(summary)
+    }
+
+    /// [`ImportRun::execute`], handing each file report over to `steps` by value once
+    /// the backup counts hold it; the summary it returns holds no file reports.
+    pub(crate) fn execute_steps(
+        &self,
+        settings: &ImportSettings<'_>,
+        plan: PlannedRun,
+        steps: &mut dyn RunSteps,
+    ) -> ImportSummary {
         let mut resolvers = Resolvers::new(self, settings);
-        let mut files = Vec::with_capacity(plan.files.len());
+        let mut backups: Vec<BackupCounts> = settings
+            .all_backup_destinations()
+            .into_iter()
+            .map(BackupCounts::new)
+            .collect();
         let mut stopped = false;
         let mut history_error = None;
         for file in plan.files {
-            if !progress.should_continue() {
+            if !steps.should_continue() {
                 stopped = true;
                 break;
             }
-            progress.file_started(&file.found.path);
+            steps.file_started(&file.found.path);
             let (report, recorded) =
                 self.execute_file(settings, &mut resolvers, file, plan.recorded);
-            progress.file_finished(&report);
-            files.push(report);
+            for counts in &mut backups {
+                counts.count(report.backups.iter());
+            }
+            steps.file_finished(report);
             if let Err(error) = recorded {
                 history_error = Some(error);
                 break;
@@ -358,15 +364,8 @@ impl<'a> ImportRun<'a> {
         {
             history_error.get_or_insert(error);
         }
-        let backups = settings
-            .all_backup_destinations()
-            .into_iter()
-            .map(|destination| {
-                BackupCounts::of(destination, files.iter().flat_map(|file| &file.backups))
-            })
-            .collect();
         ImportSummary {
-            files,
+            files: Vec::new(),
             left_out: plan.left_out,
             stopped,
             dry_run: settings.dry_run,

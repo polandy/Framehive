@@ -45,7 +45,7 @@ fn camera_with(files: &[&str]) -> MemoryFileSystem {
 }
 
 /// Opens `camera` through `MemoryCameras`.
-fn open(camera: &MemoryFileSystem) -> Box<dyn ReadOnlyFileSystem> {
+fn open(camera: &MemoryFileSystem) -> Box<dyn ReadOnlyFileSystem + Send> {
     let cameras = MemoryCameras::new().with_camera("Fujifilm X-T5", PORT, camera);
     cameras.open(PORT).unwrap()
 }

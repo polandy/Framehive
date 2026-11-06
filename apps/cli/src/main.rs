@@ -27,6 +27,10 @@ const FILES_FAILED: u8 = 1;
 /// The exit code when the import did not start (CLI-001).
 const NOT_STARTED: u8 = 2;
 
+/// Why an import job ended without an end report (IMPORT-015): only a fault in the
+/// import itself can cause it, as the job queue reports a panicking job.
+const JOB_ENDED_UNEXPECTEDLY: &str = "the import stopped unexpectedly";
+
 fn main() -> ExitCode {
     match arguments::parse(std::env::args_os()) {
         Ok(invocation) => run(&invocation),

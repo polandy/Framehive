@@ -53,7 +53,7 @@ impl Cameras for Gphoto2Cameras {
         Ok(cameras_from(detected))
     }
 
-    fn open(&self, port: &str) -> Result<Box<dyn ReadOnlyFileSystem>, CameraError> {
+    fn open(&self, port: &str) -> Result<Box<dyn ReadOnlyFileSystem + Send>, CameraError> {
         let model = model_at(port)?;
         let mut session = Session::open(&model, port).map_err(|error| camera_error(port, error))?;
         // Opening succeeds on a missing folder of the `directory` driver; listing the

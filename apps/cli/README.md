@@ -136,7 +136,7 @@ the log after real imports, or of a history written with `adapter-sqlite`.
 
 - `adapter-blake3`, `adapter-clock`, `adapter-fs`, `adapter-gphoto2`, `adapter-mounts`,
   `adapter-sequence-counters`, `adapter-sqlite`, `adapter-yaml`, `config`, `devices`,
-  `domain`, `files`, `history`, `import`, `naming`
+  `domain`, `files`, `history`, `import`, `jobs`, `naming`
 
 - `clap` (ADR 0020 §6): `default-features = false`, features `std`, `help`, `usage`,
   `error-context`.
