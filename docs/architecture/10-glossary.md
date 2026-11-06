@@ -15,9 +15,9 @@ Names in the code follow this glossary.
 | Library root | `LibraryRoot` | A root directory with a marker file and a UUID |
 | Volume | `Volume` | Physical or network storage medium on which library roots reside |
 | Source | `Source` | What is imported from: camera, card, phone, folder |
-| Device | `Device` | A removable storage medium, such as a memory card, as it is offered for import |
-| Device source | `DeviceSource` | Port of the `devices` service that lists the devices that are present, sorted by mount point, and ejects one; implemented by `adapter-mounts` (DEVICES-001) |
-| Device watch | `DeviceWatch` | Compares the device list of each poll with that of the last successful poll and reports removed, then added devices (DEVICES-001) |
+| Device | `Device` | A memory card mounted as a file system, identified by its mount point, or a camera connected over PTP or MTP, identified by its model and port, as it is offered for import |
+| Device source | `DeviceSource` | Port of the `devices` service that lists the cards that are present, sorted by mount point, and ejects one; implemented by `adapter-mounts` (DEVICES-001) |
+| Device watch | `DeviceWatch` | Polls the device source and the cameras, compares the device list with that of the last poll and reports removed, then added devices; a kind that cannot be listed keeps its last devices (DEVICES-001) |
 | Guided import | `framehive` without arguments | The line-based dialog that waits for a memory card, shows the plan, imports the card on Enter and ejects it; it remembers its answers (CLI-002, CLI-003, ADR 0024) |
 | Name template | `NameTemplate` | Text that derives an imported file's folders and name (IMPORT-001) |
 | Job code | `JobCode` | A short label the user gives an import, inserted by the `{job}` token of a name template (IMPORT-006). Not to be confused with a job |

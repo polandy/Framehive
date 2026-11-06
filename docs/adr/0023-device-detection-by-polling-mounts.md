@@ -108,3 +108,19 @@ processes are started with `std::process::Command`.
   eject fails with a clear message.
 - If events are needed later, an event-based adapter can replace polling behind the
   same port; `DeviceWatch` then stays the place that turns lists into changes.
+
+## Amendment (2026-11-06): a device is a card or a camera
+
+Owner decision F4, for the guided import of cameras (CLI-014):
+
+- A `Device` is either a card, identified by its mount point, or a camera connected over
+  PTP or MTP, identified by its model and port. A camera that is plugged in again gets a
+  new port and so counts as a new device.
+- `DeviceWatch` polls both kinds every second. The two lists are independent: if one
+  fails, the watch keeps that kind's last devices and still reports the other's changes.
+- The `devices` service depends on the `files` service for its `Cameras` port (service to
+  service, acyclic). `DeviceSource` stays a port for cards only; ejecting a camera is
+  "not present".
+- The app composes the mounts `DeviceSource` and the libgphoto2 `Cameras` adapter
+  (ADR 0034) and hands both to the watch. The guided import offers the cameras it finds
+  (CLI-014).
