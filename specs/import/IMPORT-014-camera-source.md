@@ -1,6 +1,6 @@
 # IMPORT-014 – Cameras and phones as a source
 
-- Status: accepted
+- Status: implemented
 - Module: import
 - Origin: Q2, N26
 - Depends on: IMPORT-004, IMPORT-005, IMPORT-008, IMPORT-009
@@ -36,7 +36,12 @@ because it was unplugged, every file that is not yet copied fails with the reaso
 camera gives, the run ends, and the run is not ready to be formatted (IMPORT-008).
 
 **Format readiness.** The format readiness of a camera run covers the files below `DCIM`
-of each storage, because those are all the import looks at.
+of each storage, because those are all the import looks at. A phone keeps files outside
+`DCIM` that the import neither copies nor backs up, so the format readiness of a camera
+run says so in a note of its own, after the verdict:
+
+> Only the files below DCIM were checked. Files outside DCIM, such as a phone's other
+> folders, are not backed up.
 
 ## Acceptance criteria
 
@@ -99,7 +104,9 @@ of each storage, because those are all the import looks at.
 - **Given** the camera of IMPORT-014.2
 - **When** it is imported and every file below `DCIM` is verified at the import
   destination
-- **Then** the run is ready to be formatted, whatever lies outside `DCIM`
+- **Then** the run is ready to be formatted, whatever lies outside `DCIM`, and its format
+  readiness carries the note that only the files below `DCIM` were checked and that the
+  files outside `DCIM` are not backed up
 
 ## Out of scope
 
@@ -121,3 +128,4 @@ of each storage, because those are all the import looks at.
 | Date | Change |
 |---|---|
 | 2026-11-06 | Initial version; owner decisions E1–E7 of 2026-11-06 (ADR 0034) |
+| 2026-11-06 | IMPORT-014.10: the format readiness of a camera run notes that only the files below `DCIM` were checked (owner decision E8) |

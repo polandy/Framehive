@@ -31,7 +31,9 @@ once and at most ten; the caller stores and restores it.
 The source scan (IMPORT-005) walks the source folder and lists each supported file
 with its role, size and modification time, and each file or folder it leaves out with
 the reason: unsupported type, hidden, symbolic link, sidecar until grouping, or cannot
-be read. `TargetResolver` resolves name conflicts and files already imported
+be read. `scan_camera` scans a camera or phone (IMPORT-014): only the folder `DCIM` at
+the top of each storage, with the same rules, giving paths that start with the storage
+folder; `CAMERA_FORMAT_READINESS_NOTE` is the note its format readiness carries. `TargetResolver` resolves name conflicts and files already imported
 (IMPORT-003) against the destination and the earlier files of the plan, comparing
 names by their canonical caseless key, without regard to case and Unicode
 normalization form (ADR 0026); a destination may hold several names with one key,
@@ -70,6 +72,8 @@ Boundaries:
 | `ImportPlan` | Pure description of which file goes where, with what name (IMPORT-001) |
 | `AssetFile` | One file of an asset as the import finds it: name, role, capture and modification time |
 | `PlannedFile` | The target path of one file, or why it cannot be named, its date and its date source |
+| `scan_camera` | The scan of an opened camera: `DCIM` of each storage only (IMPORT-014) |
+| `FormatReadiness`, `FormatBlocker`, `CAMERA_FORMAT_READINESS_NOTE` | Whether the source can be formatted and what keeps it (IMPORT-008); the note of a camera run (IMPORT-014.10) |
 | `scan_source`, `scan_folder`, `SourceScan`, `FoundFile`, `LeftOut`, `LeftOutReason`, `ScanError` | The source scan and its result (IMPORT-005); `scan_folder` scans without the destination check |
 | `TargetResolver`, `TargetRequest`, `ConflictPolicy`, `ConflictOutcome`, `ConflictError` | Conflict resolution against the destination and the plan (IMPORT-003) |
 | `JobCode`, `JobCodeError`, `MAX_JOB_CODE_CHARACTERS` | A validated job code and why a text is not one (IMPORT-006) |

@@ -157,10 +157,44 @@ pub fn scan_folder(
         scan: SourceScan::default(),
     };
     scanner.visit_entries(Path::new(""), entries);
-    let mut scan = scanner.scan;
-    scan.files.sort_by(|a, b| byte_order(&a.path, &b.path));
-    scan.left_out.sort_by(|a, b| byte_order(&a.path, &b.path));
-    Ok(scan)
+    Ok(scanner.into_sorted_scan())
+}
+
+/// The folder of a camera storage that holds its photos and videos (DCF), the only
+/// folder the scan of a camera enters (ADR 0034 §4).
+const CAMERA_PHOTO_FOLDER: &str = "DCIM";
+
+/// Scans the camera whose file system has its root at `root` (IMPORT-014): the folder
+/// `DCIM` at the top of each storage, with its subfolders, by the rules of
+/// [`scan_folder`].
+///
+/// Each top-level folder of the camera is a storage. Everything outside `DCIM` is not
+/// looked at and not listed as left out, and a storage without `DCIM` gives no files.
+/// The paths are relative to `root` and start with the storage folder, for example
+/// `store_00010001/DCIM/100_FUJI/DSCF0001.RAF`. A camera lies on a device of its own,
+/// so there is no import destination to refuse.
+///
+/// # Errors
+///
+/// Returns a [`ScanError`] if the root of the camera does not exist, is not a folder
+/// or cannot be read. A `DCIM` folder that cannot be looked at is listed in
+/// [`SourceScan::left_out`] instead, so it keeps the camera from being formatted.
+pub fn scan_camera(
+    file_system: &dyn ReadOnlyFileSystem,
+    root: &Path,
+) -> Result<SourceScan, ScanError> {
+    let storages = list_source(file_system, root)?;
+    let mut scanner = Scanner {
+        file_system,
+        source: root,
+        scan: SourceScan::default(),
+    };
+    for storage in storages {
+        if storage.kind == EntryKind::Folder {
+            scanner.visit_photo_folder(Path::new(&storage.name).join(CAMERA_PHOTO_FOLDER));
+        }
+    }
+    Ok(scanner.into_sorted_scan())
 }
 
 fn list_source(
@@ -203,6 +237,23 @@ struct Scanner<'a> {
 }
 
 impl Scanner<'_> {
+    /// The scan, each list in byte order of its paths.
+    fn into_sorted_scan(self) -> SourceScan {
+        let mut scan = self.scan;
+        scan.files.sort_by(|a, b| byte_order(&a.path, &b.path));
+        scan.left_out.sort_by(|a, b| byte_order(&a.path, &b.path));
+        scan
+    }
+
+    /// Scans the `DCIM` folder of a camera storage at `path`, if the storage has one.
+    fn visit_photo_folder(&mut self, path: PathBuf) {
+        match self.file_system.entry(&self.source.join(&path)) {
+            Ok(Some(EntryKind::Folder)) => self.visit_folder(path),
+            Ok(_) => {}
+            Err(error) => self.leave_out(path, cannot_be_read(&error)),
+        }
+    }
+
     fn visit_entries(&mut self, folder: &Path, entries: Vec<FolderEntry>) {
         for entry in entries {
             let path = folder.join(&entry.name);
