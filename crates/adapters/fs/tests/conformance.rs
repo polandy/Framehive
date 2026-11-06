@@ -38,7 +38,7 @@ fn list_folder_fails_like_read_dir_for_a_folder_without_permission() {
     use std::fs::{self, Permissions};
     use std::os::unix::fs::PermissionsExt;
 
-    use files::FileSystem;
+    use files::ReadOnlyFileSystem;
 
     let folder = TempDir::new().unwrap();
     let locked = folder.path().join("locked");

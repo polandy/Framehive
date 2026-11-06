@@ -9,7 +9,7 @@ use std::io;
 use std::path::{Component, Path, PathBuf};
 
 use domain::{AssetFileRole, Timestamp};
-use files::{EntryKind, FileSystem, FolderEntry};
+use files::{EntryKind, FolderEntry, ReadOnlyFileSystem};
 
 use crate::roles::role_for_extension;
 
@@ -124,7 +124,7 @@ pub enum ScanError {
 /// source does not exist, is not a folder or cannot be read. A subfolder or file
 /// that cannot be read is listed in [`SourceScan::left_out`] instead.
 pub fn scan_source(
-    file_system: &dyn FileSystem,
+    file_system: &dyn ReadOnlyFileSystem,
     source: &Path,
     destination: &Path,
 ) -> Result<SourceScan, ScanError> {
@@ -146,7 +146,10 @@ pub fn scan_source(
 ///
 /// Returns a [`ScanError`] if the source does not exist, is not a folder or cannot be
 /// read.
-pub fn scan_folder(file_system: &dyn FileSystem, source: &Path) -> Result<SourceScan, ScanError> {
+pub fn scan_folder(
+    file_system: &dyn ReadOnlyFileSystem,
+    source: &Path,
+) -> Result<SourceScan, ScanError> {
     let entries = list_source(file_system, source)?;
     let mut scanner = Scanner {
         file_system,
@@ -160,7 +163,10 @@ pub fn scan_folder(file_system: &dyn FileSystem, source: &Path) -> Result<Source
     Ok(scan)
 }
 
-fn list_source(file_system: &dyn FileSystem, source: &Path) -> Result<Vec<FolderEntry>, ScanError> {
+fn list_source(
+    file_system: &dyn ReadOnlyFileSystem,
+    source: &Path,
+) -> Result<Vec<FolderEntry>, ScanError> {
     let path = source.to_path_buf();
     match file_system.entry(source) {
         Ok(Some(EntryKind::Folder)) => {}
@@ -191,7 +197,7 @@ fn byte_order(a: &Path, b: &Path) -> std::cmp::Ordering {
 }
 
 struct Scanner<'a> {
-    file_system: &'a dyn FileSystem,
+    file_system: &'a dyn ReadOnlyFileSystem,
     source: &'a Path,
     scan: SourceScan,
 }

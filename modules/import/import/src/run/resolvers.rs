@@ -22,6 +22,7 @@ impl<'a> Resolvers<'a> {
     pub(super) fn new(run: &ImportRun<'a>, settings: &ImportSettings<'a>) -> Self {
         let resolver = |destination| {
             TargetResolver::new(
+                run.source_file_system,
                 run.file_system,
                 run.hasher,
                 settings.source,

@@ -199,16 +199,14 @@ impl ImportRun<'_> {
                 }
             })
             .collect();
-        let mut targets: Vec<&Path> = Vec::new();
-        if to_import_destination {
-            targets.push(&copy.import_target);
-        }
-        for (path, found) in copy.backup_targets.iter().zip(&found) {
-            if matches!(found, BackupTarget::Free) {
-                targets.push(path);
-            }
-        }
-        let copies = copy_verified_to_all(self.file_system, self.hasher, &copy.source, &targets);
+        let targets = targets_to_write(copy, &found, to_import_destination);
+        let copies = copy_verified_to_all(
+            self.source_file_system,
+            self.file_system,
+            self.hasher,
+            &copy.source,
+            &targets,
+        );
         let mut results = copies.targets.into_iter();
         let imported = if to_import_destination {
             results.next()
@@ -327,6 +325,25 @@ impl<'a> FileCopy<'a> {
         self.recognition
             .is_some_and(|recognition| recognition.is_backed_up_before(destination))
     }
+}
+
+/// The targets the copy writes: the import target when `to_import_destination`,
+/// then each backup target that `found` free, in the order of the destinations.
+fn targets_to_write<'c>(
+    copy: &'c FileCopy<'_>,
+    found: &[BackupTarget],
+    to_import_destination: bool,
+) -> Vec<&'c Path> {
+    let mut targets: Vec<&Path> = Vec::new();
+    if to_import_destination {
+        targets.push(&copy.import_target);
+    }
+    for (path, found) in copy.backup_targets.iter().zip(found) {
+        if matches!(found, BackupTarget::Free) {
+            targets.push(path);
+        }
+    }
+    targets
 }
 
 /// The error for a target without a result. Never expected: the verified copy gives

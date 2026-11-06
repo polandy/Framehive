@@ -53,7 +53,8 @@ Boundaries:
   (`should_continue`, IMPORT-004.13); a stopped run sets `ImportSummary::stopped`. It
   becomes the body of the import job once the jobs service exists.
 - **Never writes to the source** and never replaces a file at the destination
-  (ADR 0020 §2).
+  (ADR 0020 §2). The scan, dating, recognition, conflict resolution and the copy read
+  the source only through the `ReadOnlyFileSystem` port (ADR 0034).
 - **Grouping** of files into assets is defined by LIBRARY-001; the module uses it and
   does not redefine it. `ImportPlan::new` takes assets that are already grouped.
 - **Not covered yet:** metadata tokens, camera time correction, sidecars (until

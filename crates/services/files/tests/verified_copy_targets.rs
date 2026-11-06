@@ -18,8 +18,8 @@ use std::rc::Rc;
 use domain::{Checksum, Timestamp};
 use files::testing::{Fault, FnvHasher, MemoryFileSystem};
 use files::{
-    CopyErrorKind, CopyStep, EntryKind, FileSystem, FolderEntry, Hasher, ReadSeek, VerifiedCopies,
-    WriteFile, copy_verified_to_all,
+    CopyErrorKind, CopyStep, EntryKind, FileSystem, FolderEntry, Hasher, ReadOnlyFileSystem,
+    ReadSeek, VerifiedCopies, WriteFile, copy_verified_to_all,
 };
 
 const SOURCE: &str = "/card/DCIM/100_FUJI/DSCF0001.RAF";
@@ -50,7 +50,13 @@ fn targets() -> [&'static Path; 3] {
 }
 
 fn copy_to_all(file_system: &dyn FileSystem, targets: &[&Path]) -> VerifiedCopies {
-    copy_verified_to_all(file_system, &FnvHasher, Path::new(SOURCE), targets)
+    copy_verified_to_all(
+        file_system,
+        file_system,
+        &FnvHasher,
+        Path::new(SOURCE),
+        targets,
+    )
 }
 
 fn checksum_of(content: &[u8]) -> Checksum {
@@ -90,19 +96,19 @@ impl Seek for CountingReader {
     }
 }
 
-impl FileSystem for CountingReads<'_> {
+impl ReadOnlyFileSystem for CountingReads<'_> {
     fn entry(&self, path: &Path) -> io::Result<Option<EntryKind>> {
         self.inner.entry(path)
     }
+
     fn list_folder(&self, path: &Path) -> io::Result<Vec<FolderEntry>> {
         self.inner.list_folder(path)
     }
+
     fn file_size(&self, path: &Path) -> io::Result<u64> {
         self.inner.file_size(path)
     }
-    fn create_folder(&self, path: &Path) -> io::Result<()> {
-        self.inner.create_folder(path)
-    }
+
     fn open_read(&self, path: &Path) -> io::Result<Box<dyn ReadSeek>> {
         let reader = self.inner.open_read(path)?;
         if path != Path::new(SOURCE) {
@@ -114,18 +120,29 @@ impl FileSystem for CountingReads<'_> {
             bytes_read: Rc::clone(&self.bytes_read),
         }))
     }
-    fn create_file(&self, path: &Path) -> io::Result<Box<dyn WriteFile>> {
-        self.inner.create_file(path)
-    }
+
     fn modification_time(&self, path: &Path) -> io::Result<Timestamp> {
         self.inner.modification_time(path)
     }
+}
+
+impl FileSystem for CountingReads<'_> {
+    fn create_folder(&self, path: &Path) -> io::Result<()> {
+        self.inner.create_folder(path)
+    }
+
+    fn create_file(&self, path: &Path) -> io::Result<Box<dyn WriteFile>> {
+        self.inner.create_file(path)
+    }
+
     fn rename_no_replace(&self, from: &Path, to: &Path) -> io::Result<()> {
         self.inner.rename_no_replace(from, to)
     }
+
     fn remove_file(&self, path: &Path) -> io::Result<()> {
         self.inner.remove_file(path)
     }
+
     fn sync_folder(&self, path: &Path) -> io::Result<()> {
         self.inner.sync_folder(path)
     }
@@ -146,6 +163,28 @@ fn source_is_read_once_for_every_target() {
     assert_eq!(file_system.opened.get(), 1);
     assert_eq!(file_system.bytes_read.get(), source_content().len());
     assert!(copies.targets.iter().all(Result::is_ok));
+}
+
+/// A source that is another storage device than the targets, such as a camera, is
+/// only read (ADR 0034).
+#[test]
+fn source_on_its_own_file_system_is_only_read() {
+    let source = with_source();
+    let destination = MemoryFileSystem::new();
+
+    let copies = copy_verified_to_all(
+        &source,
+        &destination,
+        &FnvHasher,
+        Path::new(SOURCE),
+        &targets(),
+    );
+
+    assert!(copies.targets.iter().all(Result::is_ok));
+    for target in targets() {
+        assert_eq!(destination.content(target), Some(source_content()));
+    }
+    assert_eq!(source.paths(), with_source().paths());
 }
 
 /// spec: IMPORT-007.1

@@ -8,7 +8,7 @@ use std::path::Path;
 
 use domain::Checksum;
 
-use crate::{FileSystem, Hasher};
+use crate::{Hasher, ReadOnlyFileSystem};
 
 /// How many bytes are read and hashed at a time.
 pub(crate) const BUFFER_SIZE: usize = 64 * 1024;
@@ -40,7 +40,7 @@ pub(crate) const BUFFER_SIZE: usize = 64 * 1024;
 ///
 /// Returns an error if the file cannot be opened or read to its end.
 pub fn checksum_file(
-    file_system: &dyn FileSystem,
+    file_system: &dyn ReadOnlyFileSystem,
     hasher: &dyn Hasher,
     path: &Path,
 ) -> io::Result<Checksum> {

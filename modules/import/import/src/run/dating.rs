@@ -31,7 +31,7 @@ impl ImportRun<'_> {
             .and_then(|name| name.to_str())
             .ok_or(FileError::NameNotUtf8)?;
         let (capture_time, no_capture_time) =
-            match read_capture_time(self.file_system, &source.join(&file.path)) {
+            match read_capture_time(self.source_file_system, &source.join(&file.path)) {
                 Ok(capture_time) => (Some(capture_time), None),
                 Err(CaptureTimeError::NoCaptureTime(reason)) => (None, Some(reason)),
                 Err(CaptureTimeError::Io { error, .. }) => {

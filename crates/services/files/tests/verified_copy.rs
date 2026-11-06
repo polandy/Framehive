@@ -9,7 +9,9 @@ use std::path::{Path, PathBuf};
 
 use domain::{Checksum, Timestamp};
 use files::testing::{Fault, FnvHasher, MemoryFileSystem};
-use files::{CopyError, CopyErrorKind, CopyStep, EntryKind, FileSystem, Hasher, copy_verified};
+use files::{
+    CopyError, CopyErrorKind, CopyStep, EntryKind, Hasher, ReadOnlyFileSystem, copy_verified,
+};
 
 const SOURCE: &str = "/card/DCIM/100_FUJI/DSCF0001.RAF";
 const DESTINATION: &str = "/photos";

@@ -8,7 +8,7 @@ use std::path::Path;
 
 use domain::Timestamp;
 use files::testing::{Fault, MemoryFileSystem};
-use files::{EntryKind, FileSystem};
+use files::{EntryKind, FileSystem, ReadOnlyFileSystem};
 
 const FOLDER: &str = "/destination";
 

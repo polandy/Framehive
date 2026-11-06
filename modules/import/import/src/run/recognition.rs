@@ -128,7 +128,7 @@ impl ImportRun<'_> {
             return Ok(Ok(recognized));
         }
         let source = settings.source.join(&file.path);
-        let checksum = match checksum_file(self.file_system, self.hasher, &source) {
+        let checksum = match checksum_file(self.source_file_system, self.hasher, &source) {
             Ok(checksum) => checksum,
             Err(error) => return Ok(Err(FileError::CannotBeRead { error })),
         };

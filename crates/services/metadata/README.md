@@ -17,7 +17,7 @@ kilobytes that lead to the EXIF, never a whole RAW file.
 
 | Item | Meaning |
 |---|---|
-| `read_capture_time` | The capture time of a file, read through the `FileSystem` port; formats not in the CORE-005 table are not opened |
+| `read_capture_time` | The capture time of a file, read through the `ReadOnlyFileSystem` port; formats not in the CORE-005 table are not opened |
 | `CaptureTimeError` | Why `read_capture_time` gives no capture time: a `NoCaptureTime` reason or an I/O error with the path |
 | `capture_time_from_bytes` | The capture time of a file's content in memory |
 | `NoCaptureTime` | Why a file has no capture time |
@@ -26,5 +26,5 @@ kilobytes that lead to the EXIF, never a whole RAW file.
 ## Dependencies
 
 - `domain`
-- `files` (the `FileSystem` port)
+- `files` (the `ReadOnlyFileSystem` port)
 - `thiserror` (ADR 0016)

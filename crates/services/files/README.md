@@ -29,6 +29,7 @@ Boundaries:
   and each target is synced, renamed, synced and verified on its own. A target that
   fails is dropped and cleaned up without touching the others; the read ends early only
   when every target failed. `copy_verified` is this copy with one target.
+  The source may lie on its own `ReadOnlyFileSystem`, such as a camera (ADR 0034).
 - **Cleanup.** On a failure the `.part` file is removed. After the rename, a failed
   folder sync, read-back or verification also removes the target, because the copy
   wrote it and it is not verified. A file another program put at the target is never
@@ -44,17 +45,19 @@ Boundaries:
 
 | Item | Meaning |
 |---|---|
-| `FileSystem`, `ReadSeek`, `WriteFile`, `EntryKind`, `FolderEntry` | Port for files and folders, with explicit syncing; files are read from any offset (ADR 0021); folders are listed without following symbolic links (IMPORT-005) |
+| `ReadOnlyFileSystem`, `ReadSeek`, `EntryKind`, `FolderEntry` | Port for reading files and folders (`entry`, `list_folder`, `file_size`, `modification_time`, `open_read`); files are read from any offset (ADR 0021); folders are listed without following symbolic links (IMPORT-005); the import reads its source only through it (ADR 0034) |
+| `FileSystem`, `WriteFile` | Port for files and folders: `ReadOnlyFileSystem` with creating, renaming, removing and explicit syncing |
 | `FreeSpace`, `SpaceOnFileSystem`, `FileSystemId` | Port for the free space and the identity of the file system a folder lies on; a missing folder is answered for its nearest existing parent (ADR 0033) |
 | `Hasher`, `HashState` | Port for a hash function that yields a `domain::Checksum` with its algorithm id |
 | `checksum_file` | Reads a file in full and returns its checksum; used to compare content (IMPORT-003) and to read a copy back |
 | `copy_verified` | Copies one file through a `.part` file and verifies it (IMPORT-004) |
-| `copy_verified_to_all`, `VerifiedCopies` | Copies one file to several targets with one read and verifies each, with one result per target (IMPORT-007) |
+| `copy_verified_to_all`, `VerifiedCopies` | Copies one file to several targets with one read and verifies each, with one result per target (IMPORT-007); the source may lie on its own `ReadOnlyFileSystem` |
 | `CopyError`, `CopyStep`, `CopyErrorKind`, `CleanupFailure` | The failed step, why, and a file that could not be removed |
 | `testing::MemoryFileSystem`, `testing::Fault` | `FileSystem` in memory with simulated crashes, symbolic links, read, write, read-back and listing faults, and stops after a number of operations |
 | `testing::FnvHasher` | Non-cryptographic `Hasher` for tests; its checksums are written `fnv:<hex>` |
 | `testing::TempDir` | A temporary folder on the real file system, removed when dropped |
-| `testing::check_file_system`, `testing::FileSystemUnderTest`, `testing::MakeSymbolicLink` | Conformance suite of the `FileSystem` port |
+| `testing::check_read_only_file_system`, `testing::ReadOnlyFileSystemUnderTest`, `testing::AddFolder`, `testing::AddFile`, `testing::MakeSymbolicLink` | Conformance suite of the `ReadOnlyFileSystem` port; it lays out its files through the storage of the implementation |
+| `testing::check_file_system`, `testing::FileSystemUnderTest` | Conformance suite of the `FileSystem` port; it includes the `ReadOnlyFileSystem` suite |
 | `testing::MemoryFreeSpace` | `FreeSpace` with fixed answers per mounted folder, and file systems that do not report their free space |
 | `testing::check_free_space`, `testing::FreeSpaceUnderTest` | Conformance suite of the `FreeSpace` port |
 | `testing::check_hasher`, `testing::HasherUnderTest` | Conformance suite of the `Hasher` port |

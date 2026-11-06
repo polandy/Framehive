@@ -12,7 +12,7 @@ use std::sync::{Arc, Mutex, MutexGuard};
 
 use domain::Timestamp;
 
-use crate::{EntryKind, FileSystem, FolderEntry, ReadSeek, WriteFile};
+use crate::{EntryKind, FileSystem, FolderEntry, ReadOnlyFileSystem, ReadSeek, WriteFile};
 
 use handles::{MemoryReader, MemoryWriter};
 use state::{Entry, State, lock, reachable_entries, symbolic_link};
@@ -194,7 +194,7 @@ impl MemoryFileSystem {
     }
 }
 
-impl FileSystem for MemoryFileSystem {
+impl ReadOnlyFileSystem for MemoryFileSystem {
     fn entry(&self, path: &Path) -> io::Result<Option<EntryKind>> {
         self.operate(|state| Ok(state.entry_kind(path)))
     }
@@ -207,15 +207,6 @@ impl FileSystem for MemoryFileSystem {
         self.operate(|state| {
             let id = state.file_id(path)?;
             u64::try_from(state.file(id).content.len()).map_err(io::Error::other)
-        })
-    }
-
-    fn create_folder(&self, path: &Path) -> io::Result<()> {
-        self.operate(|state| {
-            state.require_absent(path)?;
-            state.require_parent_folder(path)?;
-            state.entries.insert(path.to_path_buf(), Entry::Folder);
-            Ok(())
         })
     }
 
@@ -243,6 +234,24 @@ impl FileSystem for MemoryFileSystem {
         })
     }
 
+    fn modification_time(&self, path: &Path) -> io::Result<Timestamp> {
+        self.operate(|state| {
+            let id = state.file_id(path)?;
+            Ok(state.file(id).modified)
+        })
+    }
+}
+
+impl FileSystem for MemoryFileSystem {
+    fn create_folder(&self, path: &Path) -> io::Result<()> {
+        self.operate(|state| {
+            state.require_absent(path)?;
+            state.require_parent_folder(path)?;
+            state.entries.insert(path.to_path_buf(), Entry::Folder);
+            Ok(())
+        })
+    }
+
     fn create_file(&self, path: &Path) -> io::Result<Box<dyn WriteFile>> {
         self.operate(|state| {
             state.require_parent_folder(path)?;
@@ -265,13 +274,6 @@ impl FileSystem for MemoryFileSystem {
                 fault: state.fault_for(path),
             };
             Ok(Box::new(writer) as Box<dyn WriteFile>)
-        })
-    }
-
-    fn modification_time(&self, path: &Path) -> io::Result<Timestamp> {
-        self.operate(|state| {
-            let id = state.file_id(path)?;
-            Ok(state.file(id).modified)
         })
     }
 

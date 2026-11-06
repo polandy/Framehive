@@ -10,7 +10,9 @@ use std::path::{Path, PathBuf};
 use domain::Checksum;
 
 use crate::checksum::{BUFFER_SIZE, read_some};
-use crate::{CleanupFailure, CopyError, CopyErrorKind, CopyStep, FileSystem, Hasher};
+use crate::{
+    CleanupFailure, CopyError, CopyErrorKind, CopyStep, FileSystem, Hasher, ReadOnlyFileSystem,
+};
 
 /// Copies `source` to `target` and verifies the copy (glossary: Verified copy).
 ///
@@ -61,6 +63,7 @@ pub fn copy_verified(
     target: &Path,
 ) -> Result<Checksum, CopyError> {
     let copy = Copy {
+        source_file_system: file_system,
         file_system,
         hasher,
         source,
@@ -85,6 +88,10 @@ pub struct VerifiedCopies {
 /// Copies `source` to each of `targets` and verifies each copy, reading the source
 /// once (IMPORT-007, ADR 0030 §1).
 ///
+/// `source` is read through `source_file_system`, which may be another storage
+/// device than the targets' `file_system`, such as a camera (ADR 0034); it is never
+/// written.
+///
 /// The source is read once; its bytes are hashed and written to the `.part` file of
 /// every target. Each target then goes through the steps of [`copy_verified`] on its
 /// own and is compared with the source's checksum. A failure at one target removes
@@ -106,19 +113,27 @@ pub struct VerifiedCopies {
 /// file_system.add_file(Path::new("/card/DSCF0001.RAF"), b"raw", Timestamp::UNIX_EPOCH);
 /// let targets = [Path::new("/photos/DSCF0001.RAF"), Path::new("/backup/DSCF0001.RAF")];
 ///
-/// let copies = copy_verified_to_all(&file_system, &FnvHasher, Path::new("/card/DSCF0001.RAF"), &targets);
+/// let copies = copy_verified_to_all(
+///     &file_system,
+///     &file_system,
+///     &FnvHasher,
+///     Path::new("/card/DSCF0001.RAF"),
+///     &targets,
+/// );
 ///
 /// assert!(copies.targets.iter().all(Result::is_ok));
 /// assert_eq!(file_system.content(targets[1]).as_deref(), Some(&b"raw"[..]));
 /// ```
 #[must_use]
 pub fn copy_verified_to_all(
+    source_file_system: &dyn ReadOnlyFileSystem,
     file_system: &dyn FileSystem,
     hasher: &dyn Hasher,
     source: &Path,
     targets: &[&Path],
 ) -> VerifiedCopies {
     let copy = Copy {
+        source_file_system,
         file_system,
         hasher,
         source,
@@ -168,6 +183,9 @@ impl Failure {
 
 /// The source of a verified copy and the ports it goes through.
 struct Copy<'a> {
+    /// Reads the source; never written.
+    source_file_system: &'a dyn ReadOnlyFileSystem,
+    /// Holds the targets.
     file_system: &'a dyn FileSystem,
     hasher: &'a dyn Hasher,
     source: &'a Path,
@@ -184,11 +202,11 @@ impl Copy<'_> {
         if !targets.iter().any(TargetCopy::is_open) {
             return None;
         }
-        let modified = match self.file_system.modification_time(self.source) {
+        let modified = match self.source_file_system.modification_time(self.source) {
             Ok(modified) => modified,
             Err(error) => return self.fail_reading(targets, error),
         };
-        let mut reader = match self.file_system.open_read(self.source) {
+        let mut reader = match self.source_file_system.open_read(self.source) {
             Ok(reader) => reader,
             Err(error) => return self.fail_reading(targets, error),
         };

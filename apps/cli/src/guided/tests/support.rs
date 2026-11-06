@@ -15,7 +15,7 @@ use devices::testing::MemoryDeviceSource;
 use domain::testing::ManualClock;
 use domain::{Timestamp, UtcOffset};
 use files::testing::{FnvHasher, MemoryFileSystem, MemoryFreeSpace};
-use files::{EntryKind, FileSystem, FolderEntry, ReadSeek, WriteFile};
+use files::{EntryKind, FileSystem, FolderEntry, ReadOnlyFileSystem, ReadSeek, WriteFile};
 use import::{RecentJobCodes, SessionSequence};
 use naming::NameTemplate;
 use naming::testing::MemorySequenceCounters;
@@ -286,7 +286,7 @@ impl HookedFileSystem<'_> {
     }
 }
 
-impl FileSystem for HookedFileSystem<'_> {
+impl ReadOnlyFileSystem for HookedFileSystem<'_> {
     fn entry(&self, path: &Path) -> io::Result<Option<EntryKind>> {
         self.harness.memory.entry(path)
     }
@@ -302,21 +302,23 @@ impl FileSystem for HookedFileSystem<'_> {
         }
     }
 
-    fn create_folder(&self, path: &Path) -> io::Result<()> {
-        self.harness.memory.create_folder(path)
-    }
-
     fn open_read(&self, path: &Path) -> io::Result<Box<dyn ReadSeek>> {
         self.check_read(path)?;
         self.harness.memory.open_read(path)
     }
 
-    fn create_file(&self, path: &Path) -> io::Result<Box<dyn WriteFile>> {
-        self.harness.memory.create_file(path)
-    }
-
     fn modification_time(&self, path: &Path) -> io::Result<Timestamp> {
         self.harness.memory.modification_time(path)
+    }
+}
+
+impl FileSystem for HookedFileSystem<'_> {
+    fn create_folder(&self, path: &Path) -> io::Result<()> {
+        self.harness.memory.create_folder(path)
+    }
+
+    fn create_file(&self, path: &Path) -> io::Result<Box<dyn WriteFile>> {
+        self.harness.memory.create_file(path)
     }
 
     fn rename_no_replace(&self, from: &Path, to: &Path) -> io::Result<()> {

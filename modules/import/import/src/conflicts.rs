@@ -9,8 +9,11 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 use domain::Checksum;
-use files::{EntryKind, FileSystem, Hasher, checksum_file};
-use unicode_normalization::UnicodeNormalization;
+use files::{EntryKind, FileSystem, Hasher, ReadOnlyFileSystem, checksum_file};
+
+mod target_names;
+
+use target_names::{candidates, caseless_key, join_target, split_target};
 
 /// What the import does when a target name holds a different file or a folder
 /// (glossary: Conflict policy).
@@ -104,6 +107,9 @@ pub struct TargetRequest<'a> {
 /// canonical caseless key (ADR 0026). Content is compared by size first, and by
 /// checksum only when the sizes are equal.
 pub struct TargetResolver<'a> {
+    /// Reads the source (ADR 0034).
+    source_file_system: &'a dyn ReadOnlyFileSystem,
+    /// Reads the destination.
     file_system: &'a dyn FileSystem,
     hasher: &'a dyn Hasher,
     source: &'a Path,
@@ -116,7 +122,9 @@ pub struct TargetResolver<'a> {
     /// tells case or normalization forms apart may hold several entries under one
     /// key, and each of them may hold the content.
     folders: HashMap<String, HashMap<String, Vec<Existing>>>,
-    /// Checksums by absolute path, so that no file is read twice.
+    /// Checksums of source files by absolute path, so that no file is read twice.
+    source_checksums: HashMap<PathBuf, Checksum>,
+    /// Checksums of destination files by absolute path, so that no file is read twice.
     checksums: HashMap<PathBuf, Checksum>,
 }
 
@@ -141,9 +149,11 @@ enum Holder {
 }
 
 impl<'a> TargetResolver<'a> {
-    /// Creates a resolver for files of `source` copied to `destination`.
+    /// Creates a resolver for files of `source`, read through `source_file_system`,
+    /// copied to `destination`, read through `file_system`.
     #[must_use]
     pub fn new(
+        source_file_system: &'a dyn ReadOnlyFileSystem,
         file_system: &'a dyn FileSystem,
         hasher: &'a dyn Hasher,
         source: &'a Path,
@@ -151,6 +161,7 @@ impl<'a> TargetResolver<'a> {
         policy: ConflictPolicy,
     ) -> Self {
         TargetResolver {
+            source_file_system,
             file_system,
             hasher,
             source,
@@ -158,6 +169,7 @@ impl<'a> TargetResolver<'a> {
             policy,
             claimed: HashMap::new(),
             folders: HashMap::new(),
+            source_checksums: HashMap::new(),
             checksums: HashMap::new(),
         }
     }
@@ -195,7 +207,13 @@ impl<'a> TargetResolver<'a> {
         &mut self,
         source_path: &Path,
     ) -> Result<Checksum, ConflictError> {
-        self.checksum(&self.source.join(source_path))
+        let path = self.source.join(source_path);
+        cached_checksum(
+            &mut self.source_checksums,
+            self.source_file_system,
+            self.hasher,
+            &path,
+        )
     }
 
     fn claim(&mut self, file: &TargetRequest<'_>, candidate: &str) {
@@ -262,19 +280,9 @@ impl<'a> TargetResolver<'a> {
         if file.size != other_size {
             return Ok(false);
         }
-        let ours = self.checksum(&self.source.join(file.source_path))?;
-        let theirs = self.checksum(other)?;
+        let ours = self.source_checksum(file.source_path)?;
+        let theirs = cached_checksum(&mut self.checksums, self.file_system, self.hasher, other)?;
         Ok(ours == theirs)
-    }
-
-    fn checksum(&mut self, path: &Path) -> Result<Checksum, ConflictError> {
-        if let Some(checksum) = self.checksums.get(path) {
-            return Ok(checksum.clone());
-        }
-        let checksum =
-            checksum_file(self.file_system, self.hasher, path).map_err(cannot_read(path))?;
-        self.checksums.insert(path.to_path_buf(), checksum.clone());
-        Ok(checksum)
     }
 
     /// The entries at the destination whose paths equal `target`, ignoring case and
@@ -350,18 +358,6 @@ impl<'a> TargetResolver<'a> {
     }
 }
 
-/// The planned target, then `<base>-1.<ext>`, `<base>-2.<ext>`, …
-fn candidates(target: &str) -> impl Iterator<Item = String> + '_ {
-    let (folder, name) = split_target(target);
-    let (base, extension) = match name.rsplit_once('.') {
-        Some((base, extension)) => (base, format!(".{extension}")),
-        None => (name, String::new()),
-    };
-    let suffixed =
-        (1_u64..).map(move |number| join_target(folder, &format!("{base}-{number}{extension}")));
-    std::iter::once(target.to_owned()).chain(suffixed)
-}
-
 /// The suffixes never run out: a folder holds finitely many names.
 fn unreachable_candidates() -> Result<ConflictOutcome, ConflictError> {
     Err(ConflictError {
@@ -370,26 +366,19 @@ fn unreachable_candidates() -> Result<ConflictOutcome, ConflictError> {
     })
 }
 
-/// The folder part and the name of a target; the folder is empty at the top.
-fn split_target(target: &str) -> (&str, &str) {
-    target.rsplit_once('/').unwrap_or(("", target))
-}
-
-fn join_target(folder: &str, name: &str) -> String {
-    if folder.is_empty() {
-        name.to_owned()
-    } else {
-        format!("{folder}/{name}")
+/// The checksum of `path` from `cache`, or read through `file_system` and kept there.
+fn cached_checksum(
+    cache: &mut HashMap<PathBuf, Checksum>,
+    file_system: &dyn ReadOnlyFileSystem,
+    hasher: &dyn Hasher,
+    path: &Path,
+) -> Result<Checksum, ConflictError> {
+    if let Some(checksum) = cache.get(path) {
+        return Ok(checksum.clone());
     }
-}
-
-/// The canonical caseless key of a name, `NFD(lowercase(NFD(name)))` (Unicode §3.13).
-///
-/// Lowercasing does not preserve a normalization form, so the standard's definition
-/// decomposes the name both before and after it.
-fn caseless_key(name: &str) -> String {
-    let decomposed: String = name.nfd().collect();
-    decomposed.to_lowercase().nfd().collect()
+    let checksum = checksum_file(file_system, hasher, path).map_err(cannot_read(path))?;
+    cache.insert(path.to_path_buf(), checksum.clone());
+    Ok(checksum)
 }
 
 fn cannot_read(path: &Path) -> impl Fn(io::Error) -> ConflictError + '_ {
