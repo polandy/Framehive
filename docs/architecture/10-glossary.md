@@ -45,6 +45,9 @@ Names in the code follow this glossary.
 | Verified copy | `copy_verified` | A copy through a `.part` file whose content is checked against the source checksum before it counts as copied (IMPORT-004) |
 | Checksum | `Checksum` | Hash of a file's content with its algorithm, written `blake3:<hex>` (architecture §8) |
 | File system | `FileSystem` | Port of the `files` service for files and folders on a storage device, with explicit syncing; implemented by `adapter-fs` |
+| Read-only file system | `ReadOnlyFileSystem` | The reading part of `FileSystem`: entries, folder lists, sizes, modification times and reading from any offset; the import reads its source only through it (ADR 0034) |
+| Camera | `Camera` | A camera or phone connected over PTP or MTP, with its model and its port, for example `usb:001,005`; opened, it is a `ReadOnlyFileSystem` with one folder per storage (IMPORT-014) |
+| Cameras | `Cameras` | Port of the `files` service that lists the connected cameras and opens one; implemented by `adapter-gphoto2` with libgphoto2 (ADR 0034) |
 | Hasher | `Hasher` | Port of the `files` service that computes a checksum; implemented by `adapter-blake3` |
 | Part file | `.part` file | `<target>.part` next to the target path; a verified copy writes it and renames it to the target only when it is complete (IMPORT-004) |
 | Job | `Job` | Background work in the queue |
