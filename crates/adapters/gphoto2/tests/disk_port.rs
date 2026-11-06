@@ -59,3 +59,21 @@ fn a_file_larger_than_a_chunk_reads_whole_and_from_any_offset() {
     let start = usize::try_from(across_chunks).unwrap();
     assert_eq!(bytes, content[start..start + 8]);
 }
+
+#[test]
+fn a_file_that_ends_before_its_reported_size_is_an_error_not_a_short_file() {
+    let camera = support::FolderCamera::new();
+    camera.add_folder(Path::new("/store_00010001")).unwrap();
+    let path = Path::new("/store_00010001/IMG_0001.JPG");
+    camera
+        .add_file(path, &[7; 4_096], Timestamp::from_unix_seconds(0))
+        .unwrap();
+    let opened = Gphoto2Cameras::new().open(&camera.port()).unwrap();
+    let mut reader = opened.open_read(path).unwrap();
+    // The size is reported when the file is opened; the file then loses its tail.
+    std::fs::write(camera.local(path), [7; 1_000]).unwrap();
+
+    let mut content = Vec::new();
+    let error = reader.read_to_end(&mut content).unwrap_err();
+    assert_eq!(error.kind(), std::io::ErrorKind::UnexpectedEof);
+}

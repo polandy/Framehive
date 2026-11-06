@@ -85,9 +85,17 @@ impl Read for CameraReader {
         if self.chunk_at_position().is_none() {
             self.read_chunk()?;
         }
-        // A file that became shorter than its reported size ends early.
+        // A file that ends before its reported size is an error, never a short file:
+        // the copy and its verification would both see the same truncated bytes.
         let Some(bytes) = self.chunk_at_position() else {
-            return Ok(0);
+            return Err(io::Error::new(
+                ErrorKind::UnexpectedEof,
+                format!(
+                    "{} on the camera ended before its reported size of {} bytes",
+                    self.path.display(),
+                    self.size
+                ),
+            ));
         };
         let count = bytes.len().min(buffer.len());
         buffer[..count].copy_from_slice(&bytes[..count]);
