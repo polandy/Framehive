@@ -36,6 +36,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "adapter-gphoto2"
+version = "0.1.0"
+dependencies = [
+ "domain",
+ "files",
+]
+
+[[package]]
 name = "adapter-libraw"
 version = "0.1.0"
 dependencies = [

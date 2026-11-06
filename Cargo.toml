@@ -9,6 +9,7 @@ members = [
     "crates/adapters/clock",
     "crates/adapters/free-space",
     "crates/adapters/fs",
+    "crates/adapters/gphoto2",
     "crates/adapters/libraw",
     "crates/adapters/mounts",
     "crates/adapters/sequence-counters",
@@ -41,6 +42,7 @@ adapter-blake3 = { path = "crates/adapters/blake3" }
 adapter-clock = { path = "crates/adapters/clock" }
 adapter-free-space = { path = "crates/adapters/free-space" }
 adapter-fs = { path = "crates/adapters/fs" }
+adapter-gphoto2 = { path = "crates/adapters/gphoto2" }
 adapter-libraw = { path = "crates/adapters/libraw" }
 adapter-mounts = { path = "crates/adapters/mounts" }
 adapter-sequence-counters = { path = "crates/adapters/sequence-counters" }
