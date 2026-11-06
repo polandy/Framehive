@@ -1,16 +1,18 @@
 // SPDX-FileCopyrightText: 2026 Framehive contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//! The dialog of the guided import (CLI-002, ADR 0024): prompts, waiting for a card
-//! and the remembered answers. The card itself is handled in `card.rs`.
+//! The dialog of the guided import (CLI-002, CLI-014, ADR 0024): prompts, waiting for a
+//! card or camera and the remembered answers. The device itself is handled in
+//! `card.rs`.
 
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
-use devices::{Device, DeviceChanges, DeviceWatch};
+use devices::{Device, DeviceChanges, DeviceWatch, PollError};
 use import::JobCode;
 
 use super::events::{Event, EventSource};
+use super::source::Source;
 use super::state::{RememberedState, load_state, save_state};
 use super::{Environment, Ports};
 
@@ -23,16 +25,18 @@ const BACKUP_PROMPT: &str =
 pub(super) enum Stop {
     /// The person typed `q` or the input ended: the dialog ends.
     Quit,
-    /// The card the prompt is about was pulled: the dialog waits again.
+    /// The card or camera the prompt is about went: the dialog waits again.
     CardPulled,
 }
 
-/// A card pulled during its import, to be imported again when it comes back
-/// (CLI-003, "A card pulled during the import").
+/// A card pulled or a camera disconnected during its import, to be imported again when
+/// it comes back (CLI-003, "A card pulled during the import"; CLI-014).
 #[derive(Debug, Clone)]
 pub(super) struct Interrupted {
-    /// The name of the card.
+    /// The name of the card, or the model of the camera.
     pub(super) name: String,
+    /// Whether the device is a camera.
+    pub(super) camera: bool,
     /// The job code of the interrupted import.
     pub(super) job_code: Option<JobCode>,
 }
@@ -46,13 +50,22 @@ pub(crate) struct Dialog<'a> {
     warnings: &'a mut dyn Write,
     pub(super) state: RememberedState,
     pub(super) watch: DeviceWatch,
-    /// The present cards that may be offered for import, in the order they appeared.
+    /// The present cards and cameras that may be offered for import, in the order they
+    /// appeared.
     offerable: Vec<Device>,
     /// A card that was ejected, whose removal is not reported.
-    ejected: Option<Device>,
-    /// Whether the last poll failed, so that a lasting failure is reported once.
-    listing_failed: bool,
-    /// A card pulled during its import.
+    pub(super) ejected: Option<Device>,
+    /// Cameras reported as removed when they stopped answering, whose removal is not
+    /// reported again (CLI-014).
+    pub(super) unreported: Vec<Device>,
+    /// Cameras kept open after their import, until they are disconnected (CLI-014).
+    pub(super) kept_open: Vec<Source>,
+    /// Whether the last listing of the cards failed, so that a lasting failure is
+    /// reported once.
+    cards_failed: bool,
+    /// The same for the cameras.
+    cameras_failed: bool,
+    /// A card pulled or a camera disconnected during its import.
     pub(super) interrupted: Option<Interrupted>,
 }
 
@@ -84,7 +97,10 @@ impl<'a> Dialog<'a> {
             watch: DeviceWatch::new(),
             offerable: Vec::new(),
             ejected: None,
-            listing_failed: false,
+            unreported: Vec::new(),
+            kept_open: Vec::new(),
+            cards_failed: false,
+            cameras_failed: false,
             interrupted: None,
         };
         for warning in &loaded.warnings {
@@ -106,8 +122,8 @@ impl<'a> Dialog<'a> {
         }
         loop {
             let outcome = match self.wait_for_card()? {
-                Chosen::New(card) => self.import_card(&card, None),
-                Chosen::Resumed(card, interrupted) => self.import_card(&card, Some(interrupted)),
+                Chosen::New(card) => self.import_device(&card, None),
+                Chosen::Resumed(card, interrupted) => self.import_device(&card, Some(interrupted)),
             };
             match outcome {
                 Err(Stop::Quit) => return Err(Stop::Quit),
@@ -116,15 +132,19 @@ impl<'a> Dialog<'a> {
         }
     }
 
-    /// Waits until a card is offered, or the interrupted card is back, and returns it.
+    /// Waits until a card or camera is offered, or the interrupted one is back, and
+    /// returns it.
     fn wait_for_card(&mut self) -> Result<Chosen, Stop> {
         if self.interrupted.is_none() {
-            self.say("Waiting for a memory card…");
+            self.say("Waiting for a memory card or camera…");
         }
         loop {
             self.poll();
             if let Some(interrupted) = self.interrupted.clone() {
-                if let Some(card) = self.take_offerable(|card| card.name() == interrupted.name) {
+                let back = |card: &Device| {
+                    card.name() == interrupted.name && card.is_camera() == interrupted.camera
+                };
+                if let Some(card) = self.take_offerable(back) {
                     self.interrupted = None;
                     return Ok(Chosen::Resumed(card, interrupted));
                 }
@@ -135,12 +155,15 @@ impl<'a> Dialog<'a> {
                 Event::Tick => {}
                 Event::End => return Err(self.end_of_input()),
                 Event::Line(line) if line.trim() == "q" => return Err(Stop::Quit),
-                Event::Line(_) => self.say("Insert a memory card, or type q to quit."),
+                Event::Line(_) => {
+                    self.say("Insert a memory card or connect a camera, or type q to quit.");
+                }
             }
         }
     }
 
-    /// The single offered card, or the one the person chooses among several.
+    /// The single offered device, or the one the person chooses among several, cards
+    /// first.
     fn choose_offered(&mut self) -> Result<Option<Device>, Stop> {
         let mut offered = self.offerable.clone();
         match offered.len() {
@@ -148,7 +171,7 @@ impl<'a> Dialog<'a> {
             1 => {}
             _ => {
                 offered.sort();
-                self.say("Which card?");
+                self.say("Which card or camera?");
                 for (index, card) in offered.iter().enumerate() {
                     self.say(&format!("  {}  {card}", index + 1));
                 }
@@ -284,29 +307,36 @@ impl<'a> Dialog<'a> {
         self.show_changes(&changes);
     }
 
-    /// Polls the devices; a failed poll is reported once and counts as no change.
+    /// Polls the cards and the cameras; a lasting failure to list either is reported
+    /// once, and the other is still watched (DEVICES-001).
     fn poll_quietly(&mut self) -> DeviceChanges {
-        match self.watch.poll(self.ports.devices) {
-            Ok(changes) => {
-                self.listing_failed = false;
-                changes
-            }
-            Err(error) => {
-                if !self.listing_failed {
-                    self.warn(&error.to_string());
-                }
-                self.listing_failed = true;
-                DeviceChanges::default()
+        let poll = self.watch.poll(self.ports.devices, self.ports.cameras);
+        let (mut cards_failed, mut cameras_failed) = (false, false);
+        for error in &poll.errors {
+            let (failed, reported) = match error {
+                PollError::Cards(_) => (&mut cards_failed, self.cards_failed),
+                PollError::Cameras(_) => (&mut cameras_failed, self.cameras_failed),
+            };
+            *failed = true;
+            if !reported {
+                self.warn(&error.to_string());
             }
         }
+        self.cards_failed = cards_failed;
+        self.cameras_failed = cameras_failed;
+        poll.changes
     }
 
     /// Prints `[REMOVED]` and `[NEW]` lines and updates the cards that may be offered.
     pub(super) fn show_changes(&mut self, changes: &DeviceChanges) {
         for card in &changes.removed {
             self.offerable.retain(|offerable| offerable != card);
+            // Dropping a camera kept open releases it.
+            self.kept_open.retain(|source| source.device() != card);
             if self.ejected.as_ref() == Some(card) {
                 self.ejected = None;
+            } else if let Some(index) = self.unreported.iter().position(|gone| gone == card) {
+                self.unreported.remove(index);
             } else {
                 self.say(&format!("[REMOVED] {}", card.name()));
             }
@@ -315,14 +345,6 @@ impl<'a> Dialog<'a> {
             self.say(&format!("[NEW] {card}"));
             self.offerable.push(card.clone());
         }
-    }
-
-    /// Notes that `card` was ejected, so that its removal is not reported, and polls.
-    pub(super) fn forget_ejected(&mut self, card: &Device) {
-        self.ejected = Some(card.clone());
-        self.poll();
-        // A card that is still listed is reported when it goes.
-        self.ejected = None;
     }
 
     /// Writes the state file; a failure is a warning (CLI-003, "Remembered state").

@@ -10,6 +10,7 @@
 The guided import (CLI-002) shows what it will do with a card, imports the card on Enter
 with a progress line, reports and ejects it, and remembers the answers, so the next card
 needs only Enter (ADR 0024, ADR 0025).
+Cameras are imported as CLI-014 describes.
 
 ## Behaviour
 
@@ -121,7 +122,7 @@ the dialog goes on.
 - **Given** a finished import of `EOS_DIGITAL`
 - **When** the person presses Enter at `Eject EOS_DIGITAL? [Y/n]: `
 - **Then** the card is ejected, the dialog prints `EOS_DIGITAL can be removed now.` and
-  `Waiting for a memory card…`
+  `Waiting for a memory card or camera…`
 
 ### CLI-003.7 – Eject fails
 - **Given** a finished import and a device source whose eject fails with `target is busy`
@@ -201,3 +202,4 @@ the dialog goes on.
 | 2026-11-04 | Sequence numbers (IMPORT-002): CLI-003.13 and CLI-003.14 |
 | 2026-11-04 | Backup destinations (CLI-006): the summary example shows the `backup` line and `[b]` |
 | 2026-11-04 | The import history recognizes files imported before (CLI-008): the sentence about a persisted counter is removed from the summary and from CLI-003.13 |
+| 2026-11-06 | Cameras in the guided import (CLI-014): cross-reference; the waiting texts name cameras |

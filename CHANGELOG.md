@@ -122,6 +122,13 @@ All user-visible changes are listed here. The format follows
   After the format readiness, a camera run notes that only the files below `DCIM` were
   checked. The import log names the source `camera:<model>`. A folder whose name starts
   with `camera:` is given as `./camera:…`.
+- Cameras in the guided import (CLI-014): `framehive` without a subcommand waits for a
+  memory card or camera and offers a camera or phone connected over PTP or MTP like a
+  card, by its model. A camera that another program holds or that shows no storage
+  says what to do and asks `Try again?`. After the import the dialog asks
+  `Release <model>?`. A camera disconnected during the import, or one that stops
+  answering, stops the import like a pulled card; connected again, it is imported
+  where it stopped without a question.
 
 ### Fixed
 

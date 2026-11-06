@@ -9,7 +9,7 @@ use domain::Timestamp;
 
 use super::support::{Harness, OCTOBER_17, PICTURES, PRESET_1, Step, mount};
 
-const WAITING: &str = "Waiting for a memory card…\n";
+const WAITING: &str = "Waiting for a memory card or camera…\n";
 
 /// A harness with a remembered destination and template.
 fn remembered() -> Harness {
@@ -118,7 +118,7 @@ fn several_cards_are_asked_for_by_mount_point() {
 
     assert!(
         transcript.output.contains(
-            "Which card?\n\
+            "Which card or camera?\n\
          \x20 1  EOS_DIGITAL (/run/media/ada/EOS_DIGITAL)\n\
          \x20 2  Untitled (/run/media/ada/Untitled)\n\
          Choose 1–2 [1]: \n\

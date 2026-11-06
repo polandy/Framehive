@@ -14,8 +14,11 @@ use std::time::Duration;
 use devices::testing::MemoryDeviceSource;
 use domain::testing::ManualClock;
 use domain::{Timestamp, UtcOffset};
-use files::testing::{FnvHasher, MemoryFileSystem, MemoryFreeSpace};
-use files::{EntryKind, FileSystem, FolderEntry, ReadOnlyFileSystem, ReadSeek, WriteFile};
+use files::testing::{FnvHasher, MemoryCameras, MemoryFileSystem, MemoryFreeSpace};
+use files::{
+    Camera, CameraError, Cameras, EntryKind, FileSystem, FolderEntry, ReadOnlyFileSystem, ReadSeek,
+    WriteFile,
+};
 use import::{RecentJobCodes, SessionSequence};
 use naming::NameTemplate;
 use naming::testing::MemorySequenceCounters;
@@ -56,6 +59,8 @@ pub(super) enum Step {
     Insert(&'static str),
     /// Pulls the card with this name.
     Remove(&'static str),
+    /// Changes the world, for example connects or disconnects a camera.
+    Call(fn(&Harness)),
 }
 
 /// What the dialog wrote.
@@ -71,11 +76,21 @@ pub(super) fn mount(name: &str) -> PathBuf {
     Path::new(MEDIA).join(name)
 }
 
+/// A change of the world after this many copies into the library.
+pub(super) type AfterCopies = (usize, fn(&Harness));
+
 /// The world of one golden test.
 pub(super) struct Harness {
     pub(super) memory: MemoryFileSystem,
     pub(super) clock: ManualClock,
     pub(super) devices: MemoryDeviceSource,
+    /// The connected cameras; steps replace them as cameras come and go.
+    pub(super) cameras: RefCell<MemoryCameras>,
+    /// The storage of the test camera, shared with the cameras it is connected as.
+    pub(super) camera_storage: MemoryFileSystem,
+    /// After this many copies into the library, this happens, for example a camera is
+    /// disconnected.
+    pub(super) after_copies: Cell<Option<AfterCopies>>,
     pub(super) counters: MemorySequenceCounters,
     pub(super) session: SessionSequence,
     /// The import history, kept across the runs of this harness as the history in the
@@ -108,6 +123,9 @@ impl Harness {
                 UtcOffset::UTC,
             ),
             devices: MemoryDeviceSource::new(),
+            cameras: RefCell::new(MemoryCameras::new()),
+            camera_storage: MemoryFileSystem::new(),
+            after_copies: Cell::new(None),
             counters: MemorySequenceCounters::new(),
             session: SessionSequence::new(),
             history: Box::new(MemoryImportHistory::new()),
@@ -180,6 +198,7 @@ impl Harness {
             hasher: &FnvHasher,
             clock: &self.clock,
             devices: &self.devices,
+            cameras: &HarnessCameras { harness: self },
             counters: &self.counters,
             session: &self.session,
             history: &*self.history,
@@ -246,6 +265,7 @@ impl EventSource for ScriptedEvents<'_> {
                     self.harness.devices.insert_card(mount(name));
                 }
                 Step::Remove(name) => self.harness.devices.remove(&mount(name)),
+                Step::Call(change) => change(self.harness),
             }
         }
         Event::End
@@ -324,8 +344,15 @@ impl FileSystem for HookedFileSystem<'_> {
     fn rename_no_replace(&self, from: &Path, to: &Path) -> io::Result<()> {
         self.harness.memory.rename_no_replace(from, to)?;
         if to.starts_with(PICTURES) || to.starts_with("/home/ada/Archive") {
-            self.harness.copies.set(self.harness.copies.get() + 1);
+            let copies = self.harness.copies.get() + 1;
+            self.harness.copies.set(copies);
             self.harness.clock.advance(self.harness.time_per_copy.get());
+            if let Some((after, change)) = self.harness.after_copies.get()
+                && after == copies
+            {
+                self.harness.after_copies.set(None);
+                change(self.harness);
+            }
         }
         Ok(())
     }
@@ -336,5 +363,20 @@ impl FileSystem for HookedFileSystem<'_> {
 
     fn sync_folder(&self, path: &Path) -> io::Result<()> {
         self.harness.memory.sync_folder(path)
+    }
+}
+
+/// The cameras of the harness as they are now.
+struct HarnessCameras<'h> {
+    harness: &'h Harness,
+}
+
+impl Cameras for HarnessCameras<'_> {
+    fn list(&self) -> Result<Vec<Camera>, CameraError> {
+        self.harness.cameras.borrow().list()
+    }
+
+    fn open(&self, port: &str) -> Result<Box<dyn ReadOnlyFileSystem>, CameraError> {
+        self.harness.cameras.borrow().open(port)
     }
 }

@@ -94,6 +94,14 @@ impl MemoryCameras {
         self
     }
 
+    /// Disconnects the camera at `port`: it is no longer listed, and opening it fails.
+    /// A camera opened before keeps reading its file system.
+    #[must_use]
+    pub fn without_camera(mut self, port: &str) -> Self {
+        self.cameras.remove(port);
+        self
+    }
+
     /// Makes listing the cameras fail with [`CameraError::List`] and `reason`.
     #[must_use]
     pub fn with_list_failure(mut self, reason: &str) -> Self {

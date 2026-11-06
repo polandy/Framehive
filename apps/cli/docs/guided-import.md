@@ -28,8 +28,23 @@ of ADR 0030; version 1 is still read), written through the `FileSystem` port as
 when the person quits, and with 2 when it cannot start: standard input or output is not
 a terminal, or the home folder or the current folder is unknown.
 
+## Cameras
+
+Cameras and phones over PTP or MTP (CLI-014) come through the same `DeviceWatch`, which
+lists them with `files::Cameras` (`adapter-gphoto2`) beside the mounted cards; a
+`Device` is a card at its mount point or a camera with its model and port (ADR 0023
+amendment). `src/guided/source.rs` holds what the dialog reads: a card, or a camera
+opened with `cameras::open_listed_camera` and read from its root with
+`import::scan_camera` and `ImportRun::with_source`, named `camera:<model>`. A camera in
+use or without storage asks `Try again?`; a camera that is refused, released or kept
+open is not offered again until it is reconnected. During the import, a failed file
+makes the progress poll the devices at once and probe the camera's root, so that a
+camera that is gone or stops answering stops the run like a pulled card. After the
+import the dialog asks `Release <model>?` instead of `Eject`; a camera kept open is
+dropped when it is disconnected or the dialog ends.
+
 ## Tests
 
 The guided import is tested in the crate (`src/guided/tests/`) with golden transcripts:
 the dialog runs against scripted input steps, `MemoryFileSystem`, `MemoryDeviceSource`
-and a `ManualClock`; `tests/guided_import.rs` checks the binary without a terminal.
+`MemoryCameras` and a `ManualClock`; `tests/guided_import.rs` checks the binary without a terminal.

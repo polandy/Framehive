@@ -89,7 +89,7 @@ fn enter_ejects_the_card() {
 
     let output = &transcript.output;
     assert!(output.ends_with(
-        "Eject EOS_DIGITAL? [Y/n]: \nEOS_DIGITAL can be removed now.\nWaiting for a memory card…\n\n"
+        "Eject EOS_DIGITAL? [Y/n]: \nEOS_DIGITAL can be removed now.\nWaiting for a memory card or camera…\n\n"
     ), "{output}");
     assert!(harness.devices.list().unwrap().is_empty());
 }
@@ -106,7 +106,7 @@ fn a_failed_eject_is_reported() {
         transcript.output.ends_with(
             "Eject EOS_DIGITAL? [Y/n]: y\n\
          Could not eject EOS_DIGITAL: target is busy\n\
-         Waiting for a memory card…\n\n"
+         Waiting for a memory card or camera…\n\n"
         ),
         "{}",
         transcript.output

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 //! The progress of a guided import: one line redrawn after each file, and a stop when
-//! the card is pulled (CLI-003, "Import and progress").
+//! the card is pulled or the camera goes (CLI-003, "Import and progress"; CLI-014).
 
 use std::io::Write;
 use std::path::Path;
@@ -10,19 +10,25 @@ use std::time::Duration;
 
 use devices::{Device, DeviceChanges, DeviceSource, DeviceWatch};
 use domain::{Clock, Timestamp};
-use import::{FileReport, ProgressSink, SourceScan};
+use files::{Cameras, ReadOnlyFileSystem};
+use import::{FileOutcome, FileReport, ProgressSink, SourceScan};
 
 use super::POLL_INTERVAL;
 use super::format::{Progress, progress_line};
 
 /// A [`ProgressSink`] that redraws the progress line and polls the devices between
-/// files, stopping the run when the card is gone.
+/// files, stopping the run when the card or camera is gone.
 pub(super) struct ImportProgress<'s> {
     output: &'s mut dyn Write,
     watch: &'s mut DeviceWatch,
     devices: &'s dyn DeviceSource,
+    cameras: &'s dyn Cameras,
     clock: &'s dyn Clock,
     card: &'s Device,
+    /// The file system of the camera being imported, to tell whether it still answers.
+    camera: Option<&'s dyn ReadOnlyFileSystem>,
+    /// A file of the camera failed: look at once whether the camera is gone.
+    check_now: bool,
     /// The sizes of the planned files, in plan order.
     sizes: Vec<u64>,
     progress: Progress,
@@ -41,27 +47,37 @@ pub(super) struct ImportContext<'s> {
     pub(super) output: &'s mut dyn Write,
     /// The watch the dialog polls the devices with.
     pub(super) watch: &'s mut DeviceWatch,
-    /// The devices.
+    /// The cards.
     pub(super) devices: &'s dyn DeviceSource,
+    /// The cameras.
+    pub(super) cameras: &'s dyn Cameras,
     /// The clock of the rate and of the polls.
     pub(super) clock: &'s dyn Clock,
 }
 
 impl<'s> ImportProgress<'s> {
-    /// Starts the progress of importing files of `sizes` from `card`, and draws the
-    /// first line.
+    /// Starts the progress of importing files of `sizes` from `card`, read through
+    /// `camera` for a camera, and draws the first line.
     #[expect(
         clippy::needless_pass_by_value,
         reason = "the context hands its borrows over to the progress"
     )]
-    pub(super) fn start(context: ImportContext<'s>, card: &'s Device, sizes: Vec<u64>) -> Self {
+    pub(super) fn start(
+        context: ImportContext<'s>,
+        card: &'s Device,
+        camera: Option<&'s dyn ReadOnlyFileSystem>,
+        sizes: Vec<u64>,
+    ) -> Self {
         let now = context.clock.now();
         let mut progress = ImportProgress {
             output: context.output,
             watch: context.watch,
             devices: context.devices,
+            cameras: context.cameras,
             clock: context.clock,
             card,
+            camera,
+            check_now: false,
             progress: Progress {
                 total_files: sizes.len(),
                 total_bytes: sizes.iter().sum(),
@@ -94,20 +110,20 @@ impl<'s> ImportProgress<'s> {
         self.width = width;
     }
 
-    /// Polls the devices once a poll interval has passed since the last poll.
+    /// Polls the devices once a poll interval has passed since the last poll, or at
+    /// once after a file of a camera failed.
     fn poll_when_due(&mut self) {
         let now = self.clock.now();
-        if elapsed(self.last_poll, now) < POLL_INTERVAL {
+        if !self.check_now && elapsed(self.last_poll, now) < POLL_INTERVAL {
             return;
         }
         self.last_poll = now;
-        // A failed poll says nothing about the card; the next one may succeed.
-        let Ok(changes) = self.watch.poll(self.devices) else {
-            return;
-        };
-        if changes.removed.contains(self.card) {
+        // A failed listing says nothing about the card; the next one may succeed.
+        let changes = self.watch.poll(self.devices, self.cameras).changes;
+        if changes.removed.contains(self.card) || self.camera_stopped_answering() {
             self.card_gone = true;
         }
+        self.check_now = false;
         self.changes.removed.extend(changes.removed);
         self.changes.added.extend(changes.added);
     }
@@ -118,7 +134,10 @@ impl ProgressSink for ImportProgress<'_> {
 
     fn file_started(&mut self, _path: &Path) {}
 
-    fn file_finished(&mut self, _report: &FileReport) {
+    fn file_finished(&mut self, report: &FileReport) {
+        if self.camera.is_some() && matches!(report.outcome, FileOutcome::Failed(_)) {
+            self.check_now = true;
+        }
         let size = self
             .sizes
             .get(self.progress.done_files)
@@ -133,6 +152,17 @@ impl ProgressSink for ImportProgress<'_> {
     fn should_continue(&mut self) -> bool {
         self.poll_when_due();
         !self.card_gone
+    }
+}
+
+impl ImportProgress<'_> {
+    /// Whether a file of the camera failed and the camera no longer shows its root,
+    /// although it may still be listed (CLI-014.10).
+    fn camera_stopped_answering(&self) -> bool {
+        self.check_now
+            && self
+                .camera
+                .is_some_and(|camera| camera.list_folder(Path::new("/")).is_err())
     }
 }
 

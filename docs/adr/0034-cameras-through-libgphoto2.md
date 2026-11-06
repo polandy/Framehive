@@ -116,8 +116,8 @@ Configurable scanned folders (Q6) and deduplication across two slots (Q8) come l
 directly, any other text is a model name. `framehive cameras` lists the connected
 cameras. A port is opened even if autodetection does not list it, which is how the CLI
 tests reach the `directory` driver with `camera:disk:<folder>`. The guided import offers
-cameras in a later change, which generalizes the identity of a `Device` beyond its mount
-point (ADR 0023).
+cameras, which generalized the identity of a `Device` beyond its mount point; this is
+done (CLI-014, amendment of ADR 0023).
 
 ### 6. A busy camera is reported, never taken
 

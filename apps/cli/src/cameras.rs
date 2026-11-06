@@ -59,7 +59,7 @@ impl OpenedCamera {
     }
 
     /// The line for a camera that shows no storage, with the remedy (CLI-013.15).
-    fn no_storage_message(&self) -> String {
+    pub(crate) fn no_storage_message(&self) -> String {
         format!(
             "{} shows no storage; unlock it and choose file transfer (MTP or PTP) on the \
              device, then try again",
@@ -113,6 +113,41 @@ pub(crate) fn open_camera(
         }),
         Err(CameraError::InUse { .. }) => Err(in_use_message(model.as_deref(), &port)),
         Err(error) => Err(error.to_string()),
+    }
+}
+
+/// Why a listed camera could not be opened by the guided import (CLI-014).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum OpenFailure {
+    /// Another program holds the camera: the line of CLI-013 with the remedy.
+    InUse(String),
+    /// Any other reason, as the driver reports it.
+    Other(String),
+}
+
+/// Opens the listed camera `model` at `port` for the guided import (CLI-014).
+///
+/// # Errors
+///
+/// Returns [`OpenFailure::InUse`] with the line of CLI-013 when another program holds
+/// the camera, and [`OpenFailure::Other`] with the reason otherwise.
+pub(crate) fn open_listed_camera(
+    cameras: &dyn Cameras,
+    model: &str,
+    port: &str,
+) -> Result<OpenedCamera, OpenFailure> {
+    match cameras.open(port) {
+        Ok(file_system) => Ok(OpenedCamera {
+            file_system,
+            name: PathBuf::from(format!("{CAMERA_PREFIX}{model}")),
+            described: described_camera(Some(model), port),
+        }),
+        Err(CameraError::InUse { .. }) => {
+            Err(OpenFailure::InUse(in_use_message(Some(model), port)))
+        }
+        Err(CameraError::Open { reason, .. } | CameraError::List { reason }) => {
+            Err(OpenFailure::Other(reason))
+        }
     }
 }
 

@@ -13,7 +13,7 @@ imports the card on Enter and ejects it. It remembers the answers, so the next c
 needs only Enter (ADR 0024, ADR 0025).
 
 The plan summary, the import, the eject and the remembered state are specified in
-CLI-003.
+CLI-003; cameras in CLI-014.
 
 ## Behaviour
 
@@ -48,7 +48,7 @@ starts, as in CLI-001.
 
 ### Waiting for a card
 
-The dialog prints `Waiting for a memory card…` and lists each card as it appears:
+The dialog prints `Waiting for a memory card or camera…` and lists each card as it appears:
 `[NEW] <name> (<mount point>)`. When a card is pulled, it prints
 `[REMOVED] <name>`. Cards that are present when the dialog starts count as appearing.
 
@@ -59,7 +59,7 @@ When one card is offered, it is chosen. When several are offered at the same pol
 dialog asks:
 
 ```
-Which card?
+Which card or camera?
   1  EOS_DIGITAL (/run/media/ada/EOS_DIGITAL)
   2  Untitled (/run/media/ada/Untitled)
 Choose 1–2 [1]: 
@@ -152,13 +152,13 @@ has none.
 - **Given** a remembered destination and template and no card
 - **When** the card `EOS_DIGITAL` appears at the third poll and is pulled at the fifth
   before any line is typed
-- **Then** the output shows `Waiting for a memory card…`, then
+- **Then** the output shows `Waiting for a memory card or camera…`, then
   `[NEW] EOS_DIGITAL (/run/media/ada/EOS_DIGITAL)` and `[REMOVED] EOS_DIGITAL`
 
 ### CLI-002.5 – One card is chosen, several are asked for
 - **Given** one card at the start, and in another run two cards at the start
 - **When** the guided import starts
-- **Then** the single card is read at once, and for two cards `Which card?` lists both
+- **Then** the single card is read at once, and for two cards `Which card or camera?` lists both
   numbered by mount point, and Enter chooses the first
 
 ### CLI-002.6 – A card with nothing to import
@@ -227,7 +227,6 @@ has none.
 - Import profiles (N8): IMPORT-011 and CLI-010 for `framehive import`; choosing a
   profile in the guided import is a later change, and will supersede the remembered
   template and destination.
-- Cameras over PTP or MTP (Q2): further device sources.
 - A graphical template editor with live preview (N9, R10): the GUI.
 
 ## Open questions
@@ -244,3 +243,4 @@ has none.
 | 2026-11-01 | Split from CLI-002 to stay under the document size limit; criteria renumbered, content unchanged |
 | 2026-11-01 | Exit code 2 also covers an unknown home folder or current folder, as implemented |
 | 2026-11-02 | Criterion CLI-002.15 for the unknown home folder or current folder |
+| 2026-11-06 | Cameras in the guided import (CLI-014): cross-reference; the waiting texts name cameras |

@@ -104,6 +104,7 @@ impl DeviceSource for MemoryDeviceSource {
     }
 
     fn eject(&self, device: &Device) -> Result<(), EjectError> {
+        // A device source lists only cards, so a camera is never present.
         if !self.list()?.contains(device) {
             return Err(EjectError::NotPresent {
                 device: device.clone(),
@@ -118,7 +119,7 @@ impl DeviceSource for MemoryDeviceSource {
         }
         state
             .mounts
-            .retain(|(mounted, _)| mounted != device.mount_point());
+            .retain(|(mounted, _)| Some(mounted.as_path()) != device.mount_point());
         Ok(())
     }
 }

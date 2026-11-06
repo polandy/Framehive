@@ -164,7 +164,7 @@ impl DeviceSource for MountsDeviceSource {
         let cards = self.cards()?;
         let Some(card) = cards
             .iter()
-            .find(|card| card.mount_point == device.mount_point())
+            .find(|card| Some(card.mount_point.as_path()) == device.mount_point())
         else {
             return Err(EjectError::NotPresent {
                 device: device.clone(),

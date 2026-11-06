@@ -9,7 +9,7 @@
 
 `framehive import` imports from a camera or phone connected over PTP or MTP as it
 imports a card, and `framehive cameras` shows which cameras are connected
-(ADR 0034 §5).
+(ADR 0034 §5). The guided import offers cameras too: CLI-014.
 
 ## Behaviour
 
@@ -175,7 +175,6 @@ source as for a folder.
 
 ## Out of scope
 
-- Cameras in the guided import (CLI-002, CLI-003): a later spec.
 - `--format json` for `framehive cameras`: not needed yet.
 - Stopping the program that holds a camera.
 
@@ -190,3 +189,4 @@ source as for a folder.
 | 2026-11-06 | Initial version; owner decisions E1–E7 of 2026-11-06 (ADR 0034) |
 | 2026-11-06 | CLI-013.14: the note of IMPORT-014.10 after the format readiness (owner decision E8); `camera:<port>` names an unlisted camera; implemented |
 | 2026-11-06 | CLI-013.15: a camera without a storage stops with exit code 2 and a remedy (owner decision E10) |
+| 2026-11-06 | Cross-reference to CLI-014 (cameras in the guided import) |

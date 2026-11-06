@@ -55,6 +55,7 @@ pub fn check_device_source<T: DeviceSourceUnderTest>(fresh: &mut dyn FnMut() -> 
     check_eject(&mut fresh(), &mut failures);
     check_failed_eject(&mut fresh(), &mut failures);
     check_eject_not_present(&mut fresh(), &mut failures);
+    check_eject_camera(&mut fresh(), &mut failures);
     failures
 }
 
@@ -107,7 +108,11 @@ fn check_sorted(under_test: &mut dyn DeviceSourceUnderTest, failures: &mut Vec<S
         .map(|name| Device::at(under_test.insert(name, DcimFolder::Folder)))
         .collect();
     expected.sort_by(|left, right| {
-        let bytes = |device: &Device| device.mount_point().as_os_str().as_encoded_bytes().to_vec();
+        let bytes = |device: &Device| {
+            device
+                .mount_point()
+                .map(|path| path.as_os_str().as_encoded_bytes().to_vec())
+        };
         bytes(left).cmp(&bytes(right))
     });
     let devices = listed(under_test, "sorted", failures);
@@ -154,7 +159,10 @@ fn check_failed_eject(under_test: &mut dyn DeviceSourceUnderTest, failures: &mut
         }
         Err(error @ EjectError::Failed { .. }) => {
             let text = error.to_string();
-            let mount_point = card.mount_point().display().to_string();
+            let mount_point = card
+                .mount_point()
+                .map(|path| path.display().to_string())
+                .unwrap_or_default();
             if !text.contains(&mount_point) || !text.contains(message) {
                 failures.push(format!(
                     "failed_eject: the error \"{text}\" does not name {mount_point} and \"{message}\""
@@ -184,6 +192,20 @@ fn check_eject_not_present(under_test: &mut dyn DeviceSourceUnderTest, failures:
         )),
         Err(error) => failures.push(format!(
             "eject_not_present: expected \"not present\" for {pulled}, got \"{error}\""
+        )),
+    }
+}
+
+fn check_eject_camera(under_test: &mut dyn DeviceSourceUnderTest, failures: &mut Vec<String>) {
+    // A device source lists only cards, so it never has a camera to eject.
+    let camera = Device::camera("Fujifilm X-T5", "usb:002,007");
+    match under_test.source().eject(&camera) {
+        Err(EjectError::NotPresent { device }) if device == camera => {}
+        Ok(()) => failures.push(format!(
+            "eject_camera: ejecting the camera {camera} succeeds"
+        )),
+        Err(error) => failures.push(format!(
+            "eject_camera: expected \"not present\" for {camera}, got \"{error}\""
         )),
     }
 }
