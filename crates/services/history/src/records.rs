@@ -86,6 +86,9 @@ pub struct RunStart {
     pub source: PathBuf,
     /// The import destination, as the canonical absolute path the run checks.
     pub import_destination: PathBuf,
+    /// The video destination, as the canonical absolute path the run checks, when the
+    /// run sends its videos to a folder of their own (IMPORT-013); `None` otherwise.
+    pub video_destination: Option<PathBuf>,
     /// When the run started.
     pub started_at: RecordedTime,
 }
@@ -95,8 +98,8 @@ pub struct RunStart {
 pub struct CopyRecord {
     /// The run that verified the copy.
     pub run: RunId,
-    /// The import destination or one backup destination, as the canonical absolute
-    /// path the run checks.
+    /// The import destination, the video destination or one backup destination, as
+    /// the canonical absolute path the run checks.
     pub destination: PathBuf,
     /// The source file, relative to the source.
     pub source_path: PathBuf,

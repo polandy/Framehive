@@ -77,6 +77,7 @@ impl ImportRun<'_> {
         let id = self.history.start_run(&RunStart {
             source: settings.source.to_path_buf(),
             import_destination: settings.destination.to_path_buf(),
+            video_destination: settings.separate_video_destination().map(Path::to_path_buf),
             started_at,
         })?;
         Ok(RecordedRun { id, started_at })

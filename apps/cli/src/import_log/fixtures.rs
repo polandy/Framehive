@@ -25,6 +25,7 @@ pub(super) fn run(finished_at: Option<RecordedTime>) -> LoggedRun {
         start: RunStart {
             source: PathBuf::from("/media/card"),
             import_destination: PathBuf::from("/library"),
+            video_destination: None,
             started_at: now(),
         },
         finished_at,

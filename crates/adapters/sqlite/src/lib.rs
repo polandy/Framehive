@@ -90,7 +90,7 @@ impl SqliteImportHistory {
         };
         if access == Access::Write {
             database
-                .create_schema()
+                .prepare_for_writing()
                 .map_err(|error| self.error(&error))?;
         } else if !database.has_schema() {
             return Ok(None);

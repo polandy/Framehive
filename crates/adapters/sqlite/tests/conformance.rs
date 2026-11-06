@@ -70,6 +70,8 @@ impl ImportHistoryUnderTest for InStateFolder {
 /// spec: IMPORT-010.5
 /// spec: IMPORT-010.6
 /// spec: IMPORT-010.8
+/// spec: IMPORT-010.9
+/// spec: IMPORT-013.10
 #[test]
 fn conforms_to_the_port() {
     let failures = check_import_history(&mut InStateFolder::new);

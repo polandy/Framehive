@@ -15,18 +15,30 @@ use crate::database::Database;
 use crate::text::{capture_time_text, parse_capture_time, parse_recorded_time};
 
 /// The columns of a run with the number of its copies, as [`logged_run`] reads them.
-const RUN_COLUMNS: &str = "SELECT runs.id, runs.started_at, runs.finished_at, runs.source, \
-     runs.import_destination, count(copies.run_id) FROM runs \
-     LEFT JOIN copies ON copies.run_id = runs.id";
+/// A database of the first layout, read as it is, has no video destinations.
+fn run_columns(database: &Database) -> String {
+    let video_destination = if database.has_video_destination() {
+        "runs.video_destination"
+    } else {
+        "NULL"
+    };
+    format!(
+        "SELECT runs.id, runs.started_at, runs.finished_at, runs.source, \
+         runs.import_destination, {video_destination}, count(copies.run_id) FROM runs \
+         LEFT JOIN copies ON copies.run_id = runs.id"
+    )
+}
 
 /// Records the start of `run` and returns its id.
 pub(crate) fn insert_run(database: &Database, run: &RunStart) -> rusqlite::Result<RunId> {
     database.connection.execute(
-        "INSERT INTO runs (started_at, source, import_destination) VALUES (?1, ?2, ?3)",
+        "INSERT INTO runs (started_at, source, import_destination, video_destination) \
+         VALUES (?1, ?2, ?3, ?4)",
         params![
             run.started_at.to_string(),
             path_bytes(&run.source),
             path_bytes(&run.import_destination),
+            run.video_destination.as_deref().map(path_bytes),
         ],
     )?;
     Ok(RunId::new(database.connection.last_insert_rowid()))
@@ -96,9 +108,10 @@ pub(crate) fn find_copies(
 
 /// Every run, oldest first, with the number of its copies (IMPORT-010).
 pub(crate) fn list_runs(database: &Database) -> rusqlite::Result<Vec<LoggedRun>> {
-    let mut statement = database
-        .connection
-        .prepare(&format!("{RUN_COLUMNS} GROUP BY runs.id ORDER BY runs.id"))?;
+    let mut statement = database.connection.prepare(&format!(
+        "{} GROUP BY runs.id ORDER BY runs.id",
+        run_columns(database)
+    ))?;
     let runs = statement.query_map([], logged_run)?;
     runs.collect()
 }
@@ -108,7 +121,10 @@ pub(crate) fn read_run_log(database: &Database, run: RunId) -> rusqlite::Result<
     let logged = database
         .connection
         .query_row(
-            &format!("{RUN_COLUMNS} WHERE runs.id = ?1 GROUP BY runs.id"),
+            &format!(
+                "{} WHERE runs.id = ?1 GROUP BY runs.id",
+                run_columns(database)
+            ),
             params![run.number()],
             logged_run,
         )
@@ -146,7 +162,7 @@ fn run_copies(database: &Database, run: RunId) -> rusqlite::Result<Vec<CopyRecor
     copies.collect()
 }
 
-/// A row of [`RUN_COLUMNS`].
+/// A row of [`run_columns`].
 fn logged_run(row: &Row<'_>) -> rusqlite::Result<LoggedRun> {
     let finished_at: Option<String> = row.get(2)?;
     Ok(LoggedRun {
@@ -155,12 +171,13 @@ fn logged_run(row: &Row<'_>) -> rusqlite::Result<LoggedRun> {
             started_at: recorded_time(row, 1)?,
             source: path(row, 3)?,
             import_destination: path(row, 4)?,
+            video_destination: optional_path(row, 5)?,
         },
         finished_at: finished_at
             .map(|text| parse_recorded_time(&text))
             .transpose()
             .map_err(|error| conversion_error(2, error))?,
-        copy_count: size(row, 5)?,
+        copy_count: size(row, 6)?,
     })
 }
 
@@ -168,6 +185,12 @@ fn logged_run(row: &Row<'_>) -> rusqlite::Result<LoggedRun> {
 fn path(row: &Row<'_>, column: usize) -> rusqlite::Result<PathBuf> {
     let bytes: Vec<u8> = row.get(column)?;
     Ok(PathBuf::from(OsStr::from_bytes(&bytes)))
+}
+
+/// A path column that may be `NULL`.
+fn optional_path(row: &Row<'_>, column: usize) -> rusqlite::Result<Option<PathBuf>> {
+    let bytes: Option<Vec<u8>> = row.get(column)?;
+    Ok(bytes.map(|bytes| PathBuf::from(OsStr::from_bytes(&bytes))))
 }
 
 /// A size or count column, which is never negative.

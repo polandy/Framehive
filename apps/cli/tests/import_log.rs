@@ -84,6 +84,7 @@ fn a_run_without_an_end_is_not_finished() {
         .start_run(&RunStart {
             source: PathBuf::from("/media/card"),
             import_destination: PathBuf::from("/library"),
+            video_destination: None,
             started_at: recorded_time(),
         })
         .unwrap();
@@ -342,6 +343,7 @@ fn a_path_that_is_not_utf8_is_printed_with_replacement_characters() {
         .start_run(&RunStart {
             source: PathBuf::from(OsStr::from_bytes(b"/media/\xff")),
             import_destination: PathBuf::from("/library"),
+            video_destination: None,
             started_at: recorded_time(),
         })
         .unwrap();

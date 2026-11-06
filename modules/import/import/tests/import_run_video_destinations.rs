@@ -15,6 +15,7 @@ mod history_support;
 use std::path::PathBuf;
 
 use files::testing::{MemoryFileSystem, MemoryFreeSpace};
+use history::ImportHistory;
 use import::{
     BackupOutcome, ConflictPolicy, FileOutcome, FormatReadiness, ImportSummary, RunError,
     SpaceShortage,
@@ -278,6 +279,51 @@ fn the_video_destination_may_be_the_import_destination() {
         paths_below(&file_system, DESTINATION),
         paths(&[(DESTINATION, PHOTO), (DESTINATION, VIDEO)])
     );
+}
+
+/// The video destinations the history lists for the runs of `machine`, oldest first.
+fn recorded_video_destinations(machine: &Machine) -> Vec<Option<PathBuf>> {
+    machine
+        .history
+        .list_runs()
+        .unwrap()
+        .into_iter()
+        .map(|run| run.start.video_destination)
+        .collect()
+}
+
+/// spec: IMPORT-013.10
+#[test]
+fn the_run_records_its_video_destination() {
+    let file_system = photo_and_video();
+    let machine = Machine::new();
+
+    machine.import(
+        &file_system,
+        &Import::with(FLAT).with_video_destination(VIDEOS),
+    );
+    machine.import(&file_system, &Import::with(FLAT));
+
+    assert_eq!(
+        recorded_video_destinations(&machine),
+        [Some(PathBuf::from(VIDEOS)), None]
+    );
+}
+
+/// A video destination that is the import destination is not a folder of its own, so
+/// the run records none.
+/// spec: IMPORT-013.10
+#[test]
+fn a_video_destination_that_is_the_import_destination_is_not_recorded() {
+    let file_system = photo_and_video();
+    let machine = Machine::new();
+
+    machine.import(
+        &file_system,
+        &Import::with(FLAT).with_video_destination(DESTINATION),
+    );
+
+    assert_eq!(recorded_video_destinations(&machine), [None]);
 }
 
 /// spec: IMPORT-013.3

@@ -23,6 +23,7 @@ pub(super) fn check_import_log<T: ImportHistoryUnderTest>(
     check_only_own_copies(&fresh(), failures);
     check_missing_run(&fresh(), failures);
     check_log_paths_are_bytes(&fresh(), failures);
+    check_video_destination(&fresh(), failures);
 }
 
 fn list(history: &dyn ImportHistory, check: &str, failures: &mut Vec<String>) -> Vec<LoggedRun> {
@@ -64,6 +65,7 @@ fn run_start() -> RunStart {
     RunStart {
         source: PathBuf::from("/media/card"),
         import_destination: PathBuf::from(DESTINATION),
+        video_destination: None,
         started_at: now(),
     }
 }
@@ -257,6 +259,62 @@ fn check_missing_run(under_test: &dyn ImportHistoryUnderTest, failures: &mut Vec
     }
 }
 
+/// The video destination of IMPORT-013.
+const VIDEO: &str = "/videos";
+
+/// A run with a video destination lists it and groups its copies there after the
+/// import destination; a run without one has none (IMPORT-013.10, IMPORT-010.9).
+fn check_video_destination(under_test: &dyn ImportHistoryUnderTest, failures: &mut Vec<String>) {
+    const CHECK: &str = "video_destination";
+    let history = under_test.history();
+    let with_video = RunStart {
+        video_destination: Some(PathBuf::from(VIDEO)),
+        ..run_start()
+    };
+    let run = match history.start_run(&with_video) {
+        Ok(run) => run,
+        Err(error) => {
+            failures.push(format!("{CHECK}: starting a run fails: {error}"));
+            return;
+        }
+    };
+    let Some(without_video) = start(history, CHECK, failures) else {
+        return;
+    };
+    let photo = named(run, DESTINATION, "DSCF0001.RAF", 1);
+    let photo_backup = named(run, BACKUP, "DSCF0001.RAF", 1);
+    let video = named(run, VIDEO, "clip.MOV", 2);
+    let video_backup = named(run, BACKUP, "clip.MOV", 2);
+    for copy in [&photo, &photo_backup, &video, &video_backup] {
+        record(history, copy, CHECK, failures);
+    }
+
+    let runs = list(history, CHECK, failures);
+    let listed: Vec<(RunId, Option<PathBuf>)> = runs
+        .iter()
+        .map(|logged| (logged.id, logged.start.video_destination.clone()))
+        .collect();
+    let expected_runs = [(run, Some(PathBuf::from(VIDEO))), (without_video, None)];
+    if listed != expected_runs {
+        failures.push(format!(
+            "{CHECK}: the runs have the video destinations {listed:?}, not {expected_runs:?}"
+        ));
+    }
+    let Some(log) = read_log(history, run, CHECK, failures) else {
+        return;
+    };
+    if log.run.start != with_video {
+        failures.push(format!("{CHECK}: the log is of {:?}", log.run.start));
+    }
+    let expected_copies = [photo, video, photo_backup, video_backup];
+    if log.copies != expected_copies {
+        failures.push(format!(
+            "{CHECK}: the log holds {:?}, not {expected_copies:?}",
+            log.copies
+        ));
+    }
+}
+
 /// Paths that are not valid UTF-8 come back as the same bytes (ADR 0031, section 3).
 #[cfg(unix)]
 fn check_log_paths_are_bytes(under_test: &dyn ImportHistoryUnderTest, failures: &mut Vec<String>) {
@@ -268,6 +326,7 @@ fn check_log_paths_are_bytes(under_test: &dyn ImportHistoryUnderTest, failures: 
     let run_start = RunStart {
         source: PathBuf::from(OsStr::from_bytes(b"/media/\xfd")),
         import_destination: PathBuf::from(OsStr::from_bytes(b"/library-\xff")),
+        video_destination: None,
         started_at: now(),
     };
     let run = match history.start_run(&run_start) {
