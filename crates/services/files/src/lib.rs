@@ -11,12 +11,14 @@
 
 #![forbid(unsafe_code)]
 
+mod cameras;
 mod checksum;
 mod copy;
 mod copy_error;
 mod ports;
 pub mod testing;
 
+pub use cameras::{Camera, CameraError, Cameras};
 pub use checksum::checksum_file;
 pub use copy::{VerifiedCopies, copy_verified, copy_verified_to_all};
 pub use copy_error::{CleanupFailure, CopyError, CopyErrorKind, CopyStep};
