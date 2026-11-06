@@ -22,7 +22,7 @@ fn mount_points(source: &dyn DeviceSource) -> Vec<PathBuf> {
         .list()
         .unwrap()
         .iter()
-        .map(|device| device.mount_point().to_path_buf())
+        .filter_map(|device| device.mount_point().map(Path::to_path_buf))
         .collect()
 }
 

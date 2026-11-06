@@ -3,14 +3,17 @@
 
 //! The [`DeviceWatch`], which turns successive lists into changes.
 
+use files::{CameraError, Cameras};
+use thiserror::Error;
+
 use crate::{Device, DeviceSource, ListError};
 
 /// What changed between two successful polls of a [`DeviceWatch`].
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct DeviceChanges {
-    /// The devices that were removed, sorted by mount point. Reported first.
+    /// The devices that were removed, sorted (cards, then cameras). Reported first.
     pub removed: Vec<Device>,
-    /// The devices that were added, sorted by mount point.
+    /// The devices that were added, sorted (cards, then cameras).
     pub added: Vec<Device>,
 }
 
@@ -22,8 +25,30 @@ impl DeviceChanges {
     }
 }
 
-/// Compares the list of each poll with the list of the last successful poll
-/// (DEVICES-001.8–10). It never waits; the caller decides when to poll (ADR 0023 §3).
+/// One kind of device could not be listed during a poll (DEVICES-001.19).
+#[derive(Debug, Error)]
+pub enum PollError {
+    /// The cards could not be listed.
+    #[error(transparent)]
+    Cards(ListError),
+    /// The cameras could not be listed.
+    #[error(transparent)]
+    Cameras(CameraError),
+}
+
+/// The result of one poll: the changes, and one error for each kind of device that
+/// could not be listed.
+#[derive(Debug, Default)]
+pub struct DevicePoll {
+    /// What changed; a kind that failed to list contributes nothing.
+    pub changes: DeviceChanges,
+    /// The kinds that could not be listed; the watch kept their last devices.
+    pub errors: Vec<PollError>,
+}
+
+/// Compares the list of each poll with the list of the last poll
+/// (DEVICES-001.8–10, 17–20). It never waits; the caller decides when to poll
+/// (ADR 0023 §3).
 #[derive(Debug, Clone, Default)]
 pub struct DeviceWatch {
     last: Vec<Device>,
@@ -36,20 +61,47 @@ impl DeviceWatch {
         DeviceWatch::default()
     }
 
-    /// The devices of the last successful poll, sorted by mount point.
+    /// The devices of the last poll, sorted: cards, then cameras.
     #[must_use]
     pub fn devices(&self) -> &[Device] {
         &self.last
     }
 
-    /// Lists the devices of `source` and reports what changed since the last
-    /// successful poll.
-    ///
-    /// # Errors
-    ///
-    /// Returns the source's [`ListError`]; the watch then keeps its last list.
-    pub fn poll(&mut self, source: &dyn DeviceSource) -> Result<DeviceChanges, ListError> {
-        let mut current = source.list()?;
+    /// Lists the cards of `cards` and the cameras of `cameras` independently and
+    /// reports what changed since the last poll. A kind that cannot be listed keeps
+    /// its last devices and adds an error to [`DevicePoll::errors`]; the other kind
+    /// is still reported.
+    pub fn poll(&mut self, cards: &dyn DeviceSource, cameras: &dyn Cameras) -> DevicePoll {
+        let mut errors = Vec::new();
+        let mut current: Vec<Device> = Vec::new();
+        match cards.list() {
+            Ok(listed) => current.extend(listed),
+            Err(error) => {
+                current.extend(
+                    self.last
+                        .iter()
+                        .filter(|device| !device.is_camera())
+                        .cloned(),
+                );
+                errors.push(PollError::Cards(error));
+            }
+        }
+        match cameras.list() {
+            Ok(listed) => current.extend(
+                listed
+                    .into_iter()
+                    .map(|camera| Device::camera(camera.model, camera.port)),
+            ),
+            Err(error) => {
+                current.extend(
+                    self.last
+                        .iter()
+                        .filter(|device| device.is_camera())
+                        .cloned(),
+                );
+                errors.push(PollError::Cameras(error));
+            }
+        }
         current.sort();
         current.dedup();
         let changes = DeviceChanges {
@@ -57,7 +109,7 @@ impl DeviceWatch {
             added: missing_from(&current, &self.last),
         };
         self.last = current;
-        Ok(changes)
+        DevicePoll { changes, errors }
     }
 }
 

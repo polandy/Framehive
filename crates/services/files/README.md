@@ -59,7 +59,7 @@ Boundaries:
 | `CopyError`, `CopyStep`, `CopyErrorKind`, `CleanupFailure` | The failed step, why, and a file that could not be removed |
 | `Cameras`, `Camera`, `CameraError` | Port for cameras and phones over PTP or MTP: lists them sorted by port, opens one as a `ReadOnlyFileSystem`, and tells a camera in use by another program from other failures (ADR 0034) |
 | `testing::MemoryFileSystem`, `testing::Fault` | `FileSystem` in memory with simulated crashes, symbolic links, read, write, read-back and listing faults, and stops after a number of operations |
-| `testing::MemoryCameras` | `Cameras` that serve `MemoryFileSystem`s as cameras, with cameras in use, a failing list, and whether a camera is still open |
+| `testing::MemoryCameras` | `Cameras` that serve `MemoryFileSystem`s as cameras, with cameras in use, cameras disconnected again, a failing list, and whether a camera is still open |
 | `testing::FnvHasher` | Non-cryptographic `Hasher` for tests; its checksums are written `fnv:<hex>` |
 | `testing::TempDir` | A temporary folder on the real file system, removed when dropped |
 | `testing::check_read_only_file_system`, `testing::ReadOnlyFileSystemUnderTest`, `testing::AddFolder`, `testing::AddFile`, `testing::MakeSymbolicLink` | Conformance suite of the `ReadOnlyFileSystem` port; it lays out its files through the storage of the implementation |

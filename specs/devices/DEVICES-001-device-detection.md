@@ -13,12 +13,19 @@ the import. Decisions and alternatives are in ADR 0023.
 
 ## Behaviour
 
-A **device** is a removable storage medium as it is offered for import (glossary). It
-has a **name**, the last component of its mount point (for example `EOS_DIGITAL`), and
-its **mount point**, which identifies it while it is mounted.
+A **device** is as it is offered for import (glossary) either a **card** or a
+**camera**. A card has a **name**, the last component of its mount point (for example
+`EOS_DIGITAL`), and its **mount point**, which identifies it while it is mounted. A
+camera is a camera or phone connected over PTP or MTP; its name is its model (for
+example `Fujifilm X-T5`) and it is identified by model and **port** (for example
+`usb:002,007`). A camera that is plugged in again gets a new port and so is a new device.
+A card is shown as `NAME (mount point)`, a camera as `Fujifilm X-T5 (camera at usb:002,007)`.
+Devices are sorted with all cards before all cameras; cards by mount point, cameras by
+port, then by model, each in byte order.
 
-The `devices` service defines the port `DeviceSource`. A device source lists the devices
-that are present, sorted by mount point, and ejects one of them.
+The `devices` service defines the port `DeviceSource`. A device source lists the cards
+that are present, sorted by mount point, and ejects one of them. It lists no cameras;
+cameras come from the `Cameras` port of the `files` service.
 
 The `mounts` adapter finds devices among the mounted file systems:
 
@@ -31,10 +38,12 @@ A considered mount is a device only if it has a folder named `DCIM` at its top l
 (DCF). A mount whose `DCIM` folder is missing, is a file, or cannot be examined is not a
 device.
 
-A **device watch** turns successive lists into changes. Each poll reads the list from
-the device source and compares it with the list of the last successful poll; before the
-first poll that list is empty. It reports the devices that were removed, then the
-devices that were added, each sorted by mount point.
+A **device watch** turns successive lists into changes. Each poll reads the cards from
+the device source and the cameras from the `Cameras` port, independently, and compares
+the result with the list of the last poll; before the first poll that list is empty. It
+reports the devices that were removed, then the devices that were added, each sorted.
+A kind that cannot be listed keeps its last devices and is reported as an error of the
+poll; the other kind is still reported.
 
 Ejecting a device makes it safe to pull:
 
@@ -102,8 +111,8 @@ Ejecting a device makes it safe to pull:
 - **Given** a device watch whose last poll saw card A
 - **When** a poll fails because the source cannot list the devices, and a later poll
   lists no device
-- **Then** the failed poll returns the source's error and reports no change, and the
-  later poll reports A as removed.
+- **Then** the failed poll reports the source's error and no change, and the later poll
+  reports A as removed.
 
 ### DEVICES-001.11 – Ejecting a card
 - **Given** a listed card
@@ -129,10 +138,54 @@ Ejecting a device makes it safe to pull:
 - **When** it is ejected
 - **Then** the eject fails with an error that says the device is not present.
 
+### DEVICES-001.15 – A camera is a device
+- **Given** a camera of model `Fujifilm X-T5` connected at `usb:002,007`
+- **When** it is represented as a device
+- **Then** its name is the model, it has the port and no mount point, and it is
+  displayed as `Fujifilm X-T5 (camera at usb:002,007)`.
+
+### DEVICES-001.16 – Cards sort before cameras
+- **Given** several cards and cameras
+- **When** they are sorted
+- **Then** all cards come before all cameras; cards are ordered by mount point and
+  cameras by port, then by model, in byte order.
+
+### DEVICES-001.17 – The watch reports cameras
+- **Given** a device watch, a card and a camera listed by the `Cameras` port
+- **When** the watch polls, and later polls after the camera was unplugged
+- **Then** the first poll reports the card and then the camera as added, and the later
+  poll reports the camera as removed.
+
+### DEVICES-001.18 – A replugged camera is a new device
+- **Given** a device watch whose last poll saw a camera at port `usb:002,007`
+- **When** the camera is plugged in again and listed at `usb:002,008`
+- **Then** the poll reports the camera at the old port as removed and the camera at the
+  new port as added.
+
+### DEVICES-001.19 – Failing cameras keep the last cameras
+- **Given** a device watch whose last poll saw a camera and card A
+- **When** a poll fails because the cameras cannot be listed, while card A was replaced
+  by card B
+- **Then** the poll reports the camera error, still reports A as removed and B as added,
+  and the watch keeps the camera.
+
+### DEVICES-001.20 – Failing cards keep the last cards
+- **Given** a device watch whose last poll saw a camera and card A
+- **When** a poll fails because the cards cannot be listed, while the camera was
+  unplugged
+- **Then** the poll reports the card error, still reports the camera as removed, and the
+  watch keeps card A.
+
+### DEVICES-001.21 – A camera is not ejected
+- **Given** a camera device
+- **When** it is ejected through a device source
+- **Then** the eject fails with an error that says the device is not present.
+
 ## Out of scope
 
 - Mounting devices that the system did not mount (A1).
-- Cameras and phones over PTP or MTP (Q2), iOS devices (Q3).
+- Importing from a camera: the `Cameras` port and its adapter (IMPORT-014); iOS
+  devices (Q3).
 - Free space and capacity of a device (Q7).
 - Remembering devices (Q9) and binding profiles to devices (N8).
 - Waiting for cards and asking the user: the guided import (CLI-002).
@@ -147,3 +200,4 @@ Ejecting a device makes it safe to pull:
 |---|---|
 | 2026-11-01 | Created (ADR 0023) |
 | 2026-11-01 | Implemented in `devices` and `adapter-mounts` |
+| 2026-11-06 | A device is a card or a camera; the watch polls both (criteria 15–21; ADR 0023 amendment) |

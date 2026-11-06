@@ -223,6 +223,7 @@ dependencies = [
 name = "devices"
 version = "0.1.0"
 dependencies = [
+ "files",
  "thiserror",
 ]
 

@@ -14,6 +14,7 @@ publish.workspace = true
 layer = "service"
 
 [dependencies]
+files.workspace = true
 thiserror.workspace = true
 
 [lints]

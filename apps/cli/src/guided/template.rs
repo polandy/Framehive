@@ -8,6 +8,7 @@ use import::{FilePlan, JobCode, PlannedRun, SourceScan};
 use naming::{NameTemplate, TemplateError};
 
 use super::dialog::{Dialog, Stop};
+use super::source::Source;
 
 /// The template presets of the template step: label and template (CLI-002).
 pub(super) const PRESETS: [(&str, &str); 3] = [
@@ -29,17 +30,25 @@ const PREVIEW_FILES: usize = 5;
 const PREVIEW_JOB_CODE: &str = "job-code";
 
 impl Dialog<'_> {
+    /// Whether the remembered template has `{job}`.
+    pub(super) fn uses_job_code(&self) -> bool {
+        self.state
+            .template
+            .as_ref()
+            .is_some_and(NameTemplate::uses_job_code)
+    }
+
     /// Asks for a template until the person accepts one in the preview, and remembers
     /// it (CLI-002, "Template step").
     pub(super) fn template_step(
         &mut self,
-        card: &Device,
+        source: &Source,
         scan: &SourceScan,
         job_code: Option<&JobCode>,
     ) -> Result<(), Stop> {
         loop {
-            let template = self.ask_template(card)?;
-            if self.preview(card, scan, &template, job_code)? {
+            let template = self.ask_template(source.device())?;
+            if self.preview(source, scan, &template, job_code)? {
                 self.state.template = Some(template);
                 self.remember();
                 return Ok(());
@@ -95,14 +104,16 @@ impl Dialog<'_> {
         self.say(&format!("  {indent}^ {}", error.kind));
     }
 
-    /// Previews `template` with the first files of the card and asks whether to use it.
+    /// Previews `template` with the first files of the card or camera and asks whether
+    /// to use it.
     fn preview(
         &mut self,
-        card: &Device,
+        source: &Source,
         scan: &SourceScan,
         template: &NameTemplate,
         job_code: Option<&JobCode>,
     ) -> Result<bool, Stop> {
+        let card = source.device();
         let preview_job_code = JobCode::parse(PREVIEW_JOB_CODE).ok();
         let destination = match (self.ports.resolve_folder)(&self.destination()) {
             Ok(destination) => destination,
@@ -112,7 +123,7 @@ impl Dialog<'_> {
             }
         };
         let settings = import::ImportSettings {
-            source: card.mount_point(),
+            source: source.root(),
             destination: &destination,
             backup_destinations: &[],
             video_destination: None,
@@ -124,7 +135,7 @@ impl Dialog<'_> {
             dry_run: true,
         };
         let ports = self.ports;
-        let run = ports.import_run();
+        let run = source.run(&ports);
         match run.plan_first(&settings, scan, PREVIEW_FILES) {
             Ok(plan) => self.show_preview(card, &plan),
             Err(error) => self.say(&format!("The template cannot be previewed: {error}")),

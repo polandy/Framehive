@@ -4,6 +4,8 @@
 //! The plan summary of the guided import: what it shows, what keeps Enter from
 //! starting the import, and the choices (CLI-003, CLI-006).
 
+use std::path::Path;
+
 use devices::Device;
 use domain::LocalDateTime;
 use import::{
@@ -62,14 +64,18 @@ impl Dialog<'_> {
     }
 
     /// The lines that keep the import of `plan` from starting, and a warning for each
-    /// destination whose free space is unknown (CLI-003, CLI-006, CLI-011).
+    /// destination whose free space is unknown (CLI-003, CLI-006, CLI-011). A `camera`
+    /// has no destination on the card.
     pub(super) fn blockers(
         &mut self,
         run: &ImportRun<'_>,
         settings: &ImportSettings<'_>,
         plan: &PlannedRun,
+        camera: bool,
     ) -> Vec<String> {
-        let mut lines = blockers(settings);
+        // No destination can lie on a camera (CLI-014).
+        let card = (!camera).then_some(settings.source);
+        let mut lines = blockers(settings, card);
         let space = run.check_free_space(settings, plan);
         lines.extend(space_blockers(&space.shortages));
         for unknown in &space.unknown {
@@ -116,18 +122,17 @@ impl Dialog<'_> {
 }
 
 /// The lines that keep the import from starting: a destination on the card, and a
-/// backup destination that is invalid (CLI-003, CLI-006). The free space is checked
+/// backup destination that is invalid (CLI-003, CLI-006). `card` is the source the
+/// destinations are checked against, none for a camera. The free space is checked
 /// apart, in [`space_blockers`].
-fn blockers(settings: &ImportSettings<'_>) -> Vec<String> {
+fn blockers(settings: &ImportSettings<'_>, card: Option<&Path>) -> Vec<String> {
     let mut blockers = Vec::new();
-    if settings.destination.starts_with(settings.source) {
+    if card.is_some_and(|card| settings.destination.starts_with(card)) {
         blockers.push(ON_CARD.to_owned());
     }
-    if let Err(error) = check_backup_destinations(
-        Some(settings.source),
-        settings.destination,
-        settings.backup_destinations,
-    ) {
+    if let Err(error) =
+        check_backup_destinations(card, settings.destination, settings.backup_destinations)
+    {
         let reason = match error.problem {
             BackupDestinationProblem::InsideSource => "it is on the card".to_owned(),
             problem => problem.to_string(),

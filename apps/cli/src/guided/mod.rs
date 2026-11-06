@@ -1,14 +1,17 @@
 // SPDX-FileCopyrightText: 2026 Framehive contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//! The guided import (CLI-002, CLI-003): `framehive` without a subcommand waits for a memory
-//! card, shows what it will do, imports the card on Enter and ejects it (ADR 0024).
+//! The guided import (CLI-002, CLI-003, CLI-014): `framehive` without a subcommand waits for
+//! a memory card or camera, shows what it will do, imports it on Enter and ejects or
+//! releases it (ADR 0024).
 
 mod card;
+mod device;
 mod dialog;
 mod events;
 mod format;
 mod progress;
+mod source;
 mod state;
 mod summary;
 mod template;
@@ -25,12 +28,13 @@ use adapter_blake3::Blake3Hasher;
 use adapter_clock::SystemClock;
 use adapter_free_space::StatvfsFreeSpace;
 use adapter_fs::StdFileSystem;
+use adapter_gphoto2::Gphoto2Cameras;
 use adapter_mounts::MountsDeviceSource;
 use adapter_sequence_counters::FileSequenceCounters;
 use adapter_sqlite::SqliteImportHistory;
 use devices::DeviceSource;
 use domain::Clock;
-use files::{FileSystem, FreeSpace, Hasher};
+use files::{Cameras, FileSystem, FreeSpace, Hasher};
 use history::ImportHistory;
 use import::{ImportRun, SessionSequence};
 use naming::SequenceCounters;
@@ -43,7 +47,8 @@ pub(crate) use format::space_text;
 use state::state_file;
 pub(crate) use state::{create_folders, state_folder};
 
-/// How often the devices are polled while the dialog waits for a line (CLI-002).
+/// How often the cards and cameras are polled while the dialog waits for a line
+/// (CLI-002, CLI-014).
 pub(crate) const POLL_INTERVAL: Duration = Duration::from_secs(1);
 
 /// The ports the dialog works through.
@@ -57,6 +62,8 @@ pub(crate) struct Ports<'a> {
     pub(crate) clock: &'a dyn Clock,
     /// The memory cards.
     pub(crate) devices: &'a dyn DeviceSource,
+    /// The cameras and phones connected over PTP or MTP (CLI-014).
+    pub(crate) cameras: &'a dyn Cameras,
     /// The persisted sequence counters (ADR 0029).
     pub(crate) counters: &'a dyn SequenceCounters,
     /// The session counter, shared by the imports of all cards in this run.
@@ -117,6 +124,7 @@ pub(crate) fn run_guided() -> ExitCode {
     let file_system = StdFileSystem::new();
     let clock = SystemClock::new();
     let devices = MountsDeviceSource::new();
+    let cameras = Gphoto2Cameras::new();
     let counters = FileSequenceCounters::new(environment.state_folder.clone());
     let session = SessionSequence::new();
     let history = SqliteImportHistory::new(&environment.state_folder);
@@ -125,6 +133,7 @@ pub(crate) fn run_guided() -> ExitCode {
         hasher: &Blake3Hasher,
         clock: &clock,
         devices: &devices,
+        cameras: &cameras,
         counters: &counters,
         session: &session,
         history: &history,

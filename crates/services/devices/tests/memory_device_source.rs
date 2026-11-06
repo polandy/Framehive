@@ -23,7 +23,7 @@ fn a_card_is_listed_with_its_name_and_mount_point() {
 
     assert_eq!(devices.len(), 1);
     assert_eq!(devices[0].name(), "EOS_DIGITAL");
-    assert_eq!(devices[0].mount_point(), Path::new(CARD));
+    assert_eq!(devices[0].mount_point(), Some(Path::new(CARD)));
 }
 
 /// spec: DEVICES-001.2
@@ -48,7 +48,7 @@ fn cards_are_listed_sorted_by_mount_point() {
         .list()
         .unwrap()
         .iter()
-        .map(|device| device.mount_point().to_path_buf())
+        .filter_map(|device| device.mount_point().map(Path::to_path_buf))
         .collect();
 
     assert_eq!(
@@ -168,4 +168,16 @@ fn a_device_is_displayed_with_its_name_and_mount_point() {
         Device::at(CARD).to_string(),
         "EOS_DIGITAL (/run/media/anna/EOS_DIGITAL)"
     );
+}
+
+/// spec: DEVICES-001.21
+#[test]
+fn ejecting_a_camera_is_not_present() {
+    let source = MemoryDeviceSource::new();
+    source.insert_card(CARD);
+    let camera = Device::camera("Fujifilm X-T5", "usb:002,007");
+
+    let error = source.eject(&camera).unwrap_err();
+
+    assert!(matches!(error, EjectError::NotPresent { device } if device == camera));
 }

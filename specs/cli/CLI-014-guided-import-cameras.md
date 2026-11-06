@@ -1,6 +1,6 @@
 # CLI-014 – Cameras in the guided import
 
-- Status: accepted
+- Status: implemented
 - Module: cli (`apps/cli`)
 - Origin: Q1, Q2
 - Depends on: CLI-002, CLI-003, CLI-013, DEVICES-001, IMPORT-014
@@ -147,3 +147,4 @@ imports it again without asking; files copied before are `already imported`.
 | Date | Change |
 |---|---|
 | 2026-11-06 | Initial version; owner decisions F1–F4 of 2026-11-06 (E7) |
+| 2026-11-06 | Implemented |

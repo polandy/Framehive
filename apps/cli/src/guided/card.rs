@@ -1,21 +1,23 @@
 // SPDX-FileCopyrightText: 2026 Framehive contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//! One card of the guided import: reading it, the loop of the plan summary, the import
-//! and the eject (CLI-003, CLI-006). The summary itself is in `summary.rs`.
+//! One card or camera of the guided import: the loop of the plan summary, the import and
+//! its report (CLI-003, CLI-006, CLI-014). Opening, reading, ejecting and releasing are
+//! in `device.rs`, the summary itself in `summary.rs`.
 
 use std::path::{Path, PathBuf};
 
-use devices::{Device, EjectError};
+use devices::Device;
 use history::HistoryError;
 use import::{
-    BackupOutcome, ConflictPolicy, FileOutcome, FileReport, FormatReadiness, ImportSettings,
-    ImportSummary, JobCode, PlannedRun, RunError, SourceScan, scan_folder,
+    BackupOutcome, CAMERA_FORMAT_READINESS_NOTE, ConflictPolicy, FileOutcome, FileReport,
+    FormatReadiness, ImportSettings, ImportSummary, JobCode, PlannedRun, RunError, SourceScan,
 };
 use naming::{CompatibilityMode, NameTemplate, SequenceError};
 
 use super::dialog::{Dialog, Interrupted, Stop};
 use super::progress::{ImportContext, ImportProgress};
+use super::source::Source;
 use super::state::create_folders;
 use super::summary::Action;
 use crate::format_readiness::format_readiness_lines;
@@ -23,7 +25,7 @@ use crate::report::{ReportPrinter, backup_line, backup_summary_lines, file_line,
 
 /// The settings of a guided import: compatibility mode on, `add_suffix` (CLI-003).
 fn settings<'s>(
-    card: &'s Device,
+    source: &'s Source,
     destination: &'s Path,
     backups: &'s [PathBuf],
     template: &'s NameTemplate,
@@ -31,7 +33,7 @@ fn settings<'s>(
     dry_run: bool,
 ) -> ImportSettings<'s> {
     ImportSettings {
-        source: card.mount_point(),
+        source: source.root(),
         destination,
         backup_destinations: backups,
         video_destination: None,
@@ -45,77 +47,84 @@ fn settings<'s>(
 }
 
 impl Dialog<'_> {
-    /// Reads `card`, asks what the dialog still needs, and imports it on Enter; with
-    /// `resumed`, imports it again at once (CLI-003, "A card pulled during the import").
-    pub(super) fn import_card(
+    /// Opens and reads `device`, asks what the dialog still needs, imports it on Enter,
+    /// and offers to eject or release it; with `resumed`, imports it again at once
+    /// (CLI-003, "A card pulled during the import"; CLI-014).
+    pub(super) fn import_device(
         &mut self,
-        card: &Device,
+        device: &Device,
         resumed: Option<Interrupted>,
     ) -> Result<(), Stop> {
-        self.say(&format!("Reading {}…", card.name()));
-        let scan = match scan_folder(self.ports.file_system, card.mount_point()) {
-            Ok(scan) => scan,
-            Err(error) => {
-                self.say(&format!("Could not read {}: {error}", card.name()));
-                return Ok(());
-            }
+        let Some((source, scan)) = self.read_device(device)? else {
+            return Ok(());
         };
         if scan.files.is_empty() {
             self.say(&format!(
                 "{} has no photos or videos to import.",
-                card.name()
+                device.name()
             ));
             return Ok(());
         }
         let resuming = resumed.is_some();
         let mut job_code = resumed.and_then(|interrupted| interrupted.job_code);
         if self.state.template.is_none() {
-            self.template_step(card, &scan, job_code.as_ref())?;
+            self.template_step(&source, &scan, job_code.as_ref())?;
         }
         if !resuming && self.uses_job_code() {
-            job_code = Some(self.ask_job_code(card)?);
+            job_code = Some(self.ask_job_code(device)?);
         }
-        if resuming {
-            let Some((destination, backups)) = self.resolved_folders() else {
-                return Ok(());
-            };
-            let Some(template) = self.state.template.clone() else {
-                return Ok(());
-            };
-            let settings = settings(
-                card,
-                &destination,
-                &backups,
-                &template,
-                job_code.as_ref(),
-                false,
-            );
-            if let Some(plan) = self.plan(card, &settings, &scan) {
-                self.import(card, &settings, plan)?;
-            }
-            return Ok(());
+        let reported = if resuming {
+            self.import_at_once(&source, &scan, job_code.as_ref())
+        } else {
+            self.summarise(&source, &scan, job_code)?
+        };
+        if reported {
+            self.finish_device(source)?;
         }
-        self.summarise(card, &scan, job_code)
+        Ok(())
     }
 
-    /// Shows the plan summary until the person imports or quits.
+    /// Imports the device of an interrupted import again without asking; returns
+    /// whether the import was reported.
+    fn import_at_once(
+        &mut self,
+        source: &Source,
+        scan: &SourceScan,
+        job_code: Option<&JobCode>,
+    ) -> bool {
+        let Some((destination, backups)) = self.resolved_folders() else {
+            return false;
+        };
+        let Some(template) = self.state.template.clone() else {
+            return false;
+        };
+        let settings = settings(source, &destination, &backups, &template, job_code, false);
+        let Some(plan) = self.plan(source, &settings, scan) else {
+            return false;
+        };
+        self.import(source, &settings, plan) == Imported::Reported
+    }
+
+    /// Shows the plan summary until the person imports or quits; returns whether an
+    /// import was reported.
     fn summarise(
         &mut self,
-        card: &Device,
+        source: &Source,
         scan: &SourceScan,
         mut job_code: Option<JobCode>,
-    ) -> Result<(), Stop> {
+    ) -> Result<bool, Stop> {
         let ports = self.ports;
-        let run = ports.import_run();
+        let run = source.run(&ports);
+        let card = source.device();
         loop {
             let Some((destination, backups)) = self.resolved_folders() else {
-                return Ok(());
+                return Ok(false);
             };
             let Some(template) = self.state.template.clone() else {
-                return Ok(());
+                return Ok(false);
             };
             let settings = settings(
-                card,
+                source,
                 &destination,
                 &backups,
                 &template,
@@ -129,25 +138,24 @@ impl Dialog<'_> {
                         "The template cannot number {}: {overflow}",
                         card.name()
                     ));
-                    self.retemplate(card, scan, &mut job_code)?;
+                    self.retemplate(source, scan, &mut job_code)?;
                     continue;
                 }
                 Err(error) => {
                     self.say(&plan_error_line(card, &error));
-                    return Ok(());
+                    return Ok(false);
                 }
             };
             self.show_summary(card, &plan, &settings);
-            let blockers = self.blockers(&run, &settings, &plan);
+            let blockers = self.blockers(&run, &settings, &plan, source.is_camera());
             for blocker in &blockers {
                 self.say(blocker);
             }
             match self.summary_action(card, template.uses_job_code(), &blockers)? {
-                Action::Import => {
-                    if self.import(card, &settings, plan)? {
-                        return Ok(());
-                    }
-                }
+                Action::Import => match self.import(source, &settings, plan) {
+                    Imported::NotStarted => {}
+                    imported => return Ok(imported == Imported::Reported),
+                },
                 Action::List => {
                     let listing = ImportSettings {
                         dry_run: true,
@@ -159,7 +167,7 @@ impl Dialog<'_> {
                     printer.print_summary(&summary);
                 }
                 Action::JobCode => job_code = Some(self.ask_job_code(card)?),
-                Action::Template => self.retemplate(card, scan, &mut job_code)?,
+                Action::Template => self.retemplate(source, scan, &mut job_code)?,
                 Action::Destination => self.ask_destination(&destination)?,
                 Action::Backup => self.ask_backups()?,
             }
@@ -169,13 +177,13 @@ impl Dialog<'_> {
     /// Runs the template step, and asks for a job code if the new template needs one.
     fn retemplate(
         &mut self,
-        card: &Device,
+        source: &Source,
         scan: &SourceScan,
         job_code: &mut Option<JobCode>,
     ) -> Result<(), Stop> {
-        self.template_step(card, scan, job_code.as_ref())?;
+        self.template_step(source, scan, job_code.as_ref())?;
         if job_code.is_none() && self.uses_job_code() {
-            *job_code = Some(self.ask_job_code(card)?);
+            *job_code = Some(self.ask_job_code(source.device())?);
         }
         Ok(())
     }
@@ -183,53 +191,53 @@ impl Dialog<'_> {
     /// Plans every file of `scan`, or prints why it cannot be planned.
     fn plan(
         &mut self,
-        card: &Device,
+        source: &Source,
         settings: &ImportSettings<'_>,
         scan: &SourceScan,
     ) -> Option<PlannedRun> {
         let ports = self.ports;
-        let run = ports.import_run();
+        let run = source.run(&ports);
         match run.plan(settings, scan) {
             Ok(plan) => Some(plan),
             Err(error) => {
-                self.say(&plan_error_line(card, &error));
+                self.say(&plan_error_line(source.device(), &error));
                 None
             }
         }
     }
 
     /// Creates the destination and the backup destinations and imports `plan` with the
-    /// progress line, then reports with the format readiness (CLI-007) and offers the
-    /// eject. Returns `false` when the import could not start.
+    /// progress line, then reports with the format readiness (CLI-007).
     fn import(
         &mut self,
-        card: &Device,
+        source: &Source,
         settings: &ImportSettings<'_>,
         plan: PlannedRun,
-    ) -> Result<bool, Stop> {
+    ) -> Imported {
         let ports = self.ports;
+        let card = source.device();
         let folders = std::iter::once(settings.destination)
             .chain(settings.backup_destinations.iter().map(PathBuf::as_path));
         for folder in folders {
             if let Err(error) = create_folders(ports.file_system, folder) {
                 self.say(&format!("Could not create {}: {error}", folder.display()));
-                return Ok(false);
+                return Imported::NotStarted;
             }
         }
         if let Some(job_code) = settings.job_code {
             self.state.job_codes.mark_used(job_code.clone());
             self.remember();
         }
-        let run = ports.import_run();
+        let run = source.run(&ports);
         let plan = match run.start(settings, plan) {
             Ok(plan) => plan,
             Err(RunError::History(error)) => {
                 self.say(&history_line(&error));
-                return Ok(false);
+                return Imported::NotStarted;
             }
             Err(error) => {
                 self.say(&format!("Could not import {}: {error}", card.name()));
-                return Ok(false);
+                return Imported::NotStarted;
             }
         };
         let sizes = plan.files().iter().map(|file| file.found.size).collect();
@@ -237,31 +245,55 @@ impl Dialog<'_> {
             output: &mut *self.output,
             watch: &mut self.watch,
             devices: ports.devices,
+            cameras: ports.cameras,
             clock: ports.clock,
         };
-        let mut progress = ImportProgress::start(context, card, sizes);
+        let camera = source
+            .opened_camera()
+            .map(|camera| camera.file_system.as_ref());
+        let mut progress = ImportProgress::start(context, card, camera, sizes);
         let summary = run.execute(settings, plan, &mut progress);
         let changes = progress.finish();
         self.show_changes(&changes);
         if summary.stopped {
-            self.say(&format!(
+            self.interrupted_by_removal(source, settings.job_code);
+            return Imported::Stopped;
+        }
+        self.report(&summary, source);
+        Imported::Reported
+    }
+
+    /// Says that the device went during its import and remembers the import, to run it
+    /// again when the device is back (CLI-003, CLI-014). A camera that stopped
+    /// answering may still be listed; it is reported as removed now, and not again.
+    fn interrupted_by_removal(&mut self, source: &Source, job_code: Option<&JobCode>) {
+        let card = source.device();
+        let line = if source.is_camera() {
+            if self.watch.devices().contains(card) {
+                self.say(&format!("[REMOVED] {}", card.name()));
+                self.forget_unanswered(card);
+            }
+            format!(
+                "{} was disconnected during the import. Connect it again to go on.",
+                card.name()
+            )
+        } else {
+            format!(
                 "{} was removed during the import. Insert it again to go on.",
                 card.name()
-            ));
-            self.interrupted = Some(Interrupted {
-                name: card.name().to_owned(),
-                job_code: settings.job_code.cloned(),
-            });
-            return Ok(true);
-        }
-        self.report(&summary);
-        self.offer_eject(card)?;
-        Ok(true)
+            )
+        };
+        self.say(&line);
+        self.interrupted = Some(Interrupted {
+            name: card.name().to_owned(),
+            camera: source.is_camera(),
+            job_code: job_code.cloned(),
+        });
     }
 
     /// Reports a finished import: the files that need attention, the summaries, a
     /// history that could not record, and the format readiness.
-    fn report(&mut self, summary: &ImportSummary) {
+    fn report(&mut self, summary: &ImportSummary, source: &Source) {
         for report in &summary.files {
             self.report_file(report);
         }
@@ -274,8 +306,12 @@ impl Dialog<'_> {
         }
         // A card pulled meanwhile was imported again as a whole (CLI-003.8), so this
         // summary covers every file of the card (CLI-007.10).
-        for line in format_readiness_lines(&FormatReadiness::of(summary), "card") {
-            self.say(&line);
+        let lines = format_readiness_lines(&FormatReadiness::of(summary), source.noun());
+        for line in &lines {
+            self.say(line);
+        }
+        if source.is_camera() && !lines.is_empty() {
+            self.say(CAMERA_FORMAT_READINESS_NOTE);
         }
     }
 
@@ -298,39 +334,6 @@ impl Dialog<'_> {
         for backup in failed_backups {
             self.say(&backup_line(backup, &[]));
         }
-    }
-
-    /// Asks whether to eject `card` and ejects it (CLI-003, "Report and eject").
-    fn offer_eject(&mut self, card: &Device) -> Result<(), Stop> {
-        if !self.watch.devices().contains(card) {
-            return Ok(());
-        }
-        let prompt = format!("Eject {}? [Y/n]: ", card.name());
-        if !self.ask_yes(&prompt, Some(card))? {
-            return Ok(());
-        }
-        match self.ports.devices.eject(card) {
-            Ok(()) => {
-                self.say(&format!("{} can be removed now.", card.name()));
-                self.forget_ejected(card);
-            }
-            Err(error) => {
-                let reason = match error {
-                    EjectError::Failed { message, .. } => message,
-                    error => error.to_string(),
-                };
-                self.say(&format!("Could not eject {}: {reason}", card.name()));
-            }
-        }
-        Ok(())
-    }
-
-    /// Whether the remembered template has `{job}`.
-    pub(super) fn uses_job_code(&self) -> bool {
-        self.state
-            .template
-            .as_ref()
-            .is_some_and(NameTemplate::uses_job_code)
     }
 
     /// The destination and the backup destinations as the canonical absolute paths that
@@ -361,6 +364,17 @@ impl Dialog<'_> {
             .clone()
             .unwrap_or_else(|| self.environment.home.join("Pictures"))
     }
+}
+
+/// How an import that was asked for ended.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Imported {
+    /// It did not start; the plan summary is shown again.
+    NotStarted,
+    /// The device went during the import.
+    Stopped,
+    /// It ran and was reported.
+    Reported,
 }
 
 /// The line for a plan that cannot be made; a history that cannot be used has its own

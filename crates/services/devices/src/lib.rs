@@ -5,20 +5,24 @@
 //! devices offered for import and ejects them, and the [`DeviceWatch`], which turns
 //! successive lists into changes (DEVICES-001, ADR 0023).
 //!
-//! The service never reads mounts itself; `adapter-mounts` implements the port.
+//! The service never reads mounts itself; `adapter-mounts` implements the port. A
+//! device is a card or a camera; the watch lists cameras through the `Cameras` port of
+//! the files service.
 //!
 //! ```
 //! use devices::DeviceWatch;
 //! use devices::testing::MemoryDeviceSource;
+//! use files::testing::MemoryCameras;
 //!
-//! let source = MemoryDeviceSource::new();
+//! let cards = MemoryDeviceSource::new();
+//! let cameras = MemoryCameras::new();
 //! let mut watch = DeviceWatch::new();
-//! source.insert_card("/run/media/anna/EOS_DIGITAL");
+//! cards.insert_card("/run/media/anna/EOS_DIGITAL");
 //!
-//! let changes = watch.poll(&source)?;
-//! assert_eq!(changes.added[0].name(), "EOS_DIGITAL");
-//! assert!(watch.poll(&source)?.is_empty());
-//! # Ok::<(), devices::ListError>(())
+//! let poll = watch.poll(&cards, &cameras);
+//! assert_eq!(poll.changes.added[0].name(), "EOS_DIGITAL");
+//! assert!(poll.errors.is_empty());
+//! assert!(watch.poll(&cards, &cameras).changes.is_empty());
 //! ```
 
 #![forbid(unsafe_code)]
@@ -29,7 +33,7 @@ mod port;
 pub mod testing;
 mod watch;
 
-pub use device::Device;
+pub use device::{Device, DeviceKind};
 pub use error::{EjectError, ListError};
 pub use port::DeviceSource;
-pub use watch::{DeviceChanges, DeviceWatch};
+pub use watch::{DeviceChanges, DevicePoll, DeviceWatch, PollError};

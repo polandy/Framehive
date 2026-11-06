@@ -54,7 +54,7 @@ by which the history identifies a destination (IMPORT-009).
 
 - [Cameras](docs/cameras.md): `camera:` sources and `framehive cameras` (CLI-013)
 - [Guided import](docs/guided-import.md): `framehive` without a subcommand (CLI-002,
-  CLI-003)
+  CLI-003, CLI-014)
 
 ## Import profiles
 
@@ -116,7 +116,7 @@ standard error as `warning: <message>`; there is no other log output yet.
 | `config_init` | `framehive config init`: the example profile (CLI-010) |
 | `import_log` | `framehive import-log` (CLI-009): reading the history, and the `text`, `json` and `csv` writers |
 | `format_readiness` | The format readiness lines (CLI-007), shared by `framehive import` and the guided import |
-| `guided` | The guided import (CLI-002, CLI-003): `dialog` (prompts, waiting, remembered answers), `card` (summary, import, eject), `summary` (plan summary, blockers), `template` (template step, job code), `progress` (progress line, stop on a pulled card), `format` (sizes, rate, time left), `state` (state file), `events` (input events) |
+| `guided` | The guided import (CLI-002, CLI-003, CLI-014): `dialog` (prompts, waiting, remembered answers), `source` (a card or an opened camera), `device` (opening and reading, eject or release), `card` (summary, import, report), `summary` (plan summary, blockers), `template` (template step, job code), `progress` (progress line, stop on a pulled card), `format` (sizes, rate, time left), `state` (state file), `events` (input events) |
 
 ## Tests
 
