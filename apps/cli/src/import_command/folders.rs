@@ -19,7 +19,10 @@ use crate::report::BackupName;
 
 /// The folders of an import, resolved, each with the folder as given.
 pub(super) struct Folders {
+    /// The source folder, or the root `/` of a camera.
     pub(super) source: PathBuf,
+    /// Whether the source is a camera (CLI-013), on a device of its own.
+    pub(super) source_is_camera: bool,
     pub(super) destination: Destination,
     /// The destination as given on the command line or in the profile.
     pub(super) given_destination: PathBuf,
@@ -32,6 +35,12 @@ pub(super) struct Folders {
 }
 
 impl Folders {
+    /// The source the destinations are checked against: none for a camera, which no
+    /// destination can lie inside.
+    fn checked_source(&self) -> Option<&Path> {
+        (!self.source_is_camera).then_some(self.source.as_path())
+    }
+
     /// The resolved paths of the backup destinations, in their order.
     pub(super) fn backup_paths(&self) -> Vec<PathBuf> {
         paths_of(&self.backups)
@@ -72,7 +81,8 @@ fn paths_of(folders: &[(Destination, PathBuf)]) -> Vec<PathBuf> {
 }
 
 /// Resolves the source and the destinations and checks them against each other
-/// (CLI-001, CLI-005).
+/// (CLI-001, CLI-005). A camera source (CLI-013) has the root `/` and is not resolved,
+/// and no destination is checked against it.
 ///
 /// # Errors
 ///
@@ -80,11 +90,18 @@ fn paths_of(folders: &[(Destination, PathBuf)]) -> Vec<PathBuf> {
 pub(super) fn resolve_folders(
     arguments: &ImportArguments,
     chosen: &ChosenSettings,
+    source_is_camera: bool,
 ) -> Result<Folders, String> {
-    let source = resolve_source(&arguments.source).map_err(|error| error.to_string())?;
+    let source = if source_is_camera {
+        PathBuf::from("/")
+    } else {
+        resolve_source(&arguments.source).map_err(|error| error.to_string())?
+    };
     let destination =
         resolve_destination(&chosen.destination).map_err(|error| error.to_string())?;
-    check_outside(&source, &destination).map_err(|error| error.to_string())?;
+    if !source_is_camera {
+        check_outside(&source, &destination).map_err(|error| error.to_string())?;
+    }
     let backups = resolve_backups(&chosen.backups, "backup destination")?;
     let video_destination = chosen
         .video_destination
@@ -94,6 +111,7 @@ pub(super) fn resolve_folders(
     let video_backups = resolve_backups(&chosen.video_backups, "video backup destination")?;
     let folders = Folders {
         source,
+        source_is_camera,
         destination,
         given_destination: chosen.destination.clone(),
         backups,
@@ -101,7 +119,7 @@ pub(super) fn resolve_folders(
         video_backups,
     };
     check_backup_destinations(
-        &folders.source,
+        folders.checked_source(),
         &folders.destination.path,
         &folders.backup_paths(),
     )
@@ -121,8 +139,10 @@ fn check_video_folders(folders: &Folders) -> Result<(), String> {
     let video_backup_message = |error: BackupDestinationError| {
         invalid_backup_message(&error, &folders.video_backups, "video backup destination")
     };
-    if let Some((video_destination, given)) = &folders.video_destination {
-        check_video_destination(&folders.source, &video_destination.path).map_err(|error| {
+    if let (Some((video_destination, given)), Some(source)) =
+        (&folders.video_destination, folders.checked_source())
+    {
+        check_video_destination(source, &video_destination.path).map_err(|error| {
             format!(
                 "invalid video destination {}: {}",
                 given.display(),
@@ -135,8 +155,12 @@ fn check_video_folders(folders: &Folders) -> Result<(), String> {
             |error| invalid_backup_message(&error, &folders.backups, "backup destination"),
         )?;
     }
-    check_backup_destinations(&folders.source, &folders.destination.path, &video_backups)
-        .map_err(video_backup_message)?;
+    check_backup_destinations(
+        folders.checked_source(),
+        &folders.destination.path,
+        &video_backups,
+    )
+    .map_err(video_backup_message)?;
     if let Some(video_destination) = folders.video_destination_path() {
         check_against_video_destination(video_destination, &video_backups)
             .map_err(video_backup_message)?;

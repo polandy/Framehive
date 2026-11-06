@@ -22,6 +22,7 @@ adapter-blake3.workspace = true
 adapter-clock.workspace = true
 adapter-free-space.workspace = true
 adapter-fs.workspace = true
+adapter-gphoto2.workspace = true
 adapter-mounts.workspace = true
 adapter-sequence-counters.workspace = true
 adapter-sqlite.workspace = true

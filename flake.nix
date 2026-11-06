@@ -96,6 +96,9 @@
             "-p"
             "framehive-cli"
           ];
+          # `framehive import camera:` reads cameras through adapter-gphoto2 (ADR 0034).
+          # The patched library also lets the package's tests read a `disk:` port.
+          buildInputs = [ (libgphoto2 pkgs) ];
           meta = {
             description = "Modular photo library: imports photos and videos from the command line";
             license = lib.licenses.gpl3Plus;

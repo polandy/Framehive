@@ -110,6 +110,16 @@ All user-visible changes are listed here. The format follows
   the report ends with `(video destination)`, the format readiness counts each file's
   own locations, and `framehive import-log` shows a run's video destination. The import
   history moves to layout 2 the first time it is written (ADR 0031).
+- Cameras and phones over PTP and MTP (IMPORT-014, CLI-013, ADR 0034):
+  `framehive import camera: <destination>` imports from the only connected camera, and
+  `camera:<model>` or `camera:<port>` picks one of several; `framehive cameras` lists
+  the connected cameras by model and port. Only the `DCIM` folder of each storage is
+  scanned; the camera is read through libgphoto2, never written, and released when the
+  command ends. A camera that another program holds (the file manager on Linux,
+  `ptpcamerad` on macOS) stops the import with exit code 2 and says what to close.
+  After the format readiness, a camera run notes that only the files below `DCIM` were
+  checked. The import log names the source `camera:<model>`. A folder whose name starts
+  with `camera:` is given as `./camera:…`.
 
 ### Fixed
 

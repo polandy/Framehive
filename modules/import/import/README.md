@@ -79,7 +79,7 @@ Boundaries:
 | `JobCode`, `JobCodeError`, `MAX_JOB_CODE_CHARACTERS` | A validated job code and why a text is not one (IMPORT-006) |
 | `RecentJobCodes`, `MAX_RECENT_JOB_CODES` | The job codes used before, most recent first (IMPORT-006) |
 | `require_job_code`, `MissingJobCode` | Refuses an import whose template uses `{job}` without a job code (IMPORT-006) |
-| `ImportRun`, `ImportSettings` | Scans, plans, starts, resolves and copies, file by file (ADR 0020, IMPORT-004); `with_source` reads the source from its own `ReadOnlyFileSystem` (ADR 0034) |
+| `ImportRun`, `ImportSettings` | Scans, plans, starts, resolves and copies, file by file (ADR 0020, IMPORT-004); `with_source` reads the source from its own `ReadOnlyFileSystem`, against which no destination is checked, and `with_source_name` names it in the import history, such as `camera:<model>` (ADR 0034) |
 | `SessionSequence` | The session counter of one run of the application (IMPORT-002) |
 | `PlannedRun`, `RunFile`, `FilePlan` | An import run planned and not yet executed: each selected file with its plan entry, imported before, or its dating failure |
 | `ProgressSink`, `NoProgress` | Receives each step of an import run on the caller's thread |

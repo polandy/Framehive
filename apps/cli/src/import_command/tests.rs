@@ -6,24 +6,24 @@
 
 #![allow(clippy::unwrap_used, reason = "test helpers may panic on bad fixtures")]
 
-use std::ffi::OsString;
+use std::ffi::{OsStr, OsString};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use files::testing::{MemoryFreeSpace, TempDir};
+use files::testing::{MemoryCameras, MemoryFreeSpace, TempDir};
 use import::ImportSummary;
 
 use super::{NotStarted, Surroundings, import_with};
 use crate::arguments::{Invocation, parse};
 
 /// A card with `DSCF0001.RAF` of 2.5 MB, and the folders of one test run.
-struct Folders {
+pub(super) struct Folders {
     _temp: TempDir,
     root: PathBuf,
 }
 
 impl Folders {
-    fn new() -> Self {
+    pub(super) fn new() -> Self {
         let temp = TempDir::new().unwrap();
         // The free space in memory is matched by path, so the paths must be the
         // canonical ones the command resolves.
@@ -38,14 +38,49 @@ impl Folders {
         Folders { _temp: temp, root }
     }
 
-    fn path(&self, name: &str) -> PathBuf {
+    pub(super) fn path(&self, name: &str) -> PathBuf {
         self.root.join(name)
     }
 
     /// Runs `framehive import <card> <arguments>` against `free_space`.
     fn import(&self, arguments: &[&Path], free_space: &MemoryFreeSpace) -> Run {
+        self.import_from(
+            self.path("card").as_os_str(),
+            arguments,
+            free_space,
+            &MemoryCameras::new(),
+        )
+    }
+
+    /// Runs `framehive import <source> <library> <options>` with `cameras` connected.
+    pub(super) fn import_camera(
+        &self,
+        source: &str,
+        options: &[&str],
+        cameras: &MemoryCameras,
+    ) -> Run {
+        let library = self.path("library");
+        let mut arguments = vec![library.as_path()];
+        arguments.extend(options.iter().map(Path::new));
+        self.import_from(
+            source.as_ref(),
+            &arguments,
+            &MemoryFreeSpace::unlimited(),
+            cameras,
+        )
+    }
+
+    /// Runs `framehive import <source> <arguments>` against `free_space` and
+    /// `cameras`.
+    fn import_from(
+        &self,
+        source: &OsStr,
+        arguments: &[&Path],
+        free_space: &MemoryFreeSpace,
+        cameras: &MemoryCameras,
+    ) -> Run {
         let mut line: Vec<OsString> = vec!["framehive".into(), "import".into()];
-        line.push(self.path("card").into());
+        line.push(source.to_owned());
         line.extend(
             arguments
                 .iter()
@@ -62,6 +97,7 @@ impl Folders {
             Surroundings {
                 state_folder: &self.path("state"),
                 free_space,
+                cameras,
                 output: &mut output,
                 errors: &mut errors,
             },
@@ -75,15 +111,15 @@ impl Folders {
 }
 
 /// What one run of the command did.
-struct Run {
-    result: Result<ImportSummary, NotStarted>,
-    output: String,
-    errors: String,
+pub(super) struct Run {
+    pub(super) result: Result<ImportSummary, NotStarted>,
+    pub(super) output: String,
+    pub(super) errors: String,
 }
 
 impl Run {
     /// The lines of the error that kept the import from starting.
-    fn not_started(&self) -> &[String] {
+    pub(super) fn not_started(&self) -> &[String] {
         match &self.result {
             Err(NotStarted(lines)) => lines,
             Ok(_) => panic!("the import ran: {}", self.output),

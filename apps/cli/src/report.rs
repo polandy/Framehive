@@ -29,6 +29,9 @@ pub(crate) struct ReportPrinter<W: Write> {
     output: W,
     dry_run: bool,
     backup_names: Vec<BackupName>,
+    /// A note printed after the format readiness, such as the one of a camera run
+    /// (IMPORT-014.10).
+    format_readiness_note: Option<&'static str>,
 }
 
 impl<W: Write> ReportPrinter<W> {
@@ -38,12 +41,19 @@ impl<W: Write> ReportPrinter<W> {
             output,
             dry_run,
             backup_names: Vec::new(),
+            format_readiness_note: None,
         }
     }
 
     /// Names the backup destinations in the backup lines as `names` say.
     pub(crate) fn with_backup_names(mut self, names: Vec<BackupName>) -> Self {
         self.backup_names = names;
+        self
+    }
+
+    /// Prints `note` after the format readiness of a run that wrote.
+    pub(crate) fn with_format_readiness_note(mut self, note: &'static str) -> Self {
+        self.format_readiness_note = Some(note);
         self
     }
 
@@ -60,6 +70,9 @@ impl<W: Write> ReportPrinter<W> {
         }
         for line in format_readiness_lines(&FormatReadiness::of(summary), "source") {
             self.write_line(&line);
+        }
+        if let Some(note) = self.format_readiness_note {
+            self.write_line(note);
         }
     }
 

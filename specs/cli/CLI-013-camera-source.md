@@ -1,6 +1,6 @@
 # CLI-013 – Cameras in `framehive import`
 
-- Status: accepted
+- Status: implemented
 - Module: cli (`apps/cli`)
 - Origin: Q2, N18
 - Depends on: CLI-001, CLI-007, CLI-009, CLI-010, IMPORT-014
@@ -49,14 +49,24 @@ code is 2:
 | `several cameras <model> are connected; name one: camera:<port>, …` | More than one camera has that model |
 | `cannot open the camera at <port>: <reason>` | The camera cannot be opened |
 | `the camera <model> at <port> is in use by another program; close it (the file manager on Linux, ptpcamerad on macOS) and try again` | Another program holds the camera |
+| `the camera at <port> is in use by another program; close it (the file manager on Linux, ptpcamerad on macOS) and try again` | Another program holds a camera given by a port that is not listed |
 
 **The run.** The import runs as in CLI-001 with the files of IMPORT-014; paths in the
 report are relative to the camera's root. A camera that stops answering during the run
 fails the remaining files, and the exit code is 1. The format readiness (CLI-007) says
-`source`. The camera is released when the command ends.
+`source`, and after its lines a camera run that is not a dry run prints the note of
+IMPORT-014:
+
+```
+Only the files below DCIM were checked. Files outside DCIM, such as a phone's other folders, are not backed up.
+```
+
+The camera is released when the command ends. No destination is checked against a
+camera source, because none can lie on it.
 
 **History and log.** The import log (CLI-009) shows the source of a camera run as
-`camera:<model>`, with the model the opened camera reports.
+`camera:<model>`, with the model the opened camera reports. A camera opened by a port
+that `framehive cameras` does not list is shown as `camera:<port>`.
 
 **Profiles.** A profile (CLI-010) supplies the destination and settings for a camera
 source as for a folder.
@@ -146,6 +156,14 @@ source as for a folder.
 - **When** the user runs `framehive import ./camera:x <destination>`
 - **Then** `DSCF0001.RAF` is copied, and no camera is opened
 
+### CLI-013.14 – A camera run notes that only DCIM was checked
+- **Given** the camera of CLI-013.4
+- **When** the user runs `framehive import camera: <destination>`, and in a second case
+  with `--dry-run`
+- **Then** the line after the format readiness is
+  `Only the files below DCIM were checked. Files outside DCIM, such as a phone's other folders, are not backed up.`,
+  and the dry run does not print it
+
 ## Out of scope
 
 - Cameras in the guided import (CLI-002, CLI-003): a later spec.
@@ -161,3 +179,4 @@ source as for a folder.
 | Date | Change |
 |---|---|
 | 2026-11-06 | Initial version; owner decisions E1–E7 of 2026-11-06 (ADR 0034) |
+| 2026-11-06 | CLI-013.14: the note of IMPORT-014.10 after the format readiness (owner decision E8); `camera:<port>` names an unlisted camera; implemented |

@@ -67,14 +67,15 @@ pub struct BackupDestinationError {
 
 /// Checks the backup destinations against the source, the import destination and
 /// each other (IMPORT-007, "Before the run"). The paths are compared as given: all
-/// are absolute and without `..`.
+/// are absolute and without `..`. A `source` of `None` lies on a device of its own,
+/// such as a camera (ADR 0034), so no backup destination can lie inside it.
 ///
 /// # Errors
 ///
 /// Returns a [`BackupDestinationError`] for the first backup destination that is
 /// invalid.
 pub fn check_backup_destinations(
-    source: &Path,
+    source: Option<&Path>,
     destination: &Path,
     backup_destinations: &[PathBuf],
 ) -> Result<(), BackupDestinationError> {
@@ -83,7 +84,9 @@ pub fn check_backup_destinations(
             Some(Overlap::Is) => Some(BackupDestinationProblem::IsImportDestination),
             Some(Overlap::Inside) => Some(BackupDestinationProblem::InsideImportDestination),
             Some(Overlap::Contains) => Some(BackupDestinationProblem::ContainsImportDestination),
-            None if backup.starts_with(source) => Some(BackupDestinationProblem::InsideSource),
+            None if source.is_some_and(|source| backup.starts_with(source)) => {
+                Some(BackupDestinationProblem::InsideSource)
+            }
             None if backup_destinations[..index].contains(backup) => {
                 Some(BackupDestinationProblem::GivenTwice)
             }

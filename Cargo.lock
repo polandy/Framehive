@@ -267,6 +267,7 @@ dependencies = [
  "adapter-clock",
  "adapter-free-space",
  "adapter-fs",
+ "adapter-gphoto2",
  "adapter-mounts",
  "adapter-sequence-counters",
  "adapter-sqlite",

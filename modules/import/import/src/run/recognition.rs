@@ -75,7 +75,7 @@ impl ImportRun<'_> {
     ) -> Result<RecordedRun, RunError> {
         let started_at = self.recorded_now().ok_or(RunError::ImportTimeOutOfRange)?;
         let id = self.history.start_run(&RunStart {
-            source: settings.source.to_path_buf(),
+            source: self.source_name.unwrap_or(settings.source).to_path_buf(),
             import_destination: settings.destination.to_path_buf(),
             video_destination: settings.separate_video_destination().map(Path::to_path_buf),
             started_at,
