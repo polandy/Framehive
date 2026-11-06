@@ -1,9 +1,9 @@
 # IMPORT-010 – Import log
 
-- Status: implemented
+- Status: accepted
 - Module: import
 - Origin: N6
-- Depends on: IMPORT-009
+- Depends on: IMPORT-009, IMPORT-013
 
 ## Purpose
 
@@ -17,14 +17,15 @@ The import log is a view of the import history. It never writes the history and 
 creates it.
 
 **Runs.** The log lists every recorded import run, oldest first, with its run number,
-its start, its end, its source, its import destination and the number of its copies. A
+its start, its end, its source, its import destination, its video destination when it
+has one (IMPORT-013), and the number of its copies. A
 run without an end (it is still running, or it crashed) is shown as not finished. The
 run number is the number the history gave the run; it never changes and is never
 reused.
 
 **The log of one run.** For one run, the log shows the run as above and every copy the
-run recorded, grouped by destination: the import destination first, then each backup
-destination in the order the run first recorded a copy there. Within a destination, the
+run recorded, grouped by destination: the import destination first, then the video destination when
+the run has one, then each backup destination in the order the run first recorded a copy there. Within a destination, the
 copies are in the order they were recorded. Each copy shows what IMPORT-009 records:
 the source path, the original file name, the size, the capture time when the file
 records one, the checksum, the target path and when it was recorded.
@@ -87,6 +88,14 @@ names the file; the history is not changed.
 - **When** the runs are listed
 - **Then** the result is an error that names the file, and the file is unchanged
 
+### IMPORT-010.9 – A run with a video destination
+- **Given** a run that copied `DSCF0001.RAF` to the import destination, `clip.MOV` to
+  a video destination, and both to one backup destination
+- **When** the log of the run is read
+- **Then** the run has that video destination, and the copies are grouped as the import
+  destination, the video destination, then the backup destination; a run recorded
+  before video destinations existed has none
+
 ## Out of scope
 
 - What the history records and when: IMPORT-009.
@@ -104,3 +113,4 @@ names the file; the history is not changed.
 |---|---|
 | 2026-11-04 | Initial draft; the history is read without being created or changed; accepted by the owner |
 | 2026-11-04 | Implemented in `history` (`ImportHistory::list_runs`, `ImportHistory::read_run_log`) and `adapter-sqlite` (`SqliteImportHistory::read_only`); `implemented` |
+| 2026-11-06 | The video destination of a run (IMPORT-013); accepted by the owner |

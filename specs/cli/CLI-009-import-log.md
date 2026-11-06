@@ -1,6 +1,6 @@
 # CLI-009 – Import log in the command line
 
-- Status: implemented
+- Status: accepted
 - Module: cli (`apps/cli`)
 - Origin: N6
 - Depends on: CLI-008, IMPORT-010
@@ -36,24 +36,26 @@ started              <started>
 finished             <finished>
 source               <source>
 import destination   <import destination>
+video destination    <video destination>
 
 <destination>
   <source path> -> <target path>  <checksum>
 ```
 
 with one block per destination in the order of IMPORT-010, and `not finished` as above.
+The line `video destination` is left out when the run has none (IMPORT-013).
 A run without copies prints the header and `No copies recorded.`.
 
 **JSON.** `--format json` prints one JSON object, followed by a newline:
 
 ```json
 {"run": 3, "started_at": "…", "finished_at": null, "source": "…",
- "import_destination": "…", "copies": [{"destination": "…", "source_path": "…",
+ "import_destination": "…", "video_destination": null, "copies": [{"destination": "…", "source_path": "…",
  "original_file_name": "…", "size": 10, "capture_time": "2026-10-17T14:05:09",
  "checksum": "blake3:…", "target": "…", "recorded_at": "…"}]}
 ```
 
-`finished_at` and `capture_time` are `null` when they are absent. The copies are in the
+`finished_at`, `video_destination` and `capture_time` are `null` when they are absent. The copies are in the
 order of IMPORT-010.
 
 **CSV.** `--format csv` prints RFC 4180 CSV with a header row and one row per copy,
@@ -150,6 +152,13 @@ for example `framehive import-log 3 --format csv > import-3.csv`.
 - **When** `framehive import-log --format csv` runs
 - **Then** it is a usage error with exit code 2
 
+### CLI-009.13 – A run with a video destination
+- **Given** the import of CLI-012.1 as run 1
+- **When** `framehive import-log 1` runs, and again with `--format json`
+- **Then** the text has the line `video destination    <videos>` after the import
+  destination and the block of `<videos>` with `clip.MOV`, and the JSON has
+  `"video_destination": "<videos>"`
+
 ## Out of scope
 
 - What the log holds: IMPORT-010.
@@ -167,3 +176,4 @@ for example `framehive import-log 3 --format csv > import-3.csv`.
 |---|---|
 | 2026-11-04 | Initial draft; owner decisions: `framehive import-log`, runs oldest first, `--format` only for one run, paths that are not valid UTF-8 printed with U+FFFD, `framehive import` does not print its run number; accepted by the owner |
 | 2026-11-04 | Implemented in `framehive-cli`; `implemented` |
+| 2026-11-06 | The video destination of a run (CLI-012); accepted by the owner |

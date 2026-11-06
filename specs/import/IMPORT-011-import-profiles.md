@@ -1,9 +1,9 @@
 # IMPORT-011 – Import profiles
 
-- Status: implemented
+- Status: accepted
 - Module: import
-- Origin: N8, N25, R9
-- Depends on: CORE-006, IMPORT-001, IMPORT-003, IMPORT-006, IMPORT-007
+- Origin: N8, N25, R9, R7, I4
+- Depends on: CORE-006, IMPORT-001, IMPORT-003, IMPORT-006, IMPORT-007, IMPORT-013
 
 ## Purpose
 
@@ -21,10 +21,12 @@ An import profile is a configuration file (CORE-006) of the file type
 |---|---|---|---|
 | `schema_version` | whole number, required | – | Version of the format, `1` |
 | `destination` | path | none | Folder to import into |
+| `video_destination` | path | the destination | Folder to import videos into (IMPORT-013) |
 | `naming.template` | text | `{date:%Y}/{date:%Y-%m-%d}/{name}.{ext}` | Name template (IMPORT-001) |
 | `naming.on_conflict` | text | `add_suffix` | Conflict policy (IMPORT-003): `add_suffix`, `skip` or `fail` |
 | `job_codes` | list of text | empty | Job codes of the profile (IMPORT-006), the one to use first |
 | `backup.destinations` | list of paths | empty | Backup destinations (IMPORT-007), in this order |
+| `backup.video_destinations` | list of paths | the backup destinations | Backup destinations for videos (IMPORT-013), in this order |
 
 `naming` and `backup` are mappings; either can be left out, and then each of its keys
 takes its default.
@@ -45,6 +47,13 @@ that when it runs.
   Entries are kept trimmed and in their order.
 - `backup.destinations`: an entry that is not a valid path, and an entry equal to an
   earlier one: `repeated backup destination <path>`.
+- `backup.video_destinations`: the same, with the message `repeated video backup
+  destination <path>`. An empty list is an error at the value: `leave
+  backup.video_destinations out to back up videos to the backup destinations`, because
+  videos without a backup are not offered (IMPORT-013).
+
+The keys for videos are optional, so every profile of `schema_version` 1 stays valid and
+the version stays 1.
 
 Reading a profile is pure: it depends only on the text, the file name for messages and
 the home folder.
@@ -113,11 +122,20 @@ The schema's descriptions are the "Meaning" column above.
 - **When** it is read as an import profile
 - **Then** the error is at `templte`: `unknown key templte; did you mean template?`
 
+### IMPORT-011.12 – Video settings
+- **Given** a profile with `video_destination: ~/Videos` and
+  `backup.video_destinations: [/mnt/backup/Videos]`, a profile without either, and a
+  profile with `backup.video_destinations: []`
+- **When** each is read as an import profile with the home folder `/home/ada`
+- **Then** the first has the video destination `/home/ada/Videos` and that video backup
+  destination; the second has neither; the third is an error at the value with the
+  message above
+
 ### IMPORT-011.10 – The published schema is the generated one
 - **Given** the file type `import-profile`
 - **When** its JSON Schema is generated
 - **Then** it is identical to `schemas/import-profile-v1.json`, has the `$id` above, and
-  lists `destination`, `naming`, `job_codes` and `backup`
+  lists `destination`, `video_destination`, `naming`, `job_codes` and `backup`
 
 ### IMPORT-011.11 – Examples validate
 - **Given** every import profile shown in `docs/`, `specs/` and the output of
@@ -146,3 +164,4 @@ The schema's descriptions are the "Meaning" column above.
 |---|---|
 | 2026-11-05 | Initial draft (N8, N25, ADR 0032); accepted by the owner |
 | 2026-11-05 | Implemented (reading and schema); the conflict policy is a choice of CORE-006 (CORE-006.20); value errors are at the start of the value |
+| 2026-11-06 | `video_destination` and `backup.video_destinations` (IMPORT-013), optional in version 1; accepted by the owner |
