@@ -52,6 +52,8 @@ fn file(path: &str, outcome: FileOutcome, backups: Vec<BackupReport>) -> FileRep
         dated_by_modification_time: None,
         outcome,
         backups,
+        // Set by `summary`, which knows the backup destinations of the run.
+        required_locations: 0,
     }
 }
 
@@ -62,8 +64,16 @@ fn left_out(path: &str, reason: LeftOutReason) -> LeftOut {
     }
 }
 
-/// A summary of a finished run with `files`, backed up to `backup_destinations`.
+/// A summary of a finished run with `files`, backed up to `backup_destinations`;
+/// each file is required at the import destination and every backup destination.
 fn summary(files: Vec<FileReport>, backup_destinations: &[&str]) -> ImportSummary {
+    let files = files
+        .into_iter()
+        .map(|file| FileReport {
+            required_locations: 1 + backup_destinations.len(),
+            ..file
+        })
+        .collect();
     ImportSummary {
         files,
         backups: backup_destinations

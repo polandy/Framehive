@@ -95,6 +95,8 @@ impl Setup {
             source: Path::new(SOURCE),
             destination,
             backup_destinations: &[],
+            video_destination: None,
+            video_backup_destinations: &[],
             template: &template,
             job_code: None,
             mode: CompatibilityMode::On,

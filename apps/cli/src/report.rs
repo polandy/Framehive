@@ -241,6 +241,7 @@ mod tests {
             dated_by_modification_time: None,
             outcome,
             backups: Vec::new(),
+            required_locations: 1,
         }
     }
 

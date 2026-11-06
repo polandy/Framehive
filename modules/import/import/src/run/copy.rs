@@ -12,6 +12,7 @@ use files::{CopyError, CopyErrorKind, CopyStep, checksum_file, copy_verified_to_
 use history::HistoryError;
 
 use super::recognition::Recognition;
+use super::resolvers::Resolvers;
 use super::{FilePlan, ImportRun, ImportSettings, RecordedRun, RunFile};
 use crate::backup::{
     BackupError, BackupOutcome, BackupReport, BackupTarget, inspect_backup_target,
@@ -46,10 +47,12 @@ impl ImportRun<'_> {
     pub(super) fn execute_file(
         &self,
         settings: &ImportSettings<'_>,
-        resolver: &mut TargetResolver<'_>,
+        resolvers: &mut Resolvers<'_>,
         file: RunFile,
         recorded: Option<RecordedRun>,
     ) -> (FileReport, Result<(), HistoryError>) {
+        let role = file.found.role;
+        let resolver = resolvers.of(role);
         let recognition = file.recognition.as_ref();
         let imported = match file.planned {
             Ok(FilePlan::Named(planned)) => {
@@ -65,10 +68,11 @@ impl ImportRun<'_> {
             dated_by_modification_time: file.no_capture_time,
             outcome: imported.outcome,
             backups: imported.backups,
+            required_locations: 1 + settings.backup_destinations_of(role).len(),
         };
         let recorded = match (recorded, recognition) {
             (Some(run), Some(recognition)) => self.record_copies(
-                settings,
+                settings.destination_of(role),
                 run,
                 recognition,
                 &report,
@@ -282,7 +286,8 @@ struct FileCopied {
 }
 
 /// The paths of one file's copy: its source, its import target and its backup
-/// targets, all for the same target path.
+/// targets, all for the same target path below the file's own destinations
+/// (IMPORT-013).
 struct FileCopy<'a> {
     source_path: &'a Path,
     source: PathBuf,
@@ -300,14 +305,14 @@ impl<'a> FileCopy<'a> {
         target: &str,
         recognition: Option<&'a Recognition>,
     ) -> Self {
+        let destinations = settings.backup_destinations_of(file.role);
         FileCopy {
             source_path: &file.path,
             source: settings.source.join(&file.path),
             size: file.size,
-            import_target: settings.destination.join(target),
-            destinations: settings.backup_destinations,
-            backup_targets: settings
-                .backup_destinations
+            import_target: settings.destination_of(file.role).join(target),
+            destinations,
+            backup_targets: destinations
                 .iter()
                 .map(|destination| destination.join(target))
                 .collect(),

@@ -80,6 +80,8 @@ fn settings(template: &NameTemplate) -> ImportSettings<'_> {
         source: Path::new(SOURCE),
         destination: Path::new(DESTINATION),
         backup_destinations: &[],
+        video_destination: None,
+        video_backup_destinations: &[],
         template,
         job_code: None,
         mode: CompatibilityMode::On,

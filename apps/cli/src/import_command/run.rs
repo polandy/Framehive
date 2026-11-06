@@ -68,6 +68,8 @@ pub(super) fn import_with(
         source: &folders.source,
         destination: &folders.destination.path,
         backup_destinations: &backup_paths,
+        video_destination: None,
+        video_backup_destinations: &[],
         template: &chosen.template,
         job_code: chosen.job_code.as_ref(),
         mode: CompatibilityMode::On,

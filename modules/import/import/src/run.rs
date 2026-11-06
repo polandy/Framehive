@@ -13,8 +13,9 @@ use history::ImportHistory;
 use metadata::NoCaptureTime;
 use naming::{CompatibilityMode, NameTemplate, SequenceCounters};
 
-use crate::backup::{BackupCounts, check_backup_destinations};
-use crate::conflicts::{ConflictPolicy, TargetResolver};
+use crate::backup::BackupCounts;
+use crate::conflicts::ConflictPolicy;
+use crate::destinations::check_destinations;
 use crate::free_space::{FreeSpaceUnknown, NotEnoughSpace};
 use crate::job_code::{JobCode, require_job_code};
 use crate::plan::PlannedFile;
@@ -28,10 +29,12 @@ mod free_space;
 mod planning;
 mod recognition;
 mod rename;
+mod resolvers;
 
 use planning::PlanInputs;
 use recognition::{Recognition, RecordedRun};
 use rename::rename;
+use resolvers::Resolvers;
 
 /// What to import, from where to where, and how.
 #[derive(Debug, Clone, Copy)]
@@ -43,6 +46,13 @@ pub struct ImportSettings<'a> {
     /// The backup destinations, absolute and without `..`, in the order they are
     /// used (IMPORT-007). Each file goes to the same target path below each of them.
     pub backup_destinations: &'a [PathBuf],
+    /// The video destination, absolute and without `..`: where videos are copied to
+    /// (IMPORT-013). `None` copies them to the import destination.
+    pub video_destination: Option<&'a Path>,
+    /// The video backup destinations, absolute and without `..`, in the order they
+    /// are used (IMPORT-013). Empty backs videos up to the backup destinations, so
+    /// videos are never left without a backup while photos have one.
+    pub video_backup_destinations: &'a [PathBuf],
     /// The name template for the target paths (IMPORT-001).
     pub template: &'a NameTemplate,
     /// The job code for `{job}` (IMPORT-006); required when the template uses it.
@@ -125,8 +135,8 @@ pub struct RunFile {
 pub enum FilePlan {
     /// Named by the import plan; copied, or found at its target, when the run executes.
     Named(PlannedFile),
-    /// The import history holds a verified copy at the import destination: the file
-    /// is not named, gets no sequence number and is not copied (IMPORT-009).
+    /// The import history holds a verified copy at the file's import destination, the
+    /// video destination for a video (IMPORT-013): the file is not named, gets no sequence number and is not copied (IMPORT-009).
     ImportedBefore {
         /// The target of the most recent recorded copy, relative to the import
         /// destination.
@@ -179,7 +189,8 @@ impl<'a> ImportRun<'a> {
     /// # Errors
     ///
     /// Returns a [`RunError`] if the template uses `{job}` without a job code, a
-    /// backup destination is invalid, a destination does not have enough space, the
+    /// backup destination, the video destination or a video backup destination is
+    /// invalid, a destination does not have enough space, the
     /// source cannot be scanned, the current time
     /// cannot be shown in local time, the import cannot get its sequence numbers or
     /// the import history cannot be used; then nothing is copied. A file that
@@ -192,7 +203,7 @@ impl<'a> ImportRun<'a> {
         // The job code and the import time are checked before the scan, so a run that
         // cannot start does not scan the source.
         require_job_code(settings.template, settings.job_code)?;
-        check_settings_backup_destinations(settings)?;
+        check_destinations(settings)?;
         let import_time = self.import_time()?;
         let scan = scan_source(self.file_system, settings.source, settings.destination)?;
         progress.scan_finished(&scan);
@@ -247,14 +258,16 @@ impl<'a> ImportRun<'a> {
     /// file is copied, and names its files again if another import took the numbers
     /// the plan showed (IMPORT-002, "Reservation"). Then it records the start of the
     /// run in the import history (IMPORT-009). A dry run reserves and records nothing.
-    /// It checks the backup destinations first (IMPORT-007.11), and then that each file
+    /// It checks the backup destinations, the video destination and the video backup
+    /// destinations first (IMPORT-007.11, IMPORT-013.8), and then that each file
     /// system can hold what the run writes to it, also in a dry run (IMPORT-012).
     /// Destinations whose free space cannot be read are kept for the
     /// [`ImportSummary`], and the run goes on.
     ///
     /// # Errors
     ///
-    /// Returns [`RunError::BackupDestination`] if a backup destination is invalid,
+    /// Returns [`RunError::BackupDestination`], [`RunError::VideoDestination`] or
+    /// [`RunError::VideoBackupDestination`] if a destination is invalid,
     /// [`RunError::NotEnoughSpace`] if a file system is short, and
     /// [`RunError::Sequence`] if the persisted counters cannot be read or
     /// stored, or the numbers do not fit the template; then nothing is reserved and
@@ -266,7 +279,7 @@ impl<'a> ImportRun<'a> {
         settings: &ImportSettings<'_>,
         mut plan: PlannedRun,
     ) -> Result<PlannedRun, RunError> {
-        check_settings_backup_destinations(settings)?;
+        check_destinations(settings)?;
         let check = self.check_free_space(settings, &plan);
         if !check.shortages.is_empty() {
             return Err(RunError::NotEnoughSpace(NotEnoughSpace {
@@ -287,8 +300,8 @@ impl<'a> ImportRun<'a> {
         Ok(plan)
     }
 
-    /// Executes `plan`: resolves the conflicts of each planned file against
-    /// `settings.destination` under `settings.policy`, and copies it, or with
+    /// Executes `plan`: resolves the conflicts of each planned file against its own
+    /// destination (IMPORT-013) under `settings.policy`, and copies it, or with
     /// `settings.dry_run` only reports where it would go. Files run in plan order, and
     /// each is reported to `progress`. Before each file, `progress` is asked whether to
     /// go on; when it says stop, the remaining files are not started (IMPORT-004.13).
@@ -303,13 +316,7 @@ impl<'a> ImportRun<'a> {
         plan: PlannedRun,
         progress: &mut dyn ProgressSink,
     ) -> ImportSummary {
-        let mut resolver = TargetResolver::new(
-            self.file_system,
-            self.hasher,
-            settings.source,
-            settings.destination,
-            settings.policy,
-        );
+        let mut resolvers = Resolvers::new(self, settings);
         let mut files = Vec::with_capacity(plan.files.len());
         let mut stopped = false;
         let mut history_error = None;
@@ -320,7 +327,7 @@ impl<'a> ImportRun<'a> {
             }
             progress.file_started(&file.found.path);
             let (report, recorded) =
-                self.execute_file(settings, &mut resolver, file, plan.recorded);
+                self.execute_file(settings, &mut resolvers, file, plan.recorded);
             progress.file_finished(&report);
             files.push(report);
             if let Err(error) = recorded {
@@ -334,8 +341,8 @@ impl<'a> ImportRun<'a> {
             history_error.get_or_insert(error);
         }
         let backups = settings
-            .backup_destinations
-            .iter()
+            .all_backup_destinations()
+            .into_iter()
             .map(|destination| {
                 BackupCounts::of(destination, files.iter().flat_map(|file| &file.backups))
             })
@@ -356,14 +363,4 @@ impl<'a> ImportRun<'a> {
         self.local_time(self.clock.now())
             .ok_or(RunError::ImportTimeOutOfRange)
     }
-}
-
-/// Checks the backup destinations of `settings` before anything is written.
-fn check_settings_backup_destinations(settings: &ImportSettings<'_>) -> Result<(), RunError> {
-    check_backup_destinations(
-        settings.source,
-        settings.destination,
-        settings.backup_destinations,
-    )?;
-    Ok(())
 }

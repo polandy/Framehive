@@ -134,6 +134,8 @@ impl<'a> Setup<'a> {
             source: Path::new(SOURCE),
             destination: Path::new(DESTINATION),
             backup_destinations: &self.backups,
+            video_destination: None,
+            video_backup_destinations: &[],
             template: &template,
             job_code: None,
             mode: CompatibilityMode::On,

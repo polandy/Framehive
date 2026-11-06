@@ -50,6 +50,8 @@ fn import(
         source: Path::new(SOURCE),
         destination: Path::new(DESTINATION),
         backup_destinations: &[],
+        video_destination: None,
+        video_backup_destinations: &[],
         template: &template,
         job_code: job_code.as_ref(),
         mode: CompatibilityMode::On,

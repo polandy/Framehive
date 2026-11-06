@@ -34,6 +34,8 @@ fn settings<'s>(
         source: card.mount_point(),
         destination,
         backup_destinations: backups,
+        video_destination: None,
+        video_backup_destinations: &[],
         template,
         job_code,
         mode: CompatibilityMode::On,
