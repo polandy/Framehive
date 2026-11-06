@@ -124,7 +124,7 @@ fn blockers(settings: &ImportSettings<'_>) -> Vec<String> {
         blockers.push(ON_CARD.to_owned());
     }
     if let Err(error) = check_backup_destinations(
-        settings.source,
+        Some(settings.source),
         settings.destination,
         settings.backup_destinations,
     ) {

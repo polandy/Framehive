@@ -58,6 +58,7 @@ pub(crate) fn resolve_all(
 ) -> Vec<ConflictOutcome> {
     let mut resolver = TargetResolver::new(
         file_system,
+        file_system,
         &FnvHasher,
         Path::new(SOURCE),
         Path::new(DESTINATION),

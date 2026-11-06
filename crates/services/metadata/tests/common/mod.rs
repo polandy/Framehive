@@ -10,7 +10,7 @@ use std::rc::Rc;
 
 use domain::Timestamp;
 use files::testing::MemoryFileSystem;
-use files::{EntryKind, FileSystem, FolderEntry, ReadSeek, WriteFile};
+use files::{EntryKind, FileSystem, FolderEntry, ReadOnlyFileSystem, ReadSeek, WriteFile};
 
 /// `MemoryFileSystem` that counts opened files and the bytes read from them.
 pub(crate) struct CountingFileSystem {
@@ -45,19 +45,19 @@ impl CountingFileSystem {
     }
 }
 
-impl FileSystem for CountingFileSystem {
+impl ReadOnlyFileSystem for CountingFileSystem {
     fn entry(&self, path: &Path) -> io::Result<Option<EntryKind>> {
         self.inner.entry(path)
     }
+
     fn list_folder(&self, path: &Path) -> io::Result<Vec<FolderEntry>> {
         self.inner.list_folder(path)
     }
+
     fn file_size(&self, path: &Path) -> io::Result<u64> {
         self.inner.file_size(path)
     }
-    fn create_folder(&self, path: &Path) -> io::Result<()> {
-        self.inner.create_folder(path)
-    }
+
     fn open_read(&self, path: &Path) -> io::Result<Box<dyn ReadSeek>> {
         self.opened.set(self.opened.get() + 1);
         Ok(Box::new(CountingReader {
@@ -65,18 +65,29 @@ impl FileSystem for CountingFileSystem {
             bytes_read: Rc::clone(&self.bytes_read),
         }))
     }
-    fn create_file(&self, path: &Path) -> io::Result<Box<dyn WriteFile>> {
-        self.inner.create_file(path)
-    }
+
     fn modification_time(&self, path: &Path) -> io::Result<Timestamp> {
         self.inner.modification_time(path)
     }
+}
+
+impl FileSystem for CountingFileSystem {
+    fn create_folder(&self, path: &Path) -> io::Result<()> {
+        self.inner.create_folder(path)
+    }
+
+    fn create_file(&self, path: &Path) -> io::Result<Box<dyn WriteFile>> {
+        self.inner.create_file(path)
+    }
+
     fn rename_no_replace(&self, from: &Path, to: &Path) -> io::Result<()> {
         self.inner.rename_no_replace(from, to)
     }
+
     fn remove_file(&self, path: &Path) -> io::Result<()> {
         self.inner.remove_file(path)
     }
+
     fn sync_folder(&self, path: &Path) -> io::Result<()> {
         self.inner.sync_folder(path)
     }

@@ -28,6 +28,8 @@ pub(crate) enum Invocation {
     ImportLog(ImportLogArguments),
     /// `framehive config init` (CLI-010).
     ConfigInit,
+    /// `framehive cameras` (CLI-013).
+    Cameras,
 }
 
 /// The arguments of `framehive import-log` (CLI-009), checked by the parser.
@@ -62,7 +64,7 @@ pub(crate) enum LogFormat {
 /// The arguments of `framehive import`, checked by the parser.
 #[derive(Debug)]
 pub(crate) struct ImportArguments {
-    /// The folder to import from, as given.
+    /// The folder to import from, as given, or `camera:…` for a camera (CLI-013).
     pub(crate) source: PathBuf,
     /// The folder to import into, as given; `None` only with `--profile` (CLI-010).
     pub(crate) destination: Option<PathBuf>,
@@ -110,6 +112,7 @@ pub(crate) fn parse(
     Ok(match matches.subcommand() {
         Some(("import", import)) => Invocation::Import(import_arguments(import)),
         Some(("config", _)) => Invocation::ConfigInit,
+        Some(("cameras", _)) => Invocation::Cameras,
         Some((_, import_log)) => Invocation::ImportLog(import_log_arguments(import_log)),
         None => Invocation::Guided,
     })
@@ -122,6 +125,9 @@ fn command() -> Command {
         .subcommand(import_command())
         .subcommand(import_log_command())
         .subcommand(config_command())
+        .subcommand(Command::new("cameras").about(
+            "List the cameras and phones connected over PTP or MTP, to import from with camera:",
+        ))
 }
 
 /// `framehive config`; `init` is its only subcommand so far (CLI-010).
@@ -181,12 +187,12 @@ fn import_log_arguments(matches: &ArgMatches) -> ImportLogArguments {
 
 fn import_command() -> Command {
     Command::new("import")
-        .about("Copy the photos and videos of a folder or memory card into a library folder")
+        .about("Copy the photos and videos of a folder, memory card or camera into a library folder")
         .arg(
             Arg::new("source")
                 .required(true)
                 .value_parser(value_parser!(PathBuf))
-                .help("Folder to import from"),
+                .help("Folder to import from, or camera:[<model>|<port>] for a camera; ./camera:… for a folder of that name"),
         )
         .arg(
             Arg::new("destination")

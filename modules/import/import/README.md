@@ -31,7 +31,10 @@ once and at most ten; the caller stores and restores it.
 The source scan (IMPORT-005) walks the source folder and lists each supported file
 with its role, size and modification time, and each file or folder it leaves out with
 the reason: unsupported type, hidden, symbolic link, sidecar until grouping, or cannot
-be read. `TargetResolver` resolves name conflicts and files already imported
+be read. `scan_camera` scans a camera or phone (IMPORT-014): only the folder `DCIM` at
+the top of each storage, with the same rules, giving paths that start with the storage
+folder. A camera without any storage folder, such as a locked phone, is
+`ScanError::NoStorage`, not an empty source; `CAMERA_FORMAT_READINESS_NOTE` is the note its format readiness carries. `TargetResolver` resolves name conflicts and files already imported
 (IMPORT-003) against the destination and the earlier files of the plan, comparing
 names by their canonical caseless key, without regard to case and Unicode
 normalization form (ADR 0026); a destination may hold several names with one key,
@@ -53,7 +56,10 @@ Boundaries:
   (`should_continue`, IMPORT-004.13); a stopped run sets `ImportSummary::stopped`. It
   becomes the body of the import job once the jobs service exists.
 - **Never writes to the source** and never replaces a file at the destination
-  (ADR 0020 §2).
+  (ADR 0020 §2). The scan, dating, recognition, conflict resolution and the copy read
+  the source only through the `ReadOnlyFileSystem` port (ADR 0034). The source lies on
+  the file system of the destinations unless `ImportRun::with_source` gives it one of
+  its own, such as an opened camera.
 - **Grouping** of files into assets is defined by LIBRARY-001; the module uses it and
   does not redefine it. `ImportPlan::new` takes assets that are already grouped.
 - **Not covered yet:** metadata tokens, camera time correction, sidecars (until
@@ -67,12 +73,14 @@ Boundaries:
 | `ImportPlan` | Pure description of which file goes where, with what name (IMPORT-001) |
 | `AssetFile` | One file of an asset as the import finds it: name, role, capture and modification time |
 | `PlannedFile` | The target path of one file, or why it cannot be named, its date and its date source |
+| `scan_camera` | The scan of an opened camera: `DCIM` of each storage only (IMPORT-014) |
+| `FormatReadiness`, `FormatBlocker`, `CAMERA_FORMAT_READINESS_NOTE` | Whether the source can be formatted and what keeps it (IMPORT-008); the note of a camera run (IMPORT-014.10) |
 | `scan_source`, `scan_folder`, `SourceScan`, `FoundFile`, `LeftOut`, `LeftOutReason`, `ScanError` | The source scan and its result (IMPORT-005); `scan_folder` scans without the destination check |
 | `TargetResolver`, `TargetRequest`, `ConflictPolicy`, `ConflictOutcome`, `ConflictError` | Conflict resolution against the destination and the plan (IMPORT-003) |
 | `JobCode`, `JobCodeError`, `MAX_JOB_CODE_CHARACTERS` | A validated job code and why a text is not one (IMPORT-006) |
 | `RecentJobCodes`, `MAX_RECENT_JOB_CODES` | The job codes used before, most recent first (IMPORT-006) |
 | `require_job_code`, `MissingJobCode` | Refuses an import whose template uses `{job}` without a job code (IMPORT-006) |
-| `ImportRun`, `ImportSettings` | Scans, plans, starts, resolves and copies, file by file (ADR 0020, IMPORT-004) |
+| `ImportRun`, `ImportSettings` | Scans, plans, starts, resolves and copies, file by file (ADR 0020, IMPORT-004); `with_source` reads the source from its own `ReadOnlyFileSystem`, against which no destination is checked, and `with_source_name` names it in the import history, such as `camera:<model>` (ADR 0034) |
 | `SessionSequence` | The session counter of one run of the application (IMPORT-002) |
 | `PlannedRun`, `RunFile`, `FilePlan` | An import run planned and not yet executed: each selected file with its plan entry, imported before, or its dating failure |
 | `ProgressSink`, `NoProgress` | Receives each step of an import run on the caller's thread |

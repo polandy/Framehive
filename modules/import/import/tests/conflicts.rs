@@ -265,6 +265,7 @@ fn unreadable_file_to_compare_is_an_error() {
     file_system.inject_fault(&target, Fault::ReadFails { after_bytes: 0 });
     let mut resolver = TargetResolver::new(
         &file_system,
+        &file_system,
         &FnvHasher,
         Path::new(SOURCE),
         Path::new(DESTINATION),

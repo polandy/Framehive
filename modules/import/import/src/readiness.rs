@@ -11,6 +11,12 @@ use crate::backup::{BackupOutcome, BackupReport};
 use crate::report::{FileOutcome, FileReport, ImportSummary};
 use crate::scan::{LeftOut, LeftOutReason};
 
+/// The note the format readiness of a camera run carries after its verdict
+/// (IMPORT-014.10): the scan of a camera looks only below `DCIM`, so the readiness says
+/// nothing about the files a phone keeps outside it.
+pub const CAMERA_FORMAT_READINESS_NOTE: &str = "Only the files below DCIM were checked. \
+     Files outside DCIM, such as a phone's other folders, are not backed up.";
+
 /// Whether a finished import run verified every file of the source at the import
 /// destination and at each backup destination, and which files keep the card from
 /// being formatted (IMPORT-008). Derived from the [`ImportSummary`] alone: no file is

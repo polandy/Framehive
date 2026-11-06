@@ -5,11 +5,12 @@
 
 use std::path::Path;
 
-use files::FreeSpace;
 use files::testing::{
-    FileSystemUnderTest, FnvHasher, FreeSpaceUnderTest, HasherUnderTest, MemoryFileSystem,
-    MemoryFreeSpace, TempDir, check_file_system, check_free_space, check_hasher,
+    CamerasUnderTest, FileSystemUnderTest, FnvHasher, FreeSpaceUnderTest, HasherUnderTest,
+    MemoryCameras, MemoryFileSystem, MemoryFreeSpace, TempDir, check_cameras, check_file_system,
+    check_free_space, check_hasher,
 };
+use files::{CameraError, Cameras, FreeSpace};
 
 #[test]
 fn memory_file_system_conforms() {
@@ -30,6 +31,68 @@ fn memory_file_system_conforms() {
     });
 
     assert_eq!(failures, Vec::<String>::new());
+}
+
+#[test]
+fn memory_cameras_conform() {
+    let storage = MemoryFileSystem::new();
+    let cameras = MemoryCameras::new()
+        .with_camera("Fujifilm X-T2", "usb:001,004", &storage)
+        .with_camera_in_use("Fujifilm X-T5", "usb:002,007", "the device is busy");
+    let add_folder = |path: &Path| {
+        storage.add_folder(path);
+        Ok(())
+    };
+    let add_file = |path: &Path, content: &[u8], modified| {
+        storage.add_file(path, content, modified);
+        Ok(())
+    };
+
+    let failures = check_cameras(&CamerasUnderTest {
+        cameras: &cameras,
+        port: "usb:001,004",
+        missing_port: "usb:009,009",
+        add_folder: &add_folder,
+        add_file: &add_file,
+    });
+
+    assert_eq!(failures, Vec::<String>::new());
+    assert!(!cameras.is_open("usb:001,004"));
+}
+
+#[test]
+fn memory_cameras_list_by_port_and_tell_a_camera_in_use() {
+    let cameras = MemoryCameras::new()
+        .with_camera_in_use("Fujifilm X-T5", "usb:002,007", "the device is busy")
+        .with_camera("Fujifilm X-T2", "usb:001,004", &MemoryFileSystem::new());
+
+    let ports: Vec<String> = cameras
+        .list()
+        .unwrap()
+        .into_iter()
+        .map(|c| c.port)
+        .collect();
+    let in_use = cameras.open("usb:002,007").err();
+
+    assert_eq!(ports, ["usb:001,004", "usb:002,007"]);
+    assert_eq!(
+        in_use,
+        Some(CameraError::InUse {
+            port: "usb:002,007".to_owned(),
+            reason: "the device is busy".to_owned(),
+        })
+    );
+    assert!(!cameras.is_open("usb:002,007"));
+}
+
+#[test]
+fn memory_cameras_fail_to_list_when_told() {
+    let cameras = MemoryCameras::new().with_list_failure("no USB access");
+
+    assert_eq!(
+        cameras.list().unwrap_err().to_string(),
+        "cannot list the cameras: no USB access"
+    );
 }
 
 #[test]

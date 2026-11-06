@@ -43,7 +43,20 @@ pub(crate) fn run_import_log(arguments: ImportLogArguments) -> ExitCode {
 /// Returns the message of CLI-009 for an unknown state folder, a history that cannot
 /// be used, or a run that does not exist.
 fn import_log(arguments: ImportLogArguments) -> Result<String, String> {
-    let history = SqliteImportHistory::read_only(&process_state_folder()?);
+    import_log_in(&process_state_folder()?, arguments)
+}
+
+/// The text to print for the import history in `state_folder`.
+///
+/// # Errors
+///
+/// Returns the message of CLI-009 for a history that cannot be used, or a run that
+/// does not exist.
+pub(crate) fn import_log_in(
+    state_folder: &Path,
+    arguments: ImportLogArguments,
+) -> Result<String, String> {
+    let history = SqliteImportHistory::read_only(state_folder);
     let Some(selection) = arguments.run else {
         let runs = history.list_runs().map_err(|error| error.to_string())?;
         return Ok(text::run_list(&runs));

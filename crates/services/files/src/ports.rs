@@ -23,7 +23,7 @@ pub enum EntryKind {
     Other,
 }
 
-/// One entry of a folder, as [`FileSystem::list_folder`] returns it.
+/// One entry of a folder, as [`ReadOnlyFileSystem::list_folder`] returns it.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FolderEntry {
     /// The entry's name within its folder, without the folder's path.
@@ -33,16 +33,17 @@ pub struct FolderEntry {
     pub kind: EntryKind,
 }
 
-/// Port for the files and folders of a storage device (ADR 0020 §4).
+/// Read-only port for the files and folders of a storage device (ADR 0020 §4,
+/// ADR 0034).
 ///
-/// `adapter-fs` implements it over `std::fs`; tests use
-/// [`testing::MemoryFileSystem`](crate::testing::MemoryFileSystem). Every
+/// The import reads its source through it, so a source that cannot be written,
+/// such as a camera, can implement it alone. Every [`FileSystem`] is one. Every
 /// implementation must pass
-/// [`testing::check_file_system`](crate::testing::check_file_system).
+/// [`testing::check_read_only_file_system`](crate::testing::check_read_only_file_system).
 ///
 /// Errors are [`io::Error`]s. Where the contract names an [`io::ErrorKind`], callers
 /// rely on it.
-pub trait FileSystem {
+pub trait ReadOnlyFileSystem {
     /// Returns what `path` names, or `None` if nothing exists there. A symbolic link
     /// is [`EntryKind::SymbolicLink`]; it is not followed.
     ///
@@ -69,14 +70,6 @@ pub trait FileSystem {
     /// if `path` is a folder.
     fn file_size(&self, path: &Path) -> io::Result<u64>;
 
-    /// Creates the folder `path`. Its parent folder must exist.
-    ///
-    /// # Errors
-    ///
-    /// Returns [`io::ErrorKind::AlreadyExists`] if something exists at `path`, and
-    /// [`io::ErrorKind::NotFound`] if the parent folder is missing.
-    fn create_folder(&self, path: &Path) -> io::Result<()>;
-
     /// Opens the file `path` for reading, from the start or from any offset.
     ///
     /// Seeking follows [`Seek`]: a position past the end reads nothing, and a position
@@ -88,6 +81,32 @@ pub trait FileSystem {
     /// Returns [`io::ErrorKind::NotFound`] if no file exists at `path`.
     fn open_read(&self, path: &Path) -> io::Result<Box<dyn ReadSeek>>;
 
+    /// Returns the modification time of the file `path`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`io::ErrorKind::NotFound`] if no file exists at `path`.
+    fn modification_time(&self, path: &Path) -> io::Result<Timestamp>;
+}
+
+/// Port for the files and folders of a storage device (ADR 0020 §4).
+///
+/// `adapter-fs` implements it over `std::fs`; tests use
+/// [`testing::MemoryFileSystem`](crate::testing::MemoryFileSystem). Every
+/// implementation must pass
+/// [`testing::check_file_system`](crate::testing::check_file_system).
+///
+/// Errors are [`io::Error`]s. Where the contract names an [`io::ErrorKind`], callers
+/// rely on it.
+pub trait FileSystem: ReadOnlyFileSystem {
+    /// Creates the folder `path`. Its parent folder must exist.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`io::ErrorKind::AlreadyExists`] if something exists at `path`, and
+    /// [`io::ErrorKind::NotFound`] if the parent folder is missing.
+    fn create_folder(&self, path: &Path) -> io::Result<()>;
+
     /// Creates the file `path` for writing, or empties it if it exists. Its parent
     /// folder must exist.
     ///
@@ -96,13 +115,6 @@ pub trait FileSystem {
     /// Returns [`io::ErrorKind::NotFound`] if the parent folder is missing, and an
     /// error if `path` names something that is not a file.
     fn create_file(&self, path: &Path) -> io::Result<Box<dyn WriteFile>>;
-
-    /// Returns the modification time of the file `path`.
-    ///
-    /// # Errors
-    ///
-    /// Returns [`io::ErrorKind::NotFound`] if no file exists at `path`.
-    fn modification_time(&self, path: &Path) -> io::Result<Timestamp>;
 
     /// Renames the file `from` to `to`, which must not exist. It never replaces a
     /// file: if something exists at `to`, or appears there during the call, both
@@ -133,7 +145,7 @@ pub trait FileSystem {
     fn sync_folder(&self, path: &Path) -> io::Result<()>;
 }
 
-/// A file opened for reading by [`FileSystem::open_read`]: it reads and seeks.
+/// A file opened for reading by [`ReadOnlyFileSystem::open_read`]: it reads and seeks.
 ///
 /// Every type that is [`Read`] and [`Seek`] is a `ReadSeek`, such as
 /// [`std::fs::File`] and [`std::io::Cursor`].

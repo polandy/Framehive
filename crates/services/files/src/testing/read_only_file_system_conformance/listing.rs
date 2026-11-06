@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2026 Framehive contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//! The cases of the [`FileSystem`](crate::FileSystem) conformance suite that list
-//! folders and read file sizes (ADR 0020 §4, amendment).
+//! The cases of the [`ReadOnlyFileSystem`](crate::ReadOnlyFileSystem) conformance
+//! suite that list folders and read file sizes (ADR 0020 §4, amendment).
 
 use std::io;
 use std::path::Path;
@@ -29,10 +29,8 @@ impl Case<'_> {
 }
 
 pub(super) fn list_folder_names_entries(case: &Case<'_>) -> CaseResult {
-    case.write(&case.path("DSCF0001.RAF"), b"raw")?;
-    case.fs()
-        .create_folder(&case.path("DCIM"))
-        .map_err(failed("create_folder"))?;
+    case.add_file(&case.path("DSCF0001.RAF"), b"raw")?;
+    case.add_folder(&case.path("DCIM"))?;
     let expected = vec![
         FolderEntry {
             name: "DCIM".into(),
@@ -62,7 +60,7 @@ pub(super) fn list_folder_does_not_follow_links(case: &Case<'_>) -> CaseResult {
         return Ok(());
     };
     let photo = case.path("photo.jpg");
-    case.write(&photo, b"jpeg")?;
+    case.add_file(&photo, b"jpeg")?;
     let loop_link = case.path("all");
     let file_link = case.path("link.jpg");
     make_symbolic_link(&loop_link, &case.folder).map_err(failed("make_symbolic_link"))?;
@@ -88,7 +86,7 @@ pub(super) fn list_folder_does_not_follow_links(case: &Case<'_>) -> CaseResult {
 
 pub(super) fn file_size(case: &Case<'_>) -> CaseResult {
     let path = case.path("photo.raf");
-    case.write(&path, &[7; 1_024])?;
+    case.add_file(&path, &[7; 1_024])?;
     let size = case.fs().file_size(&path).map_err(failed("file_size"))?;
     ensure(size == 1_024, format!("file_size is {size}, expected 1024"))?;
     expect_error_kind(

@@ -8,7 +8,7 @@
 use std::path::{Path, PathBuf};
 
 use domain::{Clock, LocalDateTime};
-use files::{FileSystem, FreeSpace, Hasher};
+use files::{FileSystem, FreeSpace, Hasher, ReadOnlyFileSystem};
 use history::ImportHistory;
 use metadata::NoCaptureTime;
 use naming::{CompatibilityMode, NameTemplate, SequenceCounters};
@@ -30,6 +30,7 @@ mod planning;
 mod recognition;
 mod rename;
 mod resolvers;
+mod source;
 
 use planning::PlanInputs;
 use recognition::{Recognition, RecordedRun};
@@ -73,6 +74,15 @@ pub struct ImportSettings<'a> {
 /// next one (IMPORT-004.11). Each verified copy is recorded in the import history,
 /// which recognizes the files imported before when the plan is made (IMPORT-009).
 pub struct ImportRun<'a> {
+    /// Reads the source, which the run never writes (ADR 0034): the file system of
+    /// the destinations, unless [`ImportRun::with_source`] gives one of its own.
+    source_file_system: &'a dyn ReadOnlyFileSystem,
+    /// Whether the source lies on a file system of its own, which no destination can
+    /// lie inside.
+    separate_source: bool,
+    /// How the import history names the source, if not by `settings.source`.
+    source_name: Option<&'a Path>,
+    /// Reads and writes the destinations.
     file_system: &'a dyn FileSystem,
     hasher: &'a dyn Hasher,
     clock: &'a dyn Clock,
@@ -173,6 +183,9 @@ impl<'a> ImportRun<'a> {
         free_space: &'a dyn FreeSpace,
     ) -> Self {
         ImportRun {
+            source_file_system: file_system,
+            separate_source: false,
+            source_name: None,
             file_system,
             hasher,
             clock,
@@ -204,9 +217,13 @@ impl<'a> ImportRun<'a> {
         // The job code and the import time are checked before the scan, so a run that
         // cannot start does not scan the source.
         require_job_code(settings.template, settings.job_code)?;
-        check_destinations(settings)?;
+        check_destinations(settings, self.checked_source(settings))?;
         let import_time = self.import_time()?;
-        let scan = scan_source(self.file_system, settings.source, settings.destination)?;
+        let scan = scan_source(
+            self.source_file_system,
+            settings.source,
+            settings.destination,
+        )?;
         progress.scan_finished(&scan);
         let plan = self.plan_at(settings, scan.files, scan.left_out, import_time)?;
         let plan = self.start(settings, plan)?;
@@ -280,7 +297,7 @@ impl<'a> ImportRun<'a> {
         settings: &ImportSettings<'_>,
         mut plan: PlannedRun,
     ) -> Result<PlannedRun, RunError> {
-        check_destinations(settings)?;
+        check_destinations(settings, self.checked_source(settings))?;
         let check = self.check_free_space(settings, &plan);
         if !check.shortages.is_empty() {
             return Err(RunError::NotEnoughSpace(NotEnoughSpace {

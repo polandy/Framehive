@@ -1,13 +1,14 @@
 // SPDX-FileCopyrightText: 2026 Framehive contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//! Reading the capture time of a file through the `FileSystem` port (CORE-005).
+//! Reading the capture time of a file through the `ReadOnlyFileSystem` port
+//! (CORE-005).
 
 use std::io::{self, Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 
 use domain::CaptureTime;
-use files::{FileSystem, ReadSeek};
+use files::{ReadOnlyFileSystem, ReadSeek};
 
 use crate::NoCaptureTime;
 use crate::capture_time::capture_time;
@@ -69,7 +70,7 @@ pub enum CaptureTimeError {
 /// # Ok::<(), metadata::CaptureTimeError>(())
 /// ```
 pub fn read_capture_time(
-    file_system: &dyn FileSystem,
+    file_system: &dyn ReadOnlyFileSystem,
     path: &Path,
 ) -> Result<CaptureTime, CaptureTimeError> {
     if !is_read(path) {

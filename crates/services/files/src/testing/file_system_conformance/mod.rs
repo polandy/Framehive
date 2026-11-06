@@ -1,23 +1,20 @@
 // SPDX-FileCopyrightText: 2026 Framehive contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//! The conformance suite of the [`FileSystem`] port.
+//! The conformance suite of the [`FileSystem`] port. It includes the suite of the
+//! [`ReadOnlyFileSystem`](crate::ReadOnlyFileSystem) port, which it lays out with the
+//! writing methods.
 
-use std::io::{self, Read, Seek, SeekFrom, Write};
+use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 
 use domain::Timestamp;
 
+use super::read_only_file_system_conformance::{
+    MakeSymbolicLink, ReadOnlyFileSystemUnderTest, check_read_only_file_system, ensure,
+    expect_error_kind, failed, modified,
+};
 use crate::{EntryKind, FileSystem};
-
-mod listing;
-
-/// A modification time every supported file system stores exactly: whole, even
-/// seconds (exFAT stores two-second steps).
-const MODIFIED_SECONDS: i64 = 1_792_245_908;
-
-/// Creates a symbolic link at its first path that points to its second.
-pub type MakeSymbolicLink<'a> = dyn Fn(&Path, &Path) -> io::Result<()> + 'a;
 
 /// What the [`FileSystem`] conformance suite runs against.
 pub struct FileSystemUnderTest<'a> {
@@ -34,41 +31,27 @@ pub struct FileSystemUnderTest<'a> {
     pub make_symbolic_link: Option<&'a MakeSymbolicLink<'a>>,
 }
 
+/// The folder below `root` that the read-only cases work in.
+const READ_ONLY_FOLDER: &str = "read_only";
+
 type CaseResult = Result<(), String>;
 type CaseFn = fn(&Case<'_>) -> CaseResult;
 
-/// Runs the conformance suite of the [`FileSystem`] port and returns one message per
-/// failed case, or nothing if the implementation conforms.
+/// Runs the conformance suite of the [`FileSystem`] port, which includes the suite of
+/// the [`ReadOnlyFileSystem`](crate::ReadOnlyFileSystem) port, and returns one
+/// message per failed case, or nothing if the implementation conforms.
 ///
 /// Each case works in its own folder below `root`.
 #[must_use]
 pub fn check_file_system(under_test: &FileSystemUnderTest<'_>) -> Vec<String> {
-    let cases: [(&str, CaseFn); 16] = [
-        (
-            "entry_reports_missing_files_and_folders",
-            entry_reports_missing,
-        ),
+    let cases: [(&str, CaseFn); 10] = [
         ("create_folder_needs_a_parent_and_no_entry", create_folder),
-        (
-            "list_folder_names_files_and_folders",
-            listing::list_folder_names_entries,
-        ),
-        (
-            "list_folder_does_not_follow_symbolic_links",
-            listing::list_folder_does_not_follow_links,
-        ),
-        ("file_size_is_the_content_length", listing::file_size),
         ("written_content_reads_back", written_content_reads_back),
-        (
-            "open_read_seeks_to_any_offset",
-            open_read_seeks_to_any_offset,
-        ),
         ("create_file_empties_an_existing_file", create_file_empties),
         (
             "create_file_needs_a_parent_folder",
             create_file_needs_parent,
         ),
-        ("open_read_reports_a_missing_file", open_read_missing),
         ("modification_time_is_kept", modification_time_is_kept),
         ("rename_moves_the_file", rename_moves),
         (
@@ -85,7 +68,7 @@ pub fn check_file_system(under_test: &FileSystemUnderTest<'_>) -> Vec<String> {
             synced_rename_survives_a_crash,
         ),
     ];
-    let mut failures = Vec::new();
+    let mut failures = check_read_only_cases(under_test);
     for (name, case) in cases {
         let folder = under_test.root.join(name);
         let result = under_test
@@ -98,6 +81,32 @@ pub fn check_file_system(under_test: &FileSystemUnderTest<'_>) -> Vec<String> {
         }
     }
     failures
+}
+
+/// Runs the [`ReadOnlyFileSystem`](crate::ReadOnlyFileSystem) suite in a folder of
+/// its own, laid out with the writing methods of the port.
+fn check_read_only_cases(under_test: &FileSystemUnderTest<'_>) -> Vec<String> {
+    let file_system = under_test.file_system;
+    let root = under_test.root.join(READ_ONLY_FOLDER);
+    if let Err(error) = file_system.create_folder(&root) {
+        return vec![format!(
+            "{READ_ONLY_FOLDER}: cannot create the folder: {error}"
+        )];
+    }
+    let add_folder = |path: &Path| file_system.create_folder(path);
+    let add_file = |path: &Path, content: &[u8], modified: Timestamp| {
+        let mut file = file_system.create_file(path)?;
+        file.write_all(content)?;
+        file.set_modification_time(modified)?;
+        file.sync()
+    };
+    check_read_only_file_system(&ReadOnlyFileSystemUnderTest {
+        file_system,
+        root: &root,
+        add_folder: &add_folder,
+        add_file: &add_file,
+        make_symbolic_link: under_test.make_symbolic_link,
+    })
 }
 
 struct Case<'a> {
@@ -155,34 +164,6 @@ impl Case<'_> {
     }
 }
 
-fn failed(operation: &'static str) -> impl Fn(io::Error) -> String {
-    move |error| format!("{operation} failed: {error}")
-}
-
-fn ensure(condition: bool, message: String) -> CaseResult {
-    if condition { Ok(()) } else { Err(message) }
-}
-
-fn expect_error_kind<T>(result: io::Result<T>, kind: io::ErrorKind, operation: &str) -> CaseResult {
-    match result {
-        Ok(_) => Err(format!("{operation} succeeded, expected {kind:?}")),
-        Err(error) if error.kind() == kind => Ok(()),
-        Err(error) => Err(format!(
-            "{operation} failed with {:?} ({error}), expected {kind:?}",
-            error.kind()
-        )),
-    }
-}
-
-fn modified() -> Timestamp {
-    Timestamp::from_unix_seconds(MODIFIED_SECONDS)
-}
-
-fn entry_reports_missing(case: &Case<'_>) -> CaseResult {
-    case.expect_entry(&case.path("missing"), None)?;
-    case.expect_entry(&case.folder, Some(EntryKind::Folder))
-}
-
 fn create_folder(case: &Case<'_>) -> CaseResult {
     let folder = case.path("2026");
     case.fs()
@@ -209,40 +190,6 @@ fn written_content_reads_back(case: &Case<'_>) -> CaseResult {
     case.expect_content(&path, &content)
 }
 
-/// Metadata readers read byte ranges at offsets and never a whole RAW file (ADR 0021).
-fn open_read_seeks_to_any_offset(case: &Case<'_>) -> CaseResult {
-    let path = case.path("photo.raf");
-    case.write(&path, b"0123456789")?;
-    let mut reader = case.fs().open_read(&path).map_err(failed("open_read"))?;
-    let mut read_at = |position: SeekFrom| -> Result<(u64, Vec<u8>), String> {
-        let offset = reader.seek(position).map_err(failed("seek"))?;
-        let mut bytes = [0; 2];
-        let count = reader.read(&mut bytes).map_err(failed("read"))?;
-        Ok((offset, bytes[..count].to_vec()))
-    };
-
-    let reads = [
-        read_at(SeekFrom::Start(6))?,
-        read_at(SeekFrom::Current(-5))?,
-        read_at(SeekFrom::End(-1))?,
-        read_at(SeekFrom::Start(20))?,
-    ];
-    let expected = [
-        (6, b"67".to_vec()),
-        (3, b"34".to_vec()),
-        (9, b"9".to_vec()),
-        (20, Vec::new()),
-    ];
-    ensure(
-        reads == expected,
-        format!("seek and read gave {reads:?}, expected {expected:?}"),
-    )?;
-    ensure(
-        reader.seek(SeekFrom::End(-11)).is_err(),
-        "seeking before the start succeeded".to_owned(),
-    )
-}
-
 fn create_file_empties(case: &Case<'_>) -> CaseResult {
     let path = case.path("photo.raf.part");
     case.write(&path, b"left by an interrupted import")?;
@@ -255,19 +202,6 @@ fn create_file_needs_parent(case: &Case<'_>) -> CaseResult {
         case.fs().create_file(&case.path("missing/photo.raf")),
         io::ErrorKind::NotFound,
         "creating a file in a missing folder",
-    )
-}
-
-fn open_read_missing(case: &Case<'_>) -> CaseResult {
-    expect_error_kind(
-        case.fs().open_read(&case.path("missing")),
-        io::ErrorKind::NotFound,
-        "open_read",
-    )?;
-    expect_error_kind(
-        case.fs().modification_time(&case.path("missing")),
-        io::ErrorKind::NotFound,
-        "modification_time",
     )
 }
 

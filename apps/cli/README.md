@@ -9,8 +9,10 @@ Layer: `app` (architecture §3). Binary: `framehive`.
 
 ## Purpose
 
-The command line of Framehive: `framehive import` (CLI-001, CLI-004, CLI-010, CLI-011), `framehive
-import-log` (CLI-009), `framehive config init` (CLI-010) and, without a subcommand, the guided import (CLI-002, CLI-003, ADR 0024). It parses the arguments
+The command line of Framehive: `framehive import` (CLI-001, CLI-004, CLI-010, CLI-011,
+CLI-013), `framehive cameras` (CLI-013), `framehive import-log` (CLI-009),
+`framehive config init` (CLI-010) and, without a subcommand, the guided import
+(CLI-002, CLI-003, ADR 0024). It parses the arguments
 with `clap` (builder API, ADR 0020 §6) and is one of the two places, with
 `framehive-gui`, that know the concrete adapters and wire them to the ports.
 
@@ -23,6 +25,8 @@ framehive import <source> <destination> [--backup <folder>]...
                  [--template <template>] [--job-code <text>]
                  [--on-conflict add_suffix|skip|fail] [--dry-run]
 framehive import <source> [<destination>] --profile <name> [other options]
+framehive import camera:[<model>|<port>] [<destination>] [other options]
+framehive cameras
 framehive import-log [<run>|last] [--format text|json|csv]
 framehive config init
 framehive --help
@@ -45,6 +49,12 @@ starts and executes the run with
 `adapter-sqlite`, both in the state folder; the command stops when the state folder is
 unknown (no absolute `XDG_STATE_HOME` and no home folder). The run gets the resolved paths,
 by which the history identifies a destination (IMPORT-009).
+
+## Sections
+
+- [Cameras](docs/cameras.md): `camera:` sources and `framehive cameras` (CLI-013)
+- [Guided import](docs/guided-import.md): `framehive` without a subcommand (CLI-002,
+  CLI-003)
 
 ## Import profiles
 
@@ -69,31 +79,6 @@ number or `last` it prints `ImportHistory::read_run_log` as text, JSON or RFC 41
 lossy (U+FFFD for invalid UTF-8). `--format` without `<run>` is a
 usage error. A run that does not exist, `last` without runs, a history that cannot be
 used and an unknown state folder print `error: …` and exit with 2.
-
-## Guided import
-
-`framehive` without a subcommand runs the dialog of CLI-002 and CLI-003 in
-`src/guided/`: it waits for a memory card (`devices::DeviceWatch` over `adapter-mounts`, polled once a second
-while it waits for a line), reads the card with `import::scan_folder`, asks for the
-template (with a preview from `ImportRun::plan_first`) and the job code, shows the plan
-summary, reserves the sequence numbers with `ImportRun::start` on Enter (numbers that
-do not fit lead back to the template step), and runs `ImportRun::execute` with a progress sink that redraws one line and
-stops the run between files when the card is pulled (IMPORT-004.13). The dialog is a
-loop over input events (a line, a tick per poll interval, the end of input) from a
-thread that reads standard input. Backup destinations (CLI-006) are chosen with `b` at
-the plan summary and passed to the run; one on the card, or one that
-`import::check_backup_destinations` rejects, blocks Enter like a destination on the
-card, and the report adds the files with a failed backup and the backup summary lines.
-The import history is `adapter-sqlite` in the state folder; the destinations are resolved
-with `paths::canonical_folder` (through `Ports::resolve_folder`) before each plan, and a
-history that cannot be used is reported as `The import history <path> cannot be used:
-<reason>`.
-The destination, the backup destinations, the template and the recent job codes are
-remembered in `$XDG_STATE_HOME/framehive/guided-import.txt` (ADR 0025, format version 2
-of ADR 0030; version 1 is still read), written through the `FileSystem` port as
-`<file>.part`, then renamed. It exits with 0
-when the person quits, and with 2 when it cannot start: standard input or output is not
-a terminal, or the home folder or the current folder is unknown.
 
 ## Report and exit codes
 
@@ -124,7 +109,8 @@ standard error as `warning: <message>`; there is no other log output yet.
 |---|---|
 | `arguments` | The `clap` command line and the parsed `Invocation` |
 | `paths` | Source and destination resolution, the inside check, creating the destination |
-| `import_command` | Wires the adapters to the import run (`run.rs`, tested in-crate with `MemoryFreeSpace`) and maps the result to the exit code |
+| `import_command` | Wires the adapters to the import run (`run.rs`, tested in-crate with `MemoryFreeSpace` and `MemoryCameras`) and maps the result to the exit code |
+| `cameras` | `camera:` sources and `framehive cameras` (CLI-013): naming, finding and opening a camera |
 | `report` | The `ProgressSink` that prints the report lines and the summary |
 | `profiles` | The configuration folder, profile names, and reading the profile of `--profile` (CLI-010) |
 | `config_init` | `framehive config init`: the example profile (CLI-010) |
@@ -146,13 +132,9 @@ nothing, the import fails only the unreadable file, a second run copies nothing,
 the source keeps its paths, bytes and modification times. `tests/import_log.rs` reads
 the log after real imports, or of a history written with `adapter-sqlite`.
 
-The guided import is tested in the crate (`src/guided/tests/`) with golden transcripts:
-the dialog runs against scripted input steps, `MemoryFileSystem`, `MemoryDeviceSource`
-and a `ManualClock`; `tests/guided_import.rs` checks the binary without a terminal.
-
 ## Dependencies
 
-- `adapter-blake3`, `adapter-clock`, `adapter-fs`, `adapter-mounts`,
+- `adapter-blake3`, `adapter-clock`, `adapter-fs`, `adapter-gphoto2`, `adapter-mounts`,
   `adapter-sequence-counters`, `adapter-sqlite`, `adapter-yaml`, `config`, `devices`,
   `domain`, `files`, `history`, `import`, `naming`
 

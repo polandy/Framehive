@@ -123,12 +123,18 @@ impl<'a> ImportSettings<'a> {
 
 /// Checks the backup destinations, the video destination and the video backup
 /// destinations of `settings` before anything is written (IMPORT-007.11,
-/// IMPORT-013.8).
-pub(crate) fn check_destinations(settings: &ImportSettings<'_>) -> Result<(), RunError> {
-    let (source, destination) = (settings.source, settings.destination);
+/// IMPORT-013.8). A `source` of `None` lies on a device of its own, such as a camera
+/// (ADR 0034), so no destination is checked against it.
+pub(crate) fn check_destinations(
+    settings: &ImportSettings<'_>,
+    source: Option<&Path>,
+) -> Result<(), RunError> {
+    let destination = settings.destination;
     check_backup_destinations(source, destination, settings.backup_destinations)?;
     if let Some(video_destination) = settings.video_destination {
-        check_video_destination(source, video_destination)?;
+        if let Some(source) = source {
+            check_video_destination(source, video_destination)?;
+        }
         check_against_video_destination(video_destination, settings.backup_destinations)?;
     }
     let video_backups = settings.video_backup_destinations;

@@ -1,0 +1,85 @@
+SPDX-FileCopyrightText: 2026 Framehive contributors
+SPDX-License-Identifier: LGPL-2.1-or-later
+
+camlibs/directory: read part of a file
+
+libgphoto2 2.5.34's `directory` driver implements only get_file_func, so
+gp_camera_file_read() returns GP_ERROR_NOT_SUPPORTED on it. Only ptp2 can read
+part of a file. Framehive reads camera files only through gp_camera_file_read(),
+in chunks from the offset a metadata reader seeks to (ADR 0034 §3), and tests
+its camera adapter without hardware through the `directory` driver on the
+`disk:` port. This patch adds a read_file_func to the driver, so those tests
+exercise the same chunked read path a PTP camera takes.
+
+It only changes cameras on `disk:` ports, which Framehive never lists. It is
+written to be offered upstream unchanged: it reads with open, lseek and read,
+as get_file_func does, and returns fewer bytes than asked for only at the end
+of the file.
+
+Applied by flake.nix to nixpkgs' libgphoto2.
+
+--- a/camlibs/directory/directory.c
++++ b/camlibs/directory/directory.c
+@@ -586,6 +586,54 @@
+ 	return (GP_OK);
+ }
+ 
++/*
++ * Reads up to *size bytes of a file from offset, so frontends can read part of
++ * a file the way they do from PTP cameras (GetPartialObject), without fetching
++ * all of it. On return, *size is the number of bytes read; it is less than asked
++ * for only at the end of the file.
++ */
++static int
++read_file_func (CameraFilesystem *fs, const char *folder, const char *filename,
++		CameraFileType type, uint64_t offset, char *buf, uint64_t *size,
++		void *user_data, GPContext *context)
++{
++	char path[1024];
++	int result, fd;
++	uint64_t done = 0;
++	Camera *camera = (Camera*)user_data;
++
++	if (type != GP_FILE_TYPE_NORMAL)
++		return GP_ERROR_NOT_SUPPORTED;
++
++	result = _get_path (camera->port, folder, filename, path, sizeof(path));
++	if (result < GP_OK)
++		return result;
++
++	fd = open (path, O_RDONLY);
++	if (fd == -1)
++		return GP_ERROR_IO_READ;
++	if (lseek (fd, (off_t)offset, SEEK_SET) == (off_t)-1) {
++		close (fd);
++		return GP_ERROR_IO_READ;
++	}
++	while (done < *size) {
++		ssize_t count = read (fd, buf + done, *size - done);
++
++		if (count == -1) {
++			if (errno == EINTR)
++				continue;
++			close (fd);
++			return GP_ERROR_IO_READ;
++		}
++		if (count == 0)
++			break;
++		done += count;
++	}
++	close (fd);
++	*size = done;
++	return GP_OK;
++}
++
+ static int
+ camera_manual (Camera *camera, CameraText *manual, GPContext *context)
+ {
+@@ -773,6 +821,7 @@
+ 	.set_info_func = set_info_func,
+ 	.get_info_func = get_info_func,
+ 	.get_file_func = get_file_func,
++	.read_file_func = read_file_func,
+ 	.put_file_func = put_file_func,
+ 	.del_file_func = delete_file_func,
+ 	.make_dir_func = make_dir_func,

@@ -33,7 +33,7 @@ use std::io::{self, Write};
 use std::path::Path;
 
 use domain::Timestamp;
-use files::{EntryKind, FileSystem, FolderEntry, ReadSeek, WriteFile};
+use files::{EntryKind, FileSystem, FolderEntry, ReadOnlyFileSystem, ReadSeek, WriteFile};
 
 /// Creates a second name for a file, as [`fs::hard_link`] does. A seam, so that tests
 /// can stand in for a file system without hard links.
@@ -41,8 +41,8 @@ type LinkFn = fn(&Path, &Path) -> io::Result<()>;
 
 /// The [`FileSystem`] of the machine, over `std::fs`.
 ///
-/// Symbolic links are not followed by [`FileSystem::entry`] and
-/// [`FileSystem::list_folder`]; they are [`EntryKind::SymbolicLink`], so a scan cannot
+/// Symbolic links are not followed by [`ReadOnlyFileSystem::entry`] and
+/// [`ReadOnlyFileSystem::list_folder`]; they are [`EntryKind::SymbolicLink`], so a scan cannot
 /// loop or leave its source (IMPORT-005).
 #[derive(Debug, Clone, Copy)]
 pub struct StdFileSystem {
@@ -84,7 +84,7 @@ impl Default for StdFileSystem {
     }
 }
 
-impl FileSystem for StdFileSystem {
+impl ReadOnlyFileSystem for StdFileSystem {
     fn entry(&self, path: &Path) -> io::Result<Option<EntryKind>> {
         match fs::symlink_metadata(path) {
             Ok(metadata) => Ok(Some(entry_kind(metadata.file_type()))),
@@ -114,10 +114,6 @@ impl FileSystem for StdFileSystem {
         Ok(metadata.len())
     }
 
-    fn create_folder(&self, path: &Path) -> io::Result<()> {
-        fs::create_dir(path)
-    }
-
     fn open_read(&self, path: &Path) -> io::Result<Box<dyn ReadSeek>> {
         let file = File::open(path)?;
         // Opening a folder succeeds on Unix; only reading it fails.
@@ -127,16 +123,22 @@ impl FileSystem for StdFileSystem {
         Ok(Box::new(file))
     }
 
-    fn create_file(&self, path: &Path) -> io::Result<Box<dyn WriteFile>> {
-        Ok(Box::new(StdWriteFile(File::create(path)?)))
-    }
-
     fn modification_time(&self, path: &Path) -> io::Result<Timestamp> {
         let metadata = fs::metadata(path)?;
         if metadata.is_dir() {
             return Err(is_a_folder(path));
         }
         system_time::to_timestamp(metadata.modified()?)
+    }
+}
+
+impl FileSystem for StdFileSystem {
+    fn create_folder(&self, path: &Path) -> io::Result<()> {
+        fs::create_dir(path)
+    }
+
+    fn create_file(&self, path: &Path) -> io::Result<Box<dyn WriteFile>> {
+        Ok(Box::new(StdWriteFile(File::create(path)?)))
     }
 
     /// Links `to` to the file and removes the name `from`, which never replaces: the

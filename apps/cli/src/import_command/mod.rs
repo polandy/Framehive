@@ -1,8 +1,10 @@
 // SPDX-FileCopyrightText: 2026 Framehive contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//! `framehive import` (CLI-001, CLI-010): wires the adapters to an import run.
+//! `framehive import` (CLI-001, CLI-010, CLI-013): wires the adapters to an import run.
 
+#[cfg(test)]
+mod camera_tests;
 mod folders;
 mod run;
 #[cfg(test)]
@@ -14,6 +16,7 @@ use std::process::ExitCode;
 
 use adapter_free_space::StatvfsFreeSpace;
 use adapter_fs::StdFileSystem;
+use adapter_gphoto2::Gphoto2Cameras;
 use adapter_yaml::SaphyrParser;
 use import::{
     ConflictPolicy, DEFAULT_NAME_TEMPLATE, ImportProfile, ImportSummary, JobCode, require_job_code,
@@ -61,6 +64,7 @@ fn import(arguments: &ImportArguments) -> Result<ImportSummary, NotStarted> {
         Surroundings {
             state_folder: &state_folder,
             free_space: &StatvfsFreeSpace::new(),
+            cameras: &Gphoto2Cameras::new(),
             output: &mut io::stdout().lock(),
             errors: &mut io::stderr(),
         },
