@@ -20,6 +20,9 @@ alone: it reads no file and does not look at the destinations again.
 **Required locations.** The import destination and each backup destination of the run
 are the required locations. A file is *saved* when it is verified at every one of them.
 Without backup destinations, the import destination is the only required location.
+With a video destination or video backup destinations (IMPORT-013), each file has its
+own required locations: the destination it is copied to and the backup destinations it
+is sent to, so a photo and a video can require different numbers of locations.
 
 **Verified at a location.**
 
@@ -48,8 +51,10 @@ hidden; they would otherwise keep every card from being formatted.
 file or folder was left out for a reason that keeps it from being formatted, and the
 run finished. Otherwise the result lists each file that keeps it from being formatted,
 in scan order, with the number of required locations it is verified at, or with its
-left-out reason. Both results carry the number of required locations and the number of
-files left out and not saved.
+left-out reason; a file that is not saved also carries its own number of required
+locations. Both results carry the largest number of required locations among the files,
+whether the files require different numbers, and the number of files left out and not
+saved.
 
 A run that the progress sink stopped (IMPORT-004.13) and a dry run never let the card be
 formatted: a stopped run has not looked at every file, and a dry run verifies nothing.
@@ -132,6 +137,14 @@ formatted: a stopped run has not looked at every file, and a dry run verifies no
 - **When** the format readiness is evaluated
 - **Then** the card can be formatted
 
+### IMPORT-008.14 – Files that require different numbers of locations
+- **Given** a photo that requires 2 locations and is verified at both, and a video that
+  requires 3 locations and is verified at 2
+- **When** the format readiness is evaluated
+- **Then** the card cannot be formatted, the video is listed as verified at 2 of 3
+  locations, the result carries 3 required locations, and it says that the files
+  require different numbers
+
 ## Out of scope
 
 - How the command line and the guided import show the format readiness: CLI-007.
@@ -150,3 +163,4 @@ formatted: a stopped run has not looked at every file, and a dry run verifies no
 | Date | Change |
 |---|---|
 | 2026-11-04 | Initial draft; owner decisions: every destination of the run is required, files left out as unsupported, hidden or symbolic links do not keep the card, no change to exit codes; accepted by the owner |
+| 2026-11-06 | Each file has its own required locations when videos have their own destinations (IMPORT-013) |

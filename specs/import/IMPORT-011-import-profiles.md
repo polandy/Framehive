@@ -1,6 +1,6 @@
 # IMPORT-011 – Import profiles
 
-- Status: accepted
+- Status: implemented
 - Module: import
 - Origin: N8, N25, R9, R7, I4
 - Depends on: CORE-006, IMPORT-001, IMPORT-003, IMPORT-006, IMPORT-007, IMPORT-013

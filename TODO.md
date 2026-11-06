@@ -16,7 +16,6 @@ feature live in its spec, decisions in `docs/adr/`. Add items with `/todo`.
 - [ ] Test or drop the JPEG XL DNG example for `UnsupportedFormat` in PREVIEWS-001 — no CC0 sample yet, and LibRaw may report a data error that the adapter maps to `Corrupt` (ADR 0028, PR #34 review) (2026-11-03)
 - [ ] Store reference pixel hashes for aarch64-darwin in the LibRaw version test — on macOS it compares only sizes until the hashes are measured on a Mac (PREVIEWS-001, ADR 0028) (2026-11-03)
 - [ ] Merge the duplicated `unfinished()` helper — it exists in both `crates/services/files/src/copy/target.rs` and `modules/import/import/src/run/copy.rs` (IMPORT-007, PR #36 review) (2026-11-04)
-- [ ] Add an index on `copies.run_id` at the next import history schema change — the import log reads copies by run; not worth its own migration now (IMPORT-010, PR import-log review) (2026-11-05)
 - [ ] Add a CLI-009 acceptance criterion for a missing state folder and mark its test `without_a_state_folder_the_command_stops` — it tests prose-only behavior today (CLI-009, PR #40 review) (2026-11-05)
 - [ ] Merge the duplicated `capture_time_text` into one `LocalDateTime` formatter — it exists in both `apps/cli/src/import_log/mod.rs` and `crates/adapters/sqlite/src/text.rs` and both write the ADR 0031 format (ADR 0031, PR #40 review) (2026-11-05)
 - [ ] Keep the text format of `framehive import-log` on one line per file when a target or original file name contains a newline — JSON and CSV already escape it (CLI-009, PR #40 review) (2026-11-05)
@@ -27,3 +26,5 @@ feature live in its spec, decisions in `docs/adr/`. Add items with `/todo`.
 - [ ] Unit-test the free-space adapter's `f_bavail × f_frsize` conversion and its overflow path by moving the multiply into a small function (ADR 0033, I1 review) (2026-11-05)
 - [ ] Show `ImportSummary::free_space_unknown` in the CLI or drop the field — the CLI prints the warnings of its own first check, and only tests read the field (IMPORT-012, I1 review) (2026-11-05)
 - [ ] A shortage that only the second free-space check in `ImportRun::start` finds comes after `framehive import` created the folders — rare, but it contradicts "nothing is created" (IMPORT-012, CLI-011, I1 review) (2026-11-05)
+- [ ] Give videos a name template of their own — today they use the import's name template (IMPORT-013, R7, owner decision D2) (2026-11-06)
+- [ ] Split `apps/cli/README.md` into one file per section with a `README.md` index — it is at 10238 of 10240 bytes, so the next CLI change cannot add a line (architecture §7, R7+I4) (2026-11-06)

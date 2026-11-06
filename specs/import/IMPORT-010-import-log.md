@@ -1,6 +1,6 @@
 # IMPORT-010 – Import log
 
-- Status: accepted
+- Status: implemented
 - Module: import
 - Origin: N6
 - Depends on: IMPORT-009, IMPORT-013

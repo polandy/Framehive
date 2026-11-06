@@ -1,6 +1,6 @@
 # IMPORT-013 – Video destinations
 
-- Status: accepted
+- Status: implemented
 - Module: import
 - Origin: R7, I4
 - Depends on: IMPORT-003, IMPORT-007, IMPORT-009, IMPORT-012

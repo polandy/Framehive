@@ -1,6 +1,6 @@
 # CLI-012 – Video destinations in `framehive import`
 
-- Status: accepted
+- Status: implemented
 - Module: cli (`apps/cli`)
 - Origin: R7, I4, N18
 - Depends on: CLI-001, CLI-005, CLI-010, IMPORT-013
@@ -32,7 +32,9 @@ command line replaces the profile's value, also for the list.
 | Video backup destinations | every `--video-backup` | `backup.video_destinations` |
 
 **Report.** When a video destination is set, the line of each video (CLI-001) ends with
-`  (video destination)`, so its target path is read below the video destination. The
+`  (video destination)`, after any other note of the line, so its target path is read
+below the video destination. Every line of such a video has the mark, also a duplicate or
+a failure. A video destination that is the import destination marks no line. The
 backup lines of a file (CLI-005) name the folders of that file's backup destinations.
 After the summary, the lines of CLI-005 list each backup destination and then each
 video backup destination that is not a backup destination too; a folder that is both
@@ -56,8 +58,8 @@ The guided import (CLI-002) has no video destinations (IMPORT-013, "Out of scope
 - **When** the user runs `framehive import <source> <destination> --video-destination
   <videos>`
 - **Then** `<destination>` has `2026/2026-10-17/DSCF0001.RAF`, `<videos>` has
-  `2026/2026-10-17/clip.MOV`, the output has the line `copied  clip.MOV ->
-  2026/2026-10-17/clip.MOV  (video destination)`, and the exit code is 0
+  `2026/2026-10-17/clip.MOV`, the line of the video starts with `copied  clip.MOV ->
+  2026/2026-10-17/clip.MOV` and ends with `  (video destination)`, and the exit code is 0
 
 ### CLI-012.2 – Video backup destinations
 - **Given** the source and folders of CLI-012.1, and empty folders `<backup>` and
@@ -102,3 +104,4 @@ The guided import (CLI-002) has no video destinations (IMPORT-013, "Out of scope
 | Date | Change |
 |---|---|
 | 2026-11-06 | Initial draft; owner decisions: options `--video-destination` and `--video-backup`, profile keys `video_destination` and `backup.video_destinations`; accepted by the owner |
+| 2026-11-06 | The mark ends the line after any other note; CLI-012.1 matches the start and end of the line |

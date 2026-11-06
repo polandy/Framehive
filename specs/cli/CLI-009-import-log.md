@@ -1,6 +1,6 @@
 # CLI-009 – Import log in the command line
 
-- Status: accepted
+- Status: implemented
 - Module: cli (`apps/cli`)
 - Origin: N6
 - Depends on: CLI-008, IMPORT-010

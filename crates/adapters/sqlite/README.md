@@ -18,8 +18,12 @@ read-only for `framehive import-log` (CLI-009).
 - **Created on first write.** A missing database reads as empty; the first write creates
   the state folder and the database, so a dry run creates nothing.
 - **Never overwritten.** A file that is not a SQLite database, a `user_version` other
-  than 1, or a database without a version that holds tables is an error, and the file is
+  than 1 or 2, or a database without a version that holds tables is an error, and the file is
   not changed.
+- **Migrated on first write.** A database with layout 1 (`user_version` 1) is migrated to
+  layout 2 (the run's video destination and the index `copies_by_run`) in one immediate
+  transaction when it is opened for writing; read-only, both layouts are read and the
+  file is not changed (ADR 0031, addendum).
 - **Crash-safe and shared.** WAL journal, `synchronous = FULL`, and a busy timeout of
   5 s for a second process that writes at the same time. Each copy is one statement and
   so one transaction.

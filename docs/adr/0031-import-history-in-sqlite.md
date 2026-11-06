@@ -137,7 +137,7 @@ its `user_version` and the dependencies stay as they are.
 
 Addendum (2026-11-06, IMPORT-013): a run can send its videos to a video destination, and
 the log shows it (IMPORT-010, CLI-009), so the layout of section 3 changes for the first
-time. Layout 2 adds the column `runs.video_destination` (a BLOB, empty when the run has
+time. Layout 2 adds the column `runs.video_destination` (a BLOB, NULL when the run has
 none) and the index `copies_by_run` on `copies (run_id)`, which the import log reads by.
 A new database is created with layout 2. Opened for writing, a database with
 `user_version` 1 is migrated to 2 in one immediate transaction: the column and the index

@@ -269,6 +269,7 @@ fn a_backup_destination_that_is_the_video_destination_stops_the_command() {
 
 /// The format readiness when photos and videos require different numbers of locations:
 /// the verdict names no number, which would be wrong for some of the files.
+/// spec: CLI-007.11
 #[test]
 fn the_verdict_names_no_number_when_files_require_different_numbers() {
     let folders = photo_and_video();

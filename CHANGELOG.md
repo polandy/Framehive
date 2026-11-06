@@ -103,6 +103,13 @@ All user-visible changes are listed here. The format follows
   the import does not start (exit code 2; in the guided import, Enter does not start
   until `d` or `b` changes a folder). A dry run checks too. When the free space cannot
   be read, a warning says so and the import goes on.
+- Video destinations (IMPORT-013, CLI-012): `framehive import --video-destination
+  <folder>` and the profile key `video_destination` send videos to a folder of their own,
+  and `--video-backup <folder>` (repeatable) and `backup.video_destinations` give them
+  their own backup destinations; unset, videos go where photos go. Each video line of
+  the report ends with `(video destination)`, the format readiness counts each file's
+  own locations, and `framehive import-log` shows a run's video destination. The import
+  history moves to layout 2 the first time it is written (ADR 0031).
 
 ### Fixed
 

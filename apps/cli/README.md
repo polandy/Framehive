@@ -19,6 +19,7 @@ with `clap` (builder API, ADR 0020 §6) and is one of the two places, with
 ```
 framehive
 framehive import <source> <destination> [--backup <folder>]...
+                 [--video-destination <folder>] [--video-backup <folder>]...
                  [--template <template>] [--job-code <text>]
                  [--on-conflict add_suffix|skip|fail] [--dry-run]
 framehive import <source> [<destination>] --profile <name> [other options]
@@ -33,27 +34,27 @@ framehive --version
 links, resolves the longest existing part of the destination and appends the missing
 folders (rejecting `..` among them), and rejects a destination inside the source.
 Each `--backup` folder (CLI-005) is resolved the same way and checked with
-`import::check_backup_destinations` (IMPORT-007.11), also in a dry run. It scans and
+`import::check_backup_destinations` (IMPORT-007.11), also in a dry run.
+So are `--video-destination` and `--video-backup` (CLI-012, IMPORT-013.8). It scans and
 plans, and checks the free space with `adapter-free-space` (CLI-011): a short file system
 stops it with exit code 2 before any folder is created, a dry run after its lines.
-Unless it is a dry run, it then creates the missing folders of the destination and of
-each backup destination, and starts and executes the run with
+Unless it is a dry run, it then creates the missing folders of all destinations, and
+starts and executes the run with
 `adapter-fs`, `adapter-blake3` and `adapter-clock`, in compatibility mode. The persisted sequence counters (CLI-004, ADR 0029) come from
 `adapter-sequence-counters`, and the import history (CLI-008, ADR 0031) from
 `adapter-sqlite`, both in the state folder; the command stops when the state folder is
-unknown (no absolute `XDG_STATE_HOME` and no home folder). The run gets the resolved paths
-above, so a destination has the same path in every run, which is how the history
-identifies it (IMPORT-009).
+unknown (no absolute `XDG_STATE_HOME` and no home folder). The run gets the resolved paths,
+by which the history identifies a destination (IMPORT-009).
 
 ## Import profiles
 
 `framehive import --profile <name>` (CLI-010, `src/profiles.rs`) checks the name
-(ADR 0032), finds the configuration folder (a pure function of the platform,
-`XDG_CONFIG_HOME` and `HOME`, tested for Linux and macOS) and reads
+(ADR 0032), finds the configuration folder (from the platform,
+`XDG_CONFIG_HOME` and `HOME`) and reads
 `profiles/<name>.yaml` through the `FileSystem` port with `import::ImportProfile::read`
 and `adapter-yaml`, with `HOME` for `~`, before anything is scanned. Each setting comes
 from the command line, else the profile, else the default of CLI-001; `--backup`
-replaces the profile's list. Only `--job-code` gets the unused job code warning. Every
+and `--video-backup` replace the profile's lists. Only `--job-code` gets the unused job code warning. Every
 failure is `error: …` with exit code 2. `framehive config init` (`src/config_init.rs`)
 writes `profiles/example.yaml` as `<file>.part` renamed without replacing, so an
 existing file is kept (exit code 1).
@@ -64,8 +65,8 @@ existing file is kept (exit code 1).
 `SqliteImportHistory::read_only`, so it never creates the history or the state folder.
 Without `<run>` it prints one line per run from `ImportHistory::list_runs`; with a run
 number or `last` it prints `ImportHistory::read_run_log` as text, JSON or RFC 4180 CSV
-(`src/import_log/`). The JSON and CSV writers are own code (ADR 0009). Paths are printed
-lossy, with U+FFFD for each byte that is not valid UTF-8. `--format` without `<run>` is a
+(`src/import_log/`, own writers, ADR 0009). Paths are printed
+lossy (U+FFFD for invalid UTF-8). `--format` without `<run>` is a
 usage error. A run that does not exist, `last` without runs, a history that cannot be
 used and an unknown state folder print `error: …` and exit with 2.
 
