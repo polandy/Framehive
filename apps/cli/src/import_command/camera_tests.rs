@@ -162,6 +162,22 @@ fn a_camera_in_use_stops_with_a_remedy() {
     );
 }
 
+/// spec: CLI-013.15
+#[test]
+fn a_camera_without_a_storage_stops_with_a_remedy() {
+    let folders = Folders::new();
+    let cameras = MemoryCameras::new().with_camera(X_T5.0, X_T5.1, &MemoryFileSystem::new());
+
+    let run = folders.import_camera("camera:", &[], &cameras);
+
+    assert_stopped(
+        &folders,
+        &run,
+        "the camera Fujifilm X-T5 at usb:002,007 shows no storage; unlock it and choose \
+         file transfer (MTP or PTP) on the device, then try again",
+    );
+}
+
 /// spec: CLI-013.10
 #[test]
 fn a_port_that_cannot_be_opened_stops() {

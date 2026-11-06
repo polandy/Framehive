@@ -10,6 +10,7 @@ use std::process::ExitCode;
 
 use adapter_gphoto2::Gphoto2Cameras;
 use files::{Camera, CameraError, Cameras, ReadOnlyFileSystem};
+use import::{ScanError, SourceScan, scan_camera};
 
 use crate::{NOT_STARTED, report_error};
 
@@ -38,6 +39,33 @@ pub(crate) struct OpenedCamera {
     pub(crate) file_system: Box<dyn ReadOnlyFileSystem>,
     /// `camera:<model>`, as the import log shows the source (CLI-013).
     pub(crate) name: PathBuf,
+    /// `the camera <model> at <port>`, or `the camera at <port>` for a camera that is
+    /// not listed, as the messages of CLI-013 name it.
+    pub(crate) described: String,
+}
+
+impl OpenedCamera {
+    /// Scans the camera from its root `root` (IMPORT-014).
+    ///
+    /// # Errors
+    ///
+    /// Returns the message of the scan error; for a camera without a storage, the
+    /// line of CLI-013.15 that names the camera.
+    pub(crate) fn scan(&self, root: &Path) -> Result<SourceScan, String> {
+        scan_camera(self.file_system.as_ref(), root).map_err(|error| match error {
+            ScanError::NoStorage => self.no_storage_message(),
+            error => error.to_string(),
+        })
+    }
+
+    /// The line for a camera that shows no storage, with the remedy (CLI-013.15).
+    fn no_storage_message(&self) -> String {
+        format!(
+            "{} shows no storage; unlock it and choose file transfer (MTP or PTP) on the \
+             device, then try again",
+            self.described
+        )
+    }
 }
 
 /// The camera that `source` names, or `None` for a folder: a source names a camera
@@ -81,6 +109,7 @@ pub(crate) fn open_camera(
                 "{CAMERA_PREFIX}{}",
                 model.as_deref().unwrap_or(&port)
             )),
+            described: described_camera(model.as_deref(), &port),
         }),
         Err(CameraError::InUse { .. }) => Err(in_use_message(model.as_deref(), &port)),
         Err(error) => Err(error.to_string()),
@@ -154,15 +183,20 @@ fn listed_model(cameras: &dyn Cameras, port: &str) -> Option<String> {
         .map(|camera| camera.model)
 }
 
+/// `the camera <model> at <port>`, or `the camera at <port>` without a model.
+fn described_camera(model: Option<&str>, port: &str) -> String {
+    match model {
+        Some(model) => format!("the camera {model} at {port}"),
+        None => format!("the camera at {port}"),
+    }
+}
+
 /// The line for a camera that another program holds, with the remedy (ADR 0034 §6).
 fn in_use_message(model: Option<&str>, port: &str) -> String {
-    let camera = model.map_or_else(
-        || "the camera".to_owned(),
-        |model| format!("the camera {model}"),
-    );
     format!(
-        "{camera} at {port} is in use by another program; close it \
-         (the file manager on Linux, ptpcamerad on macOS) and try again"
+        "{} is in use by another program; close it \
+         (the file manager on Linux, ptpcamerad on macOS) and try again",
+        described_camera(model, port)
     )
 }
 

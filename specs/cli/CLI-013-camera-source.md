@@ -50,6 +50,8 @@ code is 2:
 | `cannot open the camera at <port>: <reason>` | The camera cannot be opened |
 | `the camera <model> at <port> is in use by another program; close it (the file manager on Linux, ptpcamerad on macOS) and try again` | Another program holds the camera |
 | `the camera at <port> is in use by another program; close it (the file manager on Linux, ptpcamerad on macOS) and try again` | Another program holds a camera given by a port that is not listed |
+| `the camera <model> at <port> shows no storage; unlock it and choose file transfer (MTP or PTP) on the device, then try again` | The camera shows no storage (IMPORT-014.11), for example a locked phone or one set to charge only |
+| `the camera at <port> shows no storage; unlock it and choose file transfer (MTP or PTP) on the device, then try again` | A camera given by a port that is not listed shows no storage |
 
 **The run.** The import runs as in CLI-001 with the files of IMPORT-014; paths in the
 report are relative to the camera's root. A camera that stops answering during the run
@@ -164,6 +166,13 @@ source as for a folder.
   `Only the files below DCIM were checked. Files outside DCIM, such as a phone's other folders, are not backed up.`,
   and the dry run does not print it
 
+### CLI-013.15 – A camera without a storage stops with a remedy
+- **Given** a connected camera `Fujifilm X-T5` at `usb:002,007` that shows no storage
+- **When** the user runs `framehive import camera: <destination>`
+- **Then** standard error has
+  `the camera Fujifilm X-T5 at usb:002,007 shows no storage; unlock it and choose file transfer (MTP or PTP) on the device, then try again`,
+  nothing is created, and the exit code is 2
+
 ## Out of scope
 
 - Cameras in the guided import (CLI-002, CLI-003): a later spec.
@@ -180,3 +189,4 @@ source as for a folder.
 |---|---|
 | 2026-11-06 | Initial version; owner decisions E1–E7 of 2026-11-06 (ADR 0034) |
 | 2026-11-06 | CLI-013.14: the note of IMPORT-014.10 after the format readiness (owner decision E8); `camera:<port>` names an unlisted camera; implemented |
+| 2026-11-06 | CLI-013.15: a camera without a storage stops with exit code 2 and a remedy (owner decision E10) |

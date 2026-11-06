@@ -33,7 +33,8 @@ with its role, size and modification time, and each file or folder it leaves out
 the reason: unsupported type, hidden, symbolic link, sidecar until grouping, or cannot
 be read. `scan_camera` scans a camera or phone (IMPORT-014): only the folder `DCIM` at
 the top of each storage, with the same rules, giving paths that start with the storage
-folder; `CAMERA_FORMAT_READINESS_NOTE` is the note its format readiness carries. `TargetResolver` resolves name conflicts and files already imported
+folder. A camera without any storage folder, such as a locked phone, is
+`ScanError::NoStorage`, not an empty source; `CAMERA_FORMAT_READINESS_NOTE` is the note its format readiness carries. `TargetResolver` resolves name conflicts and files already imported
 (IMPORT-003) against the destination and the earlier files of the plan, comparing
 names by their canonical caseless key, without regard to case and Unicode
 normalization form (ADR 0026); a destination may hold several names with one key,

@@ -17,7 +17,7 @@ use history::testing::MemoryImportHistory;
 use import::{
     CAMERA_FORMAT_READINESS_NOTE, ConflictPolicy, FileOutcome, FileReport, FormatReadiness,
     ImportRun, ImportSettings, ImportSummary, LeftOut, LeftOutReason, NoProgress, ProgressSink,
-    SessionSequence, SourceScan, scan_camera,
+    ScanError, SessionSequence, SourceScan, scan_camera,
 };
 use naming::testing::MemorySequenceCounters;
 use naming::{CompatibilityMode, NameTemplate};
@@ -44,11 +44,15 @@ fn camera_with(files: &[&str]) -> MemoryFileSystem {
     camera
 }
 
-/// Opens `camera` through `MemoryCameras` and scans it.
-fn scan(camera: &MemoryFileSystem) -> SourceScan {
+/// Opens `camera` through `MemoryCameras`.
+fn open(camera: &MemoryFileSystem) -> Box<dyn ReadOnlyFileSystem> {
     let cameras = MemoryCameras::new().with_camera("Fujifilm X-T5", PORT, camera);
-    let opened = cameras.open(PORT).unwrap();
-    scan_camera(opened.as_ref(), Path::new(ROOT)).unwrap()
+    cameras.open(PORT).unwrap()
+}
+
+/// Opens `camera` and scans it.
+fn scan(camera: &MemoryFileSystem) -> SourceScan {
+    scan_camera(open(camera).as_ref(), Path::new(ROOT)).unwrap()
 }
 
 fn found_paths(scan: &SourceScan) -> Vec<PathBuf> {
@@ -68,10 +72,11 @@ fn snapshot(file_system: &MemoryFileSystem) -> Vec<(PathBuf, Option<Vec<u8>>, Op
         .collect()
 }
 
-/// Imports the opened camera `source` into `destinations` with `{name}.{ext}`, as a
-/// caller does: it scans the camera, then plans, starts and executes the run.
+/// Imports the opened camera `source` with its `scan` into `destinations` with
+/// `{name}.{ext}`, as a caller does: it plans, starts and executes the run.
 fn import(
     source: &dyn ReadOnlyFileSystem,
+    scan: &SourceScan,
     destinations: &MemoryFileSystem,
     history: &MemoryImportHistory,
     progress: &mut dyn ProgressSink,
@@ -105,8 +110,7 @@ fn import(
         space,
     )
     .with_source(source);
-    let scan = scan_camera(source, Path::new(ROOT)).unwrap();
-    let plan = run.plan(&settings, &scan).unwrap();
+    let plan = run.plan(&settings, scan).unwrap();
     let plan = run.start(&settings, plan).unwrap();
     run.execute(&settings, plan, progress)
 }
@@ -117,9 +121,15 @@ fn import_camera(
     destinations: &MemoryFileSystem,
     history: &MemoryImportHistory,
 ) -> ImportSummary {
-    let cameras = MemoryCameras::new().with_camera("Fujifilm X-T5", PORT, camera);
-    let opened = cameras.open(PORT).unwrap();
-    import(opened.as_ref(), destinations, history, &mut NoProgress)
+    let opened = open(camera);
+    let scan = scan_camera(opened.as_ref(), Path::new(ROOT)).unwrap();
+    import(
+        opened.as_ref(),
+        &scan,
+        destinations,
+        history,
+        &mut NoProgress,
+    )
 }
 
 /// Stops the camera from answering once the first file is finished, as when it is
@@ -198,12 +208,12 @@ fn a_storage_without_dcim_gives_no_files() {
     assert_eq!(scan, SourceScan::default());
 }
 
-/// spec: IMPORT-014.4
+/// spec: IMPORT-014.11
 #[test]
-fn a_camera_without_a_storage_gives_no_files() {
-    let scan = scan(&MemoryFileSystem::new());
+fn a_camera_without_a_storage_is_an_error() {
+    let error = scan_camera(open(&MemoryFileSystem::new()).as_ref(), Path::new(ROOT));
 
-    assert_eq!(scan, SourceScan::default());
+    assert!(matches!(error, Err(ScanError::NoStorage)), "{error:?}");
 }
 
 /// spec: IMPORT-014.5
@@ -236,11 +246,11 @@ fn the_scan_rules_of_a_folder_apply_below_dcim() {
     );
 }
 
+/// spec: IMPORT-014.12
 #[test]
 fn a_dcim_that_cannot_be_looked_at_is_left_out() {
     let camera = camera_with(&["store_00010001/DCIM/100_FUJI/DSCF0001.RAF"]);
-    let cameras = MemoryCameras::new().with_camera("Fujifilm X-T5", PORT, &camera);
-    let opened = cameras.open(PORT).unwrap();
+    let opened = open(&camera);
     // Listing the root succeeds; looking at the storage's DCIM does not.
     camera.stop_after_operations(2);
 
@@ -255,6 +265,14 @@ fn a_dcim_that_cannot_be_looked_at_is_left_out() {
         ),
         "{scan:?}"
     );
+    let summary = import(
+        opened.as_ref(),
+        &scan,
+        &MemoryFileSystem::new(),
+        &MemoryImportHistory::new(),
+        &mut NoProgress,
+    );
+    assert!(!FormatReadiness::of(&summary).can_be_formatted());
 }
 
 /// spec: IMPORT-014.6
@@ -321,12 +339,13 @@ fn a_camera_that_goes_away_fails_the_remaining_files() {
         "store_00010001/DCIM/100_FUJI/DSCF0001.RAF",
         "store_00010001/DCIM/100_FUJI/DSCF0002.RAF",
     ]);
-    let cameras = MemoryCameras::new().with_camera("Fujifilm X-T5", PORT, &camera);
-    let opened = cameras.open(PORT).unwrap();
+    let opened = open(&camera);
     let mut unplug = UnplugAfterFirstFile { camera: &camera };
 
+    let scan = scan_camera(opened.as_ref(), Path::new(ROOT)).unwrap();
     let summary = import(
         opened.as_ref(),
+        &scan,
         &MemoryFileSystem::new(),
         &MemoryImportHistory::new(),
         &mut unplug,

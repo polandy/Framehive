@@ -10,8 +10,9 @@ Layer: `app` (architecture §3). Binary: `framehive`.
 ## Purpose
 
 The command line of Framehive: `framehive import` (CLI-001, CLI-004, CLI-010, CLI-011,
-CLI-013), `framehive cameras` (CLI-013), `framehive
-import-log` (CLI-009), `framehive config init` (CLI-010) and, without a subcommand, the guided import (CLI-002, CLI-003, ADR 0024). It parses the arguments
+CLI-013), `framehive cameras` (CLI-013), `framehive import-log` (CLI-009),
+`framehive config init` (CLI-010) and, without a subcommand, the guided import
+(CLI-002, CLI-003, ADR 0024). It parses the arguments
 with `clap` (builder API, ADR 0020 §6) and is one of the two places, with
 `framehive-gui`, that know the concrete adapters and wire them to the ports.
 

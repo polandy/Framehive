@@ -16,7 +16,7 @@ use adapter_sqlite::SqliteImportHistory;
 use files::{Cameras, FileSystem, FreeSpace};
 use import::{
     CAMERA_FORMAT_READINESS_NOTE, ImportProfile, ImportRun, ImportSettings, ImportSummary,
-    PlannedRun, ProgressSink, SessionSequence, SpaceShortage, scan_camera, scan_source,
+    PlannedRun, ProgressSink, SessionSequence, SpaceShortage, scan_source,
 };
 use naming::CompatibilityMode;
 
@@ -138,11 +138,11 @@ pub(super) fn import_with(
             .with_source(camera.file_system.as_ref())
             .with_source_name(&camera.name);
         printer = printer.with_format_readiness_note(CAMERA_FORMAT_READINESS_NOTE);
-        scan_camera(camera.file_system.as_ref(), &folders.source)
+        camera.scan(&folders.source)
     } else {
         scan_source(&file_system, &folders.source, &folders.destination.path)
-    }
-    .map_err(|error| error.to_string())?;
+            .map_err(|error| error.to_string())
+    }?;
     printer.scan_finished(&scan);
     let plan = run
         .plan(&settings, &scan)

@@ -20,8 +20,14 @@ as the camera reports it, for example `store_00010001`.
 **What is scanned.** On a camera, only the folder `DCIM` at the top of each storage is
 scanned, with its subfolders, by the rules of IMPORT-005 (roles, hidden files, symbolic
 links, unreadable folders, order). Everything outside `DCIM` is not looked at and not
-listed as left out. A storage without `DCIM`, or a camera without a storage, gives no
-files and is not an error. The path of a found file is relative to the camera's root
+listed as left out. A storage without `DCIM` gives no files and is not an error, and
+the format readiness is that of an empty card (IMPORT-008.13). A `DCIM` that cannot be
+looked at is left out as "cannot be read", so the run is not ready to be formatted.
+
+**A camera without a storage.** A camera whose file system has no storage folder at all
+cannot be scanned: the scan stops with an error that says the camera shows no storage.
+A phone does this when it is locked or set to charge only, so an empty result would
+wrongly suggest that there is nothing to import. The path of a found file is relative to the camera's root
 and starts with its storage folder, for example
 `store_00010001/DCIM/100_FUJI/DSCF0001.RAF`.
 
@@ -64,10 +70,10 @@ run says so in a note of its own, after the verdict:
 - **When** the camera is scanned
 - **Then** both files are found, in byte order of their paths
 
-### IMPORT-014.4 – A camera without DCIM is empty, not an error
-- **Given** a camera with one storage without `DCIM`, and a camera without a storage
-- **When** each is scanned
-- **Then** each scan succeeds and finds no files
+### IMPORT-014.4 – A storage without DCIM is empty, not an error
+- **Given** a camera with one storage without `DCIM`
+- **When** it is scanned
+- **Then** the scan succeeds and finds no files
 
 ### IMPORT-014.5 – The scan rules of a folder apply below DCIM
 - **Given** a camera storage with `DCIM/100_FUJI/DSCF0001.RAF`,
@@ -108,6 +114,18 @@ run says so in a note of its own, after the verdict:
   readiness carries the note that only the files below `DCIM` were checked and that the
   files outside `DCIM` are not backed up
 
+### IMPORT-014.11 – A camera without a storage is an error
+- **Given** a camera whose file system has no storage folder, as a locked phone or a
+  phone set to charge only shows it
+- **When** the camera is scanned
+- **Then** the scan fails with the error that the camera shows no storage
+
+### IMPORT-014.12 – A DCIM that cannot be looked at keeps the camera from being formatted
+- **Given** a camera storage `store_00010001` whose `DCIM` cannot be looked at
+- **When** the camera is scanned and imported
+- **Then** `store_00010001/DCIM` is left out as "cannot be read", no file is found, and
+  the run is not ready to be formatted
+
 ## Out of scope
 
 - Finding and opening cameras, and a camera that is in use by another program: the
@@ -129,3 +147,4 @@ run says so in a note of its own, after the verdict:
 |---|---|
 | 2026-11-06 | Initial version; owner decisions E1–E7 of 2026-11-06 (ADR 0034) |
 | 2026-11-06 | IMPORT-014.10: the format readiness of a camera run notes that only the files below `DCIM` were checked (owner decision E8) |
+| 2026-11-06 | IMPORT-014.4 covers only a storage without `DCIM`; IMPORT-014.11: a camera without a storage is an error (owner decision E10); IMPORT-014.12: a `DCIM` that cannot be looked at is left out |

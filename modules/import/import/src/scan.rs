@@ -110,6 +110,14 @@ pub enum ScanError {
         /// The error of the file system.
         source: io::Error,
     },
+    /// The camera has no storage folder at all, as a locked phone or a phone set to
+    /// charge only shows it (IMPORT-014.11). An empty scan would wrongly suggest there
+    /// is nothing to import.
+    #[error(
+        "the camera shows no storage; unlock it and choose file transfer (MTP or PTP) \
+         on the device, then try again"
+    )]
+    NoStorage,
 }
 
 /// Scans the folder `source` with all its subfolders (IMPORT-005).
@@ -170,6 +178,7 @@ const CAMERA_PHOTO_FOLDER: &str = "DCIM";
 ///
 /// Each top-level folder of the camera is a storage. Everything outside `DCIM` is not
 /// looked at and not listed as left out, and a storage without `DCIM` gives no files.
+/// A camera without any storage folder is an error, not an empty source.
 /// The paths are relative to `root` and start with the storage folder, for example
 /// `store_00010001/DCIM/100_FUJI/DSCF0001.RAF`. A camera lies on a device of its own,
 /// so there is no import destination to refuse.
@@ -177,22 +186,27 @@ const CAMERA_PHOTO_FOLDER: &str = "DCIM";
 /// # Errors
 ///
 /// Returns a [`ScanError`] if the root of the camera does not exist, is not a folder
-/// or cannot be read. A `DCIM` folder that cannot be looked at is listed in
+/// or cannot be read, and [`ScanError::NoStorage`] if it holds no storage folder. A
+/// `DCIM` folder that cannot be looked at is listed in
 /// [`SourceScan::left_out`] instead, so it keeps the camera from being formatted.
 pub fn scan_camera(
     file_system: &dyn ReadOnlyFileSystem,
     root: &Path,
 ) -> Result<SourceScan, ScanError> {
-    let storages = list_source(file_system, root)?;
+    let storages: Vec<FolderEntry> = list_source(file_system, root)?
+        .into_iter()
+        .filter(|entry| entry.kind == EntryKind::Folder)
+        .collect();
+    if storages.is_empty() {
+        return Err(ScanError::NoStorage);
+    }
     let mut scanner = Scanner {
         file_system,
         source: root,
         scan: SourceScan::default(),
     };
     for storage in storages {
-        if storage.kind == EntryKind::Folder {
-            scanner.visit_photo_folder(Path::new(&storage.name).join(CAMERA_PHOTO_FOLDER));
-        }
+        scanner.visit_photo_folder(Path::new(&storage.name).join(CAMERA_PHOTO_FOLDER));
     }
     Ok(scanner.into_sorted_scan())
 }
