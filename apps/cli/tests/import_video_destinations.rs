@@ -300,9 +300,11 @@ fn the_verdict_names_no_number_when_files_require_different_numbers() {
 #[test]
 fn the_import_log_shows_the_video_destination() {
     let folders = photo_and_video();
-    let videos = text(&empty_folder(&folders, "videos"));
-    let imported = folders.import(&["--video-destination", &videos]);
+    let folder = empty_folder(&folders, "videos");
+    let imported = folders.import(&["--video-destination", &text(&folder)]);
     assert_eq!(imported.status.code(), Some(0), "{}", stderr(&imported));
+    // The history records the path without symbolic links, e.g. /private/tmp on macOS.
+    let videos = text(&fs::canonicalize(&folder).unwrap());
 
     let output = folders.import_log(&["1"]);
 
