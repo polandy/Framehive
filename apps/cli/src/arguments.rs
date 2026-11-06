@@ -68,6 +68,11 @@ pub(crate) struct ImportArguments {
     pub(crate) destination: Option<PathBuf>,
     /// The backup destinations, as given, in the order of the command line (CLI-005).
     pub(crate) backups: Vec<PathBuf>,
+    /// The folder to import videos into, as given (CLI-012).
+    pub(crate) video_destination: Option<PathBuf>,
+    /// The video backup destinations, as given, in the order of the command line
+    /// (CLI-012).
+    pub(crate) video_backups: Vec<PathBuf>,
     /// The name template text, if given, not yet parsed.
     pub(crate) template: Option<String>,
     /// The job code text, if given, not yet checked (IMPORT-006).
@@ -196,14 +201,7 @@ fn import_command() -> Command {
                 .value_name("name")
                 .help("Import profile whose settings to use; an option given here replaces its value"),
         )
-        .arg(
-            Arg::new("backup")
-                .long("backup")
-                .value_name("folder")
-                .action(ArgAction::Append)
-                .value_parser(value_parser!(PathBuf))
-                .help("Folder to back up each imported file to; can be given more than once"),
-        )
+        .args(destination_arguments())
         .arg(
             Arg::new("template")
                 .long("template")
@@ -233,12 +231,41 @@ fn import_command() -> Command {
         )
 }
 
+/// The backup destinations, the video destination and the video backup destinations
+/// of `framehive import` (CLI-005, CLI-012).
+fn destination_arguments() -> [Arg; 3] {
+    [
+        Arg::new("backup")
+            .long("backup")
+            .value_name("folder")
+            .action(ArgAction::Append)
+            .value_parser(value_parser!(PathBuf))
+            .help("Folder to back up each imported file to; can be given more than once"),
+        Arg::new("video-destination")
+            .long("video-destination")
+            .value_name("folder")
+            .value_parser(value_parser!(PathBuf))
+            .help("Folder to import videos into [default: the destination]"),
+        Arg::new("video-backup")
+            .long("video-backup")
+            .value_name("folder")
+            .action(ArgAction::Append)
+            .value_parser(value_parser!(PathBuf))
+            .help("Folder to back up each imported video to, instead of the --backup folders; can be given more than once"),
+    ]
+}
+
 fn import_arguments(matches: &ArgMatches) -> ImportArguments {
     ImportArguments {
         source: path(matches, "source"),
         destination: matches.get_one::<PathBuf>("destination").cloned(),
         backups: matches
             .get_many::<PathBuf>("backup")
+            .map(|backups| backups.cloned().collect())
+            .unwrap_or_default(),
+        video_destination: matches.get_one::<PathBuf>("video-destination").cloned(),
+        video_backups: matches
+            .get_many::<PathBuf>("video-backup")
             .map(|backups| backups.cloned().collect())
             .unwrap_or_default(),
         template: matches.get_one::<String>("template").cloned(),

@@ -38,6 +38,7 @@ fn run_start() -> RunStart {
     RunStart {
         source: PathBuf::from("/media/card"),
         import_destination: PathBuf::from("/library"),
+        video_destination: None,
         started_at: now(),
     }
 }
@@ -165,7 +166,7 @@ fn a_database_of_another_version_is_an_error_and_unchanged() {
     let file = folder.path().join(HISTORY_FILE_NAME);
     let connection = Connection::open(&file).unwrap();
     connection
-        .execute_batch("CREATE TABLE copies (anything TEXT); PRAGMA user_version = 2;")
+        .execute_batch("CREATE TABLE copies (anything TEXT); PRAGMA user_version = 3;")
         .unwrap();
     drop(connection);
     let before = fs::read(&file).unwrap();
@@ -175,7 +176,7 @@ fn a_database_of_another_version_is_an_error_and_unchanged() {
     let started = history.start_run(&run_start());
 
     let error = found.unwrap_err().to_string();
-    assert!(error.contains("user_version is 2"), "{error}");
+    assert!(error.contains("user_version is 3"), "{error}");
     assert!(started.is_err());
     drop(history);
     assert_eq!(fs::read(&file).unwrap(), before);

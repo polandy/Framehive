@@ -52,6 +52,9 @@ fn file(path: &str, outcome: FileOutcome, backups: Vec<BackupReport>) -> FileRep
         dated_by_modification_time: None,
         outcome,
         backups,
+        in_video_destination: false,
+        // Set by `summary`, which knows the backup destinations of the run.
+        required_locations: 0,
     }
 }
 
@@ -62,8 +65,16 @@ fn left_out(path: &str, reason: LeftOutReason) -> LeftOut {
     }
 }
 
-/// A summary of a finished run with `files`, backed up to `backup_destinations`.
+/// A summary of a finished run with `files`, backed up to `backup_destinations`;
+/// each file is required at the import destination and every backup destination.
 fn summary(files: Vec<FileReport>, backup_destinations: &[&str]) -> ImportSummary {
+    let files = files
+        .into_iter()
+        .map(|file| FileReport {
+            required_locations: 1 + backup_destinations.len(),
+            ..file
+        })
+        .collect();
     ImportSummary {
         files,
         backups: backup_destinations
@@ -77,10 +88,11 @@ fn summary(files: Vec<FileReport>, backup_destinations: &[&str]) -> ImportSummar
     }
 }
 
-fn not_saved(path: &str, verified_at: usize) -> FormatBlocker {
+fn not_saved(path: &str, verified_at: usize, required_at: usize) -> FormatBlocker {
     FormatBlocker::NotSaved {
         path: PathBuf::from(path),
         verified_at,
+        required_at,
     }
 }
 
@@ -136,7 +148,7 @@ fn a_failed_backup_keeps_the_card() {
 
     assert!(!readiness.can_be_formatted());
     assert_eq!(readiness.required_locations, 3);
-    assert_eq!(readiness.blockers, vec![not_saved("DSCF0001.RAF", 2)]);
+    assert_eq!(readiness.blockers, vec![not_saved("DSCF0001.RAF", 2, 3)]);
 }
 
 /// spec: IMPORT-008.5
@@ -148,7 +160,7 @@ fn a_failed_import_destination_keeps_the_card() {
 
     assert!(!readiness.can_be_formatted());
     assert_eq!(readiness.required_locations, 2);
-    assert_eq!(readiness.blockers, vec![not_saved("DSCF0001.RAF", 1)]);
+    assert_eq!(readiness.blockers, vec![not_saved("DSCF0001.RAF", 1, 2)]);
 }
 
 /// spec: IMPORT-008.6
@@ -163,7 +175,7 @@ fn a_skipped_file_keeps_the_card() {
 
     assert!(!readiness.can_be_formatted());
     assert_eq!(readiness.required_locations, 1);
-    assert_eq!(readiness.blockers, vec![not_saved("DSCF0001.RAF", 0)]);
+    assert_eq!(readiness.blockers, vec![not_saved("DSCF0001.RAF", 0, 1)]);
 }
 
 fn with_duplicate(earlier_outcome: FileOutcome) -> ImportSummary {
@@ -194,8 +206,8 @@ fn a_duplicate_of_a_failed_file_is_not_saved() {
     assert_eq!(
         readiness.blockers,
         vec![
-            not_saved("A/DSCF0001.RAF", 0),
-            not_saved("B/DSCF0001.RAF", 0)
+            not_saved("A/DSCF0001.RAF", 0, 1),
+            not_saved("B/DSCF0001.RAF", 0, 1)
         ]
     );
 }
@@ -271,7 +283,7 @@ fn a_dry_run_keeps_the_card() {
 
     assert!(!readiness.can_be_formatted());
     assert!(readiness.dry_run);
-    assert_eq!(readiness.blockers, vec![not_saved("DSCF0001.RAF", 0)]);
+    assert_eq!(readiness.blockers, vec![not_saved("DSCF0001.RAF", 0, 1)]);
 }
 
 /// spec: IMPORT-008.12
@@ -317,4 +329,26 @@ fn an_empty_source_can_be_formatted() {
 
     assert!(readiness.can_be_formatted());
     assert_eq!(readiness.left_out_not_saved, 0);
+}
+
+/// spec: IMPORT-008.14
+/// spec: IMPORT-013.3
+#[test]
+fn each_unsaved_file_carries_the_locations_it_requires() {
+    let photo = file("DSCF0001.RAF", copied(), vec![backed_up(BACKUP)]);
+    let video = FileReport {
+        required_locations: 3,
+        ..file("clip.MOV", copied(), vec![backed_up(SECOND_BACKUP)])
+    };
+    let mut run = summary(vec![photo], &[BACKUP]);
+    run.files.push(video);
+
+    let readiness = FormatReadiness::of(&run);
+
+    assert!(!readiness.can_be_formatted());
+    assert_eq!(readiness.required_locations, 3);
+    assert!(readiness.required_locations_differ);
+    assert_eq!(readiness.blockers, vec![not_saved("clip.MOV", 2, 3)]);
+    let photos_only = FormatReadiness::of(&summary(all_copied(), &[BACKUP]));
+    assert!(!photos_only.required_locations_differ);
 }

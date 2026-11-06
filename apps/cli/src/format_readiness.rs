@@ -13,14 +13,8 @@ pub(crate) fn format_readiness_lines(readiness: &FormatReadiness, noun: &str) ->
     if readiness.dry_run {
         return Vec::new();
     }
-    let required = readiness.required_locations;
     let mut lines = vec![format_verdict_line(readiness, noun)];
-    lines.extend(
-        readiness
-            .blockers
-            .iter()
-            .map(|blocker| format_blocker_line(blocker, required)),
-    );
+    lines.extend(readiness.blockers.iter().map(format_blocker_line));
     if readiness.left_out_not_saved > 0 {
         lines.push(format!(
             "Not saved: {} left out by the scan.",
@@ -30,9 +24,15 @@ pub(crate) fn format_readiness_lines(readiness: &FormatReadiness, noun: &str) ->
     lines
 }
 
-/// The first line of the format readiness: whether the source can be formatted.
+/// The first line of the format readiness: whether the source can be formatted. When
+/// the files require different numbers of locations, as photos and videos can
+/// (IMPORT-013), no single number is true for every file, so the line names none.
 fn format_verdict_line(readiness: &FormatReadiness, noun: &str) -> String {
-    let locations = locations(readiness.required_locations);
+    let locations = if readiness.required_locations_differ {
+        "all its locations".to_owned()
+    } else {
+        locations(readiness.required_locations)
+    };
     if readiness.stopped {
         format!("Do not format the {noun}: the import was stopped.")
     } else if readiness.can_be_formatted() {
@@ -43,12 +43,17 @@ fn format_verdict_line(readiness: &FormatReadiness, noun: &str) -> String {
 }
 
 /// The indented line of a file or folder that keeps the source from being formatted.
-fn format_blocker_line(blocker: &FormatBlocker, required_locations: usize) -> String {
+/// A file that is not saved names the locations it requires itself (IMPORT-013).
+fn format_blocker_line(blocker: &FormatBlocker) -> String {
     match blocker {
-        FormatBlocker::NotSaved { path, verified_at } => format!(
+        FormatBlocker::NotSaved {
+            path,
+            verified_at,
+            required_at,
+        } => format!(
             "  {}: verified in {verified_at} of {}",
             path.display(),
-            locations(required_locations)
+            locations(*required_at)
         ),
         FormatBlocker::LeftOut { path, reason } => {
             format!("  {}: left out: {reason}", path.display())
@@ -76,6 +81,7 @@ mod tests {
     fn readiness(stopped: bool, blockers: Vec<FormatBlocker>) -> FormatReadiness {
         FormatReadiness {
             required_locations: 2,
+            required_locations_differ: false,
             left_out_not_saved: 1,
             stopped,
             dry_run: false,
@@ -90,6 +96,7 @@ mod tests {
             FormatBlocker::NotSaved {
                 path: PathBuf::from("DCIM/100CANON/IMG_0002.CR2"),
                 verified_at: 1,
+                required_at: 2,
             },
             FormatBlocker::LeftOut {
                 path: PathBuf::from("DCIM/101CANON"),
@@ -113,6 +120,7 @@ mod tests {
         let blockers = vec![FormatBlocker::NotSaved {
             path: PathBuf::from("DSCF0001.RAF"),
             verified_at: 1,
+            required_at: 2,
         }];
 
         assert_eq!(
@@ -132,5 +140,35 @@ mod tests {
         dry_run.dry_run = true;
 
         assert!(format_readiness_lines(&dry_run, "source").is_empty());
+    }
+
+    /// spec: IMPORT-013.3
+    #[test]
+    fn each_file_names_its_own_locations_when_the_files_differ() {
+        let blockers = vec![
+            FormatBlocker::NotSaved {
+                path: PathBuf::from("DSCF0001.RAF"),
+                verified_at: 1,
+                required_at: 2,
+            },
+            FormatBlocker::NotSaved {
+                path: PathBuf::from("clip.MOV"),
+                verified_at: 2,
+                required_at: 3,
+            },
+        ];
+        let mut differing = readiness(false, blockers);
+        differing.required_locations = 3;
+        differing.required_locations_differ = true;
+        differing.left_out_not_saved = 0;
+
+        assert_eq!(
+            format_readiness_lines(&differing, "source"),
+            [
+                "Do not format the source: not every file is verified in all its locations.",
+                "  DSCF0001.RAF: verified in 1 of 2 locations",
+                "  clip.MOV: verified in 2 of 3 locations",
+            ]
+        );
     }
 }

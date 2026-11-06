@@ -24,6 +24,12 @@ pub enum BackupDestinationProblem {
     InsideSource,
     /// The same backup destination is given more than once.
     GivenTwice,
+    /// It is the video destination (IMPORT-013).
+    IsVideoDestination,
+    /// It lies inside the video destination (IMPORT-013).
+    InsideVideoDestination,
+    /// It contains the video destination (IMPORT-013).
+    ContainsVideoDestination,
 }
 
 impl fmt::Display for BackupDestinationProblem {
@@ -38,6 +44,13 @@ impl fmt::Display for BackupDestinationProblem {
             }
             BackupDestinationProblem::InsideSource => "it lies inside the source",
             BackupDestinationProblem::GivenTwice => "it is given twice",
+            BackupDestinationProblem::IsVideoDestination => "it is the video destination",
+            BackupDestinationProblem::InsideVideoDestination => {
+                "it lies inside the video destination"
+            }
+            BackupDestinationProblem::ContainsVideoDestination => {
+                "it contains the video destination"
+            }
         })
     }
 }
@@ -66,18 +79,15 @@ pub fn check_backup_destinations(
     backup_destinations: &[PathBuf],
 ) -> Result<(), BackupDestinationError> {
     for (index, backup) in backup_destinations.iter().enumerate() {
-        let problem = if backup == destination {
-            Some(BackupDestinationProblem::IsImportDestination)
-        } else if backup.starts_with(destination) {
-            Some(BackupDestinationProblem::InsideImportDestination)
-        } else if destination.starts_with(backup) {
-            Some(BackupDestinationProblem::ContainsImportDestination)
-        } else if backup.starts_with(source) {
-            Some(BackupDestinationProblem::InsideSource)
-        } else if backup_destinations[..index].contains(backup) {
-            Some(BackupDestinationProblem::GivenTwice)
-        } else {
-            None
+        let problem = match overlap(backup, destination) {
+            Some(Overlap::Is) => Some(BackupDestinationProblem::IsImportDestination),
+            Some(Overlap::Inside) => Some(BackupDestinationProblem::InsideImportDestination),
+            Some(Overlap::Contains) => Some(BackupDestinationProblem::ContainsImportDestination),
+            None if backup.starts_with(source) => Some(BackupDestinationProblem::InsideSource),
+            None if backup_destinations[..index].contains(backup) => {
+                Some(BackupDestinationProblem::GivenTwice)
+            }
+            None => None,
         };
         if let Some(problem) = problem {
             return Err(BackupDestinationError {
@@ -87,6 +97,53 @@ pub fn check_backup_destinations(
         }
     }
     Ok(())
+}
+
+/// Checks backup destinations against the video destination: none may be it, lie
+/// inside it or contain it (IMPORT-013, "Before the run"). The paths are compared as
+/// given: all are absolute and without `..`.
+///
+/// # Errors
+///
+/// Returns a [`BackupDestinationError`] for the first backup destination that is
+/// invalid.
+pub fn check_against_video_destination(
+    video_destination: &Path,
+    backup_destinations: &[PathBuf],
+) -> Result<(), BackupDestinationError> {
+    for backup in backup_destinations {
+        let problem = match overlap(backup, video_destination) {
+            Some(Overlap::Is) => BackupDestinationProblem::IsVideoDestination,
+            Some(Overlap::Inside) => BackupDestinationProblem::InsideVideoDestination,
+            Some(Overlap::Contains) => BackupDestinationProblem::ContainsVideoDestination,
+            None => continue,
+        };
+        return Err(BackupDestinationError {
+            path: backup.clone(),
+            problem,
+        });
+    }
+    Ok(())
+}
+
+/// How a backup destination overlaps another destination.
+enum Overlap {
+    Is,
+    Inside,
+    Contains,
+}
+
+/// How `backup` overlaps `destination`, if it does.
+fn overlap(backup: &Path, destination: &Path) -> Option<Overlap> {
+    if backup == destination {
+        Some(Overlap::Is)
+    } else if backup.starts_with(destination) {
+        Some(Overlap::Inside)
+    } else if destination.starts_with(backup) {
+        Some(Overlap::Contains)
+    } else {
+        None
+    }
 }
 
 /// What happened to one file at one backup destination.

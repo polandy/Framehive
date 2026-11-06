@@ -154,7 +154,7 @@ import destination is.
   IMPORT-008.
 - Detecting backup drives by a marker folder, and fixed network paths (I3): a later spec.
 - Separate backup destinations for photos and videos (I4), and separate destinations
-  (R7): later specs.
+  (R7): IMPORT-013.
 - Overwriting a file at a backup target: not offered, because the import never
   overwrites (IMPORT-004).
 - Enough free space at each destination (I1): IMPORT-012.

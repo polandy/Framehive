@@ -15,6 +15,7 @@ use naming::{RenderError, SequenceError};
 
 use crate::backup::{BackupCounts, BackupDestinationError, BackupReport};
 use crate::conflicts::ConflictError;
+use crate::destinations::VideoDestinationError;
 use crate::free_space::{FreeSpaceUnknown, NotEnoughSpace};
 use crate::job_code::MissingJobCode;
 use crate::scan::{LeftOut, LeftOutReason, ScanError, SourceScan};
@@ -62,6 +63,14 @@ pub struct FileReport {
     /// (IMPORT-007). Empty when the file is not backed up: when it failed before it
     /// was copied, was skipped or is a duplicate, and in a dry run.
     pub backups: Vec<BackupReport>,
+    /// Whether its target is below the video destination rather than the import
+    /// destination: a video of a run whose video destination is a folder of its own
+    /// (IMPORT-013).
+    pub in_video_destination: bool,
+    /// The locations it must be verified at for the source to be formatted
+    /// (IMPORT-008): its import destination and each of its backup destinations,
+    /// which are the video ones for a video (IMPORT-013).
+    pub required_locations: usize,
 }
 
 /// What happened to one file.
@@ -160,6 +169,12 @@ pub enum RunError {
     /// A backup destination is invalid (IMPORT-007.11).
     #[error(transparent)]
     BackupDestination(#[from] BackupDestinationError),
+    /// The video destination is invalid (IMPORT-013.8).
+    #[error(transparent)]
+    VideoDestination(#[from] VideoDestinationError),
+    /// A video backup destination is invalid (IMPORT-013.8).
+    #[error("invalid video backup destination {}: {}", .0.path.display(), .0.problem)]
+    VideoBackupDestination(BackupDestinationError),
     /// A file system cannot hold what the run writes to it (IMPORT-012).
     #[error(transparent)]
     NotEnoughSpace(#[from] NotEnoughSpace),

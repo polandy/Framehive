@@ -4,7 +4,7 @@
 //! The import log: the recorded runs and the copies of one run, read from the import
 //! history (IMPORT-010, ADR 0031, section 7).
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use crate::{CopyRecord, RecordedTime, RunId, RunStart};
 
@@ -13,7 +13,8 @@ use crate::{CopyRecord, RecordedTime, RunId, RunStart};
 pub struct LoggedRun {
     /// The number the history gave the run; it never changes and is never reused.
     pub id: RunId,
-    /// The source, the import destination and the start of the run.
+    /// The source, the import destination, the video destination and the start of the
+    /// run.
     pub start: RunStart,
     /// When the run ended; `None` when it is still running or crashed.
     pub finished_at: Option<RecordedTime>,
@@ -27,9 +28,10 @@ pub struct LoggedRun {
 pub struct RunLog {
     /// The run.
     pub run: LoggedRun,
-    /// The copies: those at the import destination first, then those at each backup
-    /// destination in the order the run first recorded a copy there; within a
-    /// destination, in the order they were recorded.
+    /// The copies: those at the import destination first, then those at the video
+    /// destination when the run has one, then those at each backup destination in the
+    /// order the run first recorded a copy there; within a destination, in the order
+    /// they were recorded.
     pub copies: Vec<CopyRecord>,
 }
 
@@ -38,7 +40,7 @@ impl RunLog {
     /// recorded, grouped by destination as IMPORT-010 orders them.
     #[must_use]
     pub fn new(run: LoggedRun, recorded: Vec<CopyRecord>) -> Self {
-        let order = destination_order(&run.start.import_destination, &recorded);
+        let order = destination_order(&run.start, &recorded);
         let mut copies = recorded;
         // A stable sort keeps the recorded order within a destination.
         copies.sort_by_key(|copy| {
@@ -50,10 +52,11 @@ impl RunLog {
     }
 }
 
-/// The import destination, then each other destination in the order of its first
-/// copy in `recorded`.
-fn destination_order(import_destination: &Path, recorded: &[CopyRecord]) -> Vec<PathBuf> {
-    let mut order = vec![import_destination.to_path_buf()];
+/// The import destination, the video destination when the run has one, then each
+/// other destination in the order of its first copy in `recorded`.
+fn destination_order(start: &RunStart, recorded: &[CopyRecord]) -> Vec<PathBuf> {
+    let mut order = vec![start.import_destination.clone()];
+    order.extend(start.video_destination.clone());
     for copy in recorded {
         if !order.contains(&copy.destination) {
             order.push(copy.destination.clone());
@@ -79,6 +82,7 @@ mod tests {
             start: RunStart {
                 source: PathBuf::from("/media/card"),
                 import_destination: PathBuf::from("/library"),
+                video_destination: None,
                 started_at: now(),
             },
             finished_at: None,
@@ -134,5 +138,40 @@ mod tests {
         ]
         .map(|(destination, name)| (destination.to_owned(), name.to_owned()));
         assert_eq!(order, expected);
+    }
+
+    /// spec: IMPORT-010.9
+    #[test]
+    fn copies_at_the_video_destination_come_after_the_import_destination() {
+        let mut with_video = run();
+        with_video.start.video_destination = Some(PathBuf::from("/videos"));
+        let recorded = vec![
+            copy("/library", "DSCF0001.RAF"),
+            copy("/backup", "DSCF0001.RAF"),
+            copy("/videos", "clip.MOV"),
+            copy("/backup", "clip.MOV"),
+        ];
+
+        let log = RunLog::new(with_video, recorded);
+
+        let order: Vec<(&str, &str)> = log
+            .copies
+            .iter()
+            .map(|copy| {
+                (
+                    copy.destination.to_str().unwrap(),
+                    copy.original_file_name.as_str(),
+                )
+            })
+            .collect();
+        assert_eq!(
+            order,
+            [
+                ("/library", "DSCF0001.RAF"),
+                ("/videos", "clip.MOV"),
+                ("/backup", "DSCF0001.RAF"),
+                ("/backup", "clip.MOV"),
+            ]
+        );
     }
 }

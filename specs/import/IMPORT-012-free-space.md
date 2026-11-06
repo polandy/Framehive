@@ -22,6 +22,9 @@ there. Their sizes add up to the bytes to write at that destination.
 | import destination | files the plan copies, also under a suffixed name (IMPORT-003) |
 | backup destination | files that are backed up (IMPORT-007) and whose target path holds nothing there yet |
 
+With a video destination (IMPORT-013), a video counts at the video destination and the
+video backup destinations instead.
+
 A file recognized as imported before (IMPORT-009), "already imported" (IMPORT-003),
 skipped or failed by a name conflict, does not count at the import destination. A file
 whose backup target already holds a file is "already backed up" or fails with a name
@@ -108,7 +111,7 @@ goes on, and the result has a warning that names the destination and the reason.
 
 - How the command line and the guided import report the shortage: CLI-011.
 - A destination that fills up during the copy: IMPORT-004.
-- Separate destinations for photos and videos (R7, I4): later specs; each then counts
+- Separate destinations for photos and videos (R7, I4): IMPORT-013; each then counts
   as a destination here.
 
 ## Open questions

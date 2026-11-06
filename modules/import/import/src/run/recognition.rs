@@ -77,6 +77,7 @@ impl ImportRun<'_> {
         let id = self.history.start_run(&RunStart {
             source: settings.source.to_path_buf(),
             import_destination: settings.destination.to_path_buf(),
+            video_destination: settings.separate_video_destination().map(Path::to_path_buf),
             started_at,
         })?;
         Ok(RecordedRun { id, started_at })
@@ -90,9 +91,10 @@ impl ImportRun<'_> {
         self.history.finish_run(run.id, finished_at)
     }
 
-    /// Looks `file` up at the import destination and at each backup destination. The
-    /// source is read for its checksum only when a lookup finds a copy with the same
-    /// name, size and capture time (IMPORT-009.5).
+    /// Looks `file` up at its own import destination and at each of its own backup
+    /// destinations, the video ones for a video (IMPORT-013). The source is read for its
+    /// checksum only when a lookup finds a copy with the same name, size and capture
+    /// time (IMPORT-009.5).
     ///
     /// The outer error stops the plan: the history cannot be read. The inner one marks
     /// the file: its content cannot be read.
@@ -102,9 +104,11 @@ impl ImportRun<'_> {
         file: &FoundFile,
         dated: DatedFile,
     ) -> Result<Result<Recognized, FileError>, HistoryError> {
-        let at_import_destination = self.find_copies(settings.destination, file, &dated)?;
-        let mut at_backups = Vec::with_capacity(settings.backup_destinations.len());
-        for destination in settings.backup_destinations {
+        let at_import_destination =
+            self.find_copies(settings.destination_of(file.role), file, &dated)?;
+        let backup_destinations = settings.backup_destinations_of(file.role);
+        let mut at_backups = Vec::with_capacity(backup_destinations.len());
+        for destination in backup_destinations {
             at_backups.push((destination, self.find_copies(destination, file, &dated)?));
         }
         let mut recognized = Recognized {
@@ -159,13 +163,13 @@ impl ImportRun<'_> {
         })
     }
 
-    /// Records each copy of `report` that was verified in this run: at the import
-    /// destination when the file was copied or already imported, and at each backup
-    /// destination where it was backed up or already backed up. `checksum` is the
-    /// source's, when the run read it.
+    /// Records each copy of `report` that was verified in this run: at `destination`,
+    /// the file's import destination, when the file was copied or already imported,
+    /// and at each backup destination where it was backed up or already backed up.
+    /// `checksum` is the source's, when the run read it.
     pub(super) fn record_copies(
         &self,
-        settings: &ImportSettings<'_>,
+        destination: &Path,
         run: RecordedRun,
         recognition: &Recognition,
         report: &FileReport,
@@ -190,7 +194,7 @@ impl ImportRun<'_> {
             )
         });
         let destinations = at_import_destination
-            .then_some(settings.destination)
+            .then_some(destination)
             .into_iter()
             .chain(backed_up.map(|backup| backup.destination.as_path()));
         for destination in destinations {

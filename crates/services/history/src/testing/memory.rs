@@ -28,6 +28,7 @@ const MEMORY_FILE: &str = "memory";
 /// let run = history.start_run(&RunStart {
 ///     source: PathBuf::from("/media/card"),
 ///     import_destination: PathBuf::from("/library"),
+///     video_destination: None,
 ///     started_at: now,
 /// })?;
 /// history.record_copy(&CopyRecord {

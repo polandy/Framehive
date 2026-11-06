@@ -76,6 +76,7 @@ pub(super) fn start(
     let run = RunStart {
         source: PathBuf::from("/media/card"),
         import_destination: PathBuf::from(DESTINATION),
+        video_destination: None,
         started_at: now(),
     };
     match history.start_run(&run) {
@@ -356,6 +357,7 @@ fn check_broken_storage(under_test: &mut dyn ImportHistoryUnderTest, failures: &
     let run_start = RunStart {
         source: PathBuf::from("/media/card"),
         import_destination: PathBuf::from(DESTINATION),
+        video_destination: None,
         started_at: now(),
     };
     let results = [

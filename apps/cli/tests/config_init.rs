@@ -16,15 +16,17 @@ use import::{IMPORT_PROFILE_SCHEMA_ID, ImportProfile};
 use support::{Folders, stderr, stdout};
 
 /// Every key of IMPORT-011, as it is written in a file.
-const KEYS: [&str; 8] = [
+const KEYS: [&str; 10] = [
     "schema_version:",
     "destination:",
+    "video_destination:",
     "naming:",
     "template:",
     "on_conflict:",
     "job_codes:",
     "backup:",
     "destinations:",
+    "video_destinations:",
 ];
 
 fn read(text: &str) -> ImportProfile {

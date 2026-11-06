@@ -76,9 +76,10 @@ Boundaries:
 | `SessionSequence` | The session counter of one run of the application (IMPORT-002) |
 | `PlannedRun`, `RunFile`, `FilePlan` | An import run planned and not yet executed: each selected file with its plan entry, imported before, or its dating failure |
 | `ProgressSink`, `NoProgress` | Receives each step of an import run on the caller's thread |
-| `ImportSummary`, `FileReport`, `FileOutcome`, `FileError`, `RunError` | What a run reports per file, and why a run did not start |
+| `ImportSummary`, `FileReport`, `FileOutcome`, `FileError`, `RunError` | What a run reports per file, and why a run did not start; each `FileReport` carries its own required locations and whether it went to a separate video destination (IMPORT-013) |
 | `BackupReport`, `BackupOutcome`, `BackupError`, `BackupCounts` | What happened to a file at each backup destination, and the counts per backup destination (IMPORT-007) |
 | `check_backup_destinations`, `BackupDestinationError`, `BackupDestinationProblem` | Refuses invalid backup destinations before a run starts (IMPORT-007.11) |
+| `check_video_destination`, `VideoDestinationError`, `VideoDestinationProblem`, `check_against_video_destination` | Refuses an invalid video destination, and backup destinations that clash with it, before a run starts (IMPORT-013.8) |
 | `FreeSpaceCheck`, `SpaceShortage`, `FreeSpaceUnknown`, `NotEnoughSpace` | What the free-space check before the first copy finds (IMPORT-012) |
 | `ImportProfile`, `IMPORT_PROFILE`, `DEFAULT_NAME_TEMPLATE`, `import_profile_json_schema`, `IMPORT_PROFILE_SCHEMA_ID` | An import profile read through `config`, checked, with defaults; its JSON Schema (IMPORT-011; tested end to end in `apps/cli`) |
 | `ExampleViewModel` | Example ViewModel from the template; replace it |

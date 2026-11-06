@@ -21,13 +21,17 @@ readiness. When the card is pulled during the import (CLI-003.8), the stopped ru
 no report; the resumed run imports the whole card again, finds the files saved before
 as already imported, and its report carries the format readiness for the whole card.
 
-**The lines.** `<n>` is the number of required locations; `location` is singular when
-`<n>` is 1. `framehive import` says `source`, the guided import says `card`.
+**The lines.** `<n>` is the number of required locations; in a line for a file that is
+not saved, it is that file's own number (IMPORT-008). `location` is singular when `<n>`
+is 1. When the files require different numbers of locations, the two verdict lines name
+no number and end with `verified in all its locations.` instead. `framehive import` says `source`, the guided import says `card`.
 
 | Line | When |
 |---|---|
 | `The <card or source> can be formatted: every file is verified in <n> locations.` | The card can be formatted |
 | `Do not format the <card or source>: not every file is verified in <n> locations.` | A file or folder keeps it from being formatted |
+| `The <card or source> can be formatted: every file is verified in all its locations.` | The card can be formatted, and the files require different numbers of locations |
+| `Do not format the <card or source>: not every file is verified in all its locations.` | A file or folder keeps it from being formatted, and the files require different numbers of locations |
 | `Do not format the <card or source>: the import was stopped.` | The run was stopped |
 | `  <source path>: verified in <k> of <n> locations` | After the `Do not format` line, for each file that is not saved |
 | `  <source path>: left out: <reason>` | After the `Do not format` line, for each file or folder left out for a reason that keeps the card |
@@ -116,6 +120,13 @@ still exits with 0.
 - **Then** the dialog prints the format readiness once, for the whole card, and not when
   the card was pulled
 
+### CLI-007.11 – Photos and videos require different numbers of locations
+- **Given** a source with a photo and a video, a backup destination, a video destination
+  and two video backup destinations
+- **When** the user runs `framehive import` with them and every file is saved
+- **Then** the last line is
+  `The source can be formatted: every file is verified in all its locations.`
+
 ## Out of scope
 
 - Which files are saved and which keep the card: IMPORT-008.
@@ -132,3 +143,4 @@ still exits with 0.
 | Date | Change |
 |---|---|
 | 2026-11-04 | Initial draft; owner decisions: no change to exit codes or to the eject question; accepted by the owner |
+| 2026-11-06 | Per-file numbers and the verdict without a number when files require different numbers of locations (IMPORT-013) |

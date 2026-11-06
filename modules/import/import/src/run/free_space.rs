@@ -8,6 +8,7 @@ use std::path::{Path, PathBuf};
 
 use files::FileSystemId;
 
+use super::resolvers::Resolvers;
 use super::{FilePlan, ImportRun, ImportSettings, PlannedRun, RunFile};
 use crate::backup::{BackupTarget, inspect_backup_target};
 use crate::conflicts::{ConflictOutcome, TargetRequest, TargetResolver};
@@ -32,12 +33,11 @@ impl ImportRun<'_> {
         settings: &ImportSettings<'_>,
         plan: &PlannedRun,
     ) -> FreeSpaceCheck {
-        let bytes = self.bytes_to_write(settings, plan);
-        let destinations = std::iter::once(settings.destination)
-            .chain(settings.backup_destinations.iter().map(PathBuf::as_path));
+        let destinations = settings.all_destinations();
+        let bytes = self.bytes_to_write(settings, plan, &destinations);
         let mut uses: Vec<FileSystemUse> = Vec::new();
         let mut check = FreeSpaceCheck::default();
-        for (destination, bytes) in destinations.zip(bytes) {
+        for (destination, bytes) in destinations.into_iter().zip(bytes) {
             match self.free_space.free_space(destination) {
                 Ok(space) => add_use(
                     &mut uses,
@@ -64,28 +64,35 @@ impl ImportRun<'_> {
         check
     }
 
-    /// The bytes written to the import destination, then to each backup destination
-    /// in the order of the settings (IMPORT-012, "Bytes to write").
-    fn bytes_to_write(&self, settings: &ImportSettings<'_>, plan: &PlannedRun) -> Vec<u64> {
-        let mut resolver = TargetResolver::new(
-            self.file_system,
-            self.hasher,
-            settings.source,
-            settings.destination,
-            settings.policy,
-        );
-        let mut bytes = vec![0_u64; 1 + settings.backup_destinations.len()];
+    /// The bytes written to each of `destinations`, every destination of the run
+    /// (IMPORT-012, "Bytes to write"). Each file counts at its own destinations
+    /// (IMPORT-013).
+    fn bytes_to_write(
+        &self,
+        settings: &ImportSettings<'_>,
+        plan: &PlannedRun,
+        destinations: &[&Path],
+    ) -> Vec<u64> {
+        let mut resolvers = Resolvers::new(self, settings);
+        let mut bytes = vec![0_u64; destinations.len()];
         for file in &plan.files {
-            let Some((target, to_import_destination)) = written_target(&mut resolver, file) else {
+            let role = file.found.role;
+            let Some((target, to_import_destination)) = written_target(resolvers.of(role), file)
+            else {
                 continue;
             };
             let size = file.found.size;
             if to_import_destination {
-                bytes[0] = bytes[0].saturating_add(size);
+                add_bytes(
+                    &mut bytes,
+                    destinations,
+                    settings.destination_of(role),
+                    size,
+                );
             }
-            for (index, destination) in settings.backup_destinations.iter().enumerate() {
+            for destination in settings.backup_destinations_of(role) {
                 if self.writes_backup(file, destination, &target) {
-                    bytes[index + 1] = bytes[index + 1].saturating_add(size);
+                    add_bytes(&mut bytes, destinations, destination, size);
                 }
             }
         }
@@ -125,6 +132,15 @@ fn written_target(resolver: &mut TargetResolver<'_>, file: &RunFile) -> Option<(
         ConflictOutcome::DuplicateOf { .. }
         | ConflictOutcome::SkippedNameConflict { .. }
         | ConflictOutcome::FailedNameConflict { .. } => None,
+    }
+}
+
+/// Adds `size` to the bytes written to `destination`, one of `destinations`.
+fn add_bytes(bytes: &mut [u64], destinations: &[&Path], destination: &Path, size: u64) {
+    if let Some(index) = destinations.iter().position(|known| *known == destination)
+        && let Some(written) = bytes.get_mut(index)
+    {
+        *written = written.saturating_add(size);
     }
 }
 

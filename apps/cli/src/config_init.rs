@@ -15,8 +15,9 @@ use crate::profiles::{process_configuration_folder, profiles_folder};
 use crate::{FILES_FAILED, NOT_STARTED, report_error};
 
 /// The example profile: every key of IMPORT-011 with a comment that explains it and
-/// names its default. `destination` has no default and is left as a comment, so the
-/// file reads as the defaults.
+/// names its default. `destination`, `video_destination` and
+/// `backup.video_destinations` have no value of their own by default and are left as
+/// comments, so the file reads as the defaults.
 const EXAMPLE_PROFILE: &str = r#"# yaml-language-server: $schema=https://polandy.github.io/framehive/schemas/import-profile-v1.json
 #
 # An import profile of Framehive. `framehive import <source> --profile <name>` uses it,
@@ -30,6 +31,10 @@ schema_version: 1
 # Folder to import into: an absolute path, ~, or a path that starts with ~/.
 # Default: none; then give the destination on the command line.
 # destination: ~/Pictures/Archive
+
+# Folder to import videos into: an absolute path, ~, or a path that starts with ~/.
+# Default: the destination.
+# video_destination: ~/Videos/Archive
 
 naming:
   # Name template for the folders and name of each imported file.
@@ -48,6 +53,10 @@ backup:
   # Folders to back up each imported file to, in this order.
   # Default: none, for example [/run/media/ada/Backup/Pictures].
   destinations: []
+  # Folders to back up each imported video to, in this order. Leave the key out to
+  # back up videos to the destinations above; an empty list is an error.
+  # Default: the destinations above.
+  # video_destinations: [/run/media/ada/Backup/Videos]
 "#;
 
 /// The file name of the example profile.

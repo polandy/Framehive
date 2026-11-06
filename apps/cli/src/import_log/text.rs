@@ -43,12 +43,17 @@ pub(super) fn run_log(log: &RunLog) -> String {
     let run = &log.run;
     let mut text = format!("run {}\n", run.id.number());
     let header = [
-        ("started", run.start.started_at.to_string()),
-        ("finished", finished(run.finished_at)),
-        ("source", shown(&run.start.source)),
-        ("import destination", shown(&run.start.import_destination)),
+        Some(("started", run.start.started_at.to_string())),
+        Some(("finished", finished(run.finished_at))),
+        Some(("source", shown(&run.start.source))),
+        Some(("import destination", shown(&run.start.import_destination))),
+        // Left out when the run has no video destination of its own (CLI-009).
+        run.start
+            .video_destination
+            .as_deref()
+            .map(|video_destination| ("video destination", shown(video_destination))),
     ];
-    for (label, value) in header {
+    for (label, value) in header.into_iter().flatten() {
         // Writing to a String does not fail.
         let _ = writeln!(text, "{label:<LABEL_WIDTH$}{value}");
     }

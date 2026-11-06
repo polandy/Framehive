@@ -96,6 +96,8 @@ pub(crate) struct Import {
     template: NameTemplate,
     destination: &'static str,
     backups: Vec<PathBuf>,
+    video_destination: Option<&'static str>,
+    video_backups: Vec<PathBuf>,
     policy: ConflictPolicy,
     dry_run: bool,
 }
@@ -106,6 +108,8 @@ impl Import {
             template: NameTemplate::parse(template).unwrap(),
             destination: DESTINATION,
             backups: Vec::new(),
+            video_destination: None,
+            video_backups: Vec::new(),
             policy: ConflictPolicy::AddSuffix,
             dry_run: false,
         }
@@ -118,6 +122,23 @@ impl Import {
 
     pub(crate) fn backed_up(mut self) -> Self {
         self.backups = vec![PathBuf::from(BACKUP)];
+        self
+    }
+
+    pub(crate) fn with_backups(mut self, backups: &[&str]) -> Self {
+        self.backups = backups.iter().map(PathBuf::from).collect();
+        self
+    }
+
+    /// Sends the videos to `video_destination` (IMPORT-013).
+    pub(crate) fn with_video_destination(mut self, video_destination: &'static str) -> Self {
+        self.video_destination = Some(video_destination);
+        self
+    }
+
+    /// Backs the videos up to `video_backups` (IMPORT-013).
+    pub(crate) fn with_video_backups(mut self, video_backups: &[&str]) -> Self {
+        self.video_backups = video_backups.iter().map(PathBuf::from).collect();
         self
     }
 
@@ -136,6 +157,8 @@ impl Import {
             source: Path::new(SOURCE),
             destination: Path::new(self.destination),
             backup_destinations: &self.backups,
+            video_destination: self.video_destination.map(Path::new),
+            video_backup_destinations: &self.video_backups,
             template: &self.template,
             job_code: None,
             mode: CompatibilityMode::On,

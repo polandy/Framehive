@@ -151,8 +151,19 @@ pub(crate) fn left_out_line(left_out: &LeftOut) -> String {
     format!("left out  {}: {}", left_out.path.display(), left_out.reason)
 }
 
-/// The line for a file the run is done with.
+/// The line for a file the run is done with; the line of a file whose target is below
+/// the video destination ends with `  (video destination)` (CLI-012).
 pub(crate) fn file_line(report: &FileReport) -> String {
+    let line = outcome_line(report);
+    if report.in_video_destination {
+        format!("{line}  (video destination)")
+    } else {
+        line
+    }
+}
+
+/// The line for a file the run is done with, without the mark of CLI-012.
+fn outcome_line(report: &FileReport) -> String {
     let source = report.path.display();
     let dated = report
         .dated_by_modification_time
@@ -241,6 +252,8 @@ mod tests {
             dated_by_modification_time: None,
             outcome,
             backups: Vec::new(),
+            in_video_destination: false,
+            required_locations: 1,
         }
     }
 
