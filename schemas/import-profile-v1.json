@@ -13,6 +13,10 @@
       "description": "Folder to import into",
       "type": "string"
     },
+    "video_destination": {
+      "description": "Folder to import videos into (IMPORT-013); left out, videos go to the destination",
+      "type": "string"
+    },
     "naming": {
       "description": "How imported files are named",
       "type": "object",
@@ -44,6 +48,13 @@
       "properties": {
         "destinations": {
           "description": "Backup destinations (IMPORT-007), in this order",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "video_destinations": {
+          "description": "Backup destinations for videos (IMPORT-013), in this order; left out, videos go to the backup destinations",
           "type": "array",
           "items": {
             "type": "string"

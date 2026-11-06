@@ -16,12 +16,13 @@ pub(super) fn run_log(log: &RunLog) -> String {
     let copies: Vec<String> = log.copies.iter().map(copy_object).collect();
     format!(
         "{{\"run\": {}, \"started_at\": {}, \"finished_at\": {}, \"source\": {}, \
-         \"import_destination\": {}, \"copies\": [{}]}}\n",
+         \"import_destination\": {}, \"video_destination\": {}, \"copies\": [{}]}}\n",
         run.id.number(),
         string(&run.start.started_at.to_string()),
         optional(run.finished_at.map(|time| time.to_string())),
         string(&shown(&run.start.source)),
         string(&shown(&run.start.import_destination)),
+        optional(run.start.video_destination.as_deref().map(shown)),
         copies.join(", "),
     )
 }
@@ -93,7 +94,7 @@ mod tests {
             json,
             "{\"run\": 3, \"started_at\": \"2026-10-31T11:00:00+02:00\", \
              \"finished_at\": \"2026-10-31T11:00:00+02:00\", \"source\": \"/media/card\", \
-             \"import_destination\": \"/library\", \"copies\": [{\"destination\": \"/library\", \
+             \"import_destination\": \"/library\", \"video_destination\": null, \"copies\": [{\"destination\": \"/library\", \
              \"source_path\": \"DCIM/a,\\\"b\\\".jpg\", \"original_file_name\": \"a,\\\"b\\\".jpg\", \
              \"size\": 10, \"capture_time\": \"2026-10-17T14:05:09\", \"checksum\": \"blake3:0101\", \
              \"target\": \"2026/a,\\\"b\\\".jpg\", \"recorded_at\": \"2026-10-31T11:00:00+02:00\"}]}\n"

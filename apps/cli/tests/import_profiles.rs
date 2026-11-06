@@ -240,3 +240,36 @@ fn every_shown_profile_is_valid() {
         assert!(result.is_ok(), "{path}: {}", result.unwrap_err());
     }
 }
+
+/// spec: IMPORT-011.12
+#[test]
+fn video_settings_are_read_and_an_empty_video_backup_list_is_an_error() {
+    let profile = read(
+        "schema_version: 1\nvideo_destination: ~/Videos\nbackup:\n  video_destinations: [/mnt/backup/Videos]\n",
+    );
+    assert_eq!(
+        profile.video_destination,
+        Some(PathBuf::from("/home/ada/Videos"))
+    );
+    assert_eq!(
+        profile.video_backup_destinations,
+        [PathBuf::from("/mnt/backup/Videos")]
+    );
+    let profile = read("schema_version: 1\n");
+    assert_eq!(profile.video_destination, None);
+    assert!(profile.video_backup_destinations.is_empty());
+    assert_eq!(
+        located_message("schema_version: 1\nbackup:\n  video_destinations: []\n"),
+        "3:23: leave backup.video_destinations out to back up videos to the backup destinations"
+    );
+    assert_eq!(
+        located_message(
+            "schema_version: 1\nbackup:\n  video_destinations: [/mnt/videos, /mnt/videos]\n"
+        ),
+        "3:37: repeated video backup destination /mnt/videos"
+    );
+    assert_eq!(
+        located_message("schema_version: 1\nvideo_destination: Videos\n"),
+        "2:20: video_destination must be an absolute path or start with ~/"
+    );
+}

@@ -21,6 +21,9 @@ pub struct FormatReadiness {
     /// With video destinations (IMPORT-013), each file is required at its own
     /// destinations; this is the most locations any file of the run requires.
     pub required_locations: usize,
+    /// Whether the files of the run require different numbers of locations, as photos
+    /// and videos do when their backup destinations differ in number (IMPORT-013).
+    pub required_locations_differ: bool,
     /// The files and folders the scan left out for a reason that does not keep the
     /// card: an unsupported type, hidden, or a symbolic link. They are not saved; the
     /// other left-out entries are listed in `blockers` instead.
@@ -44,6 +47,8 @@ pub enum FormatBlocker {
         path: PathBuf,
         /// At how many of the required locations it is verified.
         verified_at: usize,
+        /// How many locations the file itself requires (IMPORT-013).
+        required_at: usize,
     },
     /// A file or folder left out for a reason that keeps the card.
     LeftOut {
@@ -64,10 +69,15 @@ impl FormatReadiness {
             .map(|file| file.required_locations)
             .max()
             .unwrap_or(1 + summary.backups.len());
+        let required_locations_differ = summary
+            .files
+            .iter()
+            .any(|file| file.required_locations != required_locations);
         let mut blockers = unsaved_files(&summary.files);
         blockers.extend(summary.left_out.iter().filter_map(blocking_left_out));
         FormatReadiness {
             required_locations,
+            required_locations_differ,
             left_out_not_saved: summary
                 .left_out
                 .iter()
@@ -106,6 +116,7 @@ fn unsaved_files(files: &[FileReport]) -> Vec<FormatBlocker> {
             (verified_at < file.required_locations).then(|| FormatBlocker::NotSaved {
                 path: file.path.clone(),
                 verified_at,
+                required_at: file.required_locations,
             })
         })
         .collect()

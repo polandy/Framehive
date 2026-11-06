@@ -56,7 +56,7 @@ fn backed_up_at(summary: &ImportSummary, path: &str) -> Vec<PathBuf> {
 fn videos_go_to_the_video_destination() {
     let file_system = photo_and_video();
 
-    Machine::new().import(
+    let summary = Machine::new().import(
         &file_system,
         &Import::with(FLAT).with_video_destination(VIDEOS),
     );
@@ -66,6 +66,8 @@ fn videos_go_to_the_video_destination() {
         paths(&[(DESTINATION, PHOTO)])
     );
     assert_eq!(paths_below(&file_system, VIDEOS), paths(&[(VIDEOS, VIDEO)]));
+    assert!(report(&summary, VIDEO).in_video_destination);
+    assert!(!report(&summary, PHOTO).in_video_destination);
 }
 
 /// spec: IMPORT-013.2

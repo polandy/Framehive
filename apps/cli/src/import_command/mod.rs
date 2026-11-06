@@ -3,31 +3,30 @@
 
 //! `framehive import` (CLI-001, CLI-010): wires the adapters to an import run.
 
+mod folders;
 mod run;
 #[cfg(test)]
 mod tests;
 
 use std::io;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::ExitCode;
 
 use adapter_free_space::StatvfsFreeSpace;
 use adapter_fs::StdFileSystem;
 use adapter_yaml::SaphyrParser;
 use import::{
-    BackupDestinationError, ConflictPolicy, DEFAULT_NAME_TEMPLATE, ImportProfile, ImportSummary,
-    JobCode, check_backup_destinations, require_job_code,
+    ConflictPolicy, DEFAULT_NAME_TEMPLATE, ImportProfile, ImportSummary, JobCode, require_job_code,
 };
 use naming::NameTemplate;
 
 use crate::arguments::{ImportArguments, OnConflict};
 use crate::guided::state_folder;
-use crate::paths::{Destination, PathError, check_outside, resolve_destination, resolve_source};
 use crate::profiles::{
     check_profile_name, process_configuration_folder, process_home_folder, profiles_folder,
     read_profile,
 };
-use crate::report::{BackupName, has_backup_failures};
+use crate::report::has_backup_failures;
 use crate::{FILES_FAILED, NOT_STARTED, report_error, report_warning};
 use run::{NotStarted, Surroundings, import_with};
 
@@ -68,67 +67,6 @@ fn import(arguments: &ImportArguments) -> Result<ImportSummary, NotStarted> {
     )
 }
 
-/// The folders of an import, resolved, each with the folder as given.
-struct Folders {
-    source: PathBuf,
-    destination: Destination,
-    /// The destination as given on the command line or in the profile.
-    given_destination: PathBuf,
-    /// Each backup destination with the folder as given.
-    backups: Vec<(Destination, PathBuf)>,
-}
-
-impl Folders {
-    /// The resolved paths of the backup destinations, in their order.
-    fn backup_paths(&self) -> Vec<PathBuf> {
-        self.backups
-            .iter()
-            .map(|(backup, _)| backup.path.clone())
-            .collect()
-    }
-
-    /// A destination as the messages name it: as given (CLI-005, CLI-011).
-    fn shown<'p>(&'p self, path: &'p Path) -> &'p Path {
-        if path == self.destination.path {
-            return &self.given_destination;
-        }
-        self.backups
-            .iter()
-            .find(|(backup, _)| backup.path == path)
-            .map_or(path, |(_, given)| given.as_path())
-    }
-}
-
-/// Resolves the source and the destinations and checks them against each other
-/// (CLI-001, CLI-005).
-///
-/// # Errors
-///
-/// Returns the message for the first folder that cannot be resolved or is invalid.
-fn resolve_folders(
-    arguments: &ImportArguments,
-    chosen: &ChosenSettings,
-) -> Result<Folders, String> {
-    let source = resolve_source(&arguments.source).map_err(|error| error.to_string())?;
-    let destination =
-        resolve_destination(&chosen.destination).map_err(|error| error.to_string())?;
-    check_outside(&source, &destination).map_err(|error| error.to_string())?;
-    let backups = resolve_backups(&chosen.backups)?;
-    let folders = Folders {
-        source,
-        destination,
-        given_destination: chosen.destination.clone(),
-        backups,
-    };
-    check_backup_destinations(
-        &folders.source,
-        &folders.destination.path,
-        &folders.backup_paths(),
-    )
-    .map_err(|error| invalid_backup_message(&error, &folders.backups))?;
-    Ok(folders)
-}
-
 /// The settings of the import, each from the command line, else the profile, else the
 /// default of CLI-001 (CLI-010, "Settings").
 struct ChosenSettings {
@@ -138,6 +76,10 @@ struct ChosenSettings {
     policy: ConflictPolicy,
     /// As given on the command line, or the profile's paths with `~` replaced.
     backups: Vec<PathBuf>,
+    /// The video destination, if the command line or the profile names one (CLI-012).
+    video_destination: Option<PathBuf>,
+    /// The video backup destinations; empty means the backup destinations (CLI-012).
+    video_backups: Vec<PathBuf>,
 }
 
 /// Takes each setting from the command line, else from `profile`, else the default. An
@@ -151,6 +93,16 @@ fn choose_settings(
     arguments: &ImportArguments,
     profile: Option<ImportProfile>,
 ) -> Result<ChosenSettings, String> {
+    let video_destination = arguments.video_destination.clone().or_else(|| {
+        profile
+            .as_ref()
+            .and_then(|profile| profile.video_destination.clone())
+    });
+    let video_backups = match &profile {
+        _ if !arguments.video_backups.is_empty() => arguments.video_backups.clone(),
+        Some(profile) => profile.video_backup_destinations.clone(),
+        None => Vec::new(),
+    };
     let (profile_destination, profile_template, profile_policy, profile_job_code, profile_backups) =
         match profile {
             Some(profile) => (
@@ -191,6 +143,8 @@ fn choose_settings(
         job_code,
         policy,
         backups,
+        video_destination,
+        video_backups,
     })
 }
 
@@ -219,59 +173,6 @@ fn load_profile(name: &str) -> Result<ImportProfile, String> {
         &profiles_folder(&folder),
         name,
         &home,
-    )
-}
-
-/// Resolves each backup destination as the destination is resolved, so that the
-/// checks of IMPORT-007.11 compare absolute paths without `..` or symbolic links.
-///
-/// # Errors
-///
-/// Returns the message for the first backup destination that cannot be resolved.
-fn resolve_backups(backups: &[PathBuf]) -> Result<Vec<(Destination, PathBuf)>, String> {
-    backups
-        .iter()
-        .map(|given| {
-            resolve_destination(given)
-                .map(|backup| (backup, given.clone()))
-                .map_err(|error| backup_message(given, &error))
-        })
-        .collect()
-}
-
-/// The backup destinations as the report names them: as given (CLI-005).
-fn backup_names(backups: &[(Destination, PathBuf)]) -> Vec<BackupName> {
-    backups
-        .iter()
-        .map(|(backup, given)| BackupName {
-            path: backup.path.clone(),
-            shown: given.clone(),
-        })
-        .collect()
-}
-
-/// The message for a backup destination that cannot be resolved or created.
-fn backup_message(given: &Path, error: &PathError) -> String {
-    format!(
-        "the backup destination {} cannot be used: {error}",
-        given.display()
-    )
-}
-
-/// The message for a backup destination that IMPORT-007.11 rejects, naming the folder
-/// as given.
-fn invalid_backup_message(
-    error: &BackupDestinationError,
-    backups: &[(Destination, PathBuf)],
-) -> String {
-    let given = backups
-        .iter()
-        .find(|(backup, _)| backup.path == error.path)
-        .map_or(error.path.as_path(), |(_, given)| given.as_path());
-    format!(
-        "invalid backup destination {}: {}",
-        given.display(),
-        error.problem
     )
 }
 

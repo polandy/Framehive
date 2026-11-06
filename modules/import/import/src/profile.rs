@@ -10,7 +10,7 @@
 
 use std::path::{Path, PathBuf};
 
-use config::{ConfigError, ConfigFile, DefaultValue, FileType, Key, Located, YamlParser};
+use config::{ConfigError, ConfigFile, DefaultValue, FileType, Key, Located, Values, YamlParser};
 use naming::NameTemplate;
 
 use crate::conflicts::ConflictPolicy;
@@ -38,10 +38,17 @@ const NAMING_KEYS: &[Key] = &[
     .with_default(DefaultValue::Text(ADD_SUFFIX)),
 ];
 
-const BACKUP_KEYS: &[Key] = &[Key::list_of_text(
-    "destinations",
-    "Backup destinations (IMPORT-007), in this order",
-)];
+const BACKUP_KEYS: &[Key] = &[
+    Key::list_of_text(
+        "destinations",
+        "Backup destinations (IMPORT-007), in this order",
+    ),
+    Key::list_of_text(
+        "video_destinations",
+        "Backup destinations for videos (IMPORT-013), in this order; \
+         left out, videos go to the backup destinations",
+    ),
+];
 
 /// The file type `import-profile`, version 1 (IMPORT-011, "Behaviour").
 pub const IMPORT_PROFILE: FileType = FileType::new(
@@ -49,6 +56,10 @@ pub const IMPORT_PROFILE: FileType = FileType::new(
     1,
     &[
         Key::text("destination", "Folder to import into"),
+        Key::text(
+            "video_destination",
+            "Folder to import videos into (IMPORT-013); left out, videos go to the destination",
+        ),
         Key::mapping("naming", "How imported files are named", NAMING_KEYS),
         Key::list_of_text(
             "job_codes",
@@ -78,6 +89,12 @@ pub struct ImportProfile {
     pub job_codes: Vec<JobCode>,
     /// The backup destinations, in file order.
     pub backup_destinations: Vec<PathBuf>,
+    /// The folder to import videos into, if the profile names one (IMPORT-013).
+    pub video_destination: Option<PathBuf>,
+    /// The backup destinations for videos, in file order. Empty when the profile
+    /// leaves them out, which means the backup destinations: an empty list in the
+    /// file is an error, so empty never means "no video backup".
+    pub video_backup_destinations: Vec<PathBuf>,
 }
 
 impl ImportProfile {
@@ -111,6 +128,10 @@ impl ImportProfile {
             .text("destination")
             .map(|path| profile_path(config, "destination", path, home))
             .transpose()?;
+        let video_destination = values
+            .text("video_destination")
+            .map(|path| profile_path(config, "video_destination", path, home))
+            .transpose()?;
         let naming = values.mapping("naming");
         let template = match naming.and_then(|naming| naming.text("template")) {
             Some(template) => NameTemplate::parse(&template.value)
@@ -124,20 +145,26 @@ impl ImportProfile {
                 conflict_policy(&policy.value)
             });
         let job_codes = job_codes(config, values.text_list("job_codes").unwrap_or_default())?;
+        let backup = values.mapping("backup");
         let backup_destinations = backup_destinations(
             config,
-            values
-                .mapping("backup")
+            backup
                 .and_then(|backup| backup.text_list("destinations"))
                 .unwrap_or_default(),
             home,
         )?;
+        let video_backup_destinations = match backup {
+            Some(backup) => video_backup_destinations(config, backup, home)?,
+            None => Vec::new(),
+        };
         Ok(ImportProfile {
             destination,
             template,
             on_conflict,
             job_codes,
             backup_destinations,
+            video_destination,
+            video_backup_destinations,
         })
     }
 }
@@ -172,14 +199,57 @@ fn backup_destinations(
     entries: &[Located<String>],
     home: &Path,
 ) -> Result<Vec<PathBuf>, ConfigError> {
+    distinct_paths(
+        config,
+        entries,
+        home,
+        "backup.destinations",
+        "repeated backup destination",
+    )
+}
+
+/// `backup.video_destinations`: like the backup destinations, but an empty list is
+/// an error, because videos without a backup are not offered (IMPORT-013).
+fn video_backup_destinations(
+    config: &ConfigFile,
+    backup: &Values,
+    home: &Path,
+) -> Result<Vec<PathBuf>, ConfigError> {
+    let Some(entries) = backup.text_list("video_destinations") else {
+        return Ok(Vec::new());
+    };
+    if entries.is_empty() {
+        let position = backup
+            .position_of("video_destinations")
+            .unwrap_or_else(|| backup.position());
+        return Err(config.error_at(
+            position,
+            "leave backup.video_destinations out to back up videos to the backup destinations",
+        ));
+    }
+    distinct_paths(
+        config,
+        entries,
+        home,
+        "backup.video_destinations",
+        "repeated video backup destination",
+    )
+}
+
+/// The paths of a list under `key`, each checked; an entry equal to an earlier one
+/// is an error `<repeated> <path>` at that entry.
+fn distinct_paths(
+    config: &ConfigFile,
+    entries: &[Located<String>],
+    home: &Path,
+    key: &str,
+    repeated: &str,
+) -> Result<Vec<PathBuf>, ConfigError> {
     let mut paths: Vec<PathBuf> = Vec::with_capacity(entries.len());
     for entry in entries {
-        let path = profile_path(config, "backup.destinations", entry, home)?;
+        let path = profile_path(config, key, entry, home)?;
         if paths.contains(&path) {
-            return Err(config.error_at(
-                entry.position,
-                format!("repeated backup destination {}", entry.value),
-            ));
+            return Err(config.error_at(entry.position, format!("{repeated} {}", entry.value)));
         }
         paths.push(path);
     }

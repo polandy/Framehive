@@ -68,6 +68,7 @@ impl ImportRun<'_> {
             dated_by_modification_time: file.no_capture_time,
             outcome: imported.outcome,
             backups: imported.backups,
+            in_video_destination: settings.destination_of(role) != settings.destination,
             required_locations: 1 + settings.backup_destinations_of(role).len(),
         };
         let recorded = match (recorded, recognition) {

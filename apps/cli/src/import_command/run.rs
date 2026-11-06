@@ -20,7 +20,8 @@ use import::{
 };
 use naming::CompatibilityMode;
 
-use super::{Folders, backup_message, backup_names, choose_settings, resolve_folders};
+use super::choose_settings;
+use super::folders::{Folders, backup_names, resolve_folders, unusable_message};
 use crate::arguments::ImportArguments;
 use crate::guided::space_text;
 use crate::paths::create_destination;
@@ -64,12 +65,13 @@ pub(super) fn import_with(
     let chosen = choose_settings(arguments, profile)?;
     let folders = resolve_folders(arguments, &chosen)?;
     let backup_paths = folders.backup_paths();
+    let video_backup_paths = folders.video_backup_paths();
     let settings = ImportSettings {
         source: &folders.source,
         destination: &folders.destination.path,
         backup_destinations: &backup_paths,
-        video_destination: None,
-        video_backup_destinations: &[],
+        video_destination: folders.video_destination_path(),
+        video_backup_destinations: &video_backup_paths,
         template: &chosen.template,
         job_code: chosen.job_code.as_ref(),
         mode: CompatibilityMode::On,
@@ -91,7 +93,7 @@ pub(super) fn import_with(
         surroundings.free_space,
     );
     let mut printer = ReportPrinter::new(surroundings.output, arguments.dry_run)
-        .with_backup_names(backup_names(&folders.backups));
+        .with_backup_names(backup_names(&folders));
     let scan = scan_source(&file_system, &folders.source, &folders.destination.path)
         .map_err(|error| error.to_string())?;
     printer.scan_finished(&scan);
@@ -165,15 +167,34 @@ fn shortage_message(shortage: &SpaceShortage, folders: &Folders) -> String {
     format!("not enough space at {shown}: {}", space_text(shortage))
 }
 
-/// Creates the destination and each backup destination.
+/// Creates the destination, the video destination and each backup destination and
+/// video backup destination. A folder that is two of them is created once, and the
+/// second attempt finds it there.
 ///
 /// # Errors
 ///
 /// Returns the message for the first folder that cannot be created.
 fn create_destinations(file_system: &dyn FileSystem, folders: &Folders) -> Result<(), String> {
     create_destination(file_system, &folders.destination).map_err(|error| error.to_string())?;
-    for (backup, given) in &folders.backups {
-        create_destination(file_system, backup).map_err(|error| backup_message(given, &error))?;
+    let named = folders
+        .video_destination
+        .iter()
+        .map(|folder| ("video destination", folder))
+        .chain(
+            folders
+                .backups
+                .iter()
+                .map(|folder| ("backup destination", folder)),
+        )
+        .chain(
+            folders
+                .video_backups
+                .iter()
+                .map(|folder| ("video backup destination", folder)),
+        );
+    for (kind, (folder, given)) in named {
+        create_destination(file_system, folder)
+            .map_err(|error| unusable_message(kind, given, &error))?;
     }
     Ok(())
 }

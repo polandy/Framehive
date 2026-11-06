@@ -63,6 +63,10 @@ pub struct FileReport {
     /// (IMPORT-007). Empty when the file is not backed up: when it failed before it
     /// was copied, was skipped or is a duplicate, and in a dry run.
     pub backups: Vec<BackupReport>,
+    /// Whether its target is below the video destination rather than the import
+    /// destination: a video of a run whose video destination is a folder of its own
+    /// (IMPORT-013).
+    pub in_video_destination: bool,
     /// The locations it must be verified at for the source to be formatted
     /// (IMPORT-008): its import destination and each of its backup destinations,
     /// which are the video ones for a video (IMPORT-013).
