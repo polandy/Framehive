@@ -4,7 +4,8 @@ Part of the [architecture](README.md).
 
 | Extension point | Trait | Examples |
 |---|---|---|
-| Device source | `devices::DeviceSource` | Mount, gphoto2 (PTP), MTP, iOS |
+| Device source | `devices::DeviceSource` | Mount, iOS |
+| Camera source | `files::Cameras` | libgphoto2 (PTP, MTP; ADR 0034) |
 | Metadata format | `metadata::MetadataCodec` | XMP sidecar, embedded XMP, EXIF, IPTC-IIM |
 | Preview decoder | `previews::PreviewDecoder` | Embedded JPEG, RAW (LibRaw), HEIF, video (ffmpeg), Immich thumbnails |
 | Job kind | `jobs::JobKind` | Import, writing XMP, hashing, faces |

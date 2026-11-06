@@ -15,7 +15,7 @@ framehive/
 │   ├── meta/       # Read/write EXIF/XMP/IPTC, XMP merge
 │   ├── template/   # Template engine for file and folder names
 │   ├── import/     # Scan, import plan, copy and verification engine
-│   ├── devices/    # Trait DeviceSource; impls: mount (udisks2/udev, macOS DiskArbitration), gphoto2, iOS
+│   ├── devices/    # Trait DeviceSource; impls: mount (udisks2/udev, macOS DiskArbitration), iOS (cameras: ADR 0034)
 │   ├── library/    # Roots, index, queries, albums, file watcher, offline volumes
 │   ├── jobs/       # Persistent queue, scheduler, priorities
 │   ├── store/      # SQLite: index, import history, hashes, counters
