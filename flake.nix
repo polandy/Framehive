@@ -51,6 +51,14 @@
             (old.propagatedBuildInputs or [ ])
             ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isDarwin [ pkgs.llvmPackages.openmp ];
         });
+      # libgphoto2 for adapter-gphoto2. The patch lets its `directory` driver read part
+      # of a file, so the adapter's tests on a `disk:` port take the same chunked read
+      # path as a PTP camera (ADR 0034 §3).
+      libgphoto2 =
+        pkgs:
+        pkgs.libgphoto2.overrideAttrs (old: {
+          patches = (old.patches or [ ]) ++ [ ./nix/patches/libgphoto2-directory-read-file.patch ];
+        });
       # The `framehive` command from `framehive-cli`. Cargo needs the manifests and
       # sources of every workspace member, but nothing else, so a change to the
       # documentation does not rebuild the package.
@@ -98,7 +106,10 @@
     {
       devShells = forEachSystem (pkgs: {
         default = pkgs.mkShell {
-          buildInputs = [ (libraw pkgs) ];
+          buildInputs = [
+            (libraw pkgs)
+            (libgphoto2 pkgs)
+          ];
           packages = [
             (toolchain pkgs)
             pkgs.b3sum

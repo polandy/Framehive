@@ -75,6 +75,32 @@ libgphoto2:
 The flake adds nixpkgs `libgphoto2` to the shell's build inputs. No Rust crate is
 added, so `dependencies.yaml` does not change.
 
+**Amendment (2026-11-06): a patched `directory` driver.** In libgphoto2 2.5.34 only
+the `ptp2` driver can read part of a file; the `directory` driver has no
+`read_file_func`, so `gp_camera_file_read` fails there with `GP_ERROR_NOT_SUPPORTED`,
+and the conformance suites could not test `open_read`. The flake therefore applies
+`nix/patches/libgphoto2-directory-read-file.patch` to nixpkgs' libgphoto2. It adds a
+`read_file_func` of about forty lines to the `directory` driver that reads from an offset
+with `open`, `lseek` and `read`, written so that it can be offered upstream. The tests
+then take the same chunked read path through `gp_camera_file_read` that a PTP camera
+takes. The patch changes only cameras on `disk:` ports, which `Cameras::list` never
+returns, so the cameras a person imports from behave as with an unpatched library.
+Options not taken:
+
+- **Fetch the whole file into a temporary file when a partial read is not supported:**
+  works with an unpatched library, but the tests would then cover this fallback instead
+  of the chunked path that real cameras take, and the fallback would need a temporary
+  folder and space for the largest video.
+- **Leave `open_read` out of the tests on the `directory` driver:** no patch, but the
+  read path, the part of the adapter most likely to be wrong, would be tested only by
+  the manual hardware check before a release.
+
+The `directory` driver also hides files whose names start with a dot and files whose
+extension it does not know, such as `.txt`, `.HEIC` and `.HIF`. The adapter's tests
+therefore use only names it lists. That the scan of a camera leaves out hidden files and
+files of an unsupported type with their reasons (IMPORT-014.5) is tested through
+`testing::MemoryCameras` only.
+
 ### 4. Only `DCIM` is scanned on a camera
 
 Unlike a card folder (IMPORT-005), a camera source is scanned only below the `DCIM`
