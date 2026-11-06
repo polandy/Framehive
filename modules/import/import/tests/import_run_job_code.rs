@@ -64,6 +64,7 @@ fn import(
         &counters,
         &session,
         &MemoryImportHistory::new(),
+        &files::testing::MemoryFreeSpace::unlimited(),
     )
     .run(&settings, &mut NoProgress)
 }

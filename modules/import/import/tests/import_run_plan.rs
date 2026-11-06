@@ -45,6 +45,7 @@ struct Ports {
     counters: MemorySequenceCounters,
     session: SessionSequence,
     history: MemoryImportHistory,
+    free_space: files::testing::MemoryFreeSpace,
 }
 
 fn ports() -> Ports {
@@ -56,6 +57,7 @@ fn ports() -> Ports {
         counters: MemorySequenceCounters::new(),
         session: SessionSequence::new(),
         history: MemoryImportHistory::new(),
+        free_space: files::testing::MemoryFreeSpace::unlimited(),
     }
 }
 
@@ -68,6 +70,7 @@ impl Ports {
             &self.counters,
             &self.session,
             &self.history,
+            &self.free_space,
         )
     }
 }

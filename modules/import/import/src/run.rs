@@ -8,13 +8,14 @@
 use std::path::{Path, PathBuf};
 
 use domain::{Clock, LocalDateTime};
-use files::{FileSystem, Hasher};
+use files::{FileSystem, FreeSpace, Hasher};
 use history::ImportHistory;
 use metadata::NoCaptureTime;
 use naming::{CompatibilityMode, NameTemplate, SequenceCounters};
 
 use crate::backup::{BackupCounts, check_backup_destinations};
 use crate::conflicts::{ConflictPolicy, TargetResolver};
+use crate::free_space::{FreeSpaceUnknown, NotEnoughSpace};
 use crate::job_code::{JobCode, require_job_code};
 use crate::plan::PlannedFile;
 use crate::report::{FileError, ImportSummary, ProgressSink, RunError};
@@ -23,6 +24,7 @@ use crate::sequence::{Reservation, SessionSequence};
 
 mod copy;
 mod dating;
+mod free_space;
 mod planning;
 mod recognition;
 mod rename;
@@ -67,6 +69,7 @@ pub struct ImportRun<'a> {
     counters: &'a dyn SequenceCounters,
     session: &'a SessionSequence,
     history: &'a dyn ImportHistory,
+    free_space: &'a dyn FreeSpace,
 }
 
 /// An import run that is planned and not yet executed: the selected files of a source
@@ -84,6 +87,8 @@ pub struct PlannedRun {
     naming: PlanInputs,
     /// The run in the import history, once it is started and not a dry run.
     recorded: Option<RecordedRun>,
+    /// The destinations whose free space the start could not read (IMPORT-012).
+    free_space_unknown: Vec<FreeSpaceUnknown>,
 }
 
 impl PlannedRun {
@@ -144,7 +149,8 @@ impl<'a> ImportRun<'a> {
     /// Creates a run that works through these ports. `counters` holds the persisted
     /// sequence counters, and `session` the session counter of this run of the
     /// application (IMPORT-002); `history` is the import history of this machine
-    /// (IMPORT-009).
+    /// (IMPORT-009), and `free_space` tells how much the destinations can hold
+    /// (IMPORT-012).
     #[must_use]
     pub fn new(
         file_system: &'a dyn FileSystem,
@@ -153,6 +159,7 @@ impl<'a> ImportRun<'a> {
         counters: &'a dyn SequenceCounters,
         session: &'a SessionSequence,
         history: &'a dyn ImportHistory,
+        free_space: &'a dyn FreeSpace,
     ) -> Self {
         ImportRun {
             file_system,
@@ -161,6 +168,7 @@ impl<'a> ImportRun<'a> {
             counters,
             session,
             history,
+            free_space,
         }
     }
 
@@ -171,7 +179,8 @@ impl<'a> ImportRun<'a> {
     /// # Errors
     ///
     /// Returns a [`RunError`] if the template uses `{job}` without a job code, a
-    /// backup destination is invalid, the source cannot be scanned, the current time
+    /// backup destination is invalid, a destination does not have enough space, the
+    /// source cannot be scanned, the current time
     /// cannot be shown in local time, the import cannot get its sequence numbers or
     /// the import history cannot be used; then nothing is copied. A file that
     /// fails is reported in the [`ImportSummary`] instead.
@@ -238,12 +247,16 @@ impl<'a> ImportRun<'a> {
     /// file is copied, and names its files again if another import took the numbers
     /// the plan showed (IMPORT-002, "Reservation"). Then it records the start of the
     /// run in the import history (IMPORT-009). A dry run reserves and records nothing.
-    /// It checks the backup destinations first (IMPORT-007.11).
+    /// It checks the backup destinations first (IMPORT-007.11), and then that each file
+    /// system can hold what the run writes to it, also in a dry run (IMPORT-012).
+    /// Destinations whose free space cannot be read are kept for the
+    /// [`ImportSummary`], and the run goes on.
     ///
     /// # Errors
     ///
     /// Returns [`RunError::BackupDestination`] if a backup destination is invalid,
-    /// and [`RunError::Sequence`] if the persisted counters cannot be read or
+    /// [`RunError::NotEnoughSpace`] if a file system is short, and
+    /// [`RunError::Sequence`] if the persisted counters cannot be read or
     /// stored, or the numbers do not fit the template; then nothing is reserved and
     /// the import must not run. Returns [`RunError::History`] if the import history
     /// cannot record the start, and [`RunError::ImportTimeOutOfRange`] if the current
@@ -254,6 +267,13 @@ impl<'a> ImportRun<'a> {
         mut plan: PlannedRun,
     ) -> Result<PlannedRun, RunError> {
         check_settings_backup_destinations(settings)?;
+        let check = self.check_free_space(settings, &plan);
+        if !check.shortages.is_empty() {
+            return Err(RunError::NotEnoughSpace(NotEnoughSpace {
+                shortages: check.shortages,
+            }));
+        }
+        plan.free_space_unknown = check.unknown;
         if settings.dry_run {
             return Ok(plan);
         }
@@ -327,6 +347,7 @@ impl<'a> ImportRun<'a> {
             dry_run: settings.dry_run,
             history_error,
             backups,
+            free_space_unknown: plan.free_space_unknown,
         }
     }
 

@@ -3,34 +3,33 @@
 
 //! `framehive import` (CLI-001, CLI-010): wires the adapters to an import run.
 
+mod run;
+#[cfg(test)]
+mod tests;
+
 use std::io;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-use adapter_blake3::Blake3Hasher;
-use adapter_clock::SystemClock;
+use adapter_free_space::StatvfsFreeSpace;
 use adapter_fs::StdFileSystem;
-use adapter_sequence_counters::FileSequenceCounters;
-use adapter_sqlite::SqliteImportHistory;
 use adapter_yaml::SaphyrParser;
 use import::{
-    BackupDestinationError, ConflictPolicy, DEFAULT_NAME_TEMPLATE, ImportProfile, ImportRun,
-    ImportSettings, ImportSummary, JobCode, SessionSequence, check_backup_destinations,
-    require_job_code,
+    BackupDestinationError, ConflictPolicy, DEFAULT_NAME_TEMPLATE, ImportProfile, ImportSummary,
+    JobCode, check_backup_destinations, require_job_code,
 };
-use naming::{CompatibilityMode, NameTemplate};
+use naming::NameTemplate;
 
 use crate::arguments::{ImportArguments, OnConflict};
 use crate::guided::state_folder;
-use crate::paths::{
-    Destination, PathError, check_outside, create_destination, resolve_destination, resolve_source,
-};
+use crate::paths::{Destination, PathError, check_outside, resolve_destination, resolve_source};
 use crate::profiles::{
     check_profile_name, process_configuration_folder, process_home_folder, profiles_folder,
     read_profile,
 };
-use crate::report::{BackupName, ReportPrinter, has_backup_failures};
+use crate::report::{BackupName, has_backup_failures};
 use crate::{FILES_FAILED, NOT_STARTED, report_error, report_warning};
+use run::{NotStarted, Surroundings, import_with};
 
 /// Runs the import and returns the exit code of CLI-001.
 pub(crate) fn run_import(arguments: &ImportArguments) -> ExitCode {
@@ -39,76 +38,95 @@ pub(crate) fn run_import(arguments: &ImportArguments) -> ExitCode {
             ExitCode::from(FILES_FAILED)
         }
         Ok(_) => ExitCode::SUCCESS,
-        Err(message) => {
-            report_error(&message);
+        Err(NotStarted(messages)) => {
+            for message in &messages {
+                report_error(message);
+            }
             ExitCode::from(NOT_STARTED)
         }
     }
 }
 
-/// Checks the arguments, prepares the destination and runs the import, printing the
-/// report as it goes.
+/// Reads the profile and the state folder from the process environment, and imports
+/// with the real free space, standard output and standard error.
 ///
 /// # Errors
 ///
-/// Returns the message of the error that kept the import from starting.
-fn import(arguments: &ImportArguments) -> Result<ImportSummary, String> {
+/// Returns the messages of the errors that kept the import from starting.
+fn import(arguments: &ImportArguments) -> Result<ImportSummary, NotStarted> {
     let profile = arguments.profile.as_deref().map(load_profile).transpose()?;
-    let chosen = choose_settings(arguments, profile)?;
-    let template = chosen.template;
-    let job_code = chosen.job_code;
+    let state_folder = process_state_folder()?;
+    import_with(
+        arguments,
+        profile,
+        Surroundings {
+            state_folder: &state_folder,
+            free_space: &StatvfsFreeSpace::new(),
+            output: &mut io::stdout().lock(),
+            errors: &mut io::stderr(),
+        },
+    )
+}
+
+/// The folders of an import, resolved, each with the folder as given.
+struct Folders {
+    source: PathBuf,
+    destination: Destination,
+    /// The destination as given on the command line or in the profile.
+    given_destination: PathBuf,
+    /// Each backup destination with the folder as given.
+    backups: Vec<(Destination, PathBuf)>,
+}
+
+impl Folders {
+    /// The resolved paths of the backup destinations, in their order.
+    fn backup_paths(&self) -> Vec<PathBuf> {
+        self.backups
+            .iter()
+            .map(|(backup, _)| backup.path.clone())
+            .collect()
+    }
+
+    /// A destination as the messages name it: as given (CLI-005, CLI-011).
+    fn shown<'p>(&'p self, path: &'p Path) -> &'p Path {
+        if path == self.destination.path {
+            return &self.given_destination;
+        }
+        self.backups
+            .iter()
+            .find(|(backup, _)| backup.path == path)
+            .map_or(path, |(_, given)| given.as_path())
+    }
+}
+
+/// Resolves the source and the destinations and checks them against each other
+/// (CLI-001, CLI-005).
+///
+/// # Errors
+///
+/// Returns the message for the first folder that cannot be resolved or is invalid.
+fn resolve_folders(
+    arguments: &ImportArguments,
+    chosen: &ChosenSettings,
+) -> Result<Folders, String> {
     let source = resolve_source(&arguments.source).map_err(|error| error.to_string())?;
     let destination =
         resolve_destination(&chosen.destination).map_err(|error| error.to_string())?;
     check_outside(&source, &destination).map_err(|error| error.to_string())?;
     let backups = resolve_backups(&chosen.backups)?;
-    let backup_paths: Vec<PathBuf> = backups
-        .iter()
-        .map(|(backup, _)| backup.path.clone())
-        .collect();
-    check_backup_destinations(&source, &destination.path, &backup_paths)
-        .map_err(|error| invalid_backup_message(&error, &backups))?;
-    let state_folder = process_state_folder()?;
-
-    let file_system = StdFileSystem::new();
-    if !arguments.dry_run {
-        create_destination(&file_system, &destination).map_err(|error| error.to_string())?;
-        for (backup, given) in &backups {
-            create_destination(&file_system, backup)
-                .map_err(|error| backup_message(given, &error))?;
-        }
-    }
-    let settings = ImportSettings {
-        source: &source,
-        destination: &destination.path,
-        backup_destinations: &backup_paths,
-        template: &template,
-        job_code: job_code.as_ref(),
-        mode: CompatibilityMode::On,
-        policy: chosen.policy,
-        dry_run: arguments.dry_run,
+    let folders = Folders {
+        source,
+        destination,
+        given_destination: chosen.destination.clone(),
+        backups,
     };
-    let clock = SystemClock::new();
-    let counters = FileSequenceCounters::new(state_folder.clone());
-    let session = SessionSequence::new();
-    let history = SqliteImportHistory::new(&state_folder);
-    let mut printer = ReportPrinter::new(io::stdout().lock(), arguments.dry_run)
-        .with_backup_names(backup_names(&backups));
-    let summary = ImportRun::new(
-        &file_system,
-        &Blake3Hasher,
-        &clock,
-        &counters,
-        &session,
-        &history,
+    check_backup_destinations(
+        &folders.source,
+        &folders.destination.path,
+        &folders.backup_paths(),
     )
-    .run(&settings, &mut printer)
-    .map_err(|error| error.to_string())?;
-    printer.print_summary(&summary);
-    if let Some(error) = &summary.history_error {
-        report_error(&error.to_string());
-    }
-    Ok(summary)
+    .map_err(|error| invalid_backup_message(&error, &folders.backups))?;
+    Ok(folders)
 }
 
 /// The settings of the import, each from the command line, else the profile, else the

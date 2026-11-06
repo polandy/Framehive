@@ -5,126 +5,22 @@
 
 #![allow(clippy::unwrap_used, reason = "test helpers may panic on bad fixtures")]
 
+mod run_support;
+
 use std::path::{Path, PathBuf};
 
-use domain::testing::ManualClock;
-use domain::{Timestamp, UtcOffset};
-use files::testing::{Fault, FnvHasher, MemoryFileSystem};
-use history::testing::MemoryImportHistory;
+use domain::Timestamp;
+use files::testing::Fault;
 use import::{
-    ConflictPolicy, FileError, FileOutcome, FileReport, ImportRun, ImportSettings, ImportSummary,
-    NoProgress, ProgressSink, RunError, ScanError, SessionSequence, SourceScan,
+    ConflictPolicy, FileError, FileOutcome, FileReport, NoProgress, ProgressSink, RunError,
+    ScanError, SourceScan,
 };
 use metadata::NoCaptureTime;
-use metadata::testing::{ByteOrder, DATE_TIME_ORIGINAL, Tiff, jpeg};
-use naming::testing::MemorySequenceCounters;
-use naming::{CompatibilityMode, NameTemplate};
 
-const SOURCE: &str = "/media/card";
-const DESTINATION: &str = "/library";
-const TEMPLATE: &str = "{date:%Y-%m-%d}/{name}.{ext}";
-
-/// 2026-10-17 14:05:09 UTC.
-const MODIFIED: i64 = 1_792_245_909;
-/// 2026-10-17 23:30:00 UTC: 2026-10-18 in UTC+2.
-const MODIFIED_LATE: i64 = 1_792_279_800;
-/// 2026-10-31 09:00:00 UTC.
-const NOW: i64 = 1_793_437_200;
-const TWO_HOURS: i32 = 7_200;
-
-fn source_with(files: &[&str]) -> MemoryFileSystem {
-    let file_system = MemoryFileSystem::new();
-    file_system.add_folder(Path::new(SOURCE));
-    for file in files {
-        add(&file_system, file, file.as_bytes(), MODIFIED);
-    }
-    file_system
-}
-
-fn add(file_system: &MemoryFileSystem, relative: &str, content: &[u8], modified: i64) {
-    let modified = Timestamp::from_unix_seconds(modified);
-    file_system.add_file(&Path::new(SOURCE).join(relative), content, modified);
-}
-
-fn photo_taken_at(capture_time: &str) -> Vec<u8> {
-    let exif = Tiff::new(ByteOrder::LittleEndian)
-        .with_exif_text(DATE_TIME_ORIGINAL, capture_time)
-        .to_bytes();
-    jpeg(&exif)
-}
-
-struct Setup {
-    template: &'static str,
-    policy: ConflictPolicy,
-    dry_run: bool,
-    offset: i32,
-}
-
-impl Default for Setup {
-    fn default() -> Self {
-        Setup {
-            template: TEMPLATE,
-            policy: ConflictPolicy::AddSuffix,
-            dry_run: false,
-            offset: 0,
-        }
-    }
-}
-
-impl Setup {
-    fn on(&self, file_system: &MemoryFileSystem, progress: &mut dyn ProgressSink) -> ImportSummary {
-        self.try_on(file_system, Path::new(DESTINATION), progress)
-            .unwrap()
-    }
-
-    fn try_on(
-        &self,
-        file_system: &MemoryFileSystem,
-        destination: &Path,
-        progress: &mut dyn ProgressSink,
-    ) -> Result<ImportSummary, RunError> {
-        let offset = UtcOffset::from_seconds(self.offset).unwrap();
-        let clock = ManualClock::new(Timestamp::from_unix_seconds(NOW), offset);
-        let template = NameTemplate::parse(self.template).unwrap();
-        let settings = ImportSettings {
-            source: Path::new(SOURCE),
-            destination,
-            backup_destinations: &[],
-            template: &template,
-            job_code: None,
-            mode: CompatibilityMode::On,
-            policy: self.policy,
-            dry_run: self.dry_run,
-        };
-        let (counters, session) = (&MemorySequenceCounters::new(), &SessionSequence::new());
-        let history = &MemoryImportHistory::new();
-        ImportRun::new(file_system, &FnvHasher, &clock, counters, session, history)
-            .run(&settings, progress)
-    }
-}
-
-fn import(file_system: &MemoryFileSystem) -> ImportSummary {
-    Setup::default().on(file_system, &mut NoProgress)
-}
-
-/// The target of a file that was copied or would be copied.
-fn target(report: &FileReport) -> Option<&str> {
-    match &report.outcome {
-        FileOutcome::Copied { target, .. } | FileOutcome::WouldCopy { target } => Some(target),
-        _ => None,
-    }
-}
-
-fn failure(report: &FileReport) -> Option<&FileError> {
-    match &report.outcome {
-        FileOutcome::Failed(error) => Some(error),
-        _ => None,
-    }
-}
-
-fn copied_content(file_system: &MemoryFileSystem, target: &str) -> Option<Vec<u8>> {
-    file_system.content(&Path::new(DESTINATION).join(target))
-}
+use run_support::{
+    DESTINATION, MODIFIED, MODIFIED_LATE, SOURCE, Setup, TWO_HOURS, add, copied_content, failure,
+    import, photo_taken_at, source_with, target,
+};
 
 /// spec: IMPORT-004.11
 #[test]

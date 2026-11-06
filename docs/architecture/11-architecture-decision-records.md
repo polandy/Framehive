@@ -39,3 +39,4 @@ acceptance (a change means a new ADR that supersedes the old one).
 | [0030](../adr/0030-backup-destinations.md) | Backup destinations: one read to several verified targets | accepted |
 | [0031](../adr/0031-import-history-in-sqlite.md) | Import history in SQLite | accepted |
 | [0032](../adr/0032-import-profiles-and-yaml-parser.md) | Import profiles and the YAML parser | accepted |
+| [0033](../adr/0033-free-space-check.md) | Free-space check before an import | accepted |

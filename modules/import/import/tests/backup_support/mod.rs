@@ -15,11 +15,11 @@ use std::path::{Path, PathBuf};
 
 use domain::testing::ManualClock;
 use domain::{Timestamp, UtcOffset};
-use files::testing::{FnvHasher, MemoryFileSystem};
+use files::testing::{FnvHasher, MemoryFileSystem, MemoryFreeSpace};
 use history::testing::MemoryImportHistory;
 use import::{
     BackupError, BackupOutcome, ConflictPolicy, FileOutcome, FileReport, ImportRun, ImportSettings,
-    ImportSummary, NoProgress, RunError, SessionSequence,
+    ImportSummary, NoProgress, PlannedRun, RunError, SessionSequence, scan_source,
 };
 use naming::testing::MemorySequenceCounters;
 use naming::{CompatibilityMode, NameTemplate};
@@ -63,6 +63,8 @@ pub(crate) struct Setup<'a> {
     template: &'a str,
     policy: ConflictPolicy,
     backups: Vec<PathBuf>,
+    free_space: MemoryFreeSpace,
+    dry_run: bool,
 }
 
 impl<'a> Setup<'a> {
@@ -71,7 +73,20 @@ impl<'a> Setup<'a> {
             template,
             policy: ConflictPolicy::AddSuffix,
             backups: backups.iter().map(PathBuf::from).collect(),
+            free_space: MemoryFreeSpace::unlimited(),
+            dry_run: false,
         }
+    }
+
+    /// The free space of the destinations (IMPORT-012); unlimited by default.
+    pub(crate) fn with_free_space(mut self, free_space: MemoryFreeSpace) -> Self {
+        self.free_space = free_space;
+        self
+    }
+
+    pub(crate) fn dry_running(mut self) -> Self {
+        self.dry_run = true;
+        self
     }
 
     pub(crate) fn with_policy(mut self, policy: ConflictPolicy) -> Self {
@@ -84,6 +99,32 @@ impl<'a> Setup<'a> {
     }
 
     pub(crate) fn try_on(&self, file_system: &MemoryFileSystem) -> Result<ImportSummary, RunError> {
+        self.with_run(file_system, |run, settings| {
+            run.run(settings, &mut NoProgress)
+        })
+    }
+
+    /// Plans the import, calls `before_start`, and starts it, so a test can change
+    /// the files between planning and starting.
+    pub(crate) fn try_start_on(
+        &self,
+        file_system: &MemoryFileSystem,
+        before_start: impl FnOnce(),
+    ) -> Result<PlannedRun, RunError> {
+        self.with_run(file_system, |run, settings| {
+            let scan = scan_source(file_system, settings.source, settings.destination).unwrap();
+            let plan = run.plan(settings, &scan)?;
+            before_start();
+            run.start(settings, plan)
+        })
+    }
+
+    /// Calls `act` with an import run over `file_system` and the settings of the setup.
+    fn with_run<T>(
+        &self,
+        file_system: &MemoryFileSystem,
+        act: impl FnOnce(&ImportRun<'_>, &ImportSettings<'_>) -> T,
+    ) -> T {
         let clock = ManualClock::new(
             Timestamp::from_unix_seconds(NOW),
             UtcOffset::from_seconds(0).unwrap(),
@@ -97,18 +138,20 @@ impl<'a> Setup<'a> {
             job_code: None,
             mode: CompatibilityMode::On,
             policy: self.policy,
-            dry_run: false,
+            dry_run: self.dry_run,
         };
         let (counters, session) = (MemorySequenceCounters::new(), SessionSequence::new());
-        ImportRun::new(
+        let history = MemoryImportHistory::new();
+        let run = ImportRun::new(
             file_system,
             &FnvHasher,
             &clock,
             &counters,
             &session,
-            &MemoryImportHistory::new(),
-        )
-        .run(&settings, &mut NoProgress)
+            &history,
+            &self.free_space,
+        );
+        act(&run, &settings)
     }
 }
 

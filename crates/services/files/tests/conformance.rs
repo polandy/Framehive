@@ -5,9 +5,10 @@
 
 use std::path::Path;
 
+use files::FreeSpace;
 use files::testing::{
-    FileSystemUnderTest, FnvHasher, HasherUnderTest, MemoryFileSystem, TempDir, check_file_system,
-    check_hasher,
+    FileSystemUnderTest, FnvHasher, FreeSpaceUnderTest, HasherUnderTest, MemoryFileSystem,
+    MemoryFreeSpace, TempDir, check_file_system, check_free_space, check_hasher,
 };
 
 #[test]
@@ -47,6 +48,38 @@ fn fnv_hasher_conforms() {
     });
 
     assert_eq!(failures, Vec::<String>::new());
+}
+
+#[test]
+fn memory_free_space_conforms() {
+    let free_space = MemoryFreeSpace::new().with_file_system("/", 1_000);
+
+    let failures = check_free_space(&FreeSpaceUnderTest {
+        free_space: &free_space,
+        folder: Path::new("/conformance"),
+    });
+
+    assert_eq!(failures, Vec::<String>::new());
+}
+
+#[test]
+fn memory_free_space_answers_by_the_nearest_mount() {
+    let free_space = MemoryFreeSpace::new()
+        .with_file_system("/", 1_000)
+        .with_file_system("/media/disk", 500)
+        .with_unreadable("/media/share", "the file system does not report it");
+
+    let root = free_space.free_space(Path::new("/home")).unwrap();
+    let disk = free_space.free_space(Path::new("/media/disk/a/b")).unwrap();
+    let share = free_space.free_space(Path::new("/media/share/library"));
+
+    assert_eq!((root.available_bytes, disk.available_bytes), (1_000, 500));
+    assert_ne!(root.file_system, disk.file_system);
+    assert_eq!(
+        share.unwrap_err().to_string(),
+        "the file system does not report it"
+    );
+    assert!(MemoryFreeSpace::new().free_space(Path::new("/")).is_err());
 }
 
 #[test]

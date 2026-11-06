@@ -9,7 +9,7 @@ Layer: `app` (architecture §3). Binary: `framehive`.
 
 ## Purpose
 
-The command line of Framehive: `framehive import` (CLI-001, CLI-004, CLI-010), `framehive
+The command line of Framehive: `framehive import` (CLI-001, CLI-004, CLI-010, CLI-011), `framehive
 import-log` (CLI-009), `framehive config init` (CLI-010) and, without a subcommand, the guided import (CLI-002, CLI-003, ADR 0024). It parses the arguments
 with `clap` (builder API, ADR 0020 §6) and is one of the two places, with
 `framehive-gui`, that know the concrete adapters and wire them to the ports.
@@ -33,16 +33,17 @@ framehive --version
 links, resolves the longest existing part of the destination and appends the missing
 folders (rejecting `..` among them), and rejects a destination inside the source.
 Each `--backup` folder (CLI-005) is resolved the same way and checked with
-`import::check_backup_destinations` (IMPORT-007.11), also in a dry run. Unless it is a
-dry run, it then creates the missing folders of the destination and of each backup
-destination and runs `import::ImportRun` with `adapter-fs`, `adapter-blake3` and `adapter-clock`, in
-compatibility mode. The persisted sequence counters (CLI-004, ADR 0029) come from
+`import::check_backup_destinations` (IMPORT-007.11), also in a dry run. It scans and
+plans, and checks the free space with `adapter-free-space` (CLI-011): a short file system
+stops it with exit code 2 before any folder is created, a dry run after its lines.
+Unless it is a dry run, it then creates the missing folders of the destination and of
+each backup destination, and starts and executes the run with
+`adapter-fs`, `adapter-blake3` and `adapter-clock`, in compatibility mode. The persisted sequence counters (CLI-004, ADR 0029) come from
 `adapter-sequence-counters`, and the import history (CLI-008, ADR 0031) from
 `adapter-sqlite`, both in the state folder; the command stops when the state folder is
-unknown (no absolute `XDG_STATE_HOME` and no home folder). The destinations it passes to
-the run are the resolved paths above: their existing part is canonical and the missing
-folders are created as named, so a destination has the same path in the first run and
-in later ones, which is how the history identifies it (IMPORT-009).
+unknown (no absolute `XDG_STATE_HOME` and no home folder). The run gets the resolved paths
+above, so a destination has the same path in every run, which is how the history
+identifies it (IMPORT-009).
 
 ## Import profiles
 
@@ -114,7 +115,7 @@ standard error as `warning: <message>`; there is no other log output yet.
 |---|---|
 | 0 | Every file was copied, already imported, imported before, a duplicate, skipped or left out |
 | 1 | A file failed, or a folder could not be read (`ImportSummary::has_failures`), a file failed at a backup destination, or the import history failed during the run |
-| 2 | The import did not start: invalid arguments, template or job code, missing source, destination inside the source or not creatable, an invalid or not creatable backup destination, sequence numbers that do not fit, counters that cannot be read or stored, an unknown state folder, an import history that cannot be used, or a profile that cannot be found, read or used (CLI-010) |
+| 2 | The import did not start: invalid arguments, template or job code, missing source, destination inside the source or not creatable, an invalid or not creatable backup destination, sequence numbers that do not fit, counters that cannot be read or stored, an unknown state folder, an import history that cannot be used, a file system without enough space, or a profile that cannot be found, read or used (CLI-010) |
 
 ## Modules
 
@@ -122,13 +123,13 @@ standard error as `warning: <message>`; there is no other log output yet.
 |---|---|
 | `arguments` | The `clap` command line and the parsed `Invocation` |
 | `paths` | Source and destination resolution, the inside check, creating the destination |
-| `import_command` | Wires the adapters to the import run and maps the result to the exit code |
+| `import_command` | Wires the adapters to the import run (`run.rs`, tested in-crate with `MemoryFreeSpace`) and maps the result to the exit code |
 | `report` | The `ProgressSink` that prints the report lines and the summary |
 | `profiles` | The configuration folder, profile names, and reading the profile of `--profile` (CLI-010) |
 | `config_init` | `framehive config init`: the example profile (CLI-010) |
 | `import_log` | `framehive import-log` (CLI-009): reading the history, and the `text`, `json` and `csv` writers |
 | `format_readiness` | The format readiness lines (CLI-007), shared by `framehive import` and the guided import |
-| `guided` | The guided import (CLI-002, CLI-003): `dialog` (prompts, waiting, remembered answers), `card` (summary, import, eject), `template` (template step, job code), `progress` (progress line, stop on a pulled card), `format` (sizes, rate, time left), `state` (state file), `events` (input events) |
+| `guided` | The guided import (CLI-002, CLI-003): `dialog` (prompts, waiting, remembered answers), `card` (summary, import, eject), `summary` (plan summary, blockers), `template` (template step, job code), `progress` (progress line, stop on a pulled card), `format` (sizes, rate, time left), `state` (state file), `events` (input events) |
 
 ## Tests
 

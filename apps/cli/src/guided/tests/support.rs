@@ -14,7 +14,7 @@ use std::time::Duration;
 use devices::testing::MemoryDeviceSource;
 use domain::testing::ManualClock;
 use domain::{Timestamp, UtcOffset};
-use files::testing::{FnvHasher, MemoryFileSystem};
+use files::testing::{FnvHasher, MemoryFileSystem, MemoryFreeSpace};
 use files::{EntryKind, FileSystem, FolderEntry, ReadSeek, WriteFile};
 use import::{RecentJobCodes, SessionSequence};
 use naming::NameTemplate;
@@ -81,6 +81,8 @@ pub(super) struct Harness {
     /// The import history, kept across the runs of this harness as the history in the
     /// state folder is kept across program runs.
     pub(super) history: Box<dyn ImportHistory>,
+    /// The free space of the destinations; unlimited unless a test sets it.
+    pub(super) free_space: MemoryFreeSpace,
     /// Resolves a folder to its canonical path; the paths of the memory file system are
     /// canonical already, so it returns them unchanged unless a test replaces it.
     pub(super) resolve_folder: fn(&Path) -> Result<PathBuf, PathError>,
@@ -109,6 +111,7 @@ impl Harness {
             counters: MemorySequenceCounters::new(),
             session: SessionSequence::new(),
             history: Box::new(MemoryImportHistory::new()),
+            free_space: MemoryFreeSpace::unlimited(),
             resolve_folder: |folder| Ok(folder.to_path_buf()),
             time_per_copy: Cell::new(Duration::ZERO),
             pull_after_copies: Cell::new(None),
@@ -180,6 +183,7 @@ impl Harness {
             counters: &self.counters,
             session: &self.session,
             history: &*self.history,
+            free_space: &self.free_space,
             resolve_folder: self.resolve_folder,
         };
         let environment = Environment {

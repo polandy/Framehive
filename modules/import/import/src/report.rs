@@ -15,6 +15,7 @@ use naming::{RenderError, SequenceError};
 
 use crate::backup::{BackupCounts, BackupDestinationError, BackupReport};
 use crate::conflicts::ConflictError;
+use crate::free_space::{FreeSpaceUnknown, NotEnoughSpace};
 use crate::job_code::MissingJobCode;
 use crate::scan::{LeftOut, LeftOutReason, ScanError, SourceScan};
 
@@ -159,6 +160,9 @@ pub enum RunError {
     /// A backup destination is invalid (IMPORT-007.11).
     #[error(transparent)]
     BackupDestination(#[from] BackupDestinationError),
+    /// A file system cannot hold what the run writes to it (IMPORT-012).
+    #[error(transparent)]
+    NotEnoughSpace(#[from] NotEnoughSpace),
     /// The import history cannot be used (IMPORT-009).
     #[error(transparent)]
     History(#[from] HistoryError),
@@ -183,6 +187,9 @@ pub struct ImportSummary {
     pub history_error: Option<HistoryError>,
     /// What each backup destination got, in the order of the settings (IMPORT-007).
     pub backups: Vec<BackupCounts>,
+    /// The destinations whose free space could not be read when the run started; the
+    /// run went on without checking them (IMPORT-012).
+    pub free_space_unknown: Vec<FreeSpaceUnknown>,
 }
 
 impl ImportSummary {

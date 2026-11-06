@@ -23,13 +23,14 @@ use std::time::Duration;
 
 use adapter_blake3::Blake3Hasher;
 use adapter_clock::SystemClock;
+use adapter_free_space::StatvfsFreeSpace;
 use adapter_fs::StdFileSystem;
 use adapter_mounts::MountsDeviceSource;
 use adapter_sequence_counters::FileSequenceCounters;
 use adapter_sqlite::SqliteImportHistory;
 use devices::DeviceSource;
 use domain::Clock;
-use files::{FileSystem, Hasher};
+use files::{FileSystem, FreeSpace, Hasher};
 use history::ImportHistory;
 use import::{ImportRun, SessionSequence};
 use naming::SequenceCounters;
@@ -38,6 +39,7 @@ use crate::paths::{PathError, canonical_folder};
 use crate::{NOT_STARTED, report_error};
 use dialog::Dialog;
 use events::StdinEvents;
+pub(crate) use format::space_text;
 use state::state_file;
 pub(crate) use state::{create_folders, state_folder};
 
@@ -61,6 +63,8 @@ pub(crate) struct Ports<'a> {
     pub(crate) session: &'a SessionSequence,
     /// The import history: what was copied where before (IMPORT-009).
     pub(crate) history: &'a dyn ImportHistory,
+    /// The free space of the destinations (IMPORT-012).
+    pub(crate) free_space: &'a dyn FreeSpace,
     /// Resolves a destination to the canonical absolute path that identifies it in the
     /// import history (IMPORT-009).
     pub(crate) resolve_folder: fn(&Path) -> Result<PathBuf, PathError>,
@@ -76,6 +80,7 @@ impl<'a> Ports<'a> {
             self.counters,
             self.session,
             self.history,
+            self.free_space,
         )
     }
 }
@@ -123,6 +128,7 @@ pub(crate) fn run_guided() -> ExitCode {
         counters: &counters,
         session: &session,
         history: &history,
+        free_space: &StatvfsFreeSpace::new(),
         resolve_folder: canonical_folder,
     };
     let mut events = StdinEvents::start(POLL_INTERVAL);

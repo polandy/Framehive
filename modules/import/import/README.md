@@ -38,71 +38,17 @@ normalization form (ADR 0026); a destination may hold several names with one key
 and each is compared. Content is compared by size and checksum, under the conflict
 policy `add_suffix`, `skip` or `fail`.
 
-`ImportRun` ties them together (ADR 0020 §1): it scans the source, dates each file by
-its capture time or, without one, by its modification time in local time, makes one
-import plan, resolves each target and copies the file with `files::copy_verified`
-(IMPORT-004), in scan order. Until grouping exists, each file is its own asset. A file
-that fails is reported with the reason and the run goes on (IMPORT-004.11). A dry run
-resolves everything and writes nothing.
-
-Backup destinations (IMPORT-007, ADR 0030): `ImportSettings::backup_destinations`
-lists them. `start` (and so `run`) refuses one that is the import destination, lies
-inside it or the source, contains it, or is given twice (`check_backup_destinations`).
-A file copied to the import destination, or already imported there, goes to the same
-target path below each backup destination, with one read of the source through
-`files::copy_verified_to_all`. A backup target holding the same content is "already
-backed up"; one holding other content is a name conflict there and is never
-overwritten. Each destination fails on its own: a failed backup does not undo the
-import, and a failed import destination keeps the verified backups.
-`FileReport::backups` holds one `BackupReport` per backup destination, and
-`ImportSummary::backups` the `BackupCounts` of each.
-
-Format readiness (IMPORT-008): `FormatReadiness::of` reads an `ImportSummary` and tells
-whether the source can be formatted: every file the scan found is verified at the
-import destination and at every backup destination (a duplicate counts as its earlier
-file), nothing was left out as unreadable or as a sidecar that needs grouping, and the
-run was neither stopped nor a dry run (`ImportSummary::dry_run`). Otherwise
-`FormatReadiness::blockers` lists each file that is not saved, with the number of
-locations it is verified at, and each blocking left-out entry, in scan order.
-Unsupported, hidden and symbolic-link entries are only counted.
-
-`ImportRun::run` is the composition of two steps that callers can also use on their
-own. `plan` (all files of a scan) or `plan_first` (the first files only, for a preview)
-fixes the import time, dates only the selected files and returns a `PlannedRun`: each
-file with its planned target, or why it could not be dated. It resolves no conflicts
-and writes nothing. `execute` takes a `PlannedRun`, resolves conflicts and copies, with
-the same progress steps and summary as `run`.
-
-Sequence numbers (IMPORT-002): the plan numbers assets, not files, in shooting order
-(capture time, then base name byte by byte), from one contiguous range. `plan` only
-previews the range; `start` reserves it through the `naming::SequenceCounters` port, or
-from the `SessionSequence` for session and letter numbers, before the first file is
-copied, and names the files again if another import took the previewed numbers. A dry
-run reserves nothing. `run` is the scan, `plan`, `start` and `execute`.
-
-Import history (IMPORT-009): `ImportRun` reads and writes the `history::ImportHistory`
-port. `plan` looks each file up by original file name, size and capture time (before
-camera time correction) at the import destination and at each backup destination, and
-reads its checksum only when a lookup finds a copy. A file whose most recent copy at the
-import destination has the same checksum is `FilePlan::ImportedBefore`: it is left out of
-the import plan, gets no sequence number, and is reported as `FileOutcome::ImportedBefore`
-with the recorded target, without looking at the destination. It is still backed up to
-each backup destination where it is not `BackupOutcome::BackedUpBefore`. `start` records
-the run, `execute` records each verified copy (copied, already imported, backed up,
-already backed up) right after it is verified and the end of the run, also when it is
-stopped. A dry run records nothing. A history that cannot be read stops the plan
-(`RunError::History`); one that cannot record stops the run after that file
-(`ImportSummary::history_error`), which format readiness treats like a stopped run.
-The run compares destinations exactly as `ImportSettings` gives them, so the caller
-passes their canonical absolute paths (IMPORT-009); `framehive-cli` does (CLI-008).
+`ImportRun` ties them together (ADR 0020 §1): it scans, plans, starts and copies,
+with backup destinations, format readiness, sequence numbers, the import history and
+the free-space check. [`docs/import-run.md`](docs/import-run.md) describes it.
 
 Boundaries:
 
 - **Pure logic, I/O through ports.** Making an import plan does no I/O. The scan,
-  conflict resolution and the import run read and write only through the `FileSystem`
-  and `Hasher` ports of `files`, the `Clock` of `domain`, the `SequenceCounters` of
-  `naming` and the `ImportHistory` of `history`; the app wires the
-  adapters. `ImportRun` runs synchronously on the caller's thread and reports to a
+  conflict resolution and the import run read and write only through the
+  `FileSystem`, `Hasher` and `FreeSpace` ports of `files`, the `Clock` of `domain`,
+  the `SequenceCounters` of `naming` and the `ImportHistory` of `history`; the app
+  wires the adapters. `ImportRun` runs synchronously on the caller's thread and reports to a
   `ProgressSink`, which it asks before each file whether to go on
   (`should_continue`, IMPORT-004.13); a stopped run sets `ImportSummary::stopped`. It
   becomes the body of the import job once the jobs service exists.
@@ -133,6 +79,7 @@ Boundaries:
 | `ImportSummary`, `FileReport`, `FileOutcome`, `FileError`, `RunError` | What a run reports per file, and why a run did not start |
 | `BackupReport`, `BackupOutcome`, `BackupError`, `BackupCounts` | What happened to a file at each backup destination, and the counts per backup destination (IMPORT-007) |
 | `check_backup_destinations`, `BackupDestinationError`, `BackupDestinationProblem` | Refuses invalid backup destinations before a run starts (IMPORT-007.11) |
+| `FreeSpaceCheck`, `SpaceShortage`, `FreeSpaceUnknown`, `NotEnoughSpace` | What the free-space check before the first copy finds (IMPORT-012) |
 | `ImportProfile`, `IMPORT_PROFILE`, `DEFAULT_NAME_TEMPLATE`, `import_profile_json_schema`, `IMPORT_PROFILE_SCHEMA_ID` | An import profile read through `config`, checked, with defaults; its JSON Schema (IMPORT-011; tested end to end in `apps/cli`) |
 | `ExampleViewModel` | Example ViewModel from the template; replace it |
 

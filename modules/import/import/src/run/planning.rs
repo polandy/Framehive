@@ -105,6 +105,7 @@ impl ImportRun<'_> {
             })
             .collect();
         Ok(PlannedRun {
+            free_space_unknown: Vec::new(),
             files,
             left_out,
             naming,

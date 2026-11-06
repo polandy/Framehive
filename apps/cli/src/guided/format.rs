@@ -2,9 +2,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 //! The numbers the guided import shows: sizes, the transfer rate and the time left
-//! (CLI-003, "Plan summary" and "Import and progress").
+//! (CLI-003, "Plan summary" and "Import and progress"), and the free space that both
+//! imports report (CLI-011).
 
 use std::time::Duration;
+
+use import::SpaceShortage;
 
 /// One gigabyte, decimal.
 const GIGABYTE: u64 = 1_000_000_000;
@@ -54,6 +57,16 @@ impl Unit {
 pub(crate) fn size_text(bytes: u64) -> String {
     let unit = Unit::for_size(bytes);
     format!("{} {}", unit.number(bytes), unit.symbol())
+}
+
+/// What a short file system needs and has free: `needs 12.8 GB, 3.1 GB free`
+/// (CLI-011).
+pub(crate) fn space_text(shortage: &SpaceShortage) -> String {
+    format!(
+        "needs {}, {} free",
+        size_text(shortage.bytes_to_write),
+        size_text(shortage.available_bytes)
+    )
 }
 
 /// Two sizes in the unit of `total`: `4.1/12.8 GB`.

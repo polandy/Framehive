@@ -52,12 +52,23 @@ fn exit_for_argument_error(error: &clap::Error) -> ExitCode {
 
 /// Writes a warning that does not stop the command to standard error (CLI-001).
 fn report_warning(message: &str) {
+    write_warning(&mut io::stderr().lock(), message);
+}
+
+/// Writes a warning that does not stop the command to `errors`, which stands for
+/// standard error.
+fn write_warning(errors: &mut dyn Write, message: &str) {
     // Nothing more can be reported when standard error is gone.
-    let _ = writeln!(io::stderr().lock(), "warning: {message}");
+    let _ = writeln!(errors, "warning: {message}");
 }
 
 /// Writes an error that stops the command to standard error (CLI-001).
 fn report_error(message: &str) {
+    write_error(&mut io::stderr().lock(), message);
+}
+
+/// Writes an error to `errors`, which stands for standard error.
+fn write_error(errors: &mut dyn Write, message: &str) {
     // Nothing more can be reported when standard error is gone.
-    let _ = writeln!(io::stderr().lock(), "error: {message}");
+    let _ = writeln!(errors, "error: {message}");
 }

@@ -16,7 +16,7 @@ use std::path::{Path, PathBuf};
 
 use domain::testing::ManualClock;
 use domain::{Timestamp, UtcOffset};
-use files::testing::{FnvHasher, MemoryFileSystem};
+use files::testing::{FnvHasher, MemoryFileSystem, MemoryFreeSpace};
 use files::{HashState, Hasher};
 use history::testing::MemoryImportHistory;
 use import::{
@@ -152,6 +152,8 @@ pub(crate) struct Machine {
     counters: MemorySequenceCounters,
     pub(crate) hasher: CountingHasher,
     clock: ManualClock,
+    /// The free space of the destinations (IMPORT-012); unlimited unless a test sets it.
+    pub(crate) free_space: MemoryFreeSpace,
 }
 
 impl Machine {
@@ -164,6 +166,7 @@ impl Machine {
                 Timestamp::from_unix_seconds(NOW),
                 UtcOffset::from_seconds(0).unwrap(),
             ),
+            free_space: MemoryFreeSpace::unlimited(),
         }
     }
 
@@ -195,6 +198,7 @@ impl Machine {
             &self.counters,
             session,
             &self.history,
+            &self.free_space,
         )
     }
 

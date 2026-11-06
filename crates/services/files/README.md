@@ -16,7 +16,8 @@ and computes checksums, and the verified copy that writes every imported file
 Boundaries:
 
 - **Ports only.** The service never calls `std::fs`; `adapter-fs` implements
-  `FileSystem` and `adapter-blake3` implements `Hasher`. Only `testing::TempDir`
+  `FileSystem`, `adapter-blake3` implements `Hasher` and `adapter-free-space`
+  implements `FreeSpace`. Only `testing::TempDir`
   touches the real file system, for adapter tests.
 - **Verified copy.** `copy_verified` reads the source once, hashes it while writing
   `<target>.part`, syncs it with the source's modification time, renames it without
@@ -44,6 +45,7 @@ Boundaries:
 | Item | Meaning |
 |---|---|
 | `FileSystem`, `ReadSeek`, `WriteFile`, `EntryKind`, `FolderEntry` | Port for files and folders, with explicit syncing; files are read from any offset (ADR 0021); folders are listed without following symbolic links (IMPORT-005) |
+| `FreeSpace`, `SpaceOnFileSystem`, `FileSystemId` | Port for the free space and the identity of the file system a folder lies on; a missing folder is answered for its nearest existing parent (ADR 0033) |
 | `Hasher`, `HashState` | Port for a hash function that yields a `domain::Checksum` with its algorithm id |
 | `checksum_file` | Reads a file in full and returns its checksum; used to compare content (IMPORT-003) and to read a copy back |
 | `copy_verified` | Copies one file through a `.part` file and verifies it (IMPORT-004) |
@@ -53,6 +55,8 @@ Boundaries:
 | `testing::FnvHasher` | Non-cryptographic `Hasher` for tests; its checksums are written `fnv:<hex>` |
 | `testing::TempDir` | A temporary folder on the real file system, removed when dropped |
 | `testing::check_file_system`, `testing::FileSystemUnderTest`, `testing::MakeSymbolicLink` | Conformance suite of the `FileSystem` port |
+| `testing::MemoryFreeSpace` | `FreeSpace` with fixed answers per mounted folder, and file systems that do not report their free space |
+| `testing::check_free_space`, `testing::FreeSpaceUnderTest` | Conformance suite of the `FreeSpace` port |
 | `testing::check_hasher`, `testing::HasherUnderTest` | Conformance suite of the `Hasher` port |
 
 ## Dependencies
