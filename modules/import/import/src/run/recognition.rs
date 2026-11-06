@@ -92,8 +92,9 @@ impl ImportRun<'_> {
     }
 
     /// Looks `file` up at its own import destination and at each of its own backup
-    /// destinations, the video ones for a video (IMPORT-013). The source is read for its checksum only when a lookup finds a copy with the same
-    /// name, size and capture time (IMPORT-009.5).
+    /// destinations, the video ones for a video (IMPORT-013). The source is read for its
+    /// checksum only when a lookup finds a copy with the same name, size and capture
+    /// time (IMPORT-009.5).
     ///
     /// The outer error stops the plan: the history cannot be read. The inner one marks
     /// the file: its content cannot be read.

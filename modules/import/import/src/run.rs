@@ -136,7 +136,8 @@ pub enum FilePlan {
     /// Named by the import plan; copied, or found at its target, when the run executes.
     Named(PlannedFile),
     /// The import history holds a verified copy at the file's import destination, the
-    /// video destination for a video (IMPORT-013): the file is not named, gets no sequence number and is not copied (IMPORT-009).
+    /// video destination for a video (IMPORT-013): the file is not named, gets no
+    /// sequence number and is not copied (IMPORT-009).
     ImportedBefore {
         /// The target of the most recent recorded copy, relative to the import
         /// destination.

@@ -29,8 +29,9 @@ pub struct RunLog {
     /// The run.
     pub run: LoggedRun,
     /// The copies: those at the import destination first, then those at the video
-    /// destination when the run has one, then those at each backup destination in the order the run first recorded a copy there; within a
-    /// destination, in the order they were recorded.
+    /// destination when the run has one, then those at each backup destination in the
+    /// order the run first recorded a copy there; within a destination, in the order
+    /// they were recorded.
     pub copies: Vec<CopyRecord>,
 }
 
