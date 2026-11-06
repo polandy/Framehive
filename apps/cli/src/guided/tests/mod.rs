@@ -8,6 +8,7 @@
 
 mod backup;
 mod cameras;
+mod cameras_gone;
 mod environment;
 mod free_space;
 mod history;

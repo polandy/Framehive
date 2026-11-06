@@ -5,16 +5,15 @@
 //! camera that goes during the import.
 
 use std::path::{Path, PathBuf};
-use std::time::Duration;
 
 use domain::Timestamp;
 use files::testing::{MemoryCameras, MemoryFileSystem};
 
 use super::support::{Harness, OCTOBER_17, PICTURES, PRESET_1, Step};
 
-const MODEL: &str = "Fujifilm X-T5";
-const PORT: &str = "usb:002,007";
-const OTHER_PORT: &str = "usb:002,008";
+pub(super) const MODEL: &str = "Fujifilm X-T5";
+pub(super) const PORT: &str = "usb:002,007";
+pub(super) const OTHER_PORT: &str = "usb:002,008";
 const WAITING: &str = "Waiting for a memory card or camera…\n";
 const IN_USE: &str = "The camera Fujifilm X-T5 at usb:002,007 is in use by another program; \
                       close it (the file manager on Linux, ptpcamerad on macOS) and try again.\n\
@@ -22,12 +21,12 @@ const IN_USE: &str = "The camera Fujifilm X-T5 at usb:002,007 is in use by anoth
 const NO_STORAGE: &str = "The camera Fujifilm X-T5 at usb:002,007 shows no storage; unlock it \
                           and choose file transfer (MTP or PTP) on the device, then try again.\n\
                           Try again? [Y/n]: ";
-const REMOVED: &str = "[REMOVED] Fujifilm X-T5\n\
+pub(super) const REMOVED: &str = "[REMOVED] Fujifilm X-T5\n\
                        Fujifilm X-T5 was disconnected during the import. Connect it again to go on.\n";
 
 /// A harness with a remembered destination and preset 1 whose camera holds `photos`
 /// photos below `DCIM`, not yet connected.
-fn with_photos(photos: u8) -> Harness {
+pub(super) fn with_photos(photos: u8) -> Harness {
     let harness = Harness::new();
     harness.remember(Some(PICTURES), Some(PRESET_1), &[]);
     add_photos(&harness.camera_storage, photos);
@@ -35,7 +34,7 @@ fn with_photos(photos: u8) -> Harness {
 }
 
 /// Adds `photos` photos below `DCIM` of one storage of `storage`.
-fn add_photos(storage: &MemoryFileSystem, photos: u8) {
+pub(super) fn add_photos(storage: &MemoryFileSystem, photos: u8) {
     storage.add_folder(Path::new("/store_00010001/DCIM"));
     for number in 1..=photos {
         storage.add_file(
@@ -46,22 +45,25 @@ fn add_photos(storage: &MemoryFileSystem, photos: u8) {
     }
 }
 
-fn photo(number: u8) -> PathBuf {
+pub(super) fn photo(number: u8) -> PathBuf {
     PathBuf::from(format!("/store_00010001/DCIM/100_FUJI/DSCF000{number}.RAF"))
 }
 
-fn imported(number: u8) -> PathBuf {
+pub(super) fn imported(number: u8) -> PathBuf {
     Path::new(PICTURES).join(format!("2026/2026-10-17/DSCF000{number}.RAF"))
 }
 
 /// Changes the connected cameras of `harness`.
-fn change_cameras(harness: &Harness, change: impl FnOnce(MemoryCameras) -> MemoryCameras) {
+pub(super) fn change_cameras(
+    harness: &Harness,
+    change: impl FnOnce(MemoryCameras) -> MemoryCameras,
+) {
     let cameras = harness.cameras.take();
     harness.cameras.replace(change(cameras));
 }
 
 /// Connects the camera of `harness` at [`PORT`].
-fn connect(harness: &Harness) {
+pub(super) fn connect(harness: &Harness) {
     change_cameras(harness, |cameras| {
         cameras.with_camera(MODEL, PORT, &harness.camera_storage)
     });
@@ -75,7 +77,7 @@ fn connect_in_use(harness: &Harness) {
 }
 
 /// Disconnects the camera at [`PORT`].
-fn disconnect(harness: &Harness) {
+pub(super) fn disconnect(harness: &Harness) {
     change_cameras(harness, |cameras| cameras.without_camera(PORT));
 }
 
@@ -282,78 +284,6 @@ fn a_camera_kept_open_stays_open_until_disconnected() {
         output[kept..].contains("[REMOVED] Fujifilm X-T5\n"),
         "{output}"
     );
-}
-
-/// Disconnects the camera at [`PORT`] and makes its storage stop answering.
-fn disconnect_during_import(harness: &Harness) {
-    disconnect(harness);
-    harness.camera_storage.stop_after_operations(0);
-}
-
-/// Connects the camera at [`OTHER_PORT`], with a storage that answers again.
-fn reconnect_elsewhere(harness: &Harness) {
-    let storage = MemoryFileSystem::new();
-    add_photos(&storage, 3);
-    change_cameras(harness, |cameras| {
-        cameras.with_camera(MODEL, OTHER_PORT, &storage)
-    });
-}
-
-/// spec: CLI-014.9
-#[test]
-fn a_camera_disconnected_during_the_import_is_resumed() {
-    let harness = with_photos(3);
-    harness.time_per_copy.set(Duration::from_secs(1));
-    harness
-        .after_copies
-        .set(Some((1, disconnect_during_import)));
-    connect(&harness);
-
-    let transcript = harness.run(vec![
-        Step::Line(""),
-        Step::Tick,
-        Step::Call(reconnect_elsewhere),
-        Step::Tick,
-        Step::Line("y"),
-    ]);
-
-    let output = &transcript.output;
-    let removed = output.find(REMOVED).unwrap();
-    let resumed = &output[removed..];
-    assert!(
-        resumed.contains("[NEW] Fujifilm X-T5 (camera at usb:002,008)\nReading Fujifilm X-T5…\n"),
-        "{output}"
-    );
-    assert!(resumed.contains("2 copied, 1 already imported"), "{output}");
-    assert!(!resumed.contains("[Enter] import"), "{output}");
-    for number in 1..=3 {
-        assert_eq!(
-            harness.memory.content(&imported(number)),
-            Some(vec![number; 1000])
-        );
-    }
-}
-
-/// spec: CLI-014.10
-#[test]
-fn a_camera_that_stops_answering_stops_the_import() {
-    let harness = with_photos(3);
-    harness.time_per_copy.set(Duration::from_secs(1));
-    harness.after_copies.set(Some((1, |harness| {
-        harness.camera_storage.stop_after_operations(0);
-    })));
-    connect(&harness);
-
-    let transcript = harness.run(vec![
-        Step::Line(""),
-        Step::Tick,
-        Step::Call(|harness| assert!(!harness.cameras.borrow().is_open(PORT))),
-    ]);
-
-    let output = &transcript.output;
-    assert!(output.contains(REMOVED), "{output}");
-    assert_eq!(output.matches("[REMOVED] Fujifilm X-T5\n").count(), 1);
-    assert_eq!(harness.memory.content(&imported(2)), None);
 }
 
 /// spec: CLI-014.11
