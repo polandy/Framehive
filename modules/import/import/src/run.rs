@@ -73,8 +73,8 @@ pub struct ImportSettings<'a> {
 /// next one (IMPORT-004.11). Each verified copy is recorded in the import history,
 /// which recognizes the files imported before when the plan is made (IMPORT-009).
 pub struct ImportRun<'a> {
-    /// Reads the source, which the run never writes (ADR 0034). For now it is the
-    /// file system of the destinations.
+    /// Reads the source, which the run never writes (ADR 0034): the file system of
+    /// the destinations, unless [`ImportRun::with_source`] gives one of its own.
     source_file_system: &'a dyn ReadOnlyFileSystem,
     /// Reads and writes the destinations.
     file_system: &'a dyn FileSystem,
@@ -186,6 +186,15 @@ impl<'a> ImportRun<'a> {
             history,
             free_space,
         }
+    }
+
+    /// Reads the source through `source_file_system` instead of the file system of
+    /// the destinations, for a source on a device of its own, such as an opened
+    /// camera (ADR 0034). The run only reads it.
+    #[must_use]
+    pub fn with_source(mut self, source_file_system: &'a dyn ReadOnlyFileSystem) -> Self {
+        self.source_file_system = source_file_system;
+        self
     }
 
     /// Imports every file of `settings.source` that the scan finds, in scan order: the
