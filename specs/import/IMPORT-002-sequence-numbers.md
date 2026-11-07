@@ -1,6 +1,6 @@
 # IMPORT-002 – Sequence numbers
 
-- Status: accepted
+- Status: implemented
 - Module: import
 - Origin: R4, R5, J3
 - Depends on: IMPORT-001, IMPORT-003, IMPORT-015
@@ -188,4 +188,4 @@ card gets the same names again there.
 | 2026-11-04 | Accepted: counters in the state folder (ADR 0029); reserved when an import starts, as there is no queue yet; assets from the grouping, numbered in shooting order; letters end at `zz`; broken counter file stops the import; notice that persisted counters cannot recognize files already imported; criteria 9–15 |
 | 2026-11-04 | Implemented in `naming`, `import`, `adapter-sequence-counters` and `framehive-cli` (CLI-003, CLI-004) |
 | 2026-11-04 | The import history recognizes files imported before (IMPORT-009): the plan notice is removed; criterion 15 now tests the recognition, and criterion 14 an import destination the history does not know |
-| 2026-11-07 | Planned import jobs reserve when enqueued (J3, ADR 0036); criteria 16–17 |
+| 2026-11-07 | Planned import jobs reserve when enqueued (J3, ADR 0036); criteria 16–17; implemented |

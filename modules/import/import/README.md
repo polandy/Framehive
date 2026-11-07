@@ -54,8 +54,8 @@ Boundaries:
   wires the adapters. `ImportRun` runs synchronously on the caller's thread and reports to a
   `ProgressSink`, which it asks before each file whether to go on
   (`should_continue`, IMPORT-004.13); a stopped run sets `ImportSummary::stopped`. It
-  is the body of the import job (IMPORT-015), which runs it on the job queue's worker
-  thread and sends each step to its enqueuer.
+  is the body of the import job (IMPORT-015), which runs it on a worker thread of the
+  job queue and sends each step to its enqueuer.
 - **Never writes to the source** and never replaces a file at the destination
   (ADR 0020 §2). The scan, dating, recognition, conflict resolution and the copy read
   the source only through the `ReadOnlyFileSystem` port (ADR 0034). The source lies on
@@ -82,7 +82,8 @@ Boundaries:
 | `RecentJobCodes`, `MAX_RECENT_JOB_CODES` | The job codes used before, most recent first (IMPORT-006) |
 | `require_job_code`, `MissingJobCode` | Refuses an import whose template uses `{job}` without a job code (IMPORT-006) |
 | `ImportRun`, `ImportSettings` | Scans, plans, starts, resolves and copies, file by file (ADR 0020, IMPORT-004); `with_source` reads the source from its own `ReadOnlyFileSystem`, against which no destination is checked, and `with_source_name` names it in the import history, such as `camera:<model>` (ADR 0034) |
-| `ImportJob`, `ImportJobReports`, `ImportJobEnd`, `ImportPorts`, `ImportJobSettings`, `OwnSource` | An import run as a job of the `jobs` queue (IMPORT-015, ADR 0035): it owns its ports, settings and source; `with_plan` starts from a planned run, `asking_before_each_file` asks the enqueuer whether to go on; `ImportJobReports::follow` shows its reports to a `ProgressSink` and returns the end report with the summary and the source handed back |
+| `ImportJob`, `ImportJobReports`, `ImportJobEnd`, `ImportPorts`, `ImportJobSettings`, `OwnSource` | An import run as a job of the `jobs` queue (IMPORT-015, ADR 0035): it owns its ports, settings and source; `with_plan` starts from a planned run, `asking_before_each_file` asks the enqueuer whether to go on, and a stop request answers "no"; `enqueue` reserves a planned job's sequence range and target names and enqueues it; the job names its source device and destination file systems as resources (ADR 0036); `ImportJobReports::follow` shows its reports to a `ProgressSink` and returns the end report with the summary and the source handed back |
+| `ReservedTargetNames` | The target names the import jobs of one application reserved; another job's name counts as taken (IMPORT-015, ADR 0036 §6) |
 | `SessionSequence` | The session counter of one run of the application (IMPORT-002) |
 | `PlannedRun`, `RunFile`, `FilePlan` | An import run planned and not yet executed: each selected file with its plan entry, imported before, or its dating failure |
 | `ProgressSink`, `NoProgress` | Receives each step of an import run on the caller's thread |

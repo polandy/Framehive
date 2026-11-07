@@ -17,11 +17,14 @@ use files::testing::{FnvHasher, MemoryFileSystem, MemoryFreeSpace};
 use history::testing::MemoryImportHistory;
 use import::{
     ConflictPolicy, FileOutcome, FileReport, ImportJob, ImportJobEnd, ImportJobSettings,
-    ImportPorts, ImportSettings, ImportSummary, ProgressSink, SessionSequence, SourceScan,
+    ImportPorts, ImportSettings, ImportSummary, ProgressSink, ReservedTargetNames, SessionSequence,
+    SourceScan,
 };
 use jobs::{JobId, JobQueue, JobState, JobUpdate};
 use naming::testing::MemorySequenceCounters;
 use naming::{CompatibilityMode, NameTemplate};
+
+pub(crate) mod shared;
 
 use crate::run_support::{DESTINATION, NOW, SOURCE, TEMPLATE};
 
@@ -39,6 +42,7 @@ pub(crate) fn ports(
         session: Arc::new(SessionSequence::new()),
         history: Arc::clone(history) as _,
         free_space: Arc::new(MemoryFreeSpace::unlimited()),
+        reserved_names: Arc::new(ReservedTargetNames::new()),
     }
 }
 

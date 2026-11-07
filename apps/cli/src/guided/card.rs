@@ -234,8 +234,11 @@ impl Dialog<'_> {
         let (job, reports) = source.import_job(ports.import, settings);
         // The job asks before each file, so the progress polls the devices then and a
         // pulled card or camera stops it (CLI-003, CLI-014).
-        self.jobs
-            .enqueue(Box::new(job.with_plan(plan).asking_before_each_file()));
+        let job = job.with_plan(plan).asking_before_each_file();
+        if let Err(error) = job.enqueue(&mut self.jobs) {
+            self.say(&start_error_line(card, &error));
+            return Imported::NotStarted;
+        }
         let context = ImportContext {
             output: &mut *self.output,
             watch: &mut self.watch,

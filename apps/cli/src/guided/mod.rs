@@ -36,7 +36,7 @@ use adapter_sequence_counters::FileSequenceCounters;
 use adapter_sqlite::SqliteImportHistory;
 use devices::DeviceSource;
 use files::{Cameras, FileSystem};
-use import::{ImportPorts, ImportRun, SessionSequence};
+use import::{ImportPorts, ImportRun, ReservedTargetNames, SessionSequence};
 
 use crate::paths::{PathError, canonical_folder};
 use crate::{NOT_STARTED, report_error};
@@ -117,6 +117,7 @@ pub(crate) fn run_guided() -> ExitCode {
         session: Arc::new(SessionSequence::new()),
         history: Arc::new(SqliteImportHistory::new(&environment.state_folder)),
         free_space: Arc::new(StatvfsFreeSpace::new()),
+        reserved_names: Arc::new(ReservedTargetNames::new()),
     };
     let ports = Ports {
         import: &import,

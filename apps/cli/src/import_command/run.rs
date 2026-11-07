@@ -18,7 +18,7 @@ use files::{Cameras, FileSystem, FreeSpace};
 use import::{
     CAMERA_FORMAT_READINESS_NOTE, ImportJob, ImportJobReports, ImportJobSettings, ImportPorts,
     ImportProfile, ImportRun, ImportSettings, ImportSummary, PlannedRun, ProgressSink,
-    SessionSequence, SpaceShortage, scan_source,
+    ReservedTargetNames, SessionSequence, SpaceShortage, scan_source,
 };
 use jobs::JobQueue;
 use naming::CompatibilityMode;
@@ -176,6 +176,7 @@ fn import_ports(state_folder: &Path, free_space: Arc<dyn FreeSpace + Send + Sync
         session: Arc::new(SessionSequence::new()),
         history: Arc::new(SqliteImportHistory::new(state_folder)),
         free_space,
+        reserved_names: Arc::new(ReservedTargetNames::new()),
     }
 }
 
@@ -191,7 +192,8 @@ fn run_job(
     printer: &mut dyn ProgressSink,
 ) -> Result<ImportSummary, NotStarted> {
     let (mut queue, _updates) = JobQueue::start();
-    queue.enqueue(Box::new(job));
+    job.enqueue(&mut queue)
+        .map_err(|error| NotStarted::from(error.to_string()))?;
     let end = reports
         .follow(printer)
         .ok_or_else(|| JOB_ENDED_UNEXPECTEDLY.to_owned())?;

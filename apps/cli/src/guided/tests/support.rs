@@ -18,7 +18,7 @@ use domain::testing::ManualClock;
 use domain::{Timestamp, UtcOffset};
 use files::testing::{FnvHasher, MemoryCameras, MemoryFileSystem, MemoryFreeSpace};
 use files::{EntryKind, FileSystem, FolderEntry, ReadOnlyFileSystem, ReadSeek, WriteFile};
-use import::{ImportPorts, RecentJobCodes, SessionSequence};
+use import::{ImportPorts, RecentJobCodes, ReservedTargetNames, SessionSequence};
 use naming::NameTemplate;
 use naming::testing::MemorySequenceCounters;
 
@@ -221,6 +221,7 @@ impl Harness {
             session: Arc::clone(&self.session),
             history: Arc::clone(&self.history),
             free_space: Arc::new(self.free_space.clone()),
+            reserved_names: Arc::new(ReservedTargetNames::new()),
         };
         let ports = Ports {
             import: &import,

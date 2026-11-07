@@ -1,6 +1,6 @@
 # IMPORT-015 – An import as a job
 
-- Status: accepted
+- Status: implemented
 - Module: import
 - Origin: J1, J3, Q5
 - Depends on: CORE-007, IMPORT-002, IMPORT-003, IMPORT-004, IMPORT-009, IMPORT-014
@@ -193,3 +193,4 @@ asked to stop.
 |---|---|
 | 2026-11-07 | Created (J1, ADR 0035), with starting from a plan and asking before each file |
 | 2026-11-07 | Import jobs reserve at enqueue time, name their resources and run in parallel on separate devices; a job waiting for an answer stops when asked (J3, Q5, ADR 0036); criteria 10–15 |
+| 2026-11-07 | Implemented: `ImportJob::enqueue`, `ReservedTargetNames` and the job's resources |

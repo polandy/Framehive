@@ -34,7 +34,7 @@ pub(super) fn join_target(folder: &str, name: &str) -> String {
 ///
 /// Lowercasing does not preserve a normalization form, so the standard's definition
 /// decomposes the name both before and after it.
-pub(super) fn caseless_key(name: &str) -> String {
+pub(crate) fn caseless_key(name: &str) -> String {
     let decomposed: String = name.nfd().collect();
     decomposed.to_lowercase().nfd().collect()
 }

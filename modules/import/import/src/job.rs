@@ -13,16 +13,18 @@ use std::sync::mpsc::{self, Receiver, Sender};
 use domain::Clock;
 use files::{FileSystem, FreeSpace, Hasher, ReadOnlyFileSystem};
 use history::ImportHistory;
-use jobs::{Job, JobControl, JobEnd};
+use jobs::{Job, JobControl, JobEnd, ResourceKey};
 use naming::{CompatibilityMode, NameTemplate, SequenceCounters};
 
 use crate::conflicts::ConflictPolicy;
 use crate::job_code::JobCode;
 use crate::report::{FileReport, ImportSummary, ProgressSink, RunError};
+use crate::reserved_names::{ReservedNames, ReservedTargetNames};
 use crate::run::{ImportRun, ImportSettings, PlannedRun};
 use crate::scan::SourceScan;
 use crate::sequence::SessionSequence;
 
+mod enqueue;
 mod sending;
 
 use sending::{Answer, SendingSteps};
@@ -46,6 +48,8 @@ pub struct ImportPorts {
     pub history: Arc<dyn ImportHistory + Send + Sync>,
     /// How much the destinations can hold (IMPORT-012).
     pub free_space: Arc<dyn FreeSpace + Send + Sync>,
+    /// The target names the import jobs of this application reserved (IMPORT-015).
+    pub reserved_names: Arc<ReservedTargetNames>,
 }
 
 impl ImportPorts {
@@ -61,6 +65,7 @@ impl ImportPorts {
             &*self.history,
             &*self.free_space,
         )
+        .with_reserved_names(&self.reserved_names, None)
     }
 }
 
@@ -149,6 +154,8 @@ pub struct ImportJob {
     plan: Option<PlannedRun>,
     asks: bool,
     reports: Sender<Report>,
+    /// The target names reserved when the job was enqueued, until it ends.
+    reserved: Option<ReservedNames>,
 }
 
 /// What an import job sends to its enqueuer, in this order.
@@ -174,6 +181,7 @@ impl ImportJob {
             plan: None,
             asks: false,
             reports,
+            reserved: None,
         };
         (job, ImportJobReports { receiver })
     }
@@ -214,11 +222,14 @@ impl ImportJob {
             plan,
             asks,
             reports,
+            reserved,
         } = self;
         let settings = settings.settings();
         let mut steps = SendingSteps::new(&reports, control, asks);
         let result = {
-            let mut run = ports.import_run();
+            let mut run = ports
+                .import_run()
+                .with_reserved_names(&ports.reserved_names, reserved.as_ref());
             if let Some((file_system, name)) = &source {
                 run = run.with_source(&**file_system).with_source_name(name);
             }
@@ -235,12 +246,19 @@ impl ImportJob {
             Err(error) => JobEnd::Failed(error.to_string()),
         };
         let source = source.map(|(file_system, _)| file_system);
+        // Released before the enqueuer hears of the end, so a job it enqueues next
+        // finds the names free.
+        drop(reserved);
         let _ = reports.send(Report::Ended(ImportJobEnd { result, source }));
         end
     }
 }
 
 impl Job for ImportJob {
+    fn resources(&self) -> Vec<ResourceKey> {
+        self.resource_keys()
+    }
+
     fn run(self: Box<Self>, control: &JobControl) -> JobEnd {
         self.import(control)
     }
