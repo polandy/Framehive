@@ -77,3 +77,12 @@ dependencies:
     allowed_layers: [adapter]
     allowed_crates: [adapter-free-space]
     features: []
+
+  - name: libfuzzer-sys
+    purpose: Links LLVM's libFuzzer into the fuzz targets of the EXIF parser, in metadata-fuzz (ADR 0037)
+    rationale: Coverage-guided fuzzing needs a fuzzing engine with compiler instrumentation, a deep problem ADR 0009 assigns to a tool; ADR 0009 accepts our own parser only when it is fuzzed
+    review: By the Rust fuzzing organization (rust-fuzz), the engine behind cargo-fuzz, version 0.4, (MIT OR Apache-2.0) AND NCSA; its build script compiles the libFuzzer C++ sources, accepted in ADR 0037; used only in the fuzz crate outside the main workspace, never linked into the product
+    adr: "0037"
+    allowed_layers: [tooling]
+    allowed_crates: [metadata-fuzz]
+    features: [link_libfuzzer]

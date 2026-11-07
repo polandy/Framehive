@@ -5,3 +5,8 @@
 /result
 /.direnv/
 /.testdata/
+# Built by `cargo xtask fuzz`, kept between nightly runs in the Actions cache (ADR 0037).
+/fuzz/target/
+/fuzz/corpus/
+/fuzz/artifacts/
+/fuzz/coverage/

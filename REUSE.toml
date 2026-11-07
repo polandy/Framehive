@@ -11,6 +11,7 @@ path = [
     "AGENTS.md",
     "CLAUDE.md",
     "Cargo.lock",
+    "fuzz/Cargo.lock",
     "flake.lock",
     "TODO.md",
     ".claude/settings.json",

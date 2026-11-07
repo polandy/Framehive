@@ -19,6 +19,7 @@ mod ci;
 mod ci_failures;
 mod dependencies;
 mod files;
+mod fuzz;
 mod json;
 mod new_adapter;
 mod new_module;
@@ -46,6 +47,7 @@ commands:
   testdata check       testdata.lock is valid (ADR 0027)
   testdata fetch       download and verify the pinned test data (ADR 0017)
   ci-failures [<pr>]   only the failures of a red CI run (needs gh)
+  fuzz [--seconds <n>] fuzz the parsers, in `nix develop .#fuzz` (ADR 0037)
   new-module <id>      generate the two crates of a new module (architecture §4.5)
   new-adapter <port> <name>
                        generate the adapter crate adapter-<name> for a port (architecture §3)";
@@ -55,6 +57,7 @@ fn main() -> ExitCode {
     let root = repository_root();
     let result = match arguments.first().map(String::as_str) {
         Some("ci") => ci::run(&root),
+        Some("fuzz") => fuzz::run(&root, &arguments[1..]),
         Some("ci-failures") => ci_failures::run(&root, arguments.get(1).map(String::as_str)),
         Some("check-architecture") => check_architecture(&root),
         Some("check-dependencies") => check_dependencies(&root),
@@ -96,8 +99,11 @@ fn check_architecture(root: &Path) -> Result<(), String> {
     finish("architecture", &architecture::check(&packages))
 }
 
+/// Checks the main workspace and the fuzz crate, which is a workspace of its own
+/// (ADR 0037 §2).
 fn check_dependencies(root: &Path) -> Result<(), String> {
-    let packages = workspace::load(root)?;
+    let mut packages = workspace::load(root)?;
+    packages.extend(workspace::load(&root.join(fuzz::DIRECTORY))?);
     let path = root.join("dependencies.yaml");
     let text = fs::read_to_string(&path)
         .map_err(|error| format!("cannot read {}: {error}", path.display()))?;
