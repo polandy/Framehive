@@ -162,11 +162,13 @@ impl JobQueue {
         {
             let mut lineup = self.shared.lineup();
             lineup.closing = true;
-            while let Some((id, _job)) = lineup.waiting.pop_front() {
-                lineup.report(id, JobState::Removed);
-            }
+            // The running job is asked first: a frontend that sees a queued job
+            // reported removed can rely on the running one being asked to stop.
             if let Some((_, control)) = &lineup.running {
                 control.request_stop();
+            }
+            while let Some((id, _job)) = lineup.waiting.pop_front() {
+                lineup.report(id, JobState::Removed);
             }
             self.shared.wake.notify_all();
         }
