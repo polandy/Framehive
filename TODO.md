@@ -9,7 +9,6 @@ feature live in its spec, decisions in `docs/adr/`. Add items with `/todo`.
 - [ ] Create the `framehive-testdata` repository and publish the first `.tar.zst` reference set — owner, together with the sample files (ADR 0017, ADR 0027) (2026-11-03)
 - [ ] Extend the module template in `xtask/templates/module/` once the kernel has the `Module` contract, `kernel::testing::module_conformance` and `ui-kit`: implement `Module`, call the conformance suite, add a Slint view (architecture §4.5) (2026-10-19)
 - [ ] Write the job code to XMP as IPTC Job Id (`photoshop:TransmissionReference`, N16) with the XMP milestone (R9, IMPORT-006) — owner decided (2026-11-01)
-- [ ] Add the `cargo public-api` snapshot check for `kernel` and the services (architecture §7, ADR 0004) (2026-11-03)
 - [ ] Make release builds reproducible: `SOURCE_DATE_EPOCH`, `--remap-path-prefix` and a bit-for-bit check in CI, with the first release build (ADR 0007) (2026-11-03)
 - [ ] Store reference pixel hashes for aarch64-darwin in the LibRaw version test — on macOS it compares only sizes until the hashes are measured on a Mac (PREVIEWS-001, ADR 0028) (2026-11-03)
 - [ ] Merge the duplicated `capture_time_text` into one `LocalDateTime` formatter — it exists in both `apps/cli/src/import_log/mod.rs` and `crates/adapters/sqlite/src/text.rs` and both write the ADR 0031 format (ADR 0031, PR #40 review) (2026-11-05)

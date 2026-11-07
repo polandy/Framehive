@@ -1,0 +1,412 @@
+pub mod config
+pub mod config::testing
+pub fn config::testing::check_yaml_parser(&dyn config::YamlParser) -> alloc::vec::Vec<alloc::string::String>
+pub enum config::DefaultValue
+pub config::DefaultValue::Boolean(bool)
+pub config::DefaultValue::Text(&'static str)
+pub config::DefaultValue::WholeNumber(i64)
+impl core::clone::Clone for config::DefaultValue
+pub fn config::DefaultValue::clone(&self) -> config::DefaultValue
+impl core::cmp::Eq for config::DefaultValue
+impl core::cmp::PartialEq for config::DefaultValue
+pub fn config::DefaultValue::eq(&self, &config::DefaultValue) -> bool
+impl core::fmt::Debug for config::DefaultValue
+pub fn config::DefaultValue::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for config::DefaultValue
+impl core::marker::StructuralPartialEq for config::DefaultValue
+impl core::marker::Freeze for config::DefaultValue
+impl core::marker::Send for config::DefaultValue
+impl core::marker::Sync for config::DefaultValue
+impl core::marker::Unpin for config::DefaultValue
+impl core::marker::UnsafeUnpin for config::DefaultValue
+impl core::panic::unwind_safe::RefUnwindSafe for config::DefaultValue
+impl core::panic::unwind_safe::UnwindSafe for config::DefaultValue
+pub enum config::KeyKind
+pub config::KeyKind::Boolean
+pub config::KeyKind::Choice(&'static [&'static str])
+pub config::KeyKind::ListOfText
+pub config::KeyKind::Mapping(&'static [config::Key])
+pub config::KeyKind::Text
+pub config::KeyKind::WholeNumber
+impl core::clone::Clone for config::KeyKind
+pub fn config::KeyKind::clone(&self) -> config::KeyKind
+impl core::cmp::Eq for config::KeyKind
+impl core::cmp::PartialEq for config::KeyKind
+pub fn config::KeyKind::eq(&self, &config::KeyKind) -> bool
+impl core::fmt::Debug for config::KeyKind
+pub fn config::KeyKind::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for config::KeyKind
+impl core::marker::StructuralPartialEq for config::KeyKind
+impl core::marker::Freeze for config::KeyKind
+impl core::marker::Send for config::KeyKind
+impl core::marker::Sync for config::KeyKind
+impl core::marker::Unpin for config::KeyKind
+impl core::marker::UnsafeUnpin for config::KeyKind
+impl core::panic::unwind_safe::RefUnwindSafe for config::KeyKind
+impl core::panic::unwind_safe::UnwindSafe for config::KeyKind
+pub enum config::Kind
+pub config::Kind::Boolean
+pub config::Kind::List
+pub config::Kind::Mapping
+pub config::Kind::Text
+pub config::Kind::WholeNumber
+impl core::clone::Clone for config::Kind
+pub fn config::Kind::clone(&self) -> config::Kind
+impl core::cmp::Eq for config::Kind
+impl core::cmp::PartialEq for config::Kind
+pub fn config::Kind::eq(&self, &config::Kind) -> bool
+impl core::fmt::Debug for config::Kind
+pub fn config::Kind::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for config::Kind
+pub fn config::Kind::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for config::Kind
+pub fn config::Kind::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for config::Kind
+impl core::marker::StructuralPartialEq for config::Kind
+impl core::marker::Freeze for config::Kind
+impl core::marker::Send for config::Kind
+impl core::marker::Sync for config::Kind
+impl core::marker::Unpin for config::Kind
+impl core::marker::UnsafeUnpin for config::Kind
+impl core::panic::unwind_safe::RefUnwindSafe for config::Kind
+impl core::panic::unwind_safe::UnwindSafe for config::Kind
+pub enum config::Problem
+pub config::Problem::AnchorOrAlias
+pub config::Problem::EmptyEntry(alloc::string::String)
+pub config::Problem::Invalid(alloc::string::String)
+pub config::Problem::MergeKey
+pub config::Problem::MissingKey(alloc::string::String)
+pub config::Problem::NoValue(alloc::string::String)
+pub config::Problem::NotAChoice
+pub config::Problem::NotAChoice::choices: &'static [&'static str]
+pub config::Problem::NotAChoice::found: alloc::string::String
+pub config::Problem::NotAMapping
+pub config::Problem::NumberTooLarge(alloc::string::String)
+pub config::Problem::QuoteText(alloc::string::String)
+pub config::Problem::RepeatedKey(alloc::string::String)
+pub config::Problem::SecondDocument
+pub config::Problem::Syntax(alloc::string::String)
+pub config::Problem::Tag
+pub config::Problem::UnknownKey
+pub config::Problem::UnknownKey::key: alloc::string::String
+pub config::Problem::UnknownKey::suggestion: core::option::Option<alloc::string::String>
+pub config::Problem::VersionNotPositive
+pub config::Problem::VersionTooNew
+pub config::Problem::VersionTooNew::highest: u32
+pub config::Problem::VersionTooNew::version: alloc::string::String
+pub config::Problem::WrongKind
+pub config::Problem::WrongKind::expected: config::Kind
+pub config::Problem::WrongKind::found: config::Kind
+impl core::clone::Clone for config::Problem
+pub fn config::Problem::clone(&self) -> config::Problem
+impl core::cmp::Eq for config::Problem
+impl core::cmp::PartialEq for config::Problem
+pub fn config::Problem::eq(&self, &config::Problem) -> bool
+impl core::error::Error for config::Problem
+impl core::fmt::Debug for config::Problem
+pub fn config::Problem::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for config::Problem
+pub fn config::Problem::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for config::Problem
+impl core::marker::Freeze for config::Problem
+impl core::marker::Send for config::Problem
+impl core::marker::Sync for config::Problem
+impl core::marker::Unpin for config::Problem
+impl core::marker::UnsafeUnpin for config::Problem
+impl core::panic::unwind_safe::RefUnwindSafe for config::Problem
+impl core::panic::unwind_safe::UnwindSafe for config::Problem
+pub enum config::ScalarStyle
+pub config::ScalarStyle::Plain
+pub config::ScalarStyle::Quoted
+impl core::clone::Clone for config::ScalarStyle
+pub fn config::ScalarStyle::clone(&self) -> config::ScalarStyle
+impl core::cmp::Eq for config::ScalarStyle
+impl core::cmp::PartialEq for config::ScalarStyle
+pub fn config::ScalarStyle::eq(&self, &config::ScalarStyle) -> bool
+impl core::fmt::Debug for config::ScalarStyle
+pub fn config::ScalarStyle::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for config::ScalarStyle
+pub fn config::ScalarStyle::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for config::ScalarStyle
+impl core::marker::StructuralPartialEq for config::ScalarStyle
+impl core::marker::Freeze for config::ScalarStyle
+impl core::marker::Send for config::ScalarStyle
+impl core::marker::Sync for config::ScalarStyle
+impl core::marker::Unpin for config::ScalarStyle
+impl core::marker::UnsafeUnpin for config::ScalarStyle
+impl core::panic::unwind_safe::RefUnwindSafe for config::ScalarStyle
+impl core::panic::unwind_safe::UnwindSafe for config::ScalarStyle
+pub enum config::YamlParseErrorKind
+pub config::YamlParseErrorKind::AnchorOrAlias
+pub config::YamlParseErrorKind::SecondDocument
+pub config::YamlParseErrorKind::Syntax(alloc::string::String)
+pub config::YamlParseErrorKind::Tag
+impl core::clone::Clone for config::YamlParseErrorKind
+pub fn config::YamlParseErrorKind::clone(&self) -> config::YamlParseErrorKind
+impl core::cmp::Eq for config::YamlParseErrorKind
+impl core::cmp::PartialEq for config::YamlParseErrorKind
+pub fn config::YamlParseErrorKind::eq(&self, &config::YamlParseErrorKind) -> bool
+impl core::fmt::Debug for config::YamlParseErrorKind
+pub fn config::YamlParseErrorKind::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for config::YamlParseErrorKind
+impl core::marker::Freeze for config::YamlParseErrorKind
+impl core::marker::Send for config::YamlParseErrorKind
+impl core::marker::Sync for config::YamlParseErrorKind
+impl core::marker::Unpin for config::YamlParseErrorKind
+impl core::marker::UnsafeUnpin for config::YamlParseErrorKind
+impl core::panic::unwind_safe::RefUnwindSafe for config::YamlParseErrorKind
+impl core::panic::unwind_safe::UnwindSafe for config::YamlParseErrorKind
+pub enum config::YamlValue
+pub config::YamlValue::Mapping(alloc::vec::Vec<config::YamlEntry>)
+pub config::YamlValue::Scalar
+pub config::YamlValue::Scalar::style: config::ScalarStyle
+pub config::YamlValue::Scalar::text: alloc::string::String
+pub config::YamlValue::Sequence(alloc::vec::Vec<config::YamlNode>)
+impl core::clone::Clone for config::YamlValue
+pub fn config::YamlValue::clone(&self) -> config::YamlValue
+impl core::cmp::Eq for config::YamlValue
+impl core::cmp::PartialEq for config::YamlValue
+pub fn config::YamlValue::eq(&self, &config::YamlValue) -> bool
+impl core::fmt::Debug for config::YamlValue
+pub fn config::YamlValue::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for config::YamlValue
+impl core::marker::Freeze for config::YamlValue
+impl core::marker::Send for config::YamlValue
+impl core::marker::Sync for config::YamlValue
+impl core::marker::Unpin for config::YamlValue
+impl core::marker::UnsafeUnpin for config::YamlValue
+impl core::panic::unwind_safe::RefUnwindSafe for config::YamlValue
+impl core::panic::unwind_safe::UnwindSafe for config::YamlValue
+pub struct config::ConfigError
+pub config::ConfigError::file: alloc::string::String
+pub config::ConfigError::position: config::Position
+pub config::ConfigError::problem: config::Problem
+impl core::clone::Clone for config::ConfigError
+pub fn config::ConfigError::clone(&self) -> config::ConfigError
+impl core::cmp::Eq for config::ConfigError
+impl core::cmp::PartialEq for config::ConfigError
+pub fn config::ConfigError::eq(&self, &config::ConfigError) -> bool
+impl core::error::Error for config::ConfigError
+impl core::fmt::Debug for config::ConfigError
+pub fn config::ConfigError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for config::ConfigError
+pub fn config::ConfigError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for config::ConfigError
+impl core::marker::Freeze for config::ConfigError
+impl core::marker::Send for config::ConfigError
+impl core::marker::Sync for config::ConfigError
+impl core::marker::Unpin for config::ConfigError
+impl core::marker::UnsafeUnpin for config::ConfigError
+impl core::panic::unwind_safe::RefUnwindSafe for config::ConfigError
+impl core::panic::unwind_safe::UnwindSafe for config::ConfigError
+pub struct config::ConfigFile
+impl config::ConfigFile
+pub fn config::ConfigFile::error_at(&self, config::Position, impl core::convert::Into<alloc::string::String>) -> config::ConfigError
+pub fn config::ConfigFile::file(&self) -> &str
+pub fn config::ConfigFile::schema_version(&self) -> u32
+pub fn config::ConfigFile::values(&self) -> &config::Values
+impl core::clone::Clone for config::ConfigFile
+pub fn config::ConfigFile::clone(&self) -> config::ConfigFile
+impl core::cmp::Eq for config::ConfigFile
+impl core::cmp::PartialEq for config::ConfigFile
+pub fn config::ConfigFile::eq(&self, &config::ConfigFile) -> bool
+impl core::fmt::Debug for config::ConfigFile
+pub fn config::ConfigFile::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for config::ConfigFile
+impl core::marker::Freeze for config::ConfigFile
+impl core::marker::Send for config::ConfigFile
+impl core::marker::Sync for config::ConfigFile
+impl core::marker::Unpin for config::ConfigFile
+impl core::marker::UnsafeUnpin for config::ConfigFile
+impl core::panic::unwind_safe::RefUnwindSafe for config::ConfigFile
+impl core::panic::unwind_safe::UnwindSafe for config::ConfigFile
+pub struct config::FileType
+impl config::FileType
+pub const fn config::FileType::highest_version(&self) -> u32
+pub const fn config::FileType::keys(&self) -> &'static [config::Key]
+pub const fn config::FileType::name(&self) -> &'static str
+pub const fn config::FileType::new(&'static str, u32, &'static [config::Key]) -> Self
+impl core::clone::Clone for config::FileType
+pub fn config::FileType::clone(&self) -> config::FileType
+impl core::cmp::Eq for config::FileType
+impl core::cmp::PartialEq for config::FileType
+pub fn config::FileType::eq(&self, &config::FileType) -> bool
+impl core::fmt::Debug for config::FileType
+pub fn config::FileType::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for config::FileType
+impl core::marker::StructuralPartialEq for config::FileType
+impl core::marker::Freeze for config::FileType
+impl core::marker::Send for config::FileType
+impl core::marker::Sync for config::FileType
+impl core::marker::Unpin for config::FileType
+impl core::marker::UnsafeUnpin for config::FileType
+impl core::panic::unwind_safe::RefUnwindSafe for config::FileType
+impl core::panic::unwind_safe::UnwindSafe for config::FileType
+pub struct config::Key
+impl config::Key
+pub const fn config::Key::boolean(&'static str, &'static str) -> Self
+pub const fn config::Key::choice(&'static str, &'static str, &'static [&'static str]) -> Self
+pub const fn config::Key::default(&self) -> core::option::Option<config::DefaultValue>
+pub const fn config::Key::description(&self) -> &'static str
+pub const fn config::Key::is_required(&self) -> bool
+pub const fn config::Key::kind(&self) -> config::KeyKind
+pub const fn config::Key::list_of_text(&'static str, &'static str) -> Self
+pub const fn config::Key::mapping(&'static str, &'static str, &'static [config::Key]) -> Self
+pub const fn config::Key::name(&self) -> &'static str
+pub const fn config::Key::required(self) -> Self
+pub const fn config::Key::text(&'static str, &'static str) -> Self
+pub const fn config::Key::whole_number(&'static str, &'static str) -> Self
+pub const fn config::Key::with_default(self, config::DefaultValue) -> Self
+impl core::clone::Clone for config::Key
+pub fn config::Key::clone(&self) -> config::Key
+impl core::cmp::Eq for config::Key
+impl core::cmp::PartialEq for config::Key
+pub fn config::Key::eq(&self, &config::Key) -> bool
+impl core::fmt::Debug for config::Key
+pub fn config::Key::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for config::Key
+impl core::marker::StructuralPartialEq for config::Key
+impl core::marker::Freeze for config::Key
+impl core::marker::Send for config::Key
+impl core::marker::Sync for config::Key
+impl core::marker::Unpin for config::Key
+impl core::marker::UnsafeUnpin for config::Key
+impl core::panic::unwind_safe::RefUnwindSafe for config::Key
+impl core::panic::unwind_safe::UnwindSafe for config::Key
+pub struct config::Located<T>
+pub config::Located::position: config::Position
+pub config::Located::value: T
+impl<T: core::clone::Clone> core::clone::Clone for config::Located<T>
+pub fn config::Located<T>::clone(&self) -> config::Located<T>
+impl<T: core::cmp::Eq> core::cmp::Eq for config::Located<T>
+impl<T: core::cmp::PartialEq> core::cmp::PartialEq for config::Located<T>
+pub fn config::Located<T>::eq(&self, &config::Located<T>) -> bool
+impl<T: core::cmp::PartialEq> core::marker::StructuralPartialEq for config::Located<T>
+impl<T: core::fmt::Debug> core::fmt::Debug for config::Located<T>
+pub fn config::Located<T>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<T: core::hash::Hash> core::hash::Hash for config::Located<T>
+pub fn config::Located<T>::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl<T: core::marker::Copy> core::marker::Copy for config::Located<T>
+impl<T> core::marker::Freeze for config::Located<T> where T: core::marker::Freeze
+impl<T> core::marker::Send for config::Located<T> where T: core::marker::Send
+impl<T> core::marker::Sync for config::Located<T> where T: core::marker::Sync
+impl<T> core::marker::Unpin for config::Located<T> where T: core::marker::Unpin
+impl<T> core::marker::UnsafeUnpin for config::Located<T> where T: core::marker::UnsafeUnpin
+impl<T> core::panic::unwind_safe::RefUnwindSafe for config::Located<T> where T: core::panic::unwind_safe::RefUnwindSafe
+impl<T> core::panic::unwind_safe::UnwindSafe for config::Located<T> where T: core::panic::unwind_safe::UnwindSafe
+pub struct config::Position
+pub config::Position::column: usize
+pub config::Position::line: usize
+impl config::Position
+pub const config::Position::START: config::Position
+pub const fn config::Position::new(usize, usize) -> Self
+impl core::clone::Clone for config::Position
+pub fn config::Position::clone(&self) -> config::Position
+impl core::cmp::Eq for config::Position
+impl core::cmp::Ord for config::Position
+pub fn config::Position::cmp(&self, &config::Position) -> core::cmp::Ordering
+impl core::cmp::PartialEq for config::Position
+pub fn config::Position::eq(&self, &config::Position) -> bool
+impl core::cmp::PartialOrd for config::Position
+pub fn config::Position::partial_cmp(&self, &config::Position) -> core::option::Option<core::cmp::Ordering>
+impl core::fmt::Debug for config::Position
+pub fn config::Position::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for config::Position
+pub fn config::Position::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for config::Position
+pub fn config::Position::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for config::Position
+impl core::marker::StructuralPartialEq for config::Position
+impl core::marker::Freeze for config::Position
+impl core::marker::Send for config::Position
+impl core::marker::Sync for config::Position
+impl core::marker::Unpin for config::Position
+impl core::marker::UnsafeUnpin for config::Position
+impl core::panic::unwind_safe::RefUnwindSafe for config::Position
+impl core::panic::unwind_safe::UnwindSafe for config::Position
+pub struct config::Values
+impl config::Values
+pub fn config::Values::boolean(&self, &str) -> core::option::Option<config::Located<bool>>
+pub fn config::Values::mapping(&self, &str) -> core::option::Option<&config::Values>
+pub fn config::Values::position(&self) -> config::Position
+pub fn config::Values::position_of(&self, &str) -> core::option::Option<config::Position>
+pub fn config::Values::text(&self, &str) -> core::option::Option<&config::Located<alloc::string::String>>
+pub fn config::Values::text_list(&self, &str) -> core::option::Option<&[config::Located<alloc::string::String>]>
+pub fn config::Values::text_or_default(&self, &str) -> core::option::Option<&str>
+pub fn config::Values::whole_number(&self, &str) -> core::option::Option<config::Located<i64>>
+impl core::clone::Clone for config::Values
+pub fn config::Values::clone(&self) -> config::Values
+impl core::cmp::Eq for config::Values
+impl core::cmp::PartialEq for config::Values
+pub fn config::Values::eq(&self, &config::Values) -> bool
+impl core::fmt::Debug for config::Values
+pub fn config::Values::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for config::Values
+impl core::marker::Freeze for config::Values
+impl core::marker::Send for config::Values
+impl core::marker::Sync for config::Values
+impl core::marker::Unpin for config::Values
+impl core::marker::UnsafeUnpin for config::Values
+impl core::panic::unwind_safe::RefUnwindSafe for config::Values
+impl core::panic::unwind_safe::UnwindSafe for config::Values
+pub struct config::YamlEntry
+pub config::YamlEntry::key: config::YamlNode
+pub config::YamlEntry::value: config::YamlNode
+impl core::clone::Clone for config::YamlEntry
+pub fn config::YamlEntry::clone(&self) -> config::YamlEntry
+impl core::cmp::Eq for config::YamlEntry
+impl core::cmp::PartialEq for config::YamlEntry
+pub fn config::YamlEntry::eq(&self, &config::YamlEntry) -> bool
+impl core::fmt::Debug for config::YamlEntry
+pub fn config::YamlEntry::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for config::YamlEntry
+impl core::marker::Freeze for config::YamlEntry
+impl core::marker::Send for config::YamlEntry
+impl core::marker::Sync for config::YamlEntry
+impl core::marker::Unpin for config::YamlEntry
+impl core::marker::UnsafeUnpin for config::YamlEntry
+impl core::panic::unwind_safe::RefUnwindSafe for config::YamlEntry
+impl core::panic::unwind_safe::UnwindSafe for config::YamlEntry
+pub struct config::YamlNode
+pub config::YamlNode::position: config::Position
+pub config::YamlNode::value: config::YamlValue
+impl config::YamlNode
+pub fn config::YamlNode::plain(config::Position, &str) -> Self
+pub fn config::YamlNode::quoted(config::Position, &str) -> Self
+impl core::clone::Clone for config::YamlNode
+pub fn config::YamlNode::clone(&self) -> config::YamlNode
+impl core::cmp::Eq for config::YamlNode
+impl core::cmp::PartialEq for config::YamlNode
+pub fn config::YamlNode::eq(&self, &config::YamlNode) -> bool
+impl core::fmt::Debug for config::YamlNode
+pub fn config::YamlNode::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for config::YamlNode
+impl core::marker::Freeze for config::YamlNode
+impl core::marker::Send for config::YamlNode
+impl core::marker::Sync for config::YamlNode
+impl core::marker::Unpin for config::YamlNode
+impl core::marker::UnsafeUnpin for config::YamlNode
+impl core::panic::unwind_safe::RefUnwindSafe for config::YamlNode
+impl core::panic::unwind_safe::UnwindSafe for config::YamlNode
+pub struct config::YamlParseError
+pub config::YamlParseError::kind: config::YamlParseErrorKind
+pub config::YamlParseError::position: config::Position
+impl core::clone::Clone for config::YamlParseError
+pub fn config::YamlParseError::clone(&self) -> config::YamlParseError
+impl core::cmp::Eq for config::YamlParseError
+impl core::cmp::PartialEq for config::YamlParseError
+pub fn config::YamlParseError::eq(&self, &config::YamlParseError) -> bool
+impl core::fmt::Debug for config::YamlParseError
+pub fn config::YamlParseError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for config::YamlParseError
+impl core::marker::Freeze for config::YamlParseError
+impl core::marker::Send for config::YamlParseError
+impl core::marker::Sync for config::YamlParseError
+impl core::marker::Unpin for config::YamlParseError
+impl core::marker::UnsafeUnpin for config::YamlParseError
+impl core::panic::unwind_safe::RefUnwindSafe for config::YamlParseError
+impl core::panic::unwind_safe::UnwindSafe for config::YamlParseError
+pub trait config::YamlParser
+pub fn config::YamlParser::parse(&self, &str) -> core::result::Result<core::option::Option<config::YamlNode>, config::YamlParseError>
+pub fn config::json_schema(&config::FileType, &str) -> alloc::string::String
+pub fn config::read(&dyn config::YamlParser, &config::FileType, &str, &str) -> core::result::Result<config::ConfigFile, config::ConfigError>

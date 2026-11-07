@@ -1,0 +1,119 @@
+pub mod previews
+pub mod previews::testing
+pub struct previews::testing::MemoryPreviewDecoder
+impl previews::testing::MemoryPreviewDecoder
+pub const previews::testing::MemoryPreviewDecoder::VERSION: &str
+pub fn previews::testing::MemoryPreviewDecoder::insert_corrupt(&mut self, impl core::convert::Into<std::path::PathBuf>, &str)
+pub fn previews::testing::MemoryPreviewDecoder::insert_image(&mut self, impl core::convert::Into<std::path::PathBuf>, previews::DecodedImage)
+pub fn previews::testing::MemoryPreviewDecoder::insert_unsupported(&mut self, impl core::convert::Into<std::path::PathBuf>)
+pub fn previews::testing::MemoryPreviewDecoder::new() -> Self
+impl core::default::Default for previews::testing::MemoryPreviewDecoder
+pub fn previews::testing::MemoryPreviewDecoder::default() -> previews::testing::MemoryPreviewDecoder
+impl core::fmt::Debug for previews::testing::MemoryPreviewDecoder
+pub fn previews::testing::MemoryPreviewDecoder::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl previews::PreviewDecoder for previews::testing::MemoryPreviewDecoder
+pub fn previews::testing::MemoryPreviewDecoder::decode_full(&self, &std::path::Path, previews::DecodeMode) -> core::result::Result<previews::DecodedImage, previews::DecodeError>
+pub fn previews::testing::MemoryPreviewDecoder::version(&self) -> alloc::string::String
+impl core::marker::Freeze for previews::testing::MemoryPreviewDecoder
+impl core::marker::Send for previews::testing::MemoryPreviewDecoder
+impl core::marker::Sync for previews::testing::MemoryPreviewDecoder
+impl core::marker::Unpin for previews::testing::MemoryPreviewDecoder
+impl core::marker::UnsafeUnpin for previews::testing::MemoryPreviewDecoder
+impl core::panic::unwind_safe::RefUnwindSafe for previews::testing::MemoryPreviewDecoder
+impl core::panic::unwind_safe::UnwindSafe for previews::testing::MemoryPreviewDecoder
+pub trait previews::testing::PreviewDecoderUnderTest
+pub fn previews::testing::PreviewDecoderUnderTest::decoder(&self) -> &dyn previews::PreviewDecoder
+pub fn previews::testing::PreviewDecoderUnderTest::missing_path(&self) -> std::path::PathBuf
+pub fn previews::testing::PreviewDecoderUnderTest::supported_file(&self) -> std::path::PathBuf
+pub fn previews::testing::PreviewDecoderUnderTest::truncated_file(&self) -> std::path::PathBuf
+pub fn previews::testing::PreviewDecoderUnderTest::unsupported_file(&self) -> std::path::PathBuf
+pub fn previews::testing::check_preview_decoder(&dyn previews::testing::PreviewDecoderUnderTest) -> alloc::vec::Vec<alloc::string::String>
+pub enum previews::DecodeError
+pub previews::DecodeError::Corrupt
+pub previews::DecodeError::Corrupt::message: alloc::string::String
+pub previews::DecodeError::Corrupt::path: std::path::PathBuf
+pub previews::DecodeError::Failed
+pub previews::DecodeError::Failed::message: alloc::string::String
+pub previews::DecodeError::Failed::path: std::path::PathBuf
+pub previews::DecodeError::Io
+pub previews::DecodeError::Io::path: std::path::PathBuf
+pub previews::DecodeError::Io::source: core::io::error::Error
+pub previews::DecodeError::UnsupportedFormat
+pub previews::DecodeError::UnsupportedFormat::path: std::path::PathBuf
+impl core::error::Error for previews::DecodeError
+pub fn previews::DecodeError::source(&self) -> core::option::Option<&(dyn core::error::Error + 'static)>
+impl core::fmt::Debug for previews::DecodeError
+pub fn previews::DecodeError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for previews::DecodeError
+pub fn previews::DecodeError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for previews::DecodeError
+impl core::marker::Send for previews::DecodeError
+impl core::marker::Sync for previews::DecodeError
+impl core::marker::Unpin for previews::DecodeError
+impl core::marker::UnsafeUnpin for previews::DecodeError
+impl !core::panic::unwind_safe::RefUnwindSafe for previews::DecodeError
+impl !core::panic::unwind_safe::UnwindSafe for previews::DecodeError
+pub enum previews::DecodeMode
+pub previews::DecodeMode::Interactive
+pub previews::DecodeMode::Reference
+impl core::clone::Clone for previews::DecodeMode
+pub fn previews::DecodeMode::clone(&self) -> previews::DecodeMode
+impl core::cmp::Eq for previews::DecodeMode
+impl core::cmp::PartialEq for previews::DecodeMode
+pub fn previews::DecodeMode::eq(&self, &previews::DecodeMode) -> bool
+impl core::fmt::Debug for previews::DecodeMode
+pub fn previews::DecodeMode::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for previews::DecodeMode
+impl core::marker::StructuralPartialEq for previews::DecodeMode
+impl core::marker::Freeze for previews::DecodeMode
+impl core::marker::Send for previews::DecodeMode
+impl core::marker::Sync for previews::DecodeMode
+impl core::marker::Unpin for previews::DecodeMode
+impl core::marker::UnsafeUnpin for previews::DecodeMode
+impl core::panic::unwind_safe::RefUnwindSafe for previews::DecodeMode
+impl core::panic::unwind_safe::UnwindSafe for previews::DecodeMode
+pub struct previews::DecodedImage
+impl previews::DecodedImage
+pub fn previews::DecodedImage::height(&self) -> u32
+pub fn previews::DecodedImage::new(u32, u32, alloc::vec::Vec<u16>) -> core::result::Result<Self, previews::ImageLayoutError>
+pub fn previews::DecodedImage::sample_bytes(&self) -> alloc::vec::Vec<u8>
+pub fn previews::DecodedImage::samples(&self) -> &[u16]
+pub fn previews::DecodedImage::width(&self) -> u32
+impl core::clone::Clone for previews::DecodedImage
+pub fn previews::DecodedImage::clone(&self) -> previews::DecodedImage
+impl core::cmp::Eq for previews::DecodedImage
+impl core::cmp::PartialEq for previews::DecodedImage
+pub fn previews::DecodedImage::eq(&self, &previews::DecodedImage) -> bool
+impl core::fmt::Debug for previews::DecodedImage
+pub fn previews::DecodedImage::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for previews::DecodedImage
+impl core::marker::Freeze for previews::DecodedImage
+impl core::marker::Send for previews::DecodedImage
+impl core::marker::Sync for previews::DecodedImage
+impl core::marker::Unpin for previews::DecodedImage
+impl core::marker::UnsafeUnpin for previews::DecodedImage
+impl core::panic::unwind_safe::RefUnwindSafe for previews::DecodedImage
+impl core::panic::unwind_safe::UnwindSafe for previews::DecodedImage
+pub struct previews::ImageLayoutError
+impl core::cmp::Eq for previews::ImageLayoutError
+impl core::cmp::PartialEq for previews::ImageLayoutError
+pub fn previews::ImageLayoutError::eq(&self, &previews::ImageLayoutError) -> bool
+impl core::error::Error for previews::ImageLayoutError
+impl core::fmt::Debug for previews::ImageLayoutError
+pub fn previews::ImageLayoutError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for previews::ImageLayoutError
+pub fn previews::ImageLayoutError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for previews::ImageLayoutError
+impl core::marker::Freeze for previews::ImageLayoutError
+impl core::marker::Send for previews::ImageLayoutError
+impl core::marker::Sync for previews::ImageLayoutError
+impl core::marker::Unpin for previews::ImageLayoutError
+impl core::marker::UnsafeUnpin for previews::ImageLayoutError
+impl core::panic::unwind_safe::RefUnwindSafe for previews::ImageLayoutError
+impl core::panic::unwind_safe::UnwindSafe for previews::ImageLayoutError
+pub trait previews::PreviewDecoder
+pub fn previews::PreviewDecoder::decode_full(&self, &std::path::Path, previews::DecodeMode) -> core::result::Result<previews::DecodedImage, previews::DecodeError>
+pub fn previews::PreviewDecoder::version(&self) -> alloc::string::String
+impl previews::PreviewDecoder for previews::testing::MemoryPreviewDecoder
+pub fn previews::testing::MemoryPreviewDecoder::decode_full(&self, &std::path::Path, previews::DecodeMode) -> core::result::Result<previews::DecodedImage, previews::DecodeError>
+pub fn previews::testing::MemoryPreviewDecoder::version(&self) -> alloc::string::String

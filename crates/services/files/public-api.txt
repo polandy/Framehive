@@ -1,0 +1,494 @@
+pub mod files
+pub mod files::testing
+pub enum files::testing::Fault
+pub files::testing::Fault::ListFails
+pub files::testing::Fault::OtherProgramCreates
+pub files::testing::Fault::OtherProgramCreates::content: alloc::vec::Vec<u8>
+pub files::testing::Fault::OtherProgramCreates::path: std::path::PathBuf
+pub files::testing::Fault::ReadFails
+pub files::testing::Fault::ReadFails::after_bytes: usize
+pub files::testing::Fault::ReadReturnsDifferentBytes
+pub files::testing::Fault::WriteFails
+pub files::testing::Fault::WriteFails::after_bytes: usize
+impl core::clone::Clone for files::testing::Fault
+pub fn files::testing::Fault::clone(&self) -> files::testing::Fault
+impl core::cmp::Eq for files::testing::Fault
+impl core::cmp::PartialEq for files::testing::Fault
+pub fn files::testing::Fault::eq(&self, &files::testing::Fault) -> bool
+impl core::fmt::Debug for files::testing::Fault
+pub fn files::testing::Fault::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for files::testing::Fault
+impl core::marker::Freeze for files::testing::Fault
+impl core::marker::Send for files::testing::Fault
+impl core::marker::Sync for files::testing::Fault
+impl core::marker::Unpin for files::testing::Fault
+impl core::marker::UnsafeUnpin for files::testing::Fault
+impl core::panic::unwind_safe::RefUnwindSafe for files::testing::Fault
+impl core::panic::unwind_safe::UnwindSafe for files::testing::Fault
+pub struct files::testing::CamerasUnderTest<'a>
+pub files::testing::CamerasUnderTest::add_file: &'a files::testing::AddFile<'a>
+pub files::testing::CamerasUnderTest::add_folder: &'a files::testing::AddFolder<'a>
+pub files::testing::CamerasUnderTest::cameras: &'a dyn files::Cameras
+pub files::testing::CamerasUnderTest::missing_port: &'a str
+pub files::testing::CamerasUnderTest::port: &'a str
+impl<'a> core::marker::Freeze for files::testing::CamerasUnderTest<'a>
+impl<'a> !core::marker::Send for files::testing::CamerasUnderTest<'a>
+impl<'a> !core::marker::Sync for files::testing::CamerasUnderTest<'a>
+impl<'a> core::marker::Unpin for files::testing::CamerasUnderTest<'a>
+impl<'a> core::marker::UnsafeUnpin for files::testing::CamerasUnderTest<'a>
+impl<'a> !core::panic::unwind_safe::RefUnwindSafe for files::testing::CamerasUnderTest<'a>
+impl<'a> !core::panic::unwind_safe::UnwindSafe for files::testing::CamerasUnderTest<'a>
+pub struct files::testing::FileSystemUnderTest<'a>
+pub files::testing::FileSystemUnderTest::crash: core::option::Option<&'a dyn core::ops::function::Fn()>
+pub files::testing::FileSystemUnderTest::file_system: &'a dyn files::FileSystem
+pub files::testing::FileSystemUnderTest::make_symbolic_link: core::option::Option<&'a files::testing::MakeSymbolicLink<'a>>
+pub files::testing::FileSystemUnderTest::root: &'a std::path::Path
+impl<'a> core::marker::Freeze for files::testing::FileSystemUnderTest<'a>
+impl<'a> !core::marker::Send for files::testing::FileSystemUnderTest<'a>
+impl<'a> !core::marker::Sync for files::testing::FileSystemUnderTest<'a>
+impl<'a> core::marker::Unpin for files::testing::FileSystemUnderTest<'a>
+impl<'a> core::marker::UnsafeUnpin for files::testing::FileSystemUnderTest<'a>
+impl<'a> !core::panic::unwind_safe::RefUnwindSafe for files::testing::FileSystemUnderTest<'a>
+impl<'a> !core::panic::unwind_safe::UnwindSafe for files::testing::FileSystemUnderTest<'a>
+pub struct files::testing::FnvHasher
+impl files::testing::FnvHasher
+pub const files::testing::FnvHasher::ALGORITHM: &'static str
+impl core::clone::Clone for files::testing::FnvHasher
+pub fn files::testing::FnvHasher::clone(&self) -> files::testing::FnvHasher
+impl core::default::Default for files::testing::FnvHasher
+pub fn files::testing::FnvHasher::default() -> files::testing::FnvHasher
+impl core::fmt::Debug for files::testing::FnvHasher
+pub fn files::testing::FnvHasher::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for files::testing::FnvHasher
+impl files::Hasher for files::testing::FnvHasher
+pub fn files::testing::FnvHasher::start(&self) -> alloc::boxed::Box<dyn files::HashState>
+impl core::marker::Freeze for files::testing::FnvHasher
+impl core::marker::Send for files::testing::FnvHasher
+impl core::marker::Sync for files::testing::FnvHasher
+impl core::marker::Unpin for files::testing::FnvHasher
+impl core::marker::UnsafeUnpin for files::testing::FnvHasher
+impl core::panic::unwind_safe::RefUnwindSafe for files::testing::FnvHasher
+impl core::panic::unwind_safe::UnwindSafe for files::testing::FnvHasher
+pub struct files::testing::FreeSpaceUnderTest<'a>
+pub files::testing::FreeSpaceUnderTest::folder: &'a std::path::Path
+pub files::testing::FreeSpaceUnderTest::free_space: &'a dyn files::FreeSpace
+impl<'a> core::marker::Freeze for files::testing::FreeSpaceUnderTest<'a>
+impl<'a> !core::marker::Send for files::testing::FreeSpaceUnderTest<'a>
+impl<'a> !core::marker::Sync for files::testing::FreeSpaceUnderTest<'a>
+impl<'a> core::marker::Unpin for files::testing::FreeSpaceUnderTest<'a>
+impl<'a> core::marker::UnsafeUnpin for files::testing::FreeSpaceUnderTest<'a>
+impl<'a> !core::panic::unwind_safe::RefUnwindSafe for files::testing::FreeSpaceUnderTest<'a>
+impl<'a> !core::panic::unwind_safe::UnwindSafe for files::testing::FreeSpaceUnderTest<'a>
+pub struct files::testing::HasherUnderTest<'a>
+pub files::testing::HasherUnderTest::algorithm: &'a str
+pub files::testing::HasherUnderTest::hasher: &'a dyn files::Hasher
+pub files::testing::HasherUnderTest::known_checksums: &'a [(&'a [u8], &'a str)]
+impl<'a> core::marker::Freeze for files::testing::HasherUnderTest<'a>
+impl<'a> !core::marker::Send for files::testing::HasherUnderTest<'a>
+impl<'a> !core::marker::Sync for files::testing::HasherUnderTest<'a>
+impl<'a> core::marker::Unpin for files::testing::HasherUnderTest<'a>
+impl<'a> core::marker::UnsafeUnpin for files::testing::HasherUnderTest<'a>
+impl<'a> !core::panic::unwind_safe::RefUnwindSafe for files::testing::HasherUnderTest<'a>
+impl<'a> !core::panic::unwind_safe::UnwindSafe for files::testing::HasherUnderTest<'a>
+pub struct files::testing::MemoryCameras
+impl files::testing::MemoryCameras
+pub fn files::testing::MemoryCameras::is_open(&self, &str) -> bool
+pub fn files::testing::MemoryCameras::new() -> Self
+pub fn files::testing::MemoryCameras::with_camera(self, &str, &str, &files::testing::MemoryFileSystem) -> Self
+pub fn files::testing::MemoryCameras::with_camera_in_use(self, &str, &str, &str) -> Self
+pub fn files::testing::MemoryCameras::with_list_failure(self, &str) -> Self
+pub fn files::testing::MemoryCameras::without_camera(self, &str) -> Self
+impl core::clone::Clone for files::testing::MemoryCameras
+pub fn files::testing::MemoryCameras::clone(&self) -> files::testing::MemoryCameras
+impl core::default::Default for files::testing::MemoryCameras
+pub fn files::testing::MemoryCameras::default() -> files::testing::MemoryCameras
+impl core::fmt::Debug for files::testing::MemoryCameras
+pub fn files::testing::MemoryCameras::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl files::Cameras for files::testing::MemoryCameras
+pub fn files::testing::MemoryCameras::list(&self) -> core::result::Result<alloc::vec::Vec<files::Camera>, files::CameraError>
+pub fn files::testing::MemoryCameras::open(&self, &str) -> core::result::Result<alloc::boxed::Box<(dyn files::ReadOnlyFileSystem + core::marker::Send)>, files::CameraError>
+impl core::marker::Freeze for files::testing::MemoryCameras
+impl core::marker::Send for files::testing::MemoryCameras
+impl core::marker::Sync for files::testing::MemoryCameras
+impl core::marker::Unpin for files::testing::MemoryCameras
+impl core::marker::UnsafeUnpin for files::testing::MemoryCameras
+impl core::panic::unwind_safe::RefUnwindSafe for files::testing::MemoryCameras
+impl core::panic::unwind_safe::UnwindSafe for files::testing::MemoryCameras
+pub struct files::testing::MemoryFileSystem
+impl files::testing::MemoryFileSystem
+pub fn files::testing::MemoryFileSystem::add_file(&self, &std::path::Path, &[u8], domain::time::Timestamp)
+pub fn files::testing::MemoryFileSystem::add_folder(&self, &std::path::Path)
+pub fn files::testing::MemoryFileSystem::add_symbolic_link(&self, &std::path::Path)
+pub fn files::testing::MemoryFileSystem::content(&self, &std::path::Path) -> core::option::Option<alloc::vec::Vec<u8>>
+pub fn files::testing::MemoryFileSystem::crash(&self)
+pub fn files::testing::MemoryFileSystem::inject_fault(&self, &std::path::Path, files::testing::Fault)
+pub fn files::testing::MemoryFileSystem::modified(&self, &std::path::Path) -> core::option::Option<domain::time::Timestamp>
+pub fn files::testing::MemoryFileSystem::new() -> Self
+pub fn files::testing::MemoryFileSystem::operations(&self) -> usize
+pub fn files::testing::MemoryFileSystem::paths(&self) -> alloc::vec::Vec<std::path::PathBuf>
+pub fn files::testing::MemoryFileSystem::stop_after_operations(&self, usize)
+impl core::clone::Clone for files::testing::MemoryFileSystem
+pub fn files::testing::MemoryFileSystem::clone(&self) -> files::testing::MemoryFileSystem
+impl core::default::Default for files::testing::MemoryFileSystem
+pub fn files::testing::MemoryFileSystem::default() -> files::testing::MemoryFileSystem
+impl core::fmt::Debug for files::testing::MemoryFileSystem
+pub fn files::testing::MemoryFileSystem::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl files::FileSystem for files::testing::MemoryFileSystem
+pub fn files::testing::MemoryFileSystem::create_file(&self, &std::path::Path) -> core::io::error::Result<alloc::boxed::Box<dyn files::WriteFile>>
+pub fn files::testing::MemoryFileSystem::create_folder(&self, &std::path::Path) -> core::io::error::Result<()>
+pub fn files::testing::MemoryFileSystem::remove_file(&self, &std::path::Path) -> core::io::error::Result<()>
+pub fn files::testing::MemoryFileSystem::rename_no_replace(&self, &std::path::Path, &std::path::Path) -> core::io::error::Result<()>
+pub fn files::testing::MemoryFileSystem::sync_folder(&self, &std::path::Path) -> core::io::error::Result<()>
+impl files::ReadOnlyFileSystem for files::testing::MemoryFileSystem
+pub fn files::testing::MemoryFileSystem::entry(&self, &std::path::Path) -> core::io::error::Result<core::option::Option<files::EntryKind>>
+pub fn files::testing::MemoryFileSystem::file_size(&self, &std::path::Path) -> core::io::error::Result<u64>
+pub fn files::testing::MemoryFileSystem::list_folder(&self, &std::path::Path) -> core::io::error::Result<alloc::vec::Vec<files::FolderEntry>>
+pub fn files::testing::MemoryFileSystem::modification_time(&self, &std::path::Path) -> core::io::error::Result<domain::time::Timestamp>
+pub fn files::testing::MemoryFileSystem::open_read(&self, &std::path::Path) -> core::io::error::Result<alloc::boxed::Box<dyn files::ReadSeek>>
+impl core::marker::Freeze for files::testing::MemoryFileSystem
+impl core::marker::Send for files::testing::MemoryFileSystem
+impl core::marker::Sync for files::testing::MemoryFileSystem
+impl core::marker::Unpin for files::testing::MemoryFileSystem
+impl core::marker::UnsafeUnpin for files::testing::MemoryFileSystem
+impl core::panic::unwind_safe::RefUnwindSafe for files::testing::MemoryFileSystem
+impl core::panic::unwind_safe::UnwindSafe for files::testing::MemoryFileSystem
+pub struct files::testing::MemoryFreeSpace
+impl files::testing::MemoryFreeSpace
+pub fn files::testing::MemoryFreeSpace::new() -> Self
+pub fn files::testing::MemoryFreeSpace::unlimited() -> Self
+pub fn files::testing::MemoryFreeSpace::with_file_system(self, impl core::convert::Into<std::path::PathBuf>, u64) -> Self
+pub fn files::testing::MemoryFreeSpace::with_unreadable(self, impl core::convert::Into<std::path::PathBuf>, &str) -> Self
+impl core::clone::Clone for files::testing::MemoryFreeSpace
+pub fn files::testing::MemoryFreeSpace::clone(&self) -> files::testing::MemoryFreeSpace
+impl core::default::Default for files::testing::MemoryFreeSpace
+pub fn files::testing::MemoryFreeSpace::default() -> files::testing::MemoryFreeSpace
+impl core::fmt::Debug for files::testing::MemoryFreeSpace
+pub fn files::testing::MemoryFreeSpace::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl files::FreeSpace for files::testing::MemoryFreeSpace
+pub fn files::testing::MemoryFreeSpace::free_space(&self, &std::path::Path) -> core::io::error::Result<files::SpaceOnFileSystem>
+impl core::marker::Freeze for files::testing::MemoryFreeSpace
+impl core::marker::Send for files::testing::MemoryFreeSpace
+impl core::marker::Sync for files::testing::MemoryFreeSpace
+impl core::marker::Unpin for files::testing::MemoryFreeSpace
+impl core::marker::UnsafeUnpin for files::testing::MemoryFreeSpace
+impl core::panic::unwind_safe::RefUnwindSafe for files::testing::MemoryFreeSpace
+impl core::panic::unwind_safe::UnwindSafe for files::testing::MemoryFreeSpace
+pub struct files::testing::ReadOnlyFileSystemUnderTest<'a>
+pub files::testing::ReadOnlyFileSystemUnderTest::add_file: &'a files::testing::AddFile<'a>
+pub files::testing::ReadOnlyFileSystemUnderTest::add_folder: &'a files::testing::AddFolder<'a>
+pub files::testing::ReadOnlyFileSystemUnderTest::file_system: &'a dyn files::ReadOnlyFileSystem
+pub files::testing::ReadOnlyFileSystemUnderTest::make_symbolic_link: core::option::Option<&'a files::testing::MakeSymbolicLink<'a>>
+pub files::testing::ReadOnlyFileSystemUnderTest::root: &'a std::path::Path
+impl<'a> core::marker::Freeze for files::testing::ReadOnlyFileSystemUnderTest<'a>
+impl<'a> !core::marker::Send for files::testing::ReadOnlyFileSystemUnderTest<'a>
+impl<'a> !core::marker::Sync for files::testing::ReadOnlyFileSystemUnderTest<'a>
+impl<'a> core::marker::Unpin for files::testing::ReadOnlyFileSystemUnderTest<'a>
+impl<'a> core::marker::UnsafeUnpin for files::testing::ReadOnlyFileSystemUnderTest<'a>
+impl<'a> !core::panic::unwind_safe::RefUnwindSafe for files::testing::ReadOnlyFileSystemUnderTest<'a>
+impl<'a> !core::panic::unwind_safe::UnwindSafe for files::testing::ReadOnlyFileSystemUnderTest<'a>
+pub struct files::testing::TempDir
+impl files::testing::TempDir
+pub fn files::testing::TempDir::new() -> core::io::error::Result<Self>
+pub fn files::testing::TempDir::path(&self) -> &std::path::Path
+impl core::fmt::Debug for files::testing::TempDir
+pub fn files::testing::TempDir::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::ops::drop::Drop for files::testing::TempDir
+pub fn files::testing::TempDir::drop(&mut self)
+impl core::marker::Freeze for files::testing::TempDir
+impl core::marker::Send for files::testing::TempDir
+impl core::marker::Sync for files::testing::TempDir
+impl core::marker::Unpin for files::testing::TempDir
+impl core::marker::UnsafeUnpin for files::testing::TempDir
+impl core::panic::unwind_safe::RefUnwindSafe for files::testing::TempDir
+impl core::panic::unwind_safe::UnwindSafe for files::testing::TempDir
+pub fn files::testing::check_cameras(&files::testing::CamerasUnderTest<'_>) -> alloc::vec::Vec<alloc::string::String>
+pub fn files::testing::check_file_system(&files::testing::FileSystemUnderTest<'_>) -> alloc::vec::Vec<alloc::string::String>
+pub fn files::testing::check_free_space(&files::testing::FreeSpaceUnderTest<'_>) -> alloc::vec::Vec<alloc::string::String>
+pub fn files::testing::check_hasher(&files::testing::HasherUnderTest<'_>) -> alloc::vec::Vec<alloc::string::String>
+pub fn files::testing::check_read_only_file_system(&files::testing::ReadOnlyFileSystemUnderTest<'_>) -> alloc::vec::Vec<alloc::string::String>
+pub type files::testing::AddFile<'a> = (dyn core::ops::function::Fn(&std::path::Path, &[u8], domain::time::Timestamp) -> core::io::error::Result<()> + 'a)
+pub type files::testing::AddFolder<'a> = (dyn core::ops::function::Fn(&std::path::Path) -> core::io::error::Result<()> + 'a)
+pub type files::testing::MakeSymbolicLink<'a> = (dyn core::ops::function::Fn(&std::path::Path, &std::path::Path) -> core::io::error::Result<()> + 'a)
+pub enum files::CameraError
+pub files::CameraError::InUse
+pub files::CameraError::InUse::port: alloc::string::String
+pub files::CameraError::InUse::reason: alloc::string::String
+pub files::CameraError::List
+pub files::CameraError::List::reason: alloc::string::String
+pub files::CameraError::Open
+pub files::CameraError::Open::port: alloc::string::String
+pub files::CameraError::Open::reason: alloc::string::String
+impl core::clone::Clone for files::CameraError
+pub fn files::CameraError::clone(&self) -> files::CameraError
+impl core::cmp::Eq for files::CameraError
+impl core::cmp::PartialEq for files::CameraError
+pub fn files::CameraError::eq(&self, &files::CameraError) -> bool
+impl core::error::Error for files::CameraError
+impl core::fmt::Debug for files::CameraError
+pub fn files::CameraError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for files::CameraError
+pub fn files::CameraError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for files::CameraError
+impl core::marker::Freeze for files::CameraError
+impl core::marker::Send for files::CameraError
+impl core::marker::Sync for files::CameraError
+impl core::marker::Unpin for files::CameraError
+impl core::marker::UnsafeUnpin for files::CameraError
+impl core::panic::unwind_safe::RefUnwindSafe for files::CameraError
+impl core::panic::unwind_safe::UnwindSafe for files::CameraError
+pub enum files::CopyErrorKind
+pub files::CopyErrorKind::ChecksumMismatch
+pub files::CopyErrorKind::ChecksumMismatch::source_checksum: domain::checksum::Checksum
+pub files::CopyErrorKind::ChecksumMismatch::target_checksum: domain::checksum::Checksum
+pub files::CopyErrorKind::Io
+pub files::CopyErrorKind::Io::error: core::io::error::Error
+pub files::CopyErrorKind::Io::path: std::path::PathBuf
+pub files::CopyErrorKind::TargetExists
+pub files::CopyErrorKind::TargetExists::path: std::path::PathBuf
+impl core::error::Error for files::CopyErrorKind
+pub fn files::CopyErrorKind::source(&self) -> core::option::Option<&(dyn core::error::Error + 'static)>
+impl core::fmt::Debug for files::CopyErrorKind
+pub fn files::CopyErrorKind::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for files::CopyErrorKind
+pub fn files::CopyErrorKind::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for files::CopyErrorKind
+impl core::marker::Send for files::CopyErrorKind
+impl core::marker::Sync for files::CopyErrorKind
+impl core::marker::Unpin for files::CopyErrorKind
+impl core::marker::UnsafeUnpin for files::CopyErrorKind
+impl !core::panic::unwind_safe::RefUnwindSafe for files::CopyErrorKind
+impl !core::panic::unwind_safe::UnwindSafe for files::CopyErrorKind
+pub enum files::CopyStep
+pub files::CopyStep::CreateFolders
+pub files::CopyStep::ReadBack
+pub files::CopyStep::ReadSource
+pub files::CopyStep::Rename
+pub files::CopyStep::SyncFolder
+pub files::CopyStep::Verify
+pub files::CopyStep::WritePart
+impl core::clone::Clone for files::CopyStep
+pub fn files::CopyStep::clone(&self) -> files::CopyStep
+impl core::cmp::Eq for files::CopyStep
+impl core::cmp::PartialEq for files::CopyStep
+pub fn files::CopyStep::eq(&self, &files::CopyStep) -> bool
+impl core::fmt::Debug for files::CopyStep
+pub fn files::CopyStep::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for files::CopyStep
+pub fn files::CopyStep::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for files::CopyStep
+pub fn files::CopyStep::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for files::CopyStep
+impl core::marker::StructuralPartialEq for files::CopyStep
+impl core::marker::Freeze for files::CopyStep
+impl core::marker::Send for files::CopyStep
+impl core::marker::Sync for files::CopyStep
+impl core::marker::Unpin for files::CopyStep
+impl core::marker::UnsafeUnpin for files::CopyStep
+impl core::panic::unwind_safe::RefUnwindSafe for files::CopyStep
+impl core::panic::unwind_safe::UnwindSafe for files::CopyStep
+pub enum files::EntryKind
+pub files::EntryKind::File
+pub files::EntryKind::Folder
+pub files::EntryKind::Other
+pub files::EntryKind::SymbolicLink
+impl core::clone::Clone for files::EntryKind
+pub fn files::EntryKind::clone(&self) -> files::EntryKind
+impl core::cmp::Eq for files::EntryKind
+impl core::cmp::PartialEq for files::EntryKind
+pub fn files::EntryKind::eq(&self, &files::EntryKind) -> bool
+impl core::fmt::Debug for files::EntryKind
+pub fn files::EntryKind::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for files::EntryKind
+pub fn files::EntryKind::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for files::EntryKind
+impl core::marker::StructuralPartialEq for files::EntryKind
+impl core::marker::Freeze for files::EntryKind
+impl core::marker::Send for files::EntryKind
+impl core::marker::Sync for files::EntryKind
+impl core::marker::Unpin for files::EntryKind
+impl core::marker::UnsafeUnpin for files::EntryKind
+impl core::panic::unwind_safe::RefUnwindSafe for files::EntryKind
+impl core::panic::unwind_safe::UnwindSafe for files::EntryKind
+pub struct files::Camera
+pub files::Camera::model: alloc::string::String
+pub files::Camera::port: alloc::string::String
+impl core::clone::Clone for files::Camera
+pub fn files::Camera::clone(&self) -> files::Camera
+impl core::cmp::Eq for files::Camera
+impl core::cmp::PartialEq for files::Camera
+pub fn files::Camera::eq(&self, &files::Camera) -> bool
+impl core::fmt::Debug for files::Camera
+pub fn files::Camera::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for files::Camera
+pub fn files::Camera::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::StructuralPartialEq for files::Camera
+impl core::marker::Freeze for files::Camera
+impl core::marker::Send for files::Camera
+impl core::marker::Sync for files::Camera
+impl core::marker::Unpin for files::Camera
+impl core::marker::UnsafeUnpin for files::Camera
+impl core::panic::unwind_safe::RefUnwindSafe for files::Camera
+impl core::panic::unwind_safe::UnwindSafe for files::Camera
+pub struct files::CleanupFailure
+pub files::CleanupFailure::error: core::io::error::Error
+pub files::CleanupFailure::path: std::path::PathBuf
+impl core::error::Error for files::CleanupFailure
+pub fn files::CleanupFailure::source(&self) -> core::option::Option<&(dyn core::error::Error + 'static)>
+impl core::fmt::Debug for files::CleanupFailure
+pub fn files::CleanupFailure::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for files::CleanupFailure
+pub fn files::CleanupFailure::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for files::CleanupFailure
+impl core::marker::Send for files::CleanupFailure
+impl core::marker::Sync for files::CleanupFailure
+impl core::marker::Unpin for files::CleanupFailure
+impl core::marker::UnsafeUnpin for files::CleanupFailure
+impl !core::panic::unwind_safe::RefUnwindSafe for files::CleanupFailure
+impl !core::panic::unwind_safe::UnwindSafe for files::CleanupFailure
+pub struct files::CopyError
+pub files::CopyError::cleanup: core::option::Option<alloc::boxed::Box<files::CleanupFailure>>
+pub files::CopyError::kind: files::CopyErrorKind
+pub files::CopyError::step: files::CopyStep
+impl files::CopyError
+pub fn files::CopyError::unfinished(&std::path::Path) -> Self
+impl core::error::Error for files::CopyError
+pub fn files::CopyError::source(&self) -> core::option::Option<&(dyn core::error::Error + 'static)>
+impl core::fmt::Debug for files::CopyError
+pub fn files::CopyError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for files::CopyError
+pub fn files::CopyError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for files::CopyError
+impl core::marker::Send for files::CopyError
+impl core::marker::Sync for files::CopyError
+impl core::marker::Unpin for files::CopyError
+impl core::marker::UnsafeUnpin for files::CopyError
+impl !core::panic::unwind_safe::RefUnwindSafe for files::CopyError
+impl !core::panic::unwind_safe::UnwindSafe for files::CopyError
+pub struct files::FileSystemId(_)
+impl files::FileSystemId
+pub const fn files::FileSystemId::get(self) -> u64
+pub const fn files::FileSystemId::new(u64) -> Self
+impl core::clone::Clone for files::FileSystemId
+pub fn files::FileSystemId::clone(&self) -> files::FileSystemId
+impl core::cmp::Eq for files::FileSystemId
+impl core::cmp::Ord for files::FileSystemId
+pub fn files::FileSystemId::cmp(&self, &files::FileSystemId) -> core::cmp::Ordering
+impl core::cmp::PartialEq for files::FileSystemId
+pub fn files::FileSystemId::eq(&self, &files::FileSystemId) -> bool
+impl core::cmp::PartialOrd for files::FileSystemId
+pub fn files::FileSystemId::partial_cmp(&self, &files::FileSystemId) -> core::option::Option<core::cmp::Ordering>
+impl core::fmt::Debug for files::FileSystemId
+pub fn files::FileSystemId::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for files::FileSystemId
+pub fn files::FileSystemId::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for files::FileSystemId
+impl core::marker::StructuralPartialEq for files::FileSystemId
+impl core::marker::Freeze for files::FileSystemId
+impl core::marker::Send for files::FileSystemId
+impl core::marker::Sync for files::FileSystemId
+impl core::marker::Unpin for files::FileSystemId
+impl core::marker::UnsafeUnpin for files::FileSystemId
+impl core::panic::unwind_safe::RefUnwindSafe for files::FileSystemId
+impl core::panic::unwind_safe::UnwindSafe for files::FileSystemId
+pub struct files::FolderEntry
+pub files::FolderEntry::kind: files::EntryKind
+pub files::FolderEntry::name: std::ffi::os_str::OsString
+impl core::clone::Clone for files::FolderEntry
+pub fn files::FolderEntry::clone(&self) -> files::FolderEntry
+impl core::cmp::Eq for files::FolderEntry
+impl core::cmp::PartialEq for files::FolderEntry
+pub fn files::FolderEntry::eq(&self, &files::FolderEntry) -> bool
+impl core::fmt::Debug for files::FolderEntry
+pub fn files::FolderEntry::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for files::FolderEntry
+pub fn files::FolderEntry::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::StructuralPartialEq for files::FolderEntry
+impl core::marker::Freeze for files::FolderEntry
+impl core::marker::Send for files::FolderEntry
+impl core::marker::Sync for files::FolderEntry
+impl core::marker::Unpin for files::FolderEntry
+impl core::marker::UnsafeUnpin for files::FolderEntry
+impl core::panic::unwind_safe::RefUnwindSafe for files::FolderEntry
+impl core::panic::unwind_safe::UnwindSafe for files::FolderEntry
+pub struct files::SpaceOnFileSystem
+pub files::SpaceOnFileSystem::available_bytes: u64
+pub files::SpaceOnFileSystem::file_system: files::FileSystemId
+impl core::clone::Clone for files::SpaceOnFileSystem
+pub fn files::SpaceOnFileSystem::clone(&self) -> files::SpaceOnFileSystem
+impl core::cmp::Eq for files::SpaceOnFileSystem
+impl core::cmp::PartialEq for files::SpaceOnFileSystem
+pub fn files::SpaceOnFileSystem::eq(&self, &files::SpaceOnFileSystem) -> bool
+impl core::fmt::Debug for files::SpaceOnFileSystem
+pub fn files::SpaceOnFileSystem::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for files::SpaceOnFileSystem
+pub fn files::SpaceOnFileSystem::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for files::SpaceOnFileSystem
+impl core::marker::StructuralPartialEq for files::SpaceOnFileSystem
+impl core::marker::Freeze for files::SpaceOnFileSystem
+impl core::marker::Send for files::SpaceOnFileSystem
+impl core::marker::Sync for files::SpaceOnFileSystem
+impl core::marker::Unpin for files::SpaceOnFileSystem
+impl core::marker::UnsafeUnpin for files::SpaceOnFileSystem
+impl core::panic::unwind_safe::RefUnwindSafe for files::SpaceOnFileSystem
+impl core::panic::unwind_safe::UnwindSafe for files::SpaceOnFileSystem
+pub struct files::VerifiedCopies
+pub files::VerifiedCopies::source_checksum: core::option::Option<domain::checksum::Checksum>
+pub files::VerifiedCopies::targets: alloc::vec::Vec<core::result::Result<domain::checksum::Checksum, files::CopyError>>
+impl core::fmt::Debug for files::VerifiedCopies
+pub fn files::VerifiedCopies::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for files::VerifiedCopies
+impl core::marker::Send for files::VerifiedCopies
+impl core::marker::Sync for files::VerifiedCopies
+impl core::marker::Unpin for files::VerifiedCopies
+impl core::marker::UnsafeUnpin for files::VerifiedCopies
+impl !core::panic::unwind_safe::RefUnwindSafe for files::VerifiedCopies
+impl !core::panic::unwind_safe::UnwindSafe for files::VerifiedCopies
+pub trait files::Cameras
+pub fn files::Cameras::list(&self) -> core::result::Result<alloc::vec::Vec<files::Camera>, files::CameraError>
+pub fn files::Cameras::open(&self, &str) -> core::result::Result<alloc::boxed::Box<(dyn files::ReadOnlyFileSystem + core::marker::Send)>, files::CameraError>
+impl files::Cameras for files::testing::MemoryCameras
+pub fn files::testing::MemoryCameras::list(&self) -> core::result::Result<alloc::vec::Vec<files::Camera>, files::CameraError>
+pub fn files::testing::MemoryCameras::open(&self, &str) -> core::result::Result<alloc::boxed::Box<(dyn files::ReadOnlyFileSystem + core::marker::Send)>, files::CameraError>
+pub trait files::FileSystem: files::ReadOnlyFileSystem
+pub fn files::FileSystem::create_file(&self, &std::path::Path) -> core::io::error::Result<alloc::boxed::Box<dyn files::WriteFile>>
+pub fn files::FileSystem::create_folder(&self, &std::path::Path) -> core::io::error::Result<()>
+pub fn files::FileSystem::remove_file(&self, &std::path::Path) -> core::io::error::Result<()>
+pub fn files::FileSystem::rename_no_replace(&self, &std::path::Path, &std::path::Path) -> core::io::error::Result<()>
+pub fn files::FileSystem::sync_folder(&self, &std::path::Path) -> core::io::error::Result<()>
+impl files::FileSystem for files::testing::MemoryFileSystem
+pub fn files::testing::MemoryFileSystem::create_file(&self, &std::path::Path) -> core::io::error::Result<alloc::boxed::Box<dyn files::WriteFile>>
+pub fn files::testing::MemoryFileSystem::create_folder(&self, &std::path::Path) -> core::io::error::Result<()>
+pub fn files::testing::MemoryFileSystem::remove_file(&self, &std::path::Path) -> core::io::error::Result<()>
+pub fn files::testing::MemoryFileSystem::rename_no_replace(&self, &std::path::Path, &std::path::Path) -> core::io::error::Result<()>
+pub fn files::testing::MemoryFileSystem::sync_folder(&self, &std::path::Path) -> core::io::error::Result<()>
+pub trait files::FreeSpace
+pub fn files::FreeSpace::free_space(&self, &std::path::Path) -> core::io::error::Result<files::SpaceOnFileSystem>
+impl files::FreeSpace for files::testing::MemoryFreeSpace
+pub fn files::testing::MemoryFreeSpace::free_space(&self, &std::path::Path) -> core::io::error::Result<files::SpaceOnFileSystem>
+pub trait files::HashState
+pub fn files::HashState::finish(alloc::boxed::Box<Self>) -> domain::checksum::Checksum
+pub fn files::HashState::update(&mut self, &[u8])
+pub trait files::Hasher
+pub fn files::Hasher::start(&self) -> alloc::boxed::Box<dyn files::HashState>
+impl files::Hasher for files::testing::FnvHasher
+pub fn files::testing::FnvHasher::start(&self) -> alloc::boxed::Box<dyn files::HashState>
+pub trait files::ReadOnlyFileSystem
+pub fn files::ReadOnlyFileSystem::entry(&self, &std::path::Path) -> core::io::error::Result<core::option::Option<files::EntryKind>>
+pub fn files::ReadOnlyFileSystem::file_size(&self, &std::path::Path) -> core::io::error::Result<u64>
+pub fn files::ReadOnlyFileSystem::list_folder(&self, &std::path::Path) -> core::io::error::Result<alloc::vec::Vec<files::FolderEntry>>
+pub fn files::ReadOnlyFileSystem::modification_time(&self, &std::path::Path) -> core::io::error::Result<domain::time::Timestamp>
+pub fn files::ReadOnlyFileSystem::open_read(&self, &std::path::Path) -> core::io::error::Result<alloc::boxed::Box<dyn files::ReadSeek>>
+impl files::ReadOnlyFileSystem for files::testing::MemoryFileSystem
+pub fn files::testing::MemoryFileSystem::entry(&self, &std::path::Path) -> core::io::error::Result<core::option::Option<files::EntryKind>>
+pub fn files::testing::MemoryFileSystem::file_size(&self, &std::path::Path) -> core::io::error::Result<u64>
+pub fn files::testing::MemoryFileSystem::list_folder(&self, &std::path::Path) -> core::io::error::Result<alloc::vec::Vec<files::FolderEntry>>
+pub fn files::testing::MemoryFileSystem::modification_time(&self, &std::path::Path) -> core::io::error::Result<domain::time::Timestamp>
+pub fn files::testing::MemoryFileSystem::open_read(&self, &std::path::Path) -> core::io::error::Result<alloc::boxed::Box<dyn files::ReadSeek>>
+pub trait files::ReadSeek: std::io::Read + std::io::Seek
+impl<T: std::io::Read + std::io::Seek + ?core::marker::Sized> files::ReadSeek for T
+pub trait files::WriteFile: std::io::Write
+pub fn files::WriteFile::set_modification_time(&mut self, domain::time::Timestamp) -> core::io::error::Result<()>
+pub fn files::WriteFile::sync(&mut self) -> core::io::error::Result<()>
+pub fn files::checksum_file(&dyn files::ReadOnlyFileSystem, &dyn files::Hasher, &std::path::Path) -> core::io::error::Result<domain::checksum::Checksum>
+pub fn files::copy_verified(&dyn files::FileSystem, &dyn files::Hasher, &std::path::Path, &std::path::Path) -> core::result::Result<domain::checksum::Checksum, files::CopyError>
+pub fn files::copy_verified_to_all(&dyn files::ReadOnlyFileSystem, &dyn files::FileSystem, &dyn files::Hasher, &std::path::Path, &[&std::path::Path]) -> files::VerifiedCopies

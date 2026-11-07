@@ -23,6 +23,7 @@ mod fuzz;
 mod json;
 mod new_adapter;
 mod new_module;
+mod public_api;
 mod schemas;
 mod specs;
 mod testdata;
@@ -42,6 +43,8 @@ commands:
   check-spec-trailers  Spec-Unchanged/Spec-Only trailers of the commits since the base (ADR 0010)
   spec-report          write target/spec-report.md: requirement, spec, criteria, tests
   check-files          only text files, no binaries (ADR 0017)
+  check-public-api     the public API of kernel and services matches its snapshot (ADR 0038)
+  public-api           write the public API snapshots of kernel and services
   check-schemas        the committed JSON Schemas are the generated ones (ADR 0032)
   schemas              write the JSON Schemas of the configuration files to schemas/
   testdata check       testdata.lock is valid (ADR 0027)
@@ -65,6 +68,10 @@ fn main() -> ExitCode {
         Some("check-spec-trailers") => check_spec_trailers(&root),
         Some("spec-report") => spec_report(&root),
         Some("check-files") => check_files(&root),
+        Some("check-public-api") => {
+            public_api::check(&root).and_then(|problems| finish("public API", &problems))
+        }
+        Some("public-api") => public_api::write(&root),
         Some("check-schemas") => finish("schemas", &schemas::check(&root)),
         Some("schemas") => schemas::write(&root),
         Some("testdata") => testdata::run(&root, arguments.get(1).map(String::as_str)),
