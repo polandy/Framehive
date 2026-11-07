@@ -81,6 +81,7 @@ fn summary(files: Vec<FileReport>, backup_destinations: &[&str]) -> ImportSummar
             .iter()
             .map(|destination| BackupCounts {
                 destination: PathBuf::from(destination),
+                receives_photos: true,
                 ..BackupCounts::default()
             })
             .collect(),
@@ -329,6 +330,22 @@ fn an_empty_source_can_be_formatted() {
 
     assert!(readiness.can_be_formatted());
     assert_eq!(readiness.left_out_not_saved, 0);
+}
+
+/// spec: IMPORT-008.15
+#[test]
+fn a_run_without_files_counts_only_the_photo_backup_destinations() {
+    let mut run = summary(Vec::new(), &[BACKUP]);
+    run.backups.push(BackupCounts {
+        destination: PathBuf::from(SECOND_BACKUP),
+        receives_photos: false,
+        ..BackupCounts::default()
+    });
+
+    let readiness = FormatReadiness::of(&run);
+
+    assert!(readiness.can_be_formatted());
+    assert_eq!(readiness.required_locations, 2);
 }
 
 /// spec: IMPORT-008.14

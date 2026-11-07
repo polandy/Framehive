@@ -338,7 +338,13 @@ impl<'a> ImportRun<'a> {
         let mut backups: Vec<BackupCounts> = settings
             .all_backup_destinations()
             .into_iter()
-            .map(BackupCounts::new)
+            .map(|destination| {
+                let receives_photos = settings
+                    .backup_destinations
+                    .iter()
+                    .any(|d| d == destination);
+                BackupCounts::new(destination, receives_photos)
+            })
             .collect();
         let mut stopped = false;
         let mut history_error = None;

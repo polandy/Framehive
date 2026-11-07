@@ -74,7 +74,7 @@ impl FormatReadiness {
             .iter()
             .map(|file| file.required_locations)
             .max()
-            .unwrap_or(1 + summary.backups.len());
+            .unwrap_or_else(|| photo_locations(summary));
         let required_locations_differ = summary
             .files
             .iter()
@@ -101,6 +101,16 @@ impl FormatReadiness {
     pub fn can_be_formatted(&self) -> bool {
         !self.stopped && !self.dry_run && self.blockers.is_empty()
     }
+}
+
+/// The locations a photo requires: the import destination and each backup destination
+/// that receives photos. A run without files requires these (IMPORT-008).
+fn photo_locations(summary: &ImportSummary) -> usize {
+    1 + summary
+        .backups
+        .iter()
+        .filter(|counts| counts.receives_photos)
+        .count()
 }
 
 /// The files not verified at every location they require, with the number they are

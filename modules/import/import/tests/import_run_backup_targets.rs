@@ -173,6 +173,7 @@ fn the_summary_counts_each_backup_destination() {
             already_backed_up: 1,
             backed_up_before: 0,
             failed: 1,
+            receives_photos: true,
         }]
     );
 }

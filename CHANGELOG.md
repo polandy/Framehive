@@ -162,6 +162,10 @@ All user-visible changes are listed here. The format follows
 
 ### Fixed
 
+- After an import that found no file, the format readiness no longer counts the video
+  backup destinations as locations: with one backup destination and a video backup
+  destination of its own, it says "verified in 2 locations", the import destination and
+  the backup destination a photo would need (IMPORT-008, IMPORT-013).
 - `framehive import` and the guided import no longer create the destination folders
   of an import that does not start because its job, when it starts, finds too little
   free space, for example after another import to the same disk filled it. The import
