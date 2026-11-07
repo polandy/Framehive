@@ -51,7 +51,7 @@ skipped.
 | Case | Error |
 |---|---|
 | The file cannot be opened or read | `Io`, with the path and the cause |
-| The decoder does not support the format, for example GoPro GPR or JPEG XL DNG with the pinned LibRaw | `UnsupportedFormat`, with the path; CORE-004 then shows the embedded preview |
+| The decoder does not support the format, for example GoPro GPR with the pinned LibRaw | `UnsupportedFormat`, with the path; CORE-004 then shows the embedded preview |
 | The file is truncated or its data is damaged | `Corrupt`, with the path and the decoder's message |
 | Any other decoder failure, such as running out of memory | `Failed`, with the path and the decoder's message |
 
@@ -115,3 +115,4 @@ skipped.
 |---|---|
 | 2026-11-03 | Created from the phase 0 LibRaw prototype (ADR 0028) |
 | 2026-11-03 | Implemented by `adapter-libraw` |
+| 2026-11-07 | JPEG XL DNG dropped as an `UnsupportedFormat` example: no CC0 sample tests it, and the pinned LibRaw may report a data error instead (ADR 0028) |
