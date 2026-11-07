@@ -96,6 +96,52 @@ mod tests {
         assert!(violations(&changed).is_empty());
     }
 
+    /// Runs git in `root` with a fixed identity and no user configuration.
+    fn scratch_git(root: &std::path::Path, arguments: &[&str]) {
+        let status = std::process::Command::new("git")
+            .args(arguments)
+            .current_dir(root)
+            .env("GIT_CONFIG_GLOBAL", "/dev/null")
+            .env("GIT_CONFIG_NOSYSTEM", "1")
+            .env("GIT_AUTHOR_NAME", "Test")
+            .env("GIT_AUTHOR_EMAIL", "test@example.invalid")
+            .env("GIT_COMMITTER_NAME", "Test")
+            .env("GIT_COMMITTER_EMAIL", "test@example.invalid")
+            .status()
+            .expect("run git");
+        assert!(status.success(), "git {arguments:?}");
+    }
+
+    #[test]
+    fn changed_files_holds_commits_edits_and_new_files_since_the_merge_base() {
+        let directory = std::env::temp_dir().join(format!(
+            "framehive-xtask-{}-public-api-changelog",
+            std::process::id()
+        ));
+        // A leftover from an aborted run would make the result depend on it.
+        let _ = std::fs::remove_dir_all(&directory);
+        std::fs::create_dir_all(&directory).unwrap();
+        let write = |file: &str| std::fs::write(directory.join(file), file).unwrap();
+        scratch_git(&directory, &["init", "--quiet", "--initial-branch=main"]);
+        write("CHANGELOG.md");
+        write("old.txt");
+        scratch_git(&directory, &["add", "--all"]);
+        scratch_git(&directory, &["commit", "--quiet", "--message", "base"]);
+        scratch_git(&directory, &["switch", "--quiet", "--create", "topic"]);
+        write("public-api.txt");
+        scratch_git(&directory, &["add", "--all"]);
+        scratch_git(&directory, &["commit", "--quiet", "--message", "change"]);
+        std::fs::write(directory.join("old.txt"), "edited").unwrap();
+        write("new.txt");
+
+        let mut repository = Repository::at(&directory);
+        repository.git_variables = vec![("GIT_CONFIG_GLOBAL".to_owned(), "/dev/null".to_owned())];
+        let mut files = changed_files(&repository, &Environment::default()).unwrap();
+        files.sort();
+        let _ = std::fs::remove_dir_all(&directory);
+        assert_eq!(files, ["new.txt", "old.txt", "public-api.txt"]);
+    }
+
     #[test]
     fn changes_outside_the_snapshots_need_no_changelog_entry() {
         let changed = paths(&["crates/kernel/src/lib.rs", "docs/public-api.txt.md"]);
