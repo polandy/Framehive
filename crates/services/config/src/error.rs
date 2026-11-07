@@ -83,6 +83,10 @@ pub enum Problem {
     /// A whole number outside the range Framehive can hold.
     #[error("{0} is too large for a whole number")]
     NumberTooLarge(String),
+    /// A `schema_version` key whose value is YAML null; unlike other keys it has no
+    /// default to fall back to.
+    #[error("schema_version has no value; it must be a positive whole number")]
+    VersionNoValue,
     /// A `schema_version` that is not a positive whole number.
     #[error("schema_version must be a positive whole number")]
     VersionNotPositive,

@@ -162,6 +162,8 @@ All user-visible changes are listed here. The format follows
 
 ### Fixed
 
+- A configuration file with `schema_version:` but no value now says that the key needs
+  a positive whole number; before, it suggested leaving the required key out (CORE-006).
 - `framehive import-log` keeps its text on one line per run and per copy when a path or
   target name contains a line break or another control character: it prints them
   escaped, such as `\n`, as the JSON format does (CLI-009).

@@ -11,7 +11,6 @@ feature live in its spec, decisions in `docs/adr/`. Add items with `/todo`.
 - [ ] Write the job code to XMP as IPTC Job Id (`photoshop:TransmissionReference`, N16) with the XMP milestone (R9, IMPORT-006) — owner decided (2026-11-01)
 - [ ] Make release builds reproducible: `SOURCE_DATE_EPOCH`, `--remap-path-prefix` and a bit-for-bit check in CI, with the first release build (ADR 0007) (2026-11-03)
 - [ ] Store reference pixel hashes for aarch64-darwin in the LibRaw version test — on macOS it compares only sizes until the hashes are measured on a Mac (PREVIEWS-001, ADR 0028) (2026-11-03)
-- [ ] Give `schema_version:` without a value its own message — it says "leave the key out to use the default", but the key is required (CORE-006, PR #41 review) (2026-11-05)
 - [ ] Add a CORE-006 acceptance criterion for a list entry with no value (`<key> has an entry with no value`) once the spec is split below 10 KB — only an unmarked test covers it (CORE-006, PR #41 review) (2026-11-05)
 - [ ] Write the `config init` example to a unique `.part` name — two overlapping runs share `example.yaml.part` and the second truncates the file the first just linked (CLI-010, PR #41 review) (2026-11-05)
 - [ ] Test that `cargo xtask check-schemas` reports a changed and a missing schema file — only the path shape is tested (IMPORT-011, PR #41 review) (2026-11-05)
