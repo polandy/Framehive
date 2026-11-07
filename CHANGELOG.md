@@ -162,6 +162,9 @@ All user-visible changes are listed here. The format follows
 
 ### Fixed
 
+- `framehive import-log` keeps its text on one line per run and per copy when a path or
+  target name contains a line break or another control character: it prints them
+  escaped, such as `\n`, as the JSON format does (CLI-009).
 - Files already imported are recognized when the destination tells case or Unicode
   normalization forms apart and holds the same name in several spellings, such as
   `Café.JPG` precomposed and decomposed: every spelling is compared, so a photo
