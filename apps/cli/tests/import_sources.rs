@@ -269,24 +269,25 @@ fn with_destination_and_a_profile_every_folder_is_a_source() {
 fn the_error_of_a_source_comes_before_the_report_of_the_next() {
     let folders = Folders::new();
     card(&folders, "cardA", &["a.jpg"]);
-    card(&folders, "cardB", &["b.jpg"]);
-    let card_b = folders.root.path().join("cardB");
-    set_mode(&card_b, 0o000);
+    // A camera on a port of a missing folder cannot be opened by any user, also root.
+    let camera = format!(
+        "camera:disk:{}",
+        folders.root.path().join("missing").display()
+    );
     let both = folders.root.path().join("output.txt");
     let file = fs::File::create(&both).unwrap();
 
     let status = folders
-        .framehive_command(&["import", "cardB", "cardA", "--destination", "library"])
+        .framehive_command(&["import", &camera, "cardA", "--destination", "library"])
         .current_dir(folders.root.path())
         .stdout(Stdio::from(file.try_clone().unwrap()))
         .stderr(Stdio::from(file))
         .status()
         .unwrap();
 
-    set_mode(&card_b, 0o755);
     let written = fs::read_to_string(&both).unwrap();
     let position = |wanted: &dyn Fn(&str) -> bool| written.lines().position(wanted);
-    let error = position(&|line| line.starts_with("error: cardB: "));
+    let error = position(&|line| line.starts_with(&format!("error: {camera}: ")));
     let report = position(&|line| line == "cardA:");
     assert!(error.is_some() && report.is_some(), "{written}");
     assert!(error < report, "{written}");

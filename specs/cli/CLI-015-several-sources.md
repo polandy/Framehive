@@ -28,7 +28,7 @@ no file system run in parallel; the others run one after another (IMPORT-015,
 or without `--profile` (CLI-016). Arguments that hold for every source, such
 as the template or the job code, are checked once, before any source; so are the sources themselves (CLI-016). An
 error there starts no source. A source that passes these checks but cannot start, for
-example because it cannot be read or its destination is short of space, does not keep the others from importing: each of its errors goes to standard
+example because it cannot be read, its camera cannot be opened, or its destination is short of space, does not keep the others from importing: each of its errors goes to standard
 error as `error: <source as given>: <message>` as soon as it is found, not after the
 other sources ended.
 
@@ -96,10 +96,12 @@ start, else 1 when a file failed, else 0.
 - **Then** both pictures are imported into `library` by the template of the profile
 
 ### CLI-015.9 – The error of a source comes at once
-- **Given** a source `cardB` that cannot be read and a source `cardA` with `a.jpg`
-- **When** `framehive import cardB cardA --destination <destination>` runs with standard
-  output and standard error written to one file
-- **Then** the line that starts with `error: cardB: ` comes before the line `cardA:`
+- **Given** a source `camera:disk:<missing folder>`, a camera that cannot be opened for
+  any user, and a source `cardA` with `a.jpg`
+- **When** `framehive import camera:disk:<missing folder> cardA --destination <destination>`
+  runs with standard output and standard error written to one file
+- **Then** the line that starts with `error: camera:disk:<missing folder>: ` comes before
+  the line `cardA:`, and the exit code is 2
 
 ### CLI-015.10 – A dry run of several sources
 - **Given** a source `cardA` with `a.jpg` and `b.jpg`, a source `cardB` with `c.jpg`,
@@ -130,4 +132,5 @@ start, else 1 when a file failed, else 0.
 | 2026-11-07 | The sources are checked before any job (CLI-016): CLI-015.3 uses a source that cannot be read |
 | 2026-11-07 | The error of a source that cannot start is printed at once: CLI-015.9 |
 | 2026-11-07 | A dry run of several sources counts in memory (IMPORT-016): CLI-015.10 |
+| 2026-11-07 | CLI-015.9 uses a camera that cannot be opened, which fails for every user, also root |
 | 2026-11-07 | The `cp` model (CLI-016, ADR 0036, decision 8): the last folder is the destination again, also with a profile; CLI-015.7 and CLI-015.8 changed |
