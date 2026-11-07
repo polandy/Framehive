@@ -17,6 +17,9 @@ All user-visible changes are listed here. The format follows
   Rust toolchain, Nix development shell, and REUSE-compliant licensing
   (GPL-3.0-or-later).
 - `cargo xtask ci` with the file, architecture, dependency and specification checks.
+- Coverage-guided fuzzing of the EXIF parser: the fuzz crate in `fuzz/`, the
+  `nix develop .#fuzz` shell with a pinned nightly toolchain, `cargo xtask fuzz` and a
+  nightly workflow (ADR 0037).
 - Name templates (IMPORT-001): the import plan gives each imported file its folders
   and name from a name template, keeps the files of one asset together, and marks
   files that cannot be named or are dated by their modification time.
