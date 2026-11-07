@@ -22,7 +22,9 @@ are the required locations. A file is *saved* when it is verified at every one o
 Without backup destinations, the import destination is the only required location.
 With a video destination or video backup destinations (IMPORT-013), each file has its
 own required locations: the destination it is copied to and the backup destinations it
-is sent to, so a photo and a video can require different numbers of locations.
+is sent to, so a photo and a video can require different numbers of locations. A run
+without files requires the locations a photo would: the import destination and the
+backup destinations, not the video backup destinations.
 
 **Verified at a location.**
 
@@ -145,6 +147,12 @@ formatted: a stopped run has not looked at every file, and a dry run verifies no
   locations, the result carries 3 required locations, and it says that the files
   require different numbers
 
+### IMPORT-008.15 – A run without files counts the photo locations
+- **Given** a run with one backup destination and one video backup destination of its
+  own, in which the scan found no file and left nothing out
+- **When** the format readiness is evaluated
+- **Then** the card can be formatted, with 2 required locations
+
 ## Out of scope
 
 - How the command line and the guided import show the format readiness: CLI-007.
@@ -164,3 +172,4 @@ formatted: a stopped run has not looked at every file, and a dry run verifies no
 |---|---|
 | 2026-11-04 | Initial draft; owner decisions: every destination of the run is required, files left out as unsupported, hidden or symbolic links do not keep the card, no change to exit codes; accepted by the owner |
 | 2026-11-06 | Each file has its own required locations when videos have their own destinations (IMPORT-013) |
+| 2026-11-07 | A run without files requires the photo locations only, not the video backup destinations |

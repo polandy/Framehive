@@ -204,13 +204,18 @@ pub struct BackupCounts {
     pub backed_up_before: usize,
     /// Files that failed there.
     pub failed: usize,
+    /// Whether photos are backed up there; a video backup destination of its own
+    /// receives only videos (IMPORT-013).
+    pub receives_photos: bool,
 }
 
 impl BackupCounts {
-    /// No files counted yet at `destination`.
-    pub(crate) fn new(destination: &Path) -> Self {
+    /// No files counted yet at `destination`, which receives photos when
+    /// `receives_photos`.
+    pub(crate) fn new(destination: &Path, receives_photos: bool) -> Self {
         BackupCounts {
             destination: destination.to_path_buf(),
+            receives_photos,
             ..BackupCounts::default()
         }
     }
