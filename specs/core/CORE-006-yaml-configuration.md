@@ -35,10 +35,10 @@ a top level that is a sequence or a scalar is an error at line 1, column 1:
 `expected a mapping of keys`.
 
 **`schema_version`.** Every file has the key `schema_version` with a plain integer. A
-missing key, or one with no value, is an error at line 1, column 1. A value that is not
-a positive integer is an error at the value. A version above the highest version the
-file type knows is an error at the value: `schema_version <n> is newer than this
-Framehive supports (<highest>); update Framehive`.
+missing key is an error at line 1, column 1, a key with no value at the key. A value
+that is not a positive integer is an error at the value. A version above the highest
+version the file type knows is an error at the value: `schema_version <n> is newer than
+this Framehive supports (<highest>); update Framehive`.
 
 **Keys.** A key is a plain or quoted string. A key that the file type does not know is
 an error at the key: `unknown key <key>`, followed by `; did you mean <known>?` when a

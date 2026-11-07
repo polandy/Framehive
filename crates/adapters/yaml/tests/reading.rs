@@ -210,6 +210,10 @@ fn schema_version_must_be_present_and_a_positive_whole_number() {
             "{text:?}"
         );
     }
+    assert_eq!(
+        located_message("destination: /a\nschema_version:\n"),
+        "2:1: schema_version has no value; it must be a positive whole number"
+    );
 }
 
 /// spec: CORE-006.14
