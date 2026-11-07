@@ -1,6 +1,6 @@
 # CORE-007 – Job queue
 
-- Status: accepted
+- Status: implemented
 - Module: core (`jobs` service)
 - Origin: J1, J3
 - Depends on: –
@@ -171,3 +171,4 @@ reports itself to whoever enqueued it (IMPORT-015).
 |---|---|
 | 2026-11-07 | Created (J1, ADR 0035) |
 | 2026-11-07 | Jobs that name no common resource run in parallel, each on a worker thread of its own; a job can be told when it is asked to stop (J3, ADR 0036); criteria 12–16 |
+| 2026-11-07 | Implemented (J3) |

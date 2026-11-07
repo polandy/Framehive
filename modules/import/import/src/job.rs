@@ -19,9 +19,13 @@ use naming::{CompatibilityMode, NameTemplate, SequenceCounters};
 use crate::conflicts::ConflictPolicy;
 use crate::job_code::JobCode;
 use crate::report::{FileReport, ImportSummary, ProgressSink, RunError};
-use crate::run::{ImportRun, ImportSettings, PlannedRun, RunSteps};
+use crate::run::{ImportRun, ImportSettings, PlannedRun};
 use crate::scan::SourceScan;
 use crate::sequence::SessionSequence;
+
+mod sending;
+
+use sending::{Answer, SendingSteps};
 
 /// The ports an import job works through, owned so they can move to the worker
 /// thread and be shared with the application that enqueued it.
@@ -152,8 +156,8 @@ enum Report {
     ScanFinished(SourceScan),
     FileStarted(PathBuf),
     FileFinished(FileReport),
-    /// Asks whether to go on with the next file; the answer goes back on the sender.
-    GoOn(Sender<bool>),
+    /// Asks whether to go on with the next file.
+    GoOn(Answer),
     Ended(ImportJobEnd),
 }
 
@@ -212,11 +216,7 @@ impl ImportJob {
             reports,
         } = self;
         let settings = settings.settings();
-        let mut steps = SendingSteps {
-            reports: &reports,
-            control,
-            asks,
-        };
+        let mut steps = SendingSteps::new(&reports, control, asks);
         let result = {
             let mut run = ports.import_run();
             if let Some((file_system, name)) = &source {
@@ -243,46 +243,6 @@ impl ImportJob {
 impl Job for ImportJob {
     fn run(self: Box<Self>, control: &JobControl) -> JobEnd {
         self.import(control)
-    }
-}
-
-/// Sends the steps of the run to the enqueuer. Nobody listening is not an error: the
-/// import still runs.
-struct SendingSteps<'s> {
-    reports: &'s Sender<Report>,
-    control: &'s JobControl,
-    asks: bool,
-}
-
-impl RunSteps for SendingSteps<'_> {
-    fn scan_finished(&mut self, scan: &SourceScan) {
-        let _ = self.reports.send(Report::ScanFinished(scan.clone()));
-    }
-
-    fn file_started(&mut self, path: &Path) {
-        let _ = self.reports.send(Report::FileStarted(path.to_path_buf()));
-    }
-
-    fn file_finished(&mut self, report: FileReport) {
-        let _ = self.reports.send(Report::FileFinished(report));
-    }
-
-    /// The enqueuer is asked first, so that a stop it asked for while it followed
-    /// the reports is seen before the next file.
-    fn should_continue(&mut self) -> bool {
-        (!self.asks || self.enqueuer_goes_on()) && self.control.should_continue()
-    }
-}
-
-impl SendingSteps<'_> {
-    /// Asks the enqueuer whether to go on and waits for the answer. An enqueuer that
-    /// no longer listens cannot answer; the import goes on.
-    fn enqueuer_goes_on(&self) -> bool {
-        let (answer, answered) = mpsc::channel();
-        if self.reports.send(Report::GoOn(answer)).is_err() {
-            return true;
-        }
-        answered.recv().unwrap_or(true)
     }
 }
 
@@ -327,9 +287,7 @@ impl ImportJobReports {
                     progress.file_finished(&report);
                     files.push(report);
                 }
-                Report::GoOn(answer) => {
-                    let _ = answer.send(progress.should_continue());
-                }
+                Report::GoOn(answer) => answer.give(progress.should_continue()),
                 Report::Ended(mut end) => {
                     if let Ok(summary) = &mut end.result {
                         summary.files = files;

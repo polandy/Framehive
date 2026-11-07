@@ -7,113 +7,24 @@
 
 #![allow(clippy::unwrap_used, clippy::panic, reason = "tests")]
 
+mod job_support;
 mod run_support;
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::mpsc::{self, Receiver, Sender};
 
-use domain::testing::ManualClock;
-use domain::{Timestamp, UtcOffset};
-use files::testing::{Fault, FnvHasher, MemoryFileSystem, MemoryFreeSpace};
+use files::testing::{Fault, MemoryFileSystem};
 use history::testing::MemoryImportHistory;
 use import::{
-    ConflictPolicy, FileOutcome, FileReport, ImportJob, ImportJobEnd, ImportJobSettings,
-    ImportPorts, ImportSettings, ImportSummary, ProgressSink, RunError, SessionSequence,
+    FileOutcome, FileReport, ImportJob, ImportJobEnd, ImportSummary, ProgressSink, RunError,
     SourceScan,
 };
-use jobs::{Job, JobControl, JobEnd, JobId, JobQueue, JobState, JobUpdate};
-use naming::testing::MemorySequenceCounters;
-use naming::{CompatibilityMode, NameTemplate};
-use run_support::{DESTINATION, NOW, SOURCE, Setup, TEMPLATE, source_with, target};
-
-/// The ports of a job on `file_system`, with a history the test can look into.
-fn ports(file_system: &MemoryFileSystem, history: &Arc<MemoryImportHistory>) -> ImportPorts {
-    let clock = ManualClock::new(Timestamp::from_unix_seconds(NOW), UtcOffset::UTC);
-    ImportPorts {
-        file_system: Arc::new(file_system.clone()),
-        hasher: Arc::new(FnvHasher),
-        clock: Arc::new(clock),
-        counters: Arc::new(MemorySequenceCounters::new()),
-        session: Arc::new(SessionSequence::new()),
-        history: Arc::clone(history) as _,
-        free_space: Arc::new(MemoryFreeSpace::unlimited()),
-    }
-}
-
-fn settings(template: &str) -> ImportJobSettings {
-    let template = NameTemplate::parse(template).unwrap();
-    ImportJobSettings::of(&ImportSettings {
-        source: Path::new(SOURCE),
-        destination: Path::new(DESTINATION),
-        backup_destinations: &[],
-        video_destination: None,
-        video_backup_destinations: &[],
-        template: &template,
-        job_code: None,
-        mode: CompatibilityMode::On,
-        policy: ConflictPolicy::AddSuffix,
-        dry_run: false,
-    })
-}
-
-/// A job that imports `file_system`'s source with [`TEMPLATE`].
-fn job(file_system: &MemoryFileSystem) -> (ImportJob, import::ImportJobReports) {
-    let history = Arc::new(MemoryImportHistory::new());
-    ImportJob::new(ports(file_system, &history), settings(TEMPLATE))
-}
-
-/// Every step the enqueuer saw, as text.
-#[derive(Default)]
-struct Steps(Vec<String>);
-
-impl ProgressSink for Steps {
-    fn scan_finished(&mut self, scan: &SourceScan) {
-        self.0.push(format!("scan {}", scan.files.len()));
-    }
-
-    fn file_started(&mut self, path: &Path) {
-        self.0.push(format!("started {}", path.display()));
-    }
-
-    fn file_finished(&mut self, report: &FileReport) {
-        self.0.push(format!("finished {}", report.path.display()));
-    }
-}
-
-/// How the job `id` ended, from the queue's updates.
-fn end_state(updates: &Receiver<JobUpdate>, id: JobId) -> JobState {
-    updates
-        .iter()
-        .find(|update| update.job == id && update.state.has_ended())
-        .unwrap()
-        .state
-}
-
-/// Runs `job` in a new queue, follows its reports with `progress`, and returns its end
-/// report and its end state.
-fn run_in_queue(
-    job: (ImportJob, import::ImportJobReports),
-    progress: &mut dyn ProgressSink,
-) -> (Option<ImportJobEnd>, JobState) {
-    let (mut queue, updates) = JobQueue::start();
-    let (job, reports) = job;
-    let id = queue.enqueue(Box::new(job));
-    let end = reports.follow(progress);
-    (end, end_state(&updates, id))
-}
-
-fn summary(end: Option<ImportJobEnd>) -> ImportSummary {
-    end.unwrap().result.unwrap()
-}
-
-fn copied(summary: &ImportSummary) -> usize {
-    summary
-        .files
-        .iter()
-        .filter(|report| matches!(report.outcome, FileOutcome::Copied { .. }))
-        .count()
-}
+use job_support::{
+    Steps, StopsAtOnce, copied, end_state, job, ports, run_in_queue, settings, summary,
+};
+use jobs::{Job, JobControl, JobEnd, JobId, JobQueue, JobState, ResourceKey};
+use run_support::{DESTINATION, SOURCE, Setup, TEMPLATE, source_with, target};
 
 /// spec: IMPORT-015.1
 #[test]
@@ -253,9 +164,26 @@ fn stopping_an_import_job_finishes_the_file_being_copied() {
 struct Gate(Receiver<()>);
 
 impl Job for Gate {
+    fn resources(&self) -> Vec<ResourceKey> {
+        vec![ResourceKey::new("disk")]
+    }
+
     fn run(self: Box<Self>, _control: &JobControl) -> JobEnd {
         let _ = self.0.recv();
         JobEnd::Finished
+    }
+}
+
+/// `job`, with the resource of [`Gate`], so that it waits behind it.
+struct BehindGate<J>(J);
+
+impl<J: Job> Job for BehindGate<J> {
+    fn resources(&self) -> Vec<ResourceKey> {
+        vec![ResourceKey::new("disk")]
+    }
+
+    fn run(self: Box<Self>, control: &JobControl) -> JobEnd {
+        Box::new(self.0).run(control)
     }
 }
 
@@ -270,7 +198,7 @@ fn a_removed_import_job_does_not_touch_the_source() {
     let (open, gate): (Sender<()>, Receiver<()>) = mpsc::channel();
     let (mut queue, updates) = JobQueue::start();
     queue.enqueue(Box::new(Gate(gate)));
-    let id = queue.enqueue(Box::new(job));
+    let id = queue.enqueue(Box::new(BehindGate(job)));
 
     queue.remove(id).unwrap();
     open.send(()).unwrap();
@@ -303,18 +231,6 @@ fn camera_job(camera: &MemoryFileSystem, template: &str) -> (ImportJob, import::
     );
     let job = job.with_source(Box::new(camera.clone()), PathBuf::from("camera:X-T5"));
     (job, reports)
-}
-
-/// Answers "stop" at the first question.
-struct StopsAtOnce;
-
-impl ProgressSink for StopsAtOnce {
-    fn scan_finished(&mut self, _scan: &SourceScan) {}
-    fn file_started(&mut self, _path: &Path) {}
-    fn file_finished(&mut self, _report: &FileReport) {}
-    fn should_continue(&mut self) -> bool {
-        false
-    }
 }
 
 /// spec: IMPORT-015.7
@@ -366,18 +282,4 @@ fn a_job_imports_a_plan_made_on_the_callers_thread() {
     );
     assert_eq!(history.runs().len(), 1);
     assert_eq!(state, JobState::Finished);
-}
-
-/// spec: IMPORT-015.9
-#[test]
-fn an_asking_job_stops_when_its_enqueuer_says_so() {
-    let file_system = source_with(&["DCIM/a.jpg", "DCIM/b.jpg"]);
-    let (job, reports) = job(&file_system);
-
-    let (end, state) = run_in_queue((job.asking_before_each_file(), reports), &mut StopsAtOnce);
-
-    let summary = summary(end);
-    assert!(summary.stopped);
-    assert!(summary.files.is_empty());
-    assert_eq!(state, JobState::Stopped);
 }

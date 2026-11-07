@@ -1,44 +1,75 @@
 // SPDX-FileCopyrightText: 2026 Framehive contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//! The worker thread: takes the jobs one by one, runs each, and reports how it ended
-//! (CORE-007, ADR 0035 §2 and §6).
+//! The worker threads: the scheduling rule that starts the jobs that can start, one
+//! thread per running job, and the report of how each job ended (CORE-007, ADR 0035
+//! §6, ADR 0036 §1 and §3).
 
 use std::any::Any;
 use std::panic::{AssertUnwindSafe, catch_unwind};
+use std::sync::Arc;
 
-use crate::job::{Job, JobControl, JobId, JobState};
-use crate::queue::Shared;
+use crate::job::{Job, JobControl, JobId, JobState, ResourceKey};
+use crate::queue::{Lineup, Running, Shared, Waiting};
 
-/// Runs the jobs of `shared` until the queue shuts down and no job is left.
-pub(crate) fn run_worker(shared: &Shared) {
-    while let Some((id, job, control)) = next_job(shared) {
-        let state = run_job(job, &control);
-        let mut lineup = shared.lineup();
-        lineup.running = None;
-        lineup.report(id, state);
+/// Starts every waiting job that conflicts with no running job and with no job
+/// enqueued before it that still waits (ADR 0036 §3).
+pub(crate) fn start_ready_jobs(shared: &Arc<Shared>, lineup: &mut Lineup) {
+    // The resources of the earlier jobs that keep waiting.
+    let mut held_back: Vec<ResourceKey> = Vec::new();
+    let mut index = 0;
+    while let Some(waiting) = lineup.waiting.get(index) {
+        let conflicts = waiting.resources.iter().any(|resource| {
+            held_back.contains(resource)
+                || lineup
+                    .running
+                    .iter()
+                    .any(|running| running.resources.contains(resource))
+        });
+        if conflicts {
+            held_back.extend(waiting.resources.iter().cloned());
+            index += 1;
+        } else if let Some(waiting) = lineup.waiting.remove(index) {
+            start_job(shared, lineup, waiting);
+        }
     }
 }
 
-/// Waits for the next job, marks it running and reports it `Running`; `None` once the
-/// queue shuts down.
-fn next_job(shared: &Shared) -> Option<(JobId, Box<dyn Job>, JobControl)> {
-    let mut lineup = shared.lineup();
-    loop {
-        if let Some((id, job)) = lineup.waiting.pop_front() {
-            let control = JobControl::new();
-            lineup.running = Some((id, control.clone()));
-            lineup.report(id, JobState::Running);
-            return Some((id, job, control));
+/// Reports `waiting` `Running` and runs it on a worker thread of its own.
+fn start_job(shared: &Arc<Shared>, lineup: &mut Lineup, waiting: Waiting) {
+    let Waiting { id, job, resources } = waiting;
+    let control = JobControl::new();
+    lineup.report(id, JobState::Running);
+    let worker_shared = Arc::clone(shared);
+    let worker_control = control.clone();
+    let spawned = std::thread::Builder::new()
+        .name(format!("framehive {id}"))
+        .spawn(move || run_worker(&worker_shared, id, job, &worker_control));
+    match spawned {
+        Ok(worker) => {
+            lineup.workers.retain(|worker| !worker.is_finished());
+            lineup.workers.push(worker);
+            lineup.running.push(Running {
+                id,
+                control,
+                resources,
+            });
         }
-        if lineup.closing {
-            return None;
-        }
-        lineup = shared
-            .wake
-            .wait(lineup)
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        Err(error) => lineup.report(
+            id,
+            JobState::Failed(format!("the job could not start a thread: {error}")),
+        ),
     }
+}
+
+/// Runs the job `id` on its worker thread, reports how it ended, and starts the jobs
+/// that waited for it.
+fn run_worker(shared: &Arc<Shared>, id: JobId, job: Box<dyn Job>, control: &JobControl) {
+    let state = run_job(job, control);
+    let mut lineup = shared.lineup();
+    lineup.running.retain(|running| running.id != id);
+    lineup.report(id, state);
+    start_ready_jobs(shared, &mut lineup);
 }
 
 /// Runs `job` and tells how it ended; a panic fails the job, not the queue (ADR 0035
