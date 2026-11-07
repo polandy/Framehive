@@ -20,7 +20,8 @@ when it is missing. `framehive import` always needs the state folder, also with
 `--dry-run` and with a template without a persisted counter: when `XDG_STATE_HOME` is
 not an absolute path and the home folder is unknown, it prints
 `error: the home folder is unknown; set HOME` to standard error, copies nothing, and
-exits with code 2.
+exits with code 2. A dry run reads an existing history and leaves the state folder
+as it was: it records nothing and leaves no journal file of SQLite behind.
 
 **The lines.** A file imported before gets its own line on standard output, in the
 place of the lines of CLI-001, and a backup destination it is backed up before at gets
@@ -128,6 +129,12 @@ the guided import.
 - **Then** standard error has `error: the home folder is unknown; set HOME`, nothing is
   written, and the exit code is 2
 
+### CLI-008.11 – A dry run leaves the state folder as it was
+- **Given** a state folder with the history of an earlier import of the source
+- **When** `framehive import <source> --destination <destination> --dry-run` runs
+- **Then** the dry run shows the file as imported before, and the files of the state
+  folder and the content of the history file are unchanged
+
 ## Out of scope
 
 - Which files are imported before or backed up before: IMPORT-009.
@@ -148,3 +155,4 @@ the guided import.
 | 2026-11-04 | CLI-008.8 and CLI-008.9: the messages for a folder that cannot be resolved |
 | 2026-11-04 | CLI-008.10: `framehive import` always needs the state folder; owner decision |
 | 2026-11-07 | Examples name the destination with `--destination` (CLI-001, ADR 0036) |
+| 2026-11-07 | CLI-008.11: a dry run leaves the state folder as it was |

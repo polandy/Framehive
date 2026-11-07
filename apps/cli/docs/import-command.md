@@ -21,7 +21,10 @@ starts and executes the run with
 `adapter-fs`, `adapter-blake3` and `adapter-clock`, in compatibility mode. The persisted sequence counters (CLI-004, ADR 0029) come from
 `adapter-sequence-counters`, and the import history (CLI-008, ADR 0031) from
 `adapter-sqlite`, both in the state folder; the command stops when the state folder is
-unknown (no absolute `XDG_STATE_HOME` and no home folder). The run gets the resolved paths,
+unknown (no absolute `XDG_STATE_HOME` and no home folder). A dry run opens the history
+with `SqliteImportHistory::new` and never writes; the last connection to close removes
+the journal files of SQLite. `SqliteImportHistory::read_only` would leave `-wal` and
+`-shm` behind, because a read-only connection cannot remove them. The run gets the resolved paths,
 by which the history identifies a destination (IMPORT-009).
 
 ## Several sources
