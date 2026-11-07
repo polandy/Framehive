@@ -1,9 +1,9 @@
 # IMPORT-002 – Sequence numbers
 
-- Status: implemented
+- Status: accepted
 - Module: import
 - Origin: R4, R5, J3
-- Depends on: IMPORT-001 (file name templates), IMPORT-003 (conflicts)
+- Depends on: IMPORT-001, IMPORT-003, IMPORT-015
 
 ## Purpose
 
@@ -40,14 +40,16 @@ name, compared byte by byte.
 **Letters.** The letter sequence counts `a`…`z`, then `aa`…`zz`: 702 values. Letter
 names sort in shooting order only within one length, because `z` sorts after `aa`.
 
-**Reservation.** Numbers are reserved when an import starts, before its first file is
-copied, and an import holds one contiguous range for all its assets. In the guided import
-this is Enter; `framehive import` reserves before copying. A dry run (CLI-001) and the
-plan summary of the guided import (CLI-003) show the numbers the import would get if no
+**Reservation.** An import holds one contiguous range for all its assets. An import job
+enqueued with its plan reserves it, session numbers too, when it is enqueued (IMPORT-015), so jobs running in
+parallel never share numbers. An import run, and an import job that scans its source
+itself, reserve when the import starts, before the first file is copied. In the guided
+import this is Enter; `framehive import` reserves when it enqueues each source's job.
+A dry run (CLI-001) and the plan summary of the guided import (CLI-003) show the numbers the import would get if no
 other import started in between, and reserve nothing. Two imports that start at the same
-time, in two processes, get ranges one after the other. When an import is cancelled or
-fails, its unused numbers are not returned, and an asset that is not copied (IMPORT-003)
-keeps its number unused. Gaps are acceptable; duplicates are not. Session and letter numbers start at 1 in every run and
+time, in two processes, get ranges one after the other. When an import is cancelled,
+fails or is removed from the queue, its unused numbers are not returned, and an asset
+that is not copied (IMPORT-003) keeps its number unused. Gaps are acceptable; duplicates are not. Session and letter numbers start at 1 in every run and
 are never stored.
 
 **Overflow.** If the last number of the range no longer fits the configured digits, or
@@ -154,6 +156,18 @@ card gets the same names again there.
 - **Then** every file is imported before (IMPORT-009), no number is reserved, and no file
   is copied
 
+### IMPORT-002.16 – Numbers are reserved when an import job is enqueued
+- **Given** `{seq_stored:3}.{ext}`, the stored counter at 100, and a running job that
+  keeps import jobs waiting
+- **When** planned import jobs of 3 and then 2 pictures are enqueued behind it
+- **Then** the counter is at 105 before either runs, and the jobs get 101–103 and
+  104–105
+
+### IMPORT-002.17 – A removed import job leaves a gap
+- **Given** a queued import job that reserved 101–103
+- **When** it is removed, and another import job is enqueued
+- **Then** the other job starts at 104
+
 ## Out of scope
 
 - Template syntax and other tokens: IMPORT-001.
@@ -165,9 +179,6 @@ card gets the same names again there.
 - Letters beyond `zz`: not planned; RPD stops there too, and longer letter names would
   not sort.
 
-## Open questions
-
-
 ## History
 
 | Date | Change |
@@ -177,3 +188,4 @@ card gets the same names again there.
 | 2026-11-04 | Accepted: counters in the state folder (ADR 0029); reserved when an import starts, as there is no queue yet; assets from the grouping, numbered in shooting order; letters end at `zz`; broken counter file stops the import; notice that persisted counters cannot recognize files already imported; criteria 9–15 |
 | 2026-11-04 | Implemented in `naming`, `import`, `adapter-sequence-counters` and `framehive-cli` (CLI-003, CLI-004) |
 | 2026-11-04 | The import history recognizes files imported before (IMPORT-009): the plan notice is removed; criterion 15 now tests the recognition, and criterion 14 an import destination the history does not know |
+| 2026-11-07 | Planned import jobs reserve when enqueued (J3, ADR 0036); criteria 16–17 |

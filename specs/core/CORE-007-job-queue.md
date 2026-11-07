@@ -1,15 +1,16 @@
 # CORE-007 – Job queue
 
-- Status: implemented
+- Status: accepted
 - Module: core (`jobs` service)
-- Origin: J1
+- Origin: J1, J3
 - Depends on: –
 
 ## Purpose
 
 Long work such as an import must not keep a frontend waiting. The job queue runs jobs
-in the background, one after another, and reports how each one stands, so the frontend
-stays free to react to the person and the devices (ADR 0035).
+in the background, in parallel where they do not get in each other's way, and reports
+how each one stands, so the frontend stays free to react to the person and the devices
+(ADR 0035, ADR 0036).
 
 ## Behaviour
 
@@ -17,16 +18,25 @@ A **job** is background work in the queue. Whoever enqueues it gets back its **j
 id** at once. Job ids are numbered 1, 2, 3, … in the order the jobs were enqueued, per
 queue.
 
-The queue runs one job at a time on a worker thread of its own, in the order the jobs
-were enqueued. Enqueueing, stopping and removing return without waiting for a job.
+**Resources.** A job names the **resources** it uses when it is enqueued, as opaque
+resource keys; the queue only compares them. Two jobs **conflict** when they name a
+common resource. A job that names no resource conflicts with no job.
+
+**Scheduling.** Each running job runs on a worker thread of its own. A queued job starts
+as soon as it conflicts with no running job and with no job enqueued before it that
+still waits. So jobs that conflict run one after another, in the order they were
+enqueued, and a later job overtakes an earlier waiting one only when it conflicts with
+neither that job nor any running job. There is no limit on the number of jobs that run
+at the same time beyond this rule. Enqueueing, stopping and removing return without
+waiting for a job.
 
 **Job states.** The queue reports each change of a job's state, with its job id, over a
 channel. The states of one job are reported in this order:
 
 | State | Meaning |
 |---|---|
-| `Queued` | Enqueued, waiting for the jobs before it |
-| `Running` | The worker runs it |
+| `Queued` | Enqueued, waiting for the jobs it conflicts with |
+| `Running` | A worker thread runs it |
 | `Finished` | It ran to its end |
 | `Stopped` | It was asked to stop while it ran, and ended early |
 | `Failed` | It ended with an error, or stopped unexpectedly (a panic); the reason is a text |
@@ -37,14 +47,15 @@ state is reported for it after that.
 
 **Stopping and removing.** A running job is asked to stop; it decides where it can stop
 safely and ends as `Stopped` there, or as `Finished` when it was already at its end. A
-queued job is removed and never runs. Asking to stop or remove a job that has already
+job that waits for something, such as an answer, can ask to be told when it is asked
+to stop, so that it does not wait on. A queued job is removed and never runs. Asking to stop or remove a job that has already
 ended, or a job id the queue does not know, changes nothing and says so.
 
 **Failures.** A job that fails, or panics, ends as `Failed`; the queue goes on with the
 next job.
 
-**Shutting down.** When the queue is shut down, the queued jobs are removed, the running
-job is asked to stop, and the shutdown returns once it has ended.
+**Shutting down.** When the queue is shut down, every running job is asked to stop, the
+queued jobs are removed, and the shutdown returns once every running job has ended.
 
 What a job reports beyond its state, such as the progress and result of an import, it
 reports itself to whoever enqueued it (IMPORT-015).
@@ -62,8 +73,9 @@ reports itself to whoever enqueued it (IMPORT-015).
 - **Then** the states `Queued`, `Running` and `Finished` are reported for its job id, in
   this order, and nothing after
 
-### CORE-007.3 – Jobs run one after another in order
-- **Given** a running job 1, and jobs 2 and 3 enqueued after it
+### CORE-007.3 – Conflicting jobs run one after another in order
+- **Given** a running job 1, and jobs 2 and 3 enqueued after it, all three naming the
+  same resource
 - **When** the jobs run
 - **Then** job 2 is reported `Running` only after job 1 ended, and job 3 only after job
   2 ended
@@ -114,9 +126,39 @@ reports itself to whoever enqueued it (IMPORT-015).
 - **When** it is asked to stop
 - **Then** it ends as `Finished`
 
+### CORE-007.12 – Jobs without a common resource run in parallel
+- **Given** a running job 1 that names resource `a` and waits until the test lets it
+  go on, and a job 2 that names resource `b`
+- **When** job 2 is enqueued
+- **Then** job 2 is reported `Running` and runs to `Finished` while job 1 still runs
+
+### CORE-007.13 – A waiting job overtakes only what it does not conflict with
+- **Given** a running job 1 that names `a`, and jobs enqueued after it: job 2 naming
+  `a` and `b`, job 3 naming `b`, and job 4 naming `c`
+- **When** the jobs run
+- **Then** job 4 is reported `Running` while job 1 runs, job 2 only after job 1 ended,
+  and job 3 only after job 2 ended
+
+### CORE-007.14 – A job without resources starts at once
+- **Given** a running job 1 that names `a`, and a queued job 2 that names `a`
+- **When** a job 3 that names no resource is enqueued
+- **Then** job 3 is reported `Running` while job 1 runs and job 2 waits
+
+### CORE-007.15 – Shutting down stops every running job
+- **Given** two running jobs that ask whether to go on before each of their steps
+- **When** the queue is shut down
+- **Then** both end as `Stopped`, and the shutdown returns after both are reported
+
+### CORE-007.16 – A waiting job is told that it is asked to stop
+- **Given** a running job that waits until it is told that it is asked to stop
+- **When** it is asked to stop
+- **Then** it is told, and ends as `Stopped`; a job asked to stop before it asks to be
+  told is told at once
+
 ## Out of scope
 
-- Jobs running in parallel, and reserving names at enqueue time: J3.
+- What the resources of an import job are, and reserving sequence numbers and names
+  at enqueue time: IMPORT-015, IMPORT-002.
 - Pausing, reordering and showing jobs in the window header: J4.
 - A queue that survives a restart, and a `JobStore` port: J6.
 - Priorities and pausing low-priority jobs: J8.
@@ -128,3 +170,4 @@ reports itself to whoever enqueued it (IMPORT-015).
 | Date | Change |
 |---|---|
 | 2026-11-07 | Created (J1, ADR 0035) |
+| 2026-11-07 | Jobs that name no common resource run in parallel, each on a worker thread of its own; a job can be told when it is asked to stop (J3, ADR 0036); criteria 12–16 |

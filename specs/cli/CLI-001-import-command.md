@@ -1,6 +1,6 @@
 # CLI-001 – `framehive import`
 
-- Status: implemented
+- Status: accepted
 - Module: cli (`apps/cli`)
 - Origin: N18, X1, N26, R9
 - Depends on: IMPORT-001, IMPORT-003, IMPORT-004, IMPORT-005, IMPORT-006, CORE-005
@@ -14,14 +14,14 @@ shows every decision the import makes.
 ## Behaviour
 
 ```
-framehive import <source> <destination> [--template <template>]
+framehive import <source>... <destination> [--template <template>]
                  [--job-code <text>] [--on-conflict add_suffix|skip|fail]
                  [--dry-run]
 ```
 
 | Argument | Meaning | Default |
 |---|---|---|
-| `<source>` | Folder to import from (IMPORT-005) | required |
+| `<source>...` | Folder to import from (IMPORT-005); several sources: CLI-015 | required |
 | `<destination>` | Folder to import into; created with its parents when missing | required |
 | `--template` | Name template (IMPORT-001) | `{date:%Y}/{date:%Y-%m-%d}/{name}.{ext}` |
 | `--job-code` | Job code for the `{job}` token (IMPORT-006) | none |
@@ -191,6 +191,7 @@ Errors that stop the command, and log messages, go to standard error.
 - Devices: detecting and naming cards and cameras as sources (Q1, Q2): the device spec.
 - Backup destinations (I2): CLI-005. The import log (N6) and resuming (N4): later specs.
 - Progress with throughput and remaining time (N12): the TUI concept and the GUI.
+- Several sources in one command: CLI-015.
 - Translated output (X2): text is English until a spec for languages exists.
 
 ## Open questions
@@ -208,3 +209,4 @@ Errors that stop the command, and log messages, go to standard error.
 | 2026-11-02 | CLI-001.11 names the unknown subcommand, which clap already rejected |
 | 2026-11-04 | Sequence numbers (IMPORT-002), specified in CLI-004 |
 | 2026-11-04 | The import history recognizes a re-run (CLI-008): CLI-001.2 now runs without the history, so it still tests IMPORT-003 |
+| 2026-11-07 | `<source>...`: several sources, specified in CLI-015 (Q5, J3) |

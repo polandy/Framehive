@@ -1,6 +1,6 @@
 # 0035 – Job queue on a worker thread
 
-- Status: accepted
+- Status: accepted; §2 superseded by ADR 0036 (parallel jobs)
 - Date: 2026-11-07
 
 ## Context
