@@ -207,24 +207,24 @@ pub struct BackupCounts {
 }
 
 impl BackupCounts {
-    /// Counts the outcomes at `destination` in `reports`, the backups of each file.
-    pub(crate) fn of<'r>(
-        destination: &Path,
-        reports: impl Iterator<Item = &'r BackupReport>,
-    ) -> Self {
-        let mut counts = BackupCounts {
+    /// No files counted yet at `destination`.
+    pub(crate) fn new(destination: &Path) -> Self {
+        BackupCounts {
             destination: destination.to_path_buf(),
             ..BackupCounts::default()
-        };
-        for report in reports.filter(|report| report.destination == destination) {
+        }
+    }
+
+    /// Adds the outcomes at this destination in `reports`, the backups of one file.
+    pub(crate) fn count<'r>(&mut self, reports: impl Iterator<Item = &'r BackupReport>) {
+        for report in reports.filter(|report| report.destination == self.destination) {
             match report.outcome {
-                BackupOutcome::BackedUp => counts.backed_up += 1,
-                BackupOutcome::AlreadyBackedUp => counts.already_backed_up += 1,
-                BackupOutcome::BackedUpBefore => counts.backed_up_before += 1,
-                BackupOutcome::Failed(_) => counts.failed += 1,
+                BackupOutcome::BackedUp => self.backed_up += 1,
+                BackupOutcome::AlreadyBackedUp => self.already_backed_up += 1,
+                BackupOutcome::BackedUpBefore => self.backed_up_before += 1,
+                BackupOutcome::Failed(_) => self.failed += 1,
             }
         }
-        counts
     }
 }
 

@@ -10,6 +10,7 @@ use std::path::{Path, PathBuf};
 
 use devices::{Device, DeviceChanges, DeviceWatch, PollError};
 use import::JobCode;
+use jobs::JobQueue;
 
 use super::events::{Event, EventSource};
 use super::source::Source;
@@ -67,6 +68,10 @@ pub(crate) struct Dialog<'a> {
     cameras_failed: bool,
     /// A card pulled or a camera disconnected during its import.
     pub(super) interrupted: Option<Interrupted>,
+    /// The job queue the imports run in (IMPORT-015); the dialog follows each import
+    /// job until it ends. Nothing reads its updates: each import job's own reports say
+    /// how it ended.
+    pub(super) jobs: JobQueue,
 }
 
 /// Which card to import, and how.
@@ -86,7 +91,7 @@ impl<'a> Dialog<'a> {
         output: &'a mut dyn Write,
         warnings: &'a mut dyn Write,
     ) -> Self {
-        let loaded = load_state(ports.file_system, &environment.state_file);
+        let loaded = load_state(ports.file_system(), &environment.state_file);
         let mut dialog = Dialog {
             ports,
             environment,
@@ -102,6 +107,7 @@ impl<'a> Dialog<'a> {
             cards_failed: false,
             cameras_failed: false,
             interrupted: None,
+            jobs: JobQueue::start().0,
         };
         for warning in &loaded.warnings {
             dialog.warn(warning);
@@ -350,7 +356,7 @@ impl<'a> Dialog<'a> {
     /// Writes the state file; a failure is a warning (CLI-003, "Remembered state").
     pub(super) fn remember(&mut self) {
         let path = self.environment.state_file.clone();
-        if let Err(error) = save_state(self.ports.file_system, &path, &self.state) {
+        if let Err(error) = save_state(self.ports.file_system(), &path, &self.state) {
             self.warn(&format!(
                 "the answers cannot be remembered in {}: {error}",
                 path.display()

@@ -280,6 +280,7 @@ dependencies = [
  "files",
  "history",
  "import",
+ "jobs",
  "metadata",
  "naming",
 ]
@@ -300,6 +301,7 @@ dependencies = [
  "domain",
  "files",
  "history",
+ "jobs",
  "kernel",
  "metadata",
  "naming",
@@ -350,6 +352,13 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.119",
+]
+
+[[package]]
+name = "jobs"
+version = "0.1.0"
+dependencies = [
+ "thiserror",
 ]
 
 [[package]]

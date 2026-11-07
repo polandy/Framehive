@@ -54,7 +54,8 @@ Boundaries:
   wires the adapters. `ImportRun` runs synchronously on the caller's thread and reports to a
   `ProgressSink`, which it asks before each file whether to go on
   (`should_continue`, IMPORT-004.13); a stopped run sets `ImportSummary::stopped`. It
-  becomes the body of the import job once the jobs service exists.
+  is the body of the import job (IMPORT-015), which runs it on the job queue's worker
+  thread and sends each step to its enqueuer.
 - **Never writes to the source** and never replaces a file at the destination
   (ADR 0020 §2). The scan, dating, recognition, conflict resolution and the copy read
   the source only through the `ReadOnlyFileSystem` port (ADR 0034). The source lies on
@@ -81,6 +82,7 @@ Boundaries:
 | `RecentJobCodes`, `MAX_RECENT_JOB_CODES` | The job codes used before, most recent first (IMPORT-006) |
 | `require_job_code`, `MissingJobCode` | Refuses an import whose template uses `{job}` without a job code (IMPORT-006) |
 | `ImportRun`, `ImportSettings` | Scans, plans, starts, resolves and copies, file by file (ADR 0020, IMPORT-004); `with_source` reads the source from its own `ReadOnlyFileSystem`, against which no destination is checked, and `with_source_name` names it in the import history, such as `camera:<model>` (ADR 0034) |
+| `ImportJob`, `ImportJobReports`, `ImportJobEnd`, `ImportPorts`, `ImportJobSettings`, `OwnSource` | An import run as a job of the `jobs` queue (IMPORT-015, ADR 0035): it owns its ports, settings and source; `with_plan` starts from a planned run, `asking_before_each_file` asks the enqueuer whether to go on; `ImportJobReports::follow` shows its reports to a `ProgressSink` and returns the end report with the summary and the source handed back |
 | `SessionSequence` | The session counter of one run of the application (IMPORT-002) |
 | `PlannedRun`, `RunFile`, `FilePlan` | An import run planned and not yet executed: each selected file with its plan entry, imported before, or its dating failure |
 | `ProgressSink`, `NoProgress` | Receives each step of an import run on the caller's thread |
@@ -114,6 +116,7 @@ None yet.
 - `config`
 - `domain`
 - `files`
+- `jobs`
 - `kernel`
 - `metadata`
 - `naming`

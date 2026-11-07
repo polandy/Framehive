@@ -3,7 +3,7 @@
 
 //! Where the sequence numbers of an import come from (IMPORT-002, "Reservation").
 
-use std::cell::Cell;
+use std::sync::atomic::{AtomicU32, Ordering};
 
 use naming::{
     CounterDate, NameTemplate, SequenceCounters, SequenceError, SequenceRange, preview_range,
@@ -14,10 +14,11 @@ use naming::{
 /// run of the application (IMPORT-002). It starts at 1 and is never stored.
 ///
 /// The application makes one and passes it to every import it runs, so the imports
-/// of one run continue each other's numbers.
+/// of one run continue each other's numbers. It can be shared with the import jobs
+/// on the job queue's worker thread (IMPORT-015).
 #[derive(Debug, Default)]
 pub struct SessionSequence {
-    last: Cell<u32>,
+    last: AtomicU32,
 }
 
 impl SessionSequence {
@@ -30,7 +31,7 @@ impl SessionSequence {
     /// The last number handed out, or 0.
     #[must_use]
     pub fn last(&self) -> u32 {
-        self.last.get()
+        self.last.load(Ordering::SeqCst)
     }
 }
 
@@ -67,7 +68,7 @@ pub(crate) fn sequence_range(
     if let Some(range) = range {
         template.check_sequence_range(range.last)?;
         if reservation == Reservation::Reserve {
-            session.last.set(range.last);
+            session.last.store(range.last, Ordering::SeqCst);
         }
     }
     Ok(range)

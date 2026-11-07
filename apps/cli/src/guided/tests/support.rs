@@ -4,22 +4,21 @@
 //! A scripted terminal for the golden tests: memory file system, memory device source,
 //! a manual clock and a list of input steps.
 
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
 use std::collections::{HashMap, VecDeque};
 use std::io::{self, Write};
+use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
+use std::sync::Arc;
 use std::time::Duration;
 
 use devices::testing::MemoryDeviceSource;
 use domain::testing::ManualClock;
 use domain::{Timestamp, UtcOffset};
 use files::testing::{FnvHasher, MemoryCameras, MemoryFileSystem, MemoryFreeSpace};
-use files::{
-    Camera, CameraError, Cameras, EntryKind, FileSystem, FolderEntry, ReadOnlyFileSystem, ReadSeek,
-    WriteFile,
-};
-use import::{RecentJobCodes, SessionSequence};
+use files::{EntryKind, FileSystem, FolderEntry, ReadOnlyFileSystem, ReadSeek, WriteFile};
+use import::{ImportPorts, RecentJobCodes, SessionSequence};
 use naming::NameTemplate;
 use naming::testing::MemorySequenceCounters;
 
@@ -29,6 +28,7 @@ use crate::guided::state::{RememberedState, load_state, save_state, state_file};
 use history::ImportHistory;
 use history::testing::MemoryImportHistory;
 
+use super::shared::{HarnessCameras, Shared};
 use crate::guided::{Environment, Ports};
 use crate::paths::PathError;
 
@@ -79,63 +79,82 @@ pub(super) fn mount(name: &str) -> PathBuf {
 /// A change of the world after this many copies into the library.
 pub(super) type AfterCopies = (usize, fn(&Harness));
 
-/// The world of one golden test.
+/// The world of one golden test. The import job reads and writes it on the worker
+/// thread while the dialog waits for its answer (IMPORT-015), so it is shared and
+/// every part that changes is behind a lock.
+#[derive(Clone)]
 pub(super) struct Harness {
-    pub(super) memory: MemoryFileSystem,
-    pub(super) clock: ManualClock,
-    pub(super) devices: MemoryDeviceSource,
-    /// The connected cameras; steps replace them as cameras come and go.
-    pub(super) cameras: RefCell<MemoryCameras>,
-    /// The storage of the test camera, shared with the cameras it is connected as.
-    pub(super) camera_storage: MemoryFileSystem,
-    /// After this many copies into the library, this happens, for example a camera is
-    /// disconnected.
-    pub(super) after_copies: Cell<Option<AfterCopies>>,
-    pub(super) counters: MemorySequenceCounters,
-    pub(super) session: SessionSequence,
+    world: Arc<World>,
+    pub(super) counters: Arc<MemorySequenceCounters>,
+    pub(super) session: Arc<SessionSequence>,
     /// The import history, kept across the runs of this harness as the history in the
     /// state folder is kept across program runs.
-    pub(super) history: Box<dyn ImportHistory>,
+    pub(super) history: Arc<dyn ImportHistory + Send + Sync>,
     /// The free space of the destinations; unlimited unless a test sets it.
     pub(super) free_space: MemoryFreeSpace,
     /// Resolves a folder to its canonical path; the paths of the memory file system are
     /// canonical already, so it returns them unchanged unless a test replaces it.
     pub(super) resolve_folder: fn(&Path) -> Result<PathBuf, PathError>,
+}
+
+/// The part of the harness that the dialog and the import job share.
+pub(super) struct World {
+    pub(super) memory: MemoryFileSystem,
+    pub(super) clock: Arc<ManualClock>,
+    pub(super) devices: MemoryDeviceSource,
+    /// The connected cameras; steps replace them as cameras come and go.
+    pub(super) cameras: Shared<MemoryCameras>,
+    /// The storage of the test camera, shared with the cameras it is connected as.
+    pub(super) camera_storage: MemoryFileSystem,
+    /// After this many copies into the library, this happens, for example a camera is
+    /// disconnected.
+    pub(super) after_copies: Shared<Option<AfterCopies>>,
     /// Each copy into the library advances the clock this much.
-    pub(super) time_per_copy: Cell<Duration>,
+    pub(super) time_per_copy: Shared<Duration>,
     /// After this many copies, the next read of a card pulls it and fails.
-    pub(super) pull_after_copies: Cell<Option<usize>>,
-    copies: Cell<usize>,
+    pub(super) pull_after_copies: Shared<Option<usize>>,
+    copies: Shared<usize>,
     /// The card that was pulled during a read, unreadable until inserted again.
-    pulled: RefCell<Option<PathBuf>>,
+    pulled: Shared<Option<PathBuf>>,
     /// Sizes that the file system reports instead of the real ones.
-    sizes: RefCell<HashMap<PathBuf, u64>>,
+    sizes: Shared<HashMap<PathBuf, u64>>,
+}
+
+impl Deref for Harness {
+    type Target = World;
+
+    fn deref(&self) -> &World {
+        &self.world
+    }
 }
 
 impl Harness {
     pub(super) fn new() -> Self {
         let memory = MemoryFileSystem::new();
         memory.add_folder(Path::new(HOME));
-        Harness {
+        let world = World {
             memory,
-            clock: ManualClock::new(
+            clock: Arc::new(ManualClock::new(
                 Timestamp::from_unix_seconds(OCTOBER_19 + 86_400),
                 UtcOffset::UTC,
-            ),
+            )),
             devices: MemoryDeviceSource::new(),
-            cameras: RefCell::new(MemoryCameras::new()),
+            cameras: Shared::new(MemoryCameras::new()),
             camera_storage: MemoryFileSystem::new(),
-            after_copies: Cell::new(None),
-            counters: MemorySequenceCounters::new(),
-            session: SessionSequence::new(),
-            history: Box::new(MemoryImportHistory::new()),
+            after_copies: Shared::new(None),
+            time_per_copy: Shared::new(Duration::ZERO),
+            pull_after_copies: Shared::new(None),
+            copies: Shared::new(0),
+            pulled: Shared::new(None),
+            sizes: Shared::new(HashMap::new()),
+        };
+        Harness {
+            world: Arc::new(world),
+            counters: Arc::new(MemorySequenceCounters::new()),
+            session: Arc::new(SessionSequence::new()),
+            history: Arc::new(MemoryImportHistory::new()),
             free_space: MemoryFreeSpace::unlimited(),
             resolve_folder: |folder| Ok(folder.to_path_buf()),
-            time_per_copy: Cell::new(Duration::ZERO),
-            pull_after_copies: Cell::new(None),
-            copies: Cell::new(0),
-            pulled: RefCell::new(None),
-            sizes: RefCell::new(HashMap::new()),
         }
     }
 
@@ -192,17 +211,21 @@ impl Harness {
 
     /// Runs the dialog through `steps`; once they are used up, the input ends.
     pub(super) fn run(&self, steps: Vec<Step>) -> Transcript {
-        let file_system = HookedFileSystem { harness: self };
+        let import = ImportPorts {
+            file_system: Arc::new(HookedFileSystem {
+                harness: self.clone(),
+            }),
+            hasher: Arc::new(FnvHasher),
+            clock: Arc::clone(&self.clock) as _,
+            counters: Arc::clone(&self.counters) as _,
+            session: Arc::clone(&self.session),
+            history: Arc::clone(&self.history),
+            free_space: Arc::new(self.free_space.clone()),
+        };
         let ports = Ports {
-            file_system: &file_system,
-            hasher: &FnvHasher,
-            clock: &self.clock,
+            import: &import,
             devices: &self.devices,
             cameras: &HarnessCameras { harness: self },
-            counters: &self.counters,
-            session: &self.session,
-            history: &*self.history,
-            free_space: &self.free_space,
             resolve_folder: self.resolve_folder,
         };
         let environment = Environment {
@@ -274,11 +297,11 @@ impl EventSource for ScriptedEvents<'_> {
 
 /// The memory file system with the test's hooks: the clock advances per copy, a card
 /// can be pulled during a read, and sizes can be pretended.
-struct HookedFileSystem<'h> {
-    harness: &'h Harness,
+struct HookedFileSystem {
+    harness: Harness,
 }
 
-impl HookedFileSystem<'_> {
+impl HookedFileSystem {
     fn card_of(path: &Path) -> Option<PathBuf> {
         let rest = path.strip_prefix(MEDIA).ok()?;
         let name = rest.components().next()?;
@@ -291,7 +314,7 @@ impl HookedFileSystem<'_> {
         let Some(card) = Self::card_of(path) else {
             return Ok(());
         };
-        let harness = self.harness;
+        let harness = &self.harness;
         let due = harness.pull_after_copies.get() == Some(harness.copies.get());
         if due && harness.pulled.borrow().is_none() {
             harness.pull_after_copies.set(None);
@@ -306,7 +329,7 @@ impl HookedFileSystem<'_> {
     }
 }
 
-impl ReadOnlyFileSystem for HookedFileSystem<'_> {
+impl ReadOnlyFileSystem for HookedFileSystem {
     fn entry(&self, path: &Path) -> io::Result<Option<EntryKind>> {
         self.harness.memory.entry(path)
     }
@@ -332,7 +355,7 @@ impl ReadOnlyFileSystem for HookedFileSystem<'_> {
     }
 }
 
-impl FileSystem for HookedFileSystem<'_> {
+impl FileSystem for HookedFileSystem {
     fn create_folder(&self, path: &Path) -> io::Result<()> {
         self.harness.memory.create_folder(path)
     }
@@ -351,7 +374,7 @@ impl FileSystem for HookedFileSystem<'_> {
                 && after == copies
             {
                 self.harness.after_copies.set(None);
-                change(self.harness);
+                change(&self.harness);
             }
         }
         Ok(())
@@ -363,20 +386,5 @@ impl FileSystem for HookedFileSystem<'_> {
 
     fn sync_folder(&self, path: &Path) -> io::Result<()> {
         self.harness.memory.sync_folder(path)
-    }
-}
-
-/// The cameras of the harness as they are now.
-struct HarnessCameras<'h> {
-    harness: &'h Harness,
-}
-
-impl Cameras for HarnessCameras<'_> {
-    fn list(&self) -> Result<Vec<Camera>, CameraError> {
-        self.harness.cameras.borrow().list()
-    }
-
-    fn open(&self, port: &str) -> Result<Box<dyn ReadOnlyFileSystem>, CameraError> {
-        self.harness.cameras.borrow().open(port)
     }
 }

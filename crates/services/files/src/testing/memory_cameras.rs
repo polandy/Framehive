@@ -133,7 +133,7 @@ impl Cameras for MemoryCameras {
             .collect())
     }
 
-    fn open(&self, port: &str) -> Result<Box<dyn ReadOnlyFileSystem>, CameraError> {
+    fn open(&self, port: &str) -> Result<Box<dyn ReadOnlyFileSystem + Send>, CameraError> {
         let camera = self.cameras.get(port).ok_or_else(|| CameraError::Open {
             port: port.to_owned(),
             reason: "no camera is connected at this port".to_owned(),

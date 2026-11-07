@@ -8,7 +8,7 @@
 use std::path::{Path, PathBuf};
 
 use devices::Device;
-use history::HistoryError;
+use files::ReadOnlyFileSystem;
 use import::{
     BackupOutcome, CAMERA_FORMAT_READINESS_NOTE, ConflictPolicy, FileOutcome, FileReport,
     FormatReadiness, ImportSettings, ImportSummary, JobCode, PlannedRun, RunError, SourceScan,
@@ -16,10 +16,12 @@ use import::{
 use naming::{CompatibilityMode, NameTemplate, SequenceError};
 
 use super::dialog::{Dialog, Interrupted, Stop};
-use super::progress::{ImportContext, ImportProgress};
+use super::error_lines::{history_line, plan_error_line, start_error_line};
+use super::progress::{ImportContext, LazyProgress};
 use super::source::Source;
 use super::state::create_folders;
 use super::summary::Action;
+use crate::JOB_ENDED_UNEXPECTEDLY;
 use crate::format_readiness::format_readiness_lines;
 use crate::report::{ReportPrinter, backup_line, backup_summary_lines, file_line, summary_line};
 
@@ -219,7 +221,7 @@ impl Dialog<'_> {
         let folders = std::iter::once(settings.destination)
             .chain(settings.backup_destinations.iter().map(PathBuf::as_path));
         for folder in folders {
-            if let Err(error) = create_folders(ports.file_system, folder) {
+            if let Err(error) = create_folders(ports.file_system(), folder) {
                 self.say(&format!("Could not create {}: {error}", folder.display()));
                 return Imported::NotStarted;
             }
@@ -228,31 +230,38 @@ impl Dialog<'_> {
             self.state.job_codes.mark_used(job_code.clone());
             self.remember();
         }
-        let run = source.run(&ports);
-        let plan = match run.start(settings, plan) {
-            Ok(plan) => plan,
-            Err(RunError::History(error)) => {
-                self.say(&history_line(&error));
-                return Imported::NotStarted;
-            }
-            Err(error) => {
-                self.say(&format!("Could not import {}: {error}", card.name()));
-                return Imported::NotStarted;
-            }
-        };
         let sizes = plan.files().iter().map(|file| file.found.size).collect();
+        let (job, reports) = source.import_job(ports.import, settings);
+        // The job asks before each file, so the progress polls the devices then and a
+        // pulled card or camera stops it (CLI-003, CLI-014).
+        self.jobs
+            .enqueue(Box::new(job.with_plan(plan).asking_before_each_file()));
         let context = ImportContext {
             output: &mut *self.output,
             watch: &mut self.watch,
             devices: ports.devices,
             cameras: ports.cameras,
-            clock: ports.clock,
+            clock: &*ports.import.clock,
         };
         let camera = source
             .opened_camera()
-            .map(|camera| camera.file_system.as_ref());
-        let mut progress = ImportProgress::start(context, card, camera, sizes);
-        let summary = run.execute(settings, plan, &mut progress);
+            .map(|camera| &camera.file_system as &dyn ReadOnlyFileSystem);
+        let mut progress = LazyProgress::new(context, card, camera, sizes);
+        let result = match reports.follow(&mut progress) {
+            Some(end) => end.result.map_err(|error| start_error_line(card, &error)),
+            None => Err(format!(
+                "Could not import {}: {JOB_ENDED_UNEXPECTEDLY}",
+                card.name()
+            )),
+        };
+        let summary = match result {
+            Ok(summary) => summary,
+            Err(line) => {
+                drop(progress);
+                self.say(&line);
+                return Imported::NotStarted;
+            }
+        };
         let changes = progress.finish();
         self.show_changes(&changes);
         if summary.stopped {
@@ -375,22 +384,4 @@ enum Imported {
     Stopped,
     /// It ran and was reported.
     Reported,
-}
-
-/// The line for a plan that cannot be made; a history that cannot be used has its own
-/// line (CLI-008).
-fn plan_error_line(card: &Device, error: &RunError) -> String {
-    match error {
-        RunError::History(error) => history_line(error),
-        error => format!("Could not plan {}: {error}", card.name()),
-    }
-}
-
-/// The line for an import history that cannot be used (CLI-008).
-fn history_line(error: &HistoryError) -> String {
-    format!(
-        "The import history {} cannot be used: {}",
-        error.file.display(),
-        error.reason
-    )
 }

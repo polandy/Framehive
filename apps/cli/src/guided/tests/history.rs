@@ -5,10 +5,16 @@
 
 use std::io;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::time::Duration;
 
 use adapter_sqlite::SqliteImportHistory;
 use files::testing::TempDir;
+use history::testing::MemoryImportHistory;
+use history::{
+    CopyKey, CopyRecord, FoundCopy, HistoryError, ImportHistory, LoggedRun, RecordedTime, RunId,
+    RunLog, RunStart,
+};
 
 use super::support::{Harness, OCTOBER_17, PICTURES, Step};
 use crate::paths::PathError;
@@ -95,7 +101,7 @@ fn a_history_that_cannot_be_used_keeps_the_card_from_being_imported() {
     std::fs::write(history.file(), b"not a SQLite database".repeat(100)).unwrap();
     let file = history.file().display().to_string();
     let mut harness = with_three_files("{name}.{ext}");
-    harness.history = Box::new(history);
+    harness.history = Arc::new(history);
 
     let transcript = harness.run(vec![Step::Line("")]);
 
@@ -105,6 +111,71 @@ fn a_history_that_cannot_be_used_keeps_the_card_from_being_imported() {
         "{}",
         transcript.output
     );
+    assert!(
+        library_files(&harness).is_empty(),
+        "{:?}",
+        library_files(&harness)
+    );
+}
+
+/// A history that answers what was copied before, but cannot record a run: the plan
+/// is made, and the import job fails as it starts.
+struct CannotRecord(MemoryImportHistory);
+
+impl CannotRecord {
+    fn failure() -> HistoryError {
+        HistoryError {
+            file: PathBuf::from("/state/import-history.sqlite"),
+            reason: "the disk is full".to_owned(),
+        }
+    }
+}
+
+impl ImportHistory for CannotRecord {
+    fn start_run(&self, _run: &RunStart) -> Result<RunId, HistoryError> {
+        Err(CannotRecord::failure())
+    }
+
+    fn finish_run(&self, _run: RunId, _finished_at: RecordedTime) -> Result<(), HistoryError> {
+        Err(CannotRecord::failure())
+    }
+
+    fn record_copy(&self, _copy: &CopyRecord) -> Result<(), HistoryError> {
+        Err(CannotRecord::failure())
+    }
+
+    fn find_copies(&self, key: &CopyKey<'_>) -> Result<Vec<FoundCopy>, HistoryError> {
+        self.0.find_copies(key)
+    }
+
+    fn list_runs(&self) -> Result<Vec<LoggedRun>, HistoryError> {
+        self.0.list_runs()
+    }
+
+    fn read_run_log(&self, run: RunId) -> Result<Option<RunLog>, HistoryError> {
+        self.0.read_run_log(run)
+    }
+}
+
+/// The import job fails as it starts, after the plan was shown: the dialog prints the
+/// history line and draws no progress line (IMPORT-015).
+///
+/// spec: CLI-008.7
+#[test]
+fn a_history_that_cannot_record_the_run_keeps_the_card_from_being_imported() {
+    let mut harness = with_three_files("{name}.{ext}");
+    harness.history = Arc::new(CannotRecord(MemoryImportHistory::new()));
+
+    let transcript = harness.run(vec![Step::Line("")]);
+
+    let expected =
+        "\nThe import history /state/import-history.sqlite cannot be used: the disk is full\n";
+    assert!(
+        transcript.output.contains(expected),
+        "{}",
+        transcript.output
+    );
+    assert!(!transcript.output.contains('\r'), "{}", transcript.output);
     assert!(
         library_files(&harness).is_empty(),
         "{:?}",

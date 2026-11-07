@@ -9,6 +9,7 @@
 use std::ffi::{OsStr, OsString};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use files::testing::{MemoryCameras, MemoryFreeSpace, TempDir};
 use import::ImportSummary;
@@ -96,7 +97,7 @@ impl Folders {
             None,
             Surroundings {
                 state_folder: &self.path("state"),
-                free_space,
+                free_space: Arc::new(free_space.clone()),
                 cameras,
                 output: &mut output,
                 errors: &mut errors,

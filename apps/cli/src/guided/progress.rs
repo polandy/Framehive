@@ -176,3 +176,75 @@ fn elapsed(from: Timestamp, to: Timestamp) -> Duration {
     let rest = u32::try_from(difference % 1_000_000_000).unwrap_or(0);
     Duration::new(seconds, rest)
 }
+
+/// The arguments of [`ImportProgress::start`].
+type ProgressStart<'s> = (
+    ImportContext<'s>,
+    &'s Device,
+    Option<&'s dyn ReadOnlyFileSystem>,
+    Vec<u64>,
+);
+
+/// The progress of an import job, whose line is drawn once the job asks before its
+/// first file or ends: an import that cannot start shows no progress line, as when it
+/// ran on the dialog's thread (IMPORT-015, CLI-003).
+pub(super) struct LazyProgress<'s> {
+    waiting: Option<ProgressStart<'s>>,
+    progress: Option<ImportProgress<'s>>,
+}
+
+impl<'s> LazyProgress<'s> {
+    /// The progress that [`ImportProgress::start`] starts with these arguments.
+    pub(super) fn new(
+        context: ImportContext<'s>,
+        card: &'s Device,
+        camera: Option<&'s dyn ReadOnlyFileSystem>,
+        sizes: Vec<u64>,
+    ) -> Self {
+        LazyProgress {
+            waiting: Some((context, card, camera, sizes)),
+            progress: None,
+        }
+    }
+
+    /// The progress, started now if it waits.
+    fn progress(&mut self) -> Option<&mut ImportProgress<'s>> {
+        if let Some((context, card, camera, sizes)) = self.waiting.take() {
+            self.progress = Some(ImportProgress::start(context, card, camera, sizes));
+        }
+        self.progress.as_mut()
+    }
+
+    /// Ends the progress line, drawn first if the job reported nothing, and returns
+    /// the device changes seen during the run.
+    pub(super) fn finish(mut self) -> DeviceChanges {
+        self.progress();
+        self.progress
+            .map(ImportProgress::finish)
+            .unwrap_or_default()
+    }
+}
+
+impl ProgressSink for LazyProgress<'_> {
+    fn scan_finished(&mut self, scan: &SourceScan) {
+        if let Some(progress) = self.progress() {
+            progress.scan_finished(scan);
+        }
+    }
+
+    fn file_started(&mut self, path: &Path) {
+        if let Some(progress) = self.progress() {
+            progress.file_started(path);
+        }
+    }
+
+    fn file_finished(&mut self, report: &FileReport) {
+        if let Some(progress) = self.progress() {
+            progress.file_finished(report);
+        }
+    }
+
+    fn should_continue(&mut self) -> bool {
+        self.progress().is_none_or(ProgressSink::should_continue)
+    }
+}

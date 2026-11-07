@@ -67,5 +67,5 @@ pub trait Cameras {
     ///
     /// Returns [`CameraError::InUse`] if another program holds the camera, and
     /// [`CameraError::Open`] if it cannot be opened for another reason.
-    fn open(&self, port: &str) -> Result<Box<dyn ReadOnlyFileSystem>, CameraError>;
+    fn open(&self, port: &str) -> Result<Box<dyn ReadOnlyFileSystem + Send>, CameraError>;
 }

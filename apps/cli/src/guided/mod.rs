@@ -8,6 +8,7 @@
 mod card;
 mod device;
 mod dialog;
+mod error_lines;
 mod events;
 mod format;
 mod progress;
@@ -22,6 +23,7 @@ use std::ffi::OsStr;
 use std::io::{self, IsTerminal};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
+use std::sync::Arc;
 use std::time::Duration;
 
 use adapter_blake3::Blake3Hasher;
@@ -33,11 +35,8 @@ use adapter_mounts::MountsDeviceSource;
 use adapter_sequence_counters::FileSequenceCounters;
 use adapter_sqlite::SqliteImportHistory;
 use devices::DeviceSource;
-use domain::Clock;
-use files::{Cameras, FileSystem, FreeSpace, Hasher};
-use history::ImportHistory;
-use import::{ImportRun, SessionSequence};
-use naming::SequenceCounters;
+use files::{Cameras, FileSystem};
+use import::{ImportPorts, ImportRun, SessionSequence};
 
 use crate::paths::{PathError, canonical_folder};
 use crate::{NOT_STARTED, report_error};
@@ -54,24 +53,14 @@ pub(crate) const POLL_INTERVAL: Duration = Duration::from_secs(1);
 /// The ports the dialog works through.
 #[derive(Clone, Copy)]
 pub(crate) struct Ports<'a> {
-    /// The files of the cards, the library and the state file.
-    pub(crate) file_system: &'a dyn FileSystem,
-    /// The checksums of the verified copy.
-    pub(crate) hasher: &'a dyn Hasher,
-    /// The time of the import and of the progress line.
-    pub(crate) clock: &'a dyn Clock,
+    /// The ports of the imports, shared with the import jobs (IMPORT-015): the files of
+    /// the cards, the library and the state file, the checksums, the time, the sequence
+    /// counters, the session counter, the import history and the free space.
+    pub(crate) import: &'a ImportPorts,
     /// The memory cards.
     pub(crate) devices: &'a dyn DeviceSource,
     /// The cameras and phones connected over PTP or MTP (CLI-014).
     pub(crate) cameras: &'a dyn Cameras,
-    /// The persisted sequence counters (ADR 0029).
-    pub(crate) counters: &'a dyn SequenceCounters,
-    /// The session counter, shared by the imports of all cards in this run.
-    pub(crate) session: &'a SessionSequence,
-    /// The import history: what was copied where before (IMPORT-009).
-    pub(crate) history: &'a dyn ImportHistory,
-    /// The free space of the destinations (IMPORT-012).
-    pub(crate) free_space: &'a dyn FreeSpace,
     /// Resolves a destination to the canonical absolute path that identifies it in the
     /// import history (IMPORT-009).
     pub(crate) resolve_folder: fn(&Path) -> Result<PathBuf, PathError>,
@@ -80,15 +69,12 @@ pub(crate) struct Ports<'a> {
 impl<'a> Ports<'a> {
     /// An import run through these ports.
     pub(crate) fn import_run(&self) -> ImportRun<'a> {
-        ImportRun::new(
-            self.file_system,
-            self.hasher,
-            self.clock,
-            self.counters,
-            self.session,
-            self.history,
-            self.free_space,
-        )
+        self.import.import_run()
+    }
+
+    /// The files of the cards, the library and the state file.
+    pub(crate) fn file_system(&self) -> &'a dyn FileSystem {
+        &*self.import.file_system
     }
 }
 
@@ -121,23 +107,21 @@ pub(crate) fn run_guided() -> ExitCode {
             return ExitCode::from(NOT_STARTED);
         }
     };
-    let file_system = StdFileSystem::new();
-    let clock = SystemClock::new();
     let devices = MountsDeviceSource::new();
     let cameras = Gphoto2Cameras::new();
-    let counters = FileSequenceCounters::new(environment.state_folder.clone());
-    let session = SessionSequence::new();
-    let history = SqliteImportHistory::new(&environment.state_folder);
+    let import = ImportPorts {
+        file_system: Arc::new(StdFileSystem::new()),
+        hasher: Arc::new(Blake3Hasher),
+        clock: Arc::new(SystemClock::new()),
+        counters: Arc::new(FileSequenceCounters::new(environment.state_folder.clone())),
+        session: Arc::new(SessionSequence::new()),
+        history: Arc::new(SqliteImportHistory::new(&environment.state_folder)),
+        free_space: Arc::new(StatvfsFreeSpace::new()),
+    };
     let ports = Ports {
-        file_system: &file_system,
-        hasher: &Blake3Hasher,
-        clock: &clock,
+        import: &import,
         devices: &devices,
         cameras: &cameras,
-        counters: &counters,
-        session: &session,
-        history: &history,
-        free_space: &StatvfsFreeSpace::new(),
         resolve_folder: canonical_folder,
     };
     let mut events = StdinEvents::start(POLL_INTERVAL);

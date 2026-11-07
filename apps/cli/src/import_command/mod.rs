@@ -13,6 +13,7 @@ mod tests;
 use std::io;
 use std::path::PathBuf;
 use std::process::ExitCode;
+use std::sync::Arc;
 
 use adapter_free_space::StatvfsFreeSpace;
 use adapter_fs::StdFileSystem;
@@ -63,7 +64,7 @@ fn import(arguments: &ImportArguments) -> Result<ImportSummary, NotStarted> {
         profile,
         Surroundings {
             state_folder: &state_folder,
-            free_space: &StatvfsFreeSpace::new(),
+            free_space: Arc::new(StatvfsFreeSpace::new()),
             cameras: &Gphoto2Cameras::new(),
             output: &mut io::stdout().lock(),
             errors: &mut io::stderr(),

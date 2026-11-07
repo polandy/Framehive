@@ -10,6 +10,7 @@ mod backup;
 mod conflicts;
 mod destinations;
 mod free_space;
+mod job;
 mod job_code;
 mod plan;
 mod profile;
@@ -33,6 +34,9 @@ pub use conflicts::{
 };
 pub use destinations::{VideoDestinationError, VideoDestinationProblem, check_video_destination};
 pub use free_space::{FreeSpaceCheck, FreeSpaceUnknown, NotEnoughSpace, SpaceShortage};
+pub use job::{
+    ImportJob, ImportJobEnd, ImportJobReports, ImportJobSettings, ImportPorts, OwnSource,
+};
 pub use job_code::{
     JobCode, JobCodeError, MAX_JOB_CODE_CHARACTERS, MissingJobCode, require_job_code,
 };

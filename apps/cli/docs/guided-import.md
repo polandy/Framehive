@@ -9,9 +9,14 @@ SPDX-License-Identifier: GPL-3.0-or-later
 `src/guided/`: it waits for a memory card (`devices::DeviceWatch` over `adapter-mounts`, polled once a second
 while it waits for a line), reads the card with `import::scan_folder`, asks for the
 template (with a preview from `ImportRun::plan_first`) and the job code, shows the plan
-summary, reserves the sequence numbers with `ImportRun::start` on Enter (numbers that
-do not fit lead back to the template step), and runs `ImportRun::execute` with a progress sink that redraws one line and
-stops the run between files when the card is pulled (IMPORT-004.13). The dialog is a
+summary, and on Enter (numbers that do not fit lead back to the template step)
+enqueues the plan as an `import::ImportJob` in the dialog's `jobs::JobQueue`
+(IMPORT-015). The job reserves the sequence numbers with `ImportRun::start`, executes
+the plan on the worker thread and asks before each file whether to go on; the dialog follows its reports with
+a progress sink that redraws one line, polls the devices before it answers, and stops
+the run between files when the card is pulled (IMPORT-004.13). The progress line is
+drawn once the job asks before its first file, so an import that cannot start shows
+none. The dialog is a
 loop over input events (a line, a tick per poll interval, the end of input) from a
 thread that reads standard input. Backup destinations (CLI-006) are chosen with `b` at
 the plan summary and passed to the run; one on the card, or one that
