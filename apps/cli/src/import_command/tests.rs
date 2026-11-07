@@ -279,3 +279,49 @@ fn a_shortage_found_when_the_job_starts_creates_nothing() {
     assert!(!folders.path("new").exists());
     assert_eq!(exit_code(&run.result), 2);
 }
+
+/// The folders of `framehive import /card --destination /library --backup backup`,
+/// with the backup resolved to `/disk/backup`.
+fn folders_with_backup() -> super::folders::Folders {
+    let destination = |path: &str| crate::paths::Destination {
+        path: PathBuf::from(path),
+    };
+    super::folders::Folders {
+        source: PathBuf::from("/card"),
+        source_is_camera: false,
+        destination: destination("/library"),
+        given_destination: PathBuf::from("/library"),
+        backups: vec![(destination("/disk/backup"), PathBuf::from("backup"))],
+        video_destination: None,
+        video_backups: Vec::new(),
+    }
+}
+
+fn not_created(destination: &str, folder: &str) -> import::DestinationNotCreated {
+    import::DestinationNotCreated {
+        destination: PathBuf::from(destination),
+        folder: PathBuf::from(folder),
+        error: io::Error::other("the disk is read-only"),
+    }
+}
+
+#[test]
+fn a_destination_the_job_cannot_create_is_named_by_its_folder() {
+    let message = folders_with_backup().not_created_message(not_created("/library", "/library"));
+
+    assert_eq!(
+        message,
+        "the destination /library cannot be created: the disk is read-only"
+    );
+}
+
+#[test]
+fn a_backup_destination_the_job_cannot_create_is_named_as_given() {
+    let message = folders_with_backup().not_created_message(not_created("/disk/backup", "/disk"));
+
+    assert_eq!(
+        message,
+        "the backup destination backup cannot be used: \
+         the destination /disk cannot be created: the disk is read-only"
+    );
+}
