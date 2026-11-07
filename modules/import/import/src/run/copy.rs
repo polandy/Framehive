@@ -4,11 +4,10 @@
 //! Executing one planned file of an import run: conflict resolution, the verified
 //! copy and the backups (IMPORT-003, IMPORT-004, IMPORT-007).
 
-use std::io;
 use std::path::{Path, PathBuf};
 
 use domain::Checksum;
-use files::{CopyError, CopyErrorKind, CopyStep, checksum_file, copy_verified_to_all};
+use files::{CopyError, checksum_file, copy_verified_to_all};
 use history::HistoryError;
 
 use super::recognition::Recognition;
@@ -139,7 +138,9 @@ impl ImportRun<'_> {
                 let outcome = match copied.imported {
                     Some(Ok(checksum)) => FileOutcome::Copied { target, checksum },
                     Some(Err(error)) => FileOutcome::Failed(FileError::Copy(error)),
-                    None => FileOutcome::Failed(FileError::Copy(unfinished(&copy.import_target))),
+                    None => FileOutcome::Failed(FileError::Copy(CopyError::unfinished(
+                        &copy.import_target,
+                    ))),
                 };
                 Imported {
                     outcome,
@@ -224,7 +225,9 @@ impl ImportRun<'_> {
                     BackupTarget::Free => match results.next() {
                         Some(Ok(_)) => BackupOutcome::BackedUp,
                         Some(Err(error)) => BackupOutcome::Failed(BackupError::Copy(error)),
-                        None => BackupOutcome::Failed(BackupError::Copy(unfinished(path))),
+                        None => {
+                            BackupOutcome::Failed(BackupError::Copy(CopyError::unfinished(path)))
+                        }
                     },
                     BackupTarget::SameSize => {
                         self.compare_backup(copy, resolver, &mut source_checksum, path)
@@ -344,19 +347,6 @@ fn targets_to_write<'c>(
         }
     }
     targets
-}
-
-/// The error for a target without a result. Never expected: the verified copy gives
-/// one result per target; reported instead of panicking.
-fn unfinished(target: &Path) -> CopyError {
-    CopyError {
-        step: CopyStep::Verify,
-        kind: CopyErrorKind::Io {
-            path: target.to_path_buf(),
-            error: io::Error::other("the copy did not finish"),
-        },
-        cleanup: None,
-    }
 }
 
 fn failed(error: FileError) -> Imported {

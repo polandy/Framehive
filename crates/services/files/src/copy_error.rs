@@ -5,7 +5,7 @@
 
 use std::fmt;
 use std::io;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use domain::Checksum;
 use thiserror::Error;
@@ -94,6 +94,23 @@ pub struct CopyError {
     pub kind: CopyErrorKind,
     /// A file the copy wrote and could not remove afterwards.
     pub cleanup: Option<Box<CleanupFailure>>,
+}
+
+impl CopyError {
+    /// The error for a `target` the copy left without a result. Never expected: a
+    /// verified copy leaves each target verified or failed; callers report this
+    /// instead of panicking.
+    #[must_use]
+    pub fn unfinished(target: &Path) -> Self {
+        CopyError {
+            step: CopyStep::Verify,
+            kind: CopyErrorKind::Io {
+                path: target.to_path_buf(),
+                error: io::Error::other("the copy did not finish"),
+            },
+            cleanup: None,
+        }
+    }
 }
 
 fn cleanup_note(cleanup: Option<&CleanupFailure>) -> String {
