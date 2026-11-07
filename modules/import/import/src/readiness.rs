@@ -25,7 +25,8 @@ pub const CAMERA_FORMAT_READINESS_NOTE: &str = "Only the files below DCIM were c
 pub struct FormatReadiness {
     /// The required locations: the import destination and each backup destination.
     /// With video destinations (IMPORT-013), each file is required at its own
-    /// destinations; this is the most locations any file of the run requires.
+    /// destinations; this is the most locations any file of the run requires. A run
+    /// without files requires the locations a photo would (IMPORT-008.15).
     pub required_locations: usize,
     /// Whether the files of the run require different numbers of locations, as photos
     /// and videos do when their backup destinations differ in number (IMPORT-013).

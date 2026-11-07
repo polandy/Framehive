@@ -342,7 +342,7 @@ impl<'a> ImportRun<'a> {
                 let receives_photos = settings
                     .backup_destinations
                     .iter()
-                    .any(|d| d == destination);
+                    .any(|backup| backup == destination);
                 BackupCounts::new(destination, receives_photos)
             })
             .collect();
