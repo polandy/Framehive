@@ -14,7 +14,7 @@ use std::process::{Output, Stdio};
 
 use support::{
     Folders, card, has_line, has_line_starting_with, import_in_root as import, lines, picture,
-    set_mode, stderr, stdout,
+    stderr, stdout,
 };
 
 const SUMMARY: &str = "1 copied, 0 already imported, 0 duplicates, 0 skipped, 0 failed, 0 left out";
@@ -104,13 +104,14 @@ fn the_exit_code_is_the_worst_of_the_sources() {
 fn a_source_that_cannot_start_keeps_no_other_from_importing() {
     let folders = Folders::new();
     card(&folders, "cardA", &["a.jpg"]);
-    card(&folders, "cardB", &["b.jpg"]);
-    let card_b = folders.root.path().join("cardB");
-    set_mode(&card_b, 0o000);
+    // A camera on a port of a missing folder cannot be opened by any user, also root.
+    let camera = format!(
+        "camera:disk:{}",
+        folders.root.path().join("missing").display()
+    );
 
-    let output = import(&folders, &["cardA", "cardB", "--destination", "library"]);
+    let output = import(&folders, &["cardA", &camera, "--destination", "library"]);
 
-    set_mode(&card_b, 0o755);
     assert_eq!(
         fs::read(library(&folders).join(DAY).join("a.jpg")).unwrap(),
         picture("a.jpg")
@@ -118,7 +119,7 @@ fn a_source_that_cannot_start_keeps_no_other_from_importing() {
     assert!(
         stderr(&output)
             .lines()
-            .any(|line| line.starts_with("error: cardB: ")),
+            .any(|line| line.starts_with(&format!("error: {camera}: "))),
         "{}",
         stderr(&output)
     );

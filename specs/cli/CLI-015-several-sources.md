@@ -61,10 +61,12 @@ start, else 1 when a file failed, else 0.
 - **Then** the file of `cardA` is copied, and the exit code is 1
 
 ### CLI-015.3 – A source that cannot start
-- **Given** a source `cardA` with `a.jpg`, and a source `cardB` that cannot be read
-- **When** `framehive import cardA cardB --destination <destination>` runs
+- **Given** a source `cardA` with `a.jpg`, and a source `camera:disk:<missing folder>`,
+  a camera that cannot be opened for any user
+- **When** `framehive import cardA camera:disk:<missing folder> --destination <destination>`
+  runs
 - **Then** `a.jpg` is copied, standard error has a line that starts with
-  `error: cardB: `, and the exit code is 2
+  `error: camera:disk:<missing folder>: `, and the exit code is 2
 
 ### CLI-015.4 – One source prints no source line
 - **Given** the source of CLI-001.1
@@ -133,4 +135,5 @@ start, else 1 when a file failed, else 0.
 | 2026-11-07 | The error of a source that cannot start is printed at once: CLI-015.9 |
 | 2026-11-07 | A dry run of several sources counts in memory (IMPORT-016): CLI-015.10 |
 | 2026-11-07 | CLI-015.9 uses a camera that cannot be opened, which fails for every user, also root |
+| 2026-11-07 | CLI-015.3 uses a camera that cannot be opened, which fails for every user, also root |
 | 2026-11-07 | The `cp` model (CLI-016, ADR 0036, decision 8): the last folder is the destination again, also with a profile; CLI-015.7 and CLI-015.8 changed |
