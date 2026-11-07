@@ -64,4 +64,5 @@ Names in the code follow this glossary.
 | Color label | `ColorLabel` | Color used as a marker |
 | Tag | `Tag` | Hierarchical keyword, path with `/` |
 | Region | `Region` | Image area, e.g. a face, per MWG |
+| Sync record | `SyncRecord` | Entry in Framehive's XMP namespace that marks one value as written, and still owned, by a sync such as the Immich sync; a value without one belongs to the user (`docs/xmp-namespace.md`, ADR 0037) |
 | Module | `Module` | Business unit as defined in Section 4 |

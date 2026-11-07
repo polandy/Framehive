@@ -17,6 +17,7 @@ framehive/
 ├── docs/
 │   ├── requirements/  architecture/   one file per section
 │   ├── pull-requests.md      # How a change reaches main
+│   ├── xmp-namespace.md      # Fields of Framehive's own XMP namespace (ADR 0037)
 │   └── adr/
 ├── specs/                    # Feature specifications (ADR 0010)
 ├── schemas/                  # JSON Schemas for the YAML configuration (ADR 0011)
