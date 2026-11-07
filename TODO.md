@@ -12,7 +12,6 @@ feature live in its spec, decisions in `docs/adr/`. Add items with `/todo`.
 - [ ] Make release builds reproducible: `SOURCE_DATE_EPOCH`, `--remap-path-prefix` and a bit-for-bit check in CI, with the first release build (ADR 0007) (2026-11-03)
 - [ ] Store reference pixel hashes for aarch64-darwin in the LibRaw version test — on macOS it compares only sizes until the hashes are measured on a Mac (PREVIEWS-001, ADR 0028) (2026-11-03)
 - [ ] Add a CORE-006 acceptance criterion for a list entry with no value (`<key> has an entry with no value`) once the spec is split below 10 KB — only an unmarked test covers it (CORE-006, PR #41 review) (2026-11-05)
-- [ ] Test that `cargo xtask check-schemas` reports a changed and a missing schema file — only the path shape is tested (IMPORT-011, PR #41 review) (2026-11-05)
 - [ ] Unit-test the free-space adapter's `f_bavail × f_frsize` conversion and its overflow path by moving the multiply into a small function (ADR 0033, I1 review) (2026-11-05)
 - [ ] Show `ImportSummary::free_space_unknown` in the CLI or drop the field — the CLI prints the warnings of its own first check, and only tests read the field (IMPORT-012, I1 review) (2026-11-05)
 - [ ] A shortage that only the second free-space check in `ImportRun::start` finds comes after `framehive import` created the folders — rare, but it contradicts "nothing is created" (IMPORT-012, CLI-011, I1 review) (2026-11-05)
