@@ -85,10 +85,43 @@ fn available_bytes(path: &Path) -> io::Result<u64> {
         reason = "the fields are u64 on Linux, but f_bavail is u32 on macOS"
     )]
     let (blocks, block_size) = (u64::from(stats.f_bavail), u64::from(stats.f_frsize));
+    bytes_of_blocks(blocks, block_size)
+}
+
+/// `blocks × block_size` in bytes, or an error when the product does not fit in 64
+/// bits. Kept apart from the `statvfs` call so the overflow can be tested.
+fn bytes_of_blocks(blocks: u64, block_size: u64) -> io::Result<u64> {
     blocks.checked_mul(block_size).ok_or_else(|| {
         io::Error::new(
             io::ErrorKind::InvalidData,
             "the free space does not fit in 64 bits",
         )
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn multiplies_the_available_blocks_by_the_fragment_size() {
+        assert_eq!(bytes_of_blocks(1_000, 4_096).unwrap(), 4_096_000);
+    }
+
+    #[test]
+    fn no_available_blocks_are_no_bytes() {
+        assert_eq!(bytes_of_blocks(0, 4_096).unwrap(), 0);
+    }
+
+    #[test]
+    fn the_largest_product_that_fits_in_64_bits_is_kept() {
+        assert_eq!(bytes_of_blocks(u64::MAX, 1).unwrap(), u64::MAX);
+    }
+
+    #[test]
+    fn a_product_beyond_64_bits_is_invalid_data() {
+        let error = bytes_of_blocks(u64::MAX / 2 + 1, 2).unwrap_err();
+        assert_eq!(error.kind(), io::ErrorKind::InvalidData);
+        assert_eq!(error.to_string(), "the free space does not fit in 64 bits");
+    }
 }
