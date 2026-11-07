@@ -6,7 +6,7 @@ Part of the [architecture](README.md).
 |---|---|
 | Layers & module isolation (Section 3) | `cargo xtask check-architecture`: reads `cargo metadata` and the `layer` annotations, fails on forbidden edges |
 | Domain has no I/O | Clippy `disallowed_methods`/`disallowed_types` per layer (`SystemTime::now`, `Instant::now`, `std::fs`, `thread::sleep`, …) + dependency allowlist |
-| No accidental public API changes | `cargo public-api` snapshot for `kernel` and services; a change requires an updated snapshot and a changelog entry |
+| No accidental public API changes | `cargo xtask check-public-api`: a `cargo public-api` snapshot (`public-api.txt`) for `kernel` and every service; a change requires an updated snapshot and a changelog entry (ADR 0038) |
 | No `unsafe` outside FFI adapters | `#![forbid(unsafe_code)]` in all other crates, checked by `check-architecture` |
 | Documentation | `#![warn(missing_docs)]` treated as an error in CI; every crate has a README with mandatory sections (checked by `xtask`) |
 | Formatting & lints | `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings` with `clippy::pedantic` (justified exceptions in `clippy.toml`) |

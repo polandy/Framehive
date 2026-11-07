@@ -17,6 +17,9 @@ All user-visible changes are listed here. The format follows
   Rust toolchain, Nix development shell, and REUSE-compliant licensing
   (GPL-3.0-or-later).
 - `cargo xtask ci` with the file, architecture, dependency and specification checks.
+- Public API snapshots of `kernel` and the services: `cargo xtask check-public-api`
+  fails on an API change without an updated `public-api.txt` and a changelog entry,
+  and `cargo xtask public-api` writes the snapshots (ADR 0038).
 - Coverage-guided fuzzing of the EXIF parser: the fuzz crate in `fuzz/`, the
   `nix develop .#fuzz` shell with a pinned nightly toolchain, `cargo xtask fuzz` and a
   nightly workflow (ADR 0037).

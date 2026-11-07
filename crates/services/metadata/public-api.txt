@@ -1,0 +1,99 @@
+pub mod metadata
+pub mod metadata::testing
+pub enum metadata::testing::ByteOrder
+pub metadata::testing::ByteOrder::BigEndian
+pub metadata::testing::ByteOrder::LittleEndian
+impl core::clone::Clone for metadata::testing::ByteOrder
+pub fn metadata::testing::ByteOrder::clone(&self) -> metadata::testing::ByteOrder
+impl core::cmp::Eq for metadata::testing::ByteOrder
+impl core::cmp::PartialEq for metadata::testing::ByteOrder
+pub fn metadata::testing::ByteOrder::eq(&self, &metadata::testing::ByteOrder) -> bool
+impl core::fmt::Debug for metadata::testing::ByteOrder
+pub fn metadata::testing::ByteOrder::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for metadata::testing::ByteOrder
+impl core::marker::StructuralPartialEq for metadata::testing::ByteOrder
+impl core::marker::Freeze for metadata::testing::ByteOrder
+impl core::marker::Send for metadata::testing::ByteOrder
+impl core::marker::Sync for metadata::testing::ByteOrder
+impl core::marker::Unpin for metadata::testing::ByteOrder
+impl core::marker::UnsafeUnpin for metadata::testing::ByteOrder
+impl core::panic::unwind_safe::RefUnwindSafe for metadata::testing::ByteOrder
+impl core::panic::unwind_safe::UnwindSafe for metadata::testing::ByteOrder
+pub struct metadata::testing::Tiff
+impl metadata::testing::Tiff
+pub fn metadata::testing::Tiff::new(metadata::testing::ByteOrder) -> Self
+pub fn metadata::testing::Tiff::to_bytes(&self) -> alloc::vec::Vec<u8>
+pub fn metadata::testing::Tiff::with_exif_ifd_pointer(self, u32) -> Self
+pub fn metadata::testing::Tiff::with_exif_text(self, u16, &str) -> Self
+pub fn metadata::testing::Tiff::with_ifd0_text(self, u16, &str) -> Self
+pub fn metadata::testing::Tiff::with_magic(self, u16) -> Self
+impl core::clone::Clone for metadata::testing::Tiff
+pub fn metadata::testing::Tiff::clone(&self) -> metadata::testing::Tiff
+impl core::cmp::Eq for metadata::testing::Tiff
+impl core::cmp::PartialEq for metadata::testing::Tiff
+pub fn metadata::testing::Tiff::eq(&self, &metadata::testing::Tiff) -> bool
+impl core::fmt::Debug for metadata::testing::Tiff
+pub fn metadata::testing::Tiff::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for metadata::testing::Tiff
+impl core::marker::Freeze for metadata::testing::Tiff
+impl core::marker::Send for metadata::testing::Tiff
+impl core::marker::Sync for metadata::testing::Tiff
+impl core::marker::Unpin for metadata::testing::Tiff
+impl core::marker::UnsafeUnpin for metadata::testing::Tiff
+impl core::panic::unwind_safe::RefUnwindSafe for metadata::testing::Tiff
+impl core::panic::unwind_safe::UnwindSafe for metadata::testing::Tiff
+pub const metadata::testing::DATE_TIME: u16
+pub const metadata::testing::DATE_TIME_ORIGINAL: u16
+pub const metadata::testing::OFFSET_TIME_ORIGINAL: u16
+pub const metadata::testing::SUB_SEC_TIME_ORIGINAL: u16
+pub fn metadata::testing::jpeg(&[u8]) -> alloc::vec::Vec<u8>
+pub fn metadata::testing::raf(&[u8]) -> alloc::vec::Vec<u8>
+pub enum metadata::CaptureTimeError
+pub metadata::CaptureTimeError::Io
+pub metadata::CaptureTimeError::Io::error: core::io::error::Error
+pub metadata::CaptureTimeError::Io::path: std::path::PathBuf
+pub metadata::CaptureTimeError::NoCaptureTime(metadata::NoCaptureTime)
+impl core::convert::From<metadata::NoCaptureTime> for metadata::CaptureTimeError
+pub fn metadata::CaptureTimeError::from(metadata::NoCaptureTime) -> Self
+impl core::error::Error for metadata::CaptureTimeError
+pub fn metadata::CaptureTimeError::source(&self) -> core::option::Option<&(dyn core::error::Error + 'static)>
+impl core::fmt::Debug for metadata::CaptureTimeError
+pub fn metadata::CaptureTimeError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for metadata::CaptureTimeError
+pub fn metadata::CaptureTimeError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for metadata::CaptureTimeError
+impl core::marker::Send for metadata::CaptureTimeError
+impl core::marker::Sync for metadata::CaptureTimeError
+impl core::marker::Unpin for metadata::CaptureTimeError
+impl core::marker::UnsafeUnpin for metadata::CaptureTimeError
+impl !core::panic::unwind_safe::RefUnwindSafe for metadata::CaptureTimeError
+impl !core::panic::unwind_safe::UnwindSafe for metadata::CaptureTimeError
+pub enum metadata::NoCaptureTime
+pub metadata::NoCaptureTime::Damaged
+pub metadata::NoCaptureTime::Damaged::what: alloc::string::String
+pub metadata::NoCaptureTime::FormatNotRead
+pub metadata::NoCaptureTime::Invalid
+pub metadata::NoCaptureTime::Invalid::value: alloc::string::String
+pub metadata::NoCaptureTime::Missing
+impl core::clone::Clone for metadata::NoCaptureTime
+pub fn metadata::NoCaptureTime::clone(&self) -> metadata::NoCaptureTime
+impl core::cmp::Eq for metadata::NoCaptureTime
+impl core::cmp::PartialEq for metadata::NoCaptureTime
+pub fn metadata::NoCaptureTime::eq(&self, &metadata::NoCaptureTime) -> bool
+impl core::convert::From<metadata::NoCaptureTime> for metadata::CaptureTimeError
+pub fn metadata::CaptureTimeError::from(metadata::NoCaptureTime) -> Self
+impl core::error::Error for metadata::NoCaptureTime
+impl core::fmt::Debug for metadata::NoCaptureTime
+pub fn metadata::NoCaptureTime::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for metadata::NoCaptureTime
+pub fn metadata::NoCaptureTime::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for metadata::NoCaptureTime
+impl core::marker::Freeze for metadata::NoCaptureTime
+impl core::marker::Send for metadata::NoCaptureTime
+impl core::marker::Sync for metadata::NoCaptureTime
+impl core::marker::Unpin for metadata::NoCaptureTime
+impl core::marker::UnsafeUnpin for metadata::NoCaptureTime
+impl core::panic::unwind_safe::RefUnwindSafe for metadata::NoCaptureTime
+impl core::panic::unwind_safe::UnwindSafe for metadata::NoCaptureTime
+pub fn metadata::capture_time_from_bytes(&[u8]) -> core::result::Result<domain::capture_time::CaptureTime, metadata::NoCaptureTime>
+pub fn metadata::read_capture_time(&dyn files::ports::ReadOnlyFileSystem, &std::path::Path) -> core::result::Result<domain::capture_time::CaptureTime, metadata::CaptureTimeError>

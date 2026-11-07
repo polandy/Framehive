@@ -1,0 +1,58 @@
+pub mod kernel
+pub enum kernel::ModuleIdError
+pub kernel::ModuleIdError::Empty
+pub kernel::ModuleIdError::InvalidCharacter
+pub kernel::ModuleIdError::InvalidCharacter::character: char
+pub kernel::ModuleIdError::InvalidCharacter::id: alloc::string::String
+pub kernel::ModuleIdError::InvalidStart
+pub kernel::ModuleIdError::InvalidStart::id: alloc::string::String
+pub kernel::ModuleIdError::InvalidUnderscore
+pub kernel::ModuleIdError::InvalidUnderscore::id: alloc::string::String
+pub kernel::ModuleIdError::TooLong
+pub kernel::ModuleIdError::TooLong::id: alloc::string::String
+impl core::clone::Clone for kernel::ModuleIdError
+pub fn kernel::ModuleIdError::clone(&self) -> kernel::ModuleIdError
+impl core::cmp::Eq for kernel::ModuleIdError
+impl core::cmp::PartialEq for kernel::ModuleIdError
+pub fn kernel::ModuleIdError::eq(&self, &kernel::ModuleIdError) -> bool
+impl core::error::Error for kernel::ModuleIdError
+impl core::fmt::Debug for kernel::ModuleIdError
+pub fn kernel::ModuleIdError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for kernel::ModuleIdError
+pub fn kernel::ModuleIdError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for kernel::ModuleIdError
+impl core::marker::Freeze for kernel::ModuleIdError
+impl core::marker::Send for kernel::ModuleIdError
+impl core::marker::Sync for kernel::ModuleIdError
+impl core::marker::Unpin for kernel::ModuleIdError
+impl core::marker::UnsafeUnpin for kernel::ModuleIdError
+impl core::panic::unwind_safe::RefUnwindSafe for kernel::ModuleIdError
+impl core::panic::unwind_safe::UnwindSafe for kernel::ModuleIdError
+pub struct kernel::ModuleId(_)
+impl kernel::ModuleId
+pub const kernel::ModuleId::MAX_LEN: usize
+pub fn kernel::ModuleId::as_str(&self) -> &str
+pub fn kernel::ModuleId::new(&str) -> core::result::Result<Self, kernel::ModuleIdError>
+impl core::clone::Clone for kernel::ModuleId
+pub fn kernel::ModuleId::clone(&self) -> kernel::ModuleId
+impl core::cmp::Eq for kernel::ModuleId
+impl core::cmp::Ord for kernel::ModuleId
+pub fn kernel::ModuleId::cmp(&self, &kernel::ModuleId) -> core::cmp::Ordering
+impl core::cmp::PartialEq for kernel::ModuleId
+pub fn kernel::ModuleId::eq(&self, &kernel::ModuleId) -> bool
+impl core::cmp::PartialOrd for kernel::ModuleId
+pub fn kernel::ModuleId::partial_cmp(&self, &kernel::ModuleId) -> core::option::Option<core::cmp::Ordering>
+impl core::fmt::Debug for kernel::ModuleId
+pub fn kernel::ModuleId::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for kernel::ModuleId
+pub fn kernel::ModuleId::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for kernel::ModuleId
+pub fn kernel::ModuleId::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::StructuralPartialEq for kernel::ModuleId
+impl core::marker::Freeze for kernel::ModuleId
+impl core::marker::Send for kernel::ModuleId
+impl core::marker::Sync for kernel::ModuleId
+impl core::marker::Unpin for kernel::ModuleId
+impl core::marker::UnsafeUnpin for kernel::ModuleId
+impl core::panic::unwind_safe::RefUnwindSafe for kernel::ModuleId
+impl core::panic::unwind_safe::UnwindSafe for kernel::ModuleId

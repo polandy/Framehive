@@ -118,6 +118,7 @@
             pkgs.b3sum
             pkgs.cargo-deny
             pkgs.cargo-nextest
+            pkgs.cargo-public-api
             pkgs.curl
             pkgs.gh
             pkgs.gnutar

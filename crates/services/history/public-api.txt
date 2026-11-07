@@ -1,0 +1,259 @@
+pub mod history
+pub mod history::testing
+pub struct history::testing::MemoryImportHistory
+impl history::testing::MemoryImportHistory
+pub fn history::testing::MemoryImportHistory::break_storage(&self)
+pub fn history::testing::MemoryImportHistory::copies(&self) -> alloc::vec::Vec<history::CopyRecord>
+pub fn history::testing::MemoryImportHistory::fail_recording_after(&self, usize)
+pub fn history::testing::MemoryImportHistory::is_broken(&self) -> bool
+pub fn history::testing::MemoryImportHistory::new() -> Self
+pub fn history::testing::MemoryImportHistory::runs(&self) -> alloc::vec::Vec<history::testing::RecordedRun>
+impl core::default::Default for history::testing::MemoryImportHistory
+pub fn history::testing::MemoryImportHistory::default() -> history::testing::MemoryImportHistory
+impl core::fmt::Debug for history::testing::MemoryImportHistory
+pub fn history::testing::MemoryImportHistory::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl history::ImportHistory for history::testing::MemoryImportHistory
+pub fn history::testing::MemoryImportHistory::find_copies(&self, &history::CopyKey<'_>) -> core::result::Result<alloc::vec::Vec<history::FoundCopy>, history::HistoryError>
+pub fn history::testing::MemoryImportHistory::finish_run(&self, history::RunId, history::RecordedTime) -> core::result::Result<(), history::HistoryError>
+pub fn history::testing::MemoryImportHistory::list_runs(&self) -> core::result::Result<alloc::vec::Vec<history::LoggedRun>, history::HistoryError>
+pub fn history::testing::MemoryImportHistory::read_run_log(&self, history::RunId) -> core::result::Result<core::option::Option<history::RunLog>, history::HistoryError>
+pub fn history::testing::MemoryImportHistory::record_copy(&self, &history::CopyRecord) -> core::result::Result<(), history::HistoryError>
+pub fn history::testing::MemoryImportHistory::start_run(&self, &history::RunStart) -> core::result::Result<history::RunId, history::HistoryError>
+impl !core::marker::Freeze for history::testing::MemoryImportHistory
+impl core::marker::Send for history::testing::MemoryImportHistory
+impl core::marker::Sync for history::testing::MemoryImportHistory
+impl core::marker::Unpin for history::testing::MemoryImportHistory
+impl core::marker::UnsafeUnpin for history::testing::MemoryImportHistory
+impl core::panic::unwind_safe::RefUnwindSafe for history::testing::MemoryImportHistory
+impl core::panic::unwind_safe::UnwindSafe for history::testing::MemoryImportHistory
+pub struct history::testing::RecordedRun
+pub history::testing::RecordedRun::finished_at: core::option::Option<history::RecordedTime>
+pub history::testing::RecordedRun::id: history::RunId
+pub history::testing::RecordedRun::start: history::RunStart
+impl core::clone::Clone for history::testing::RecordedRun
+pub fn history::testing::RecordedRun::clone(&self) -> history::testing::RecordedRun
+impl core::cmp::Eq for history::testing::RecordedRun
+impl core::cmp::PartialEq for history::testing::RecordedRun
+pub fn history::testing::RecordedRun::eq(&self, &history::testing::RecordedRun) -> bool
+impl core::fmt::Debug for history::testing::RecordedRun
+pub fn history::testing::RecordedRun::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for history::testing::RecordedRun
+impl core::marker::Freeze for history::testing::RecordedRun
+impl core::marker::Send for history::testing::RecordedRun
+impl core::marker::Sync for history::testing::RecordedRun
+impl core::marker::Unpin for history::testing::RecordedRun
+impl core::marker::UnsafeUnpin for history::testing::RecordedRun
+impl core::panic::unwind_safe::RefUnwindSafe for history::testing::RecordedRun
+impl core::panic::unwind_safe::UnwindSafe for history::testing::RecordedRun
+pub trait history::testing::ImportHistoryUnderTest
+pub fn history::testing::ImportHistoryUnderTest::break_storage(&mut self) -> alloc::string::String
+pub fn history::testing::ImportHistoryUnderTest::history(&self) -> &dyn history::ImportHistory
+pub fn history::testing::ImportHistoryUnderTest::is_unchanged_since_broken(&self) -> bool
+pub fn history::testing::ImportHistoryUnderTest::reopen(&mut self)
+pub fn history::testing::check_import_history<T: history::testing::ImportHistoryUnderTest>(&mut dyn core::ops::function::FnMut() -> T) -> alloc::vec::Vec<alloc::string::String>
+pub struct history::CopyKey<'a>
+pub history::CopyKey::capture_time: core::option::Option<domain::date_time::LocalDateTime>
+pub history::CopyKey::destination: &'a std::path::Path
+pub history::CopyKey::original_file_name: &'a str
+pub history::CopyKey::size: u64
+impl<'a> core::clone::Clone for history::CopyKey<'a>
+pub fn history::CopyKey<'a>::clone(&self) -> history::CopyKey<'a>
+impl<'a> core::cmp::Eq for history::CopyKey<'a>
+impl<'a> core::cmp::PartialEq for history::CopyKey<'a>
+pub fn history::CopyKey<'a>::eq(&self, &history::CopyKey<'a>) -> bool
+impl<'a> core::fmt::Debug for history::CopyKey<'a>
+pub fn history::CopyKey<'a>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl<'a> core::marker::Copy for history::CopyKey<'a>
+impl<'a> core::marker::StructuralPartialEq for history::CopyKey<'a>
+impl<'a> core::marker::Freeze for history::CopyKey<'a>
+impl<'a> core::marker::Send for history::CopyKey<'a>
+impl<'a> core::marker::Sync for history::CopyKey<'a>
+impl<'a> core::marker::Unpin for history::CopyKey<'a>
+impl<'a> core::marker::UnsafeUnpin for history::CopyKey<'a>
+impl<'a> core::panic::unwind_safe::RefUnwindSafe for history::CopyKey<'a>
+impl<'a> core::panic::unwind_safe::UnwindSafe for history::CopyKey<'a>
+pub struct history::CopyRecord
+pub history::CopyRecord::capture_time: core::option::Option<domain::date_time::LocalDateTime>
+pub history::CopyRecord::checksum: domain::checksum::Checksum
+pub history::CopyRecord::destination: std::path::PathBuf
+pub history::CopyRecord::original_file_name: alloc::string::String
+pub history::CopyRecord::recorded_at: history::RecordedTime
+pub history::CopyRecord::run: history::RunId
+pub history::CopyRecord::size: u64
+pub history::CopyRecord::source_path: std::path::PathBuf
+pub history::CopyRecord::target: alloc::string::String
+impl history::CopyRecord
+pub fn history::CopyRecord::matches(&self, &history::CopyKey<'_>) -> bool
+impl core::clone::Clone for history::CopyRecord
+pub fn history::CopyRecord::clone(&self) -> history::CopyRecord
+impl core::cmp::Eq for history::CopyRecord
+impl core::cmp::PartialEq for history::CopyRecord
+pub fn history::CopyRecord::eq(&self, &history::CopyRecord) -> bool
+impl core::fmt::Debug for history::CopyRecord
+pub fn history::CopyRecord::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for history::CopyRecord
+impl core::marker::Freeze for history::CopyRecord
+impl core::marker::Send for history::CopyRecord
+impl core::marker::Sync for history::CopyRecord
+impl core::marker::Unpin for history::CopyRecord
+impl core::marker::UnsafeUnpin for history::CopyRecord
+impl core::panic::unwind_safe::RefUnwindSafe for history::CopyRecord
+impl core::panic::unwind_safe::UnwindSafe for history::CopyRecord
+pub struct history::FoundCopy
+pub history::FoundCopy::checksum: domain::checksum::Checksum
+pub history::FoundCopy::target: alloc::string::String
+impl core::clone::Clone for history::FoundCopy
+pub fn history::FoundCopy::clone(&self) -> history::FoundCopy
+impl core::cmp::Eq for history::FoundCopy
+impl core::cmp::PartialEq for history::FoundCopy
+pub fn history::FoundCopy::eq(&self, &history::FoundCopy) -> bool
+impl core::fmt::Debug for history::FoundCopy
+pub fn history::FoundCopy::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for history::FoundCopy
+impl core::marker::Freeze for history::FoundCopy
+impl core::marker::Send for history::FoundCopy
+impl core::marker::Sync for history::FoundCopy
+impl core::marker::Unpin for history::FoundCopy
+impl core::marker::UnsafeUnpin for history::FoundCopy
+impl core::panic::unwind_safe::RefUnwindSafe for history::FoundCopy
+impl core::panic::unwind_safe::UnwindSafe for history::FoundCopy
+pub struct history::HistoryError
+pub history::HistoryError::file: std::path::PathBuf
+pub history::HistoryError::reason: alloc::string::String
+impl core::clone::Clone for history::HistoryError
+pub fn history::HistoryError::clone(&self) -> history::HistoryError
+impl core::cmp::Eq for history::HistoryError
+impl core::cmp::PartialEq for history::HistoryError
+pub fn history::HistoryError::eq(&self, &history::HistoryError) -> bool
+impl core::error::Error for history::HistoryError
+impl core::fmt::Debug for history::HistoryError
+pub fn history::HistoryError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for history::HistoryError
+pub fn history::HistoryError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for history::HistoryError
+impl core::marker::Freeze for history::HistoryError
+impl core::marker::Send for history::HistoryError
+impl core::marker::Sync for history::HistoryError
+impl core::marker::Unpin for history::HistoryError
+impl core::marker::UnsafeUnpin for history::HistoryError
+impl core::panic::unwind_safe::RefUnwindSafe for history::HistoryError
+impl core::panic::unwind_safe::UnwindSafe for history::HistoryError
+pub struct history::LoggedRun
+pub history::LoggedRun::copy_count: u64
+pub history::LoggedRun::finished_at: core::option::Option<history::RecordedTime>
+pub history::LoggedRun::id: history::RunId
+pub history::LoggedRun::start: history::RunStart
+impl core::clone::Clone for history::LoggedRun
+pub fn history::LoggedRun::clone(&self) -> history::LoggedRun
+impl core::cmp::Eq for history::LoggedRun
+impl core::cmp::PartialEq for history::LoggedRun
+pub fn history::LoggedRun::eq(&self, &history::LoggedRun) -> bool
+impl core::fmt::Debug for history::LoggedRun
+pub fn history::LoggedRun::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for history::LoggedRun
+impl core::marker::Freeze for history::LoggedRun
+impl core::marker::Send for history::LoggedRun
+impl core::marker::Sync for history::LoggedRun
+impl core::marker::Unpin for history::LoggedRun
+impl core::marker::UnsafeUnpin for history::LoggedRun
+impl core::panic::unwind_safe::RefUnwindSafe for history::LoggedRun
+impl core::panic::unwind_safe::UnwindSafe for history::LoggedRun
+pub struct history::RecordedTime
+pub history::RecordedTime::local: domain::date_time::LocalDateTime
+pub history::RecordedTime::offset: domain::time::UtcOffset
+impl history::RecordedTime
+pub fn history::RecordedTime::at(domain::time::Timestamp, domain::time::UtcOffset) -> core::option::Option<Self>
+impl core::clone::Clone for history::RecordedTime
+pub fn history::RecordedTime::clone(&self) -> history::RecordedTime
+impl core::cmp::Eq for history::RecordedTime
+impl core::cmp::PartialEq for history::RecordedTime
+pub fn history::RecordedTime::eq(&self, &history::RecordedTime) -> bool
+impl core::fmt::Debug for history::RecordedTime
+pub fn history::RecordedTime::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for history::RecordedTime
+pub fn history::RecordedTime::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for history::RecordedTime
+impl core::marker::StructuralPartialEq for history::RecordedTime
+impl core::marker::Freeze for history::RecordedTime
+impl core::marker::Send for history::RecordedTime
+impl core::marker::Sync for history::RecordedTime
+impl core::marker::Unpin for history::RecordedTime
+impl core::marker::UnsafeUnpin for history::RecordedTime
+impl core::panic::unwind_safe::RefUnwindSafe for history::RecordedTime
+impl core::panic::unwind_safe::UnwindSafe for history::RecordedTime
+pub struct history::RunId(_)
+impl history::RunId
+pub fn history::RunId::new(i64) -> Self
+pub fn history::RunId::number(self) -> i64
+impl core::clone::Clone for history::RunId
+pub fn history::RunId::clone(&self) -> history::RunId
+impl core::cmp::Eq for history::RunId
+impl core::cmp::PartialEq for history::RunId
+pub fn history::RunId::eq(&self, &history::RunId) -> bool
+impl core::fmt::Debug for history::RunId
+pub fn history::RunId::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for history::RunId
+pub fn history::RunId::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for history::RunId
+impl core::marker::StructuralPartialEq for history::RunId
+impl core::marker::Freeze for history::RunId
+impl core::marker::Send for history::RunId
+impl core::marker::Sync for history::RunId
+impl core::marker::Unpin for history::RunId
+impl core::marker::UnsafeUnpin for history::RunId
+impl core::panic::unwind_safe::RefUnwindSafe for history::RunId
+impl core::panic::unwind_safe::UnwindSafe for history::RunId
+pub struct history::RunLog
+pub history::RunLog::copies: alloc::vec::Vec<history::CopyRecord>
+pub history::RunLog::run: history::LoggedRun
+impl history::RunLog
+pub fn history::RunLog::new(history::LoggedRun, alloc::vec::Vec<history::CopyRecord>) -> Self
+impl core::clone::Clone for history::RunLog
+pub fn history::RunLog::clone(&self) -> history::RunLog
+impl core::cmp::Eq for history::RunLog
+impl core::cmp::PartialEq for history::RunLog
+pub fn history::RunLog::eq(&self, &history::RunLog) -> bool
+impl core::fmt::Debug for history::RunLog
+pub fn history::RunLog::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for history::RunLog
+impl core::marker::Freeze for history::RunLog
+impl core::marker::Send for history::RunLog
+impl core::marker::Sync for history::RunLog
+impl core::marker::Unpin for history::RunLog
+impl core::marker::UnsafeUnpin for history::RunLog
+impl core::panic::unwind_safe::RefUnwindSafe for history::RunLog
+impl core::panic::unwind_safe::UnwindSafe for history::RunLog
+pub struct history::RunStart
+pub history::RunStart::import_destination: std::path::PathBuf
+pub history::RunStart::source: std::path::PathBuf
+pub history::RunStart::started_at: history::RecordedTime
+pub history::RunStart::video_destination: core::option::Option<std::path::PathBuf>
+impl core::clone::Clone for history::RunStart
+pub fn history::RunStart::clone(&self) -> history::RunStart
+impl core::cmp::Eq for history::RunStart
+impl core::cmp::PartialEq for history::RunStart
+pub fn history::RunStart::eq(&self, &history::RunStart) -> bool
+impl core::fmt::Debug for history::RunStart
+pub fn history::RunStart::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for history::RunStart
+impl core::marker::Freeze for history::RunStart
+impl core::marker::Send for history::RunStart
+impl core::marker::Sync for history::RunStart
+impl core::marker::Unpin for history::RunStart
+impl core::marker::UnsafeUnpin for history::RunStart
+impl core::panic::unwind_safe::RefUnwindSafe for history::RunStart
+impl core::panic::unwind_safe::UnwindSafe for history::RunStart
+pub trait history::ImportHistory
+pub fn history::ImportHistory::find_copies(&self, &history::CopyKey<'_>) -> core::result::Result<alloc::vec::Vec<history::FoundCopy>, history::HistoryError>
+pub fn history::ImportHistory::finish_run(&self, history::RunId, history::RecordedTime) -> core::result::Result<(), history::HistoryError>
+pub fn history::ImportHistory::list_runs(&self) -> core::result::Result<alloc::vec::Vec<history::LoggedRun>, history::HistoryError>
+pub fn history::ImportHistory::read_run_log(&self, history::RunId) -> core::result::Result<core::option::Option<history::RunLog>, history::HistoryError>
+pub fn history::ImportHistory::record_copy(&self, &history::CopyRecord) -> core::result::Result<(), history::HistoryError>
+pub fn history::ImportHistory::start_run(&self, &history::RunStart) -> core::result::Result<history::RunId, history::HistoryError>
+impl history::ImportHistory for history::testing::MemoryImportHistory
+pub fn history::testing::MemoryImportHistory::find_copies(&self, &history::CopyKey<'_>) -> core::result::Result<alloc::vec::Vec<history::FoundCopy>, history::HistoryError>
+pub fn history::testing::MemoryImportHistory::finish_run(&self, history::RunId, history::RecordedTime) -> core::result::Result<(), history::HistoryError>
+pub fn history::testing::MemoryImportHistory::list_runs(&self) -> core::result::Result<alloc::vec::Vec<history::LoggedRun>, history::HistoryError>
+pub fn history::testing::MemoryImportHistory::read_run_log(&self, history::RunId) -> core::result::Result<core::option::Option<history::RunLog>, history::HistoryError>
+pub fn history::testing::MemoryImportHistory::record_copy(&self, &history::CopyRecord) -> core::result::Result<(), history::HistoryError>
+pub fn history::testing::MemoryImportHistory::start_run(&self, &history::RunStart) -> core::result::Result<history::RunId, history::HistoryError>
