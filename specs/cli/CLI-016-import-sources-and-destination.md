@@ -35,6 +35,22 @@ with 2. Each message names the problem, the affected path and the fix.
 | No source | `error: no source: give the folders or cameras to import from`, then `hint: framehive import /media/card --destination ~/Pictures` |
 | No destination | `error: no destination: give --destination <folder>` |
 | No destination, with `--profile <name>` | `error: no destination: give --destination <folder>, or set destination in the profile <name>: <path of the profile file>` |
+| A source does not exist | `error: the source <source> does not exist` |
+| A source is not a folder | `error: the source <source> is not a folder; give the folder that holds it` |
+| The destination is a source or lies inside one | `error: the destination <destination> lies inside the source <source>; choose a destination outside it` |
+| A source lies inside another | `error: source <source> lies inside the source <other source>; give it once` |
+| A source is given twice | `error: source <source> is given twice; give it once` |
+
+Sources are named as given, except in the message about the destination, which names
+both resolved (CLI-001.10). Two folders are compared by their resolved paths, so
+`cardA` and `./cardA` are the same source, named by the later one. A `camera:` source
+is given twice when its text after `camera:` is the same; cameras are not opened for
+this check, and no folder lies inside a camera. The checks of the backup destinations
+and video destinations against the source (CLI-005, CLI-012) also run for every source
+before any job.
+
+A source that passes these checks but cannot start, for example because it cannot be
+read, does not keep the others from importing (CLI-015).
 
 **The old habit.** When the destination is missing and two or more sources are given,
 the last of them a folder, someone probably meant that folder as the destination. A
@@ -78,6 +94,44 @@ the file system.
 - **When** `framehive import /cardA camera:` runs
 - **Then** standard error is exactly the error of CLI-016.2, without a hint
 
+### CLI-016.6 – A missing source starts no source
+- **Given** a source `cardA` with `a.jpg`, and no `missing`
+- **When** `framehive import cardA missing --destination library` runs
+- **Then** standard error is exactly `error: the source missing does not exist`,
+  `library` is not created, and the exit code is 2
+
+### CLI-016.7 – A file as source
+- **Given** a source `cardA` with `a.jpg`, and a file `b.jpg`
+- **When** `framehive import cardA b.jpg --destination library` runs
+- **Then** standard error is exactly
+  `error: the source b.jpg is not a folder; give the folder that holds it`, `library` is
+  not created, and the exit code is 2
+
+### CLI-016.8 – The destination inside a later source
+- **Given** sources `cardA` with `a.jpg` and `cardB` with `b.jpg`
+- **When** `framehive import cardA cardB --destination cardB/library` runs
+- **Then** standard error is exactly the message of the destination inside the source
+  for the resolved `cardB/library` and `cardB`, nothing is copied, and the exit code is 2
+
+### CLI-016.9 – A source inside another
+- **Given** a source `card` with `DCIM/a.jpg`
+- **When** `framehive import card/DCIM card --destination library` runs
+- **Then** standard error is exactly
+  `error: source card/DCIM lies inside the source card; give it once`, `library` is not
+  created, and the exit code is 2
+
+### CLI-016.10 – A source given twice
+- **Given** a source `cardA` with `a.jpg`
+- **When** `framehive import cardA ./cardA --destination library` runs
+- **Then** standard error is exactly `error: source ./cardA is given twice; give it once`,
+  `library` is not created, and the exit code is 2
+
+### CLI-016.11 – A camera given twice
+- **Given** no camera is connected
+- **When** `framehive import camera: camera: --destination library` runs
+- **Then** standard error is exactly `error: source camera: is given twice; give it once`,
+  and the exit code is 2
+
 ## Out of scope
 
 - The guided import, which asks for the sources and the destination (CLI-002).
@@ -92,3 +146,4 @@ the file system.
 | Date | Change |
 |---|---|
 | 2026-11-07 | Created and implemented: decision C of ADR 0036, accepted by the owner |
+| 2026-11-07 | Every source is checked before any job: CLI-016.6 to CLI-016.11 |

@@ -25,9 +25,9 @@ no file system run in parallel; the others run one after another (IMPORT-015,
 
 **Arguments.** Every folder is a source, also with `--profile`; `--destination`, or else
 the profile, names the destination (CLI-016). Arguments that hold for every source, such
-as the template or the job code, are checked once, before any source; an error there starts no source. A source
-that cannot start, for example because it does not exist or its destination is short of
-space, does not keep the others from importing: each of its errors goes to standard
+as the template or the job code, are checked once, before any source; so are the sources themselves (CLI-016). An
+error there starts no source. A source that passes these checks but cannot start, for
+example because it cannot be read or its destination is short of space, does not keep the others from importing: each of its errors goes to standard
 error as `error: <source as given>: <message>`.
 
 **Report.** The file lines of CLI-001 are unchanged; those of parallel jobs may
@@ -58,10 +58,10 @@ start, else 1 when a file failed, else 0.
 - **Then** the file of `cardA` is copied, and the exit code is 1
 
 ### CLI-015.3 – A source that cannot start
-- **Given** a source `cardA` with `a.jpg`, and a source `missing` that does not exist
-- **When** `framehive import cardA missing --destination <destination>` runs
+- **Given** a source `cardA` with `a.jpg`, and a source `cardB` that cannot be read
+- **When** `framehive import cardA cardB --destination <destination>` runs
 - **Then** `a.jpg` is copied, standard error has a line that starts with
-  `error: missing: `, and the exit code is 2
+  `error: cardB: `, and the exit code is 2
 
 ### CLI-015.4 – One source prints no source line
 - **Given** the source of CLI-001.1
@@ -110,3 +110,4 @@ start, else 1 when a file failed, else 0.
 | 2026-11-07 | Created (Q5, J3, ADR 0036) |
 | 2026-11-07 | Implemented (J3, Q5); the last folder is the destination also with a profile |
 | 2026-11-07 | Every folder is a source, also with a profile; `--destination` names the destination (CLI-016, ADR 0036); CLI-015.7 changed, CLI-015.8 added |
+| 2026-11-07 | The sources are checked before any job (CLI-016): CLI-015.3 uses a source that cannot be read |

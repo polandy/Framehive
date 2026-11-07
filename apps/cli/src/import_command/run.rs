@@ -24,7 +24,7 @@ use import::{
 use jobs::JobQueue;
 use naming::CompatibilityMode;
 
-use super::folders::{Folders, backup_names, resolve_folders, unusable_message};
+use super::folders::{Folders, backup_names, resolve_sources, unusable_message};
 use super::sources::{Enqueued, Streams};
 use super::{ChosenSettings, LoadedProfile, choose_settings};
 use crate::arguments::ImportArguments;
@@ -75,23 +75,20 @@ impl From<String> for NotStarted {
     }
 }
 
-/// The checked folders and, for a `camera:` source, the opened camera. The camera is
-/// opened only once the folders are known to be fine.
+/// For a `camera:` source, the opened camera. It is opened only once the folders of
+/// every source are known to be fine.
 ///
 /// # Errors
 ///
-/// Returns the messages for unusable folders or a camera that cannot be opened.
-fn folders_and_camera(
+/// Returns the message when the camera cannot be opened.
+fn open_source_camera(
     source: &Path,
-    chosen: &ChosenSettings,
     cameras: &dyn Cameras,
-) -> Result<(Folders, Option<OpenedCamera>), NotStarted> {
-    let choice = camera_choice(source);
-    let folders = resolve_folders(source, chosen, choice.is_some())?;
-    let camera = choice
+) -> Result<Option<OpenedCamera>, NotStarted> {
+    let camera = camera_choice(source)
         .map(|choice| open_camera(cameras, &choice))
         .transpose()?;
-    Ok((folders, camera))
+    Ok(camera)
 }
 
 /// The settings of the run from the checked `folders`, the `chosen` settings and the
@@ -116,14 +113,21 @@ fn import_settings<'a>(
     }
 }
 
-/// The arguments, one source as given and the settings chosen for every source.
-type Given<'a> = (&'a ImportArguments, &'a Path, &'a ChosenSettings);
+/// The arguments, one source as given, the settings chosen for every source, and the
+/// checked folders of that source.
+type Given<'a> = (
+    &'a ImportArguments,
+    &'a Path,
+    &'a ChosenSettings,
+    &'a Folders,
+);
 
 /// What became of each source, in the order given (CLI-015).
 pub(super) type SourceResults = Vec<Result<ImportSummary, NotStarted>>;
 
-/// Chooses the settings, then checks, plans and enqueues the job of each source in the
-/// order given, and prints each job's report as it goes (CLI-001, CLI-015).
+/// Chooses the settings and checks every source (CLI-016), then plans and enqueues the
+/// job of each source in the order given, and prints each job's report as it goes
+/// (CLI-001, CLI-015).
 ///
 /// # Errors
 ///
@@ -134,6 +138,7 @@ pub(super) fn import_with(
     surroundings: Surroundings<'_>,
 ) -> Result<SourceResults, NotStarted> {
     let chosen = choose_settings(arguments, profile)?;
+    let checked = resolve_sources(&arguments.sources, &chosen)?;
     let ports = import_ports(surroundings.state_folder, surroundings.free_space);
     let streams = Streams::new(surroundings.output, surroundings.errors);
     let streams = &streams;
@@ -145,8 +150,9 @@ pub(super) fn import_with(
         let following: Vec<_> = arguments
             .sources
             .iter()
-            .map(|source| {
-                let given = (arguments, source.as_path(), &chosen);
+            .zip(&checked)
+            .map(|(source, folders)| {
+                let given = (arguments, source.as_path(), &chosen, folders);
                 let (enqueued, camera) =
                     enqueue_source(given, &ports, surroundings.cameras, &mut queue, streams)?;
                 opened.extend(camera);
@@ -168,31 +174,31 @@ pub(super) fn import_with(
     Ok(results)
 }
 
-/// Checks the folders and the free space of one source, prepares its destinations,
+/// Opens the camera of one source, checks its free space, prepares its destinations,
 /// plans its import and enqueues its job.
 ///
 /// # Errors
 ///
 /// Returns the messages of the errors that kept the source from starting.
 fn enqueue_source(
-    (arguments, source, chosen): Given<'_>,
+    (arguments, source, chosen, folders): Given<'_>,
     ports: &ImportPorts,
     cameras: &dyn Cameras,
     queue: &mut JobQueue,
     streams: &Streams<'_>,
 ) -> Result<(Enqueued, Option<OpenedCamera>), NotStarted> {
-    let (folders, camera) = folders_and_camera(source, chosen, cameras)?;
+    let camera = open_source_camera(source, cameras)?;
     let backup_paths = folders.backup_paths();
     let video_backup_paths = folders.video_backup_paths();
     let settings = import_settings(
-        &folders,
+        folders,
         chosen,
         (&backup_paths, &video_backup_paths),
         arguments.dry_run,
     );
     let mut run = ports.import_run();
     let mut printer =
-        ReportPrinter::new(Vec::new(), arguments.dry_run).with_backup_names(backup_names(&folders));
+        ReportPrinter::new(Vec::new(), arguments.dry_run).with_backup_names(backup_names(folders));
     let scan = if let Some(camera) = &camera {
         run = run
             .with_source(&camera.file_system)
@@ -212,7 +218,7 @@ fn enqueue_source(
     let plan = run
         .plan(&settings, &scan)
         .map_err(|error| error.to_string())?;
-    let space = check_free_space(&run, &settings, &folders, &plan, &mut **streams.errors());
+    let space = check_free_space(&run, &settings, folders, &plan, &mut **streams.errors());
     if let Err(shortages) = space {
         if arguments.dry_run {
             // A dry run still lists what it would do (CLI-011.3).
@@ -222,7 +228,7 @@ fn enqueue_source(
         return Err(shortages);
     }
     if !arguments.dry_run {
-        create_destinations(&*ports.file_system, &folders)?;
+        create_destinations(&*ports.file_system, folders)?;
     }
     let (job, reports) = ImportJob::new(ports.clone(), ImportJobSettings::of(&settings));
     let mut job = job.with_plan(plan);

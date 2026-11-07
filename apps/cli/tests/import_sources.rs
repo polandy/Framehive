@@ -12,38 +12,13 @@ use std::fs;
 use std::path::PathBuf;
 use std::process::Output;
 
-use support::{Folders, has_line, has_line_starting_with, lines, photo, stderr, stdout};
+use support::{
+    Folders, card, has_line, has_line_starting_with, import_in_root as import, lines, picture,
+    set_mode, stderr, stdout,
+};
 
 const SUMMARY: &str = "1 copied, 0 already imported, 0 duplicates, 0 skipped, 0 failed, 0 left out";
 const DAY: &str = "2026/2026-10-17";
-
-/// Adds a source folder `card` below the root, with a picture captured at
-/// 2026-10-17 14:05:09 for each of `names`; each picture's content is its own.
-fn card(folders: &Folders, card: &str, names: &[&str]) {
-    let folder = folders.root.path().join(card);
-    fs::create_dir_all(&folder).unwrap();
-    for name in names {
-        fs::write(folder.join(name), picture(name)).unwrap();
-    }
-}
-
-/// A picture that differs from every other by `name`, after the end of its image.
-fn picture(name: &str) -> Vec<u8> {
-    let mut bytes = photo();
-    bytes.extend(name.as_bytes());
-    bytes
-}
-
-/// Runs `framehive import <arguments>` in the root folder.
-fn import(folders: &Folders, arguments: &[&str]) -> Output {
-    let mut line = vec!["import"];
-    line.extend(arguments);
-    folders
-        .framehive_command(&line)
-        .current_dir(folders.root.path())
-        .output()
-        .unwrap()
-}
 
 fn library(folders: &Folders) -> PathBuf {
     folders.root.path().join("library")
@@ -129,9 +104,13 @@ fn the_exit_code_is_the_worst_of_the_sources() {
 fn a_source_that_cannot_start_keeps_no_other_from_importing() {
     let folders = Folders::new();
     card(&folders, "cardA", &["a.jpg"]);
+    card(&folders, "cardB", &["b.jpg"]);
+    let card_b = folders.root.path().join("cardB");
+    set_mode(&card_b, 0o000);
 
-    let output = import(&folders, &["cardA", "missing", "--destination", "library"]);
+    let output = import(&folders, &["cardA", "cardB", "--destination", "library"]);
 
+    set_mode(&card_b, 0o755);
     assert_eq!(
         fs::read(library(&folders).join(DAY).join("a.jpg")).unwrap(),
         picture("a.jpg")
@@ -139,7 +118,7 @@ fn a_source_that_cannot_start_keeps_no_other_from_importing() {
     assert!(
         stderr(&output)
             .lines()
-            .any(|line| line.starts_with("error: missing: ")),
+            .any(|line| line.starts_with("error: cardB: ")),
         "{}",
         stderr(&output)
     );

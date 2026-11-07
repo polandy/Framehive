@@ -11,7 +11,9 @@ links, resolves the longest existing part of the destination and appends the mis
 folders (rejecting `..` among them), and rejects a destination inside the source.
 Each `--backup` folder (CLI-005) is resolved the same way and checked with
 `import::check_backup_destinations` (IMPORT-007.11), also in a dry run.
-So are `--video-destination` and `--video-backup` (CLI-012, IMPORT-013.8). It scans and
+So are `--video-destination` and `--video-backup` (CLI-012, IMPORT-013.8). These checks
+run for every source before any job (`folders::resolve_sources`), which also rejects a
+source given twice or lying inside another (CLI-016). It scans and
 plans, and checks the free space with `adapter-free-space` (CLI-011): a short file system
 stops it with exit code 2 before any folder is created, a dry run after its lines.
 Unless it is a dry run, it then creates the missing folders of all destinations, and

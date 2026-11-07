@@ -187,6 +187,35 @@ impl Folders {
     }
 }
 
+/// Adds a source folder `card` below the root, with a picture captured at
+/// 2026-10-17 14:05:09 for each of `names`; each picture's content is its own.
+pub(crate) fn card(folders: &Folders, card: &str, names: &[&str]) {
+    let folder = folders.root.path().join(card);
+    fs::create_dir_all(&folder).unwrap();
+    for name in names {
+        fs::write(folder.join(name), picture(name)).unwrap();
+    }
+}
+
+/// A picture that differs from every other by `name`, after the end of its image.
+pub(crate) fn picture(name: &str) -> Vec<u8> {
+    let mut bytes = photo();
+    bytes.extend(name.as_bytes());
+    bytes
+}
+
+/// Runs `framehive import <arguments>` in the root folder, so the sources are named
+/// relative to it as the user would give them.
+pub(crate) fn import_in_root(folders: &Folders, arguments: &[&str]) -> Output {
+    let mut line = vec!["import"];
+    line.extend(arguments);
+    folders
+        .framehive_command(&line)
+        .current_dir(folders.root.path())
+        .output()
+        .unwrap()
+}
+
 pub(crate) fn photo() -> Vec<u8> {
     jpeg(
         &Tiff::new(ByteOrder::LittleEndian)

@@ -16,4 +16,5 @@ guarantees end to end on a folder laid out like a memory card: a dry run writes
 nothing, the import fails only the unreadable file, a second run copies nothing, and
 the source keeps its paths, bytes and modification times. `tests/import_log.rs` reads
 the log after real imports, or of a history written with `adapter-sqlite`. `tests/import_sources.rs`
-(CLI-015) runs the binary in the temporary folder, so the sources are named as given.
+(CLI-015) and `tests/import_source_checks.rs` (CLI-016) run the binary in the temporary
+folder, so the sources are named as given.
