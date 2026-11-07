@@ -10,7 +10,10 @@
 
 use std::path::{Path, PathBuf};
 
-use config::{ConfigError, ConfigFile, DefaultValue, FileType, Key, Located, Values, YamlParser};
+use config::{
+    ConfigError, ConfigFile, DefaultValue, FileType, Key, Located, Position, Problem, Values,
+    YamlNode, YamlParser, YamlValue,
+};
 use naming::NameTemplate;
 
 use crate::conflicts::ConflictPolicy;
@@ -55,10 +58,9 @@ pub const IMPORT_PROFILE: FileType = FileType::new(
     "import-profile",
     1,
     &[
-        Key::text("destination", "Folder to import into"),
         Key::text(
             "video_destination",
-            "Folder to import videos into (IMPORT-013); left out, videos go to the destination",
+            "Folder to import videos into (IMPORT-013); left out, videos go to the destination given on the command line",
         ),
         Key::mapping("naming", "How imported files are named", NAMING_KEYS),
         Key::list_of_text(
@@ -79,8 +81,6 @@ pub fn import_profile_json_schema() -> String {
 /// The settings of one import profile, with every default applied.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ImportProfile {
-    /// The folder to import into, if the profile names one.
-    pub destination: Option<PathBuf>,
     /// The name template.
     pub template: NameTemplate,
     /// The conflict policy.
@@ -112,7 +112,8 @@ impl ImportProfile {
         text: &str,
         home: &Path,
     ) -> Result<Self, ConfigError> {
-        let config = config::read(parser, &IMPORT_PROFILE, file, text)?;
+        let config = config::read(parser, &IMPORT_PROFILE, file, text)
+            .map_err(|error| explain_destination(parser, text, error))?;
         Self::from_config(&config, home)
     }
 
@@ -124,10 +125,6 @@ impl ImportProfile {
     /// The first invalid value, in the order of the keys of IMPORT-011.
     pub fn from_config(config: &ConfigFile, home: &Path) -> Result<Self, ConfigError> {
         let values = config.values();
-        let destination = values
-            .text("destination")
-            .map(|path| profile_path(config, "destination", path, home))
-            .transpose()?;
         let video_destination = values
             .text("video_destination")
             .map(|path| profile_path(config, "video_destination", path, home))
@@ -158,7 +155,6 @@ impl ImportProfile {
             None => Vec::new(),
         };
         Ok(ImportProfile {
-            destination,
             template,
             on_conflict,
             job_codes,
@@ -167,6 +163,44 @@ impl ImportProfile {
             video_backup_destinations,
         })
     }
+}
+
+/// The key a profile once had for the folder to import into (ADR 0036, decision 8).
+const REMOVED_DESTINATION: &str = "destination";
+
+/// Why a profile has no `destination`, which IMPORT-011 gives instead of the message
+/// for an unknown key.
+const DESTINATION_NOT_READ: &str =
+    "destination is not read from a profile; give the folder to import into on the command line";
+
+/// Replaces the unknown-key error of a top-level `destination` with the reason the
+/// key is gone, so that someone who wrote it learns where the folder goes now
+/// (IMPORT-011, "Behaviour"). Every other error stays as it is.
+fn explain_destination(parser: &dyn YamlParser, text: &str, error: ConfigError) -> ConfigError {
+    let is_unknown_destination = matches!(
+        &error.problem,
+        Problem::UnknownKey { key, .. } if key == REMOVED_DESTINATION
+    );
+    if is_unknown_destination && is_top_level_key(parser, text, error.position) {
+        return ConfigError {
+            problem: Problem::Invalid(DESTINATION_NOT_READ.to_owned()),
+            ..error
+        };
+    }
+    error
+}
+
+/// Whether a key of the top-level mapping of `text` starts at `position`; a key of
+/// the same name inside `naming` or `backup` is an ordinary unknown key.
+fn is_top_level_key(parser: &dyn YamlParser, text: &str, position: Position) -> bool {
+    let Ok(Some(YamlNode {
+        value: YamlValue::Mapping(entries),
+        ..
+    })) = parser.parse(text)
+    else {
+        return false;
+    };
+    entries.iter().any(|entry| entry.key.position == position)
 }
 
 /// The policy of a choice the strict reading accepted.

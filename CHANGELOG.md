@@ -87,7 +87,7 @@ All user-visible changes are listed here. The format follows
   where, with its checksum, as text, JSON or RFC 4180 CSV to redirect into a file. It
   reads the import history without creating or changing it.
 - Import profiles (IMPORT-011, CLI-010, ADR 0032): `framehive import <source>
-  --profile <name>` takes the destination, the backup destinations, the name template,
+  <destination> --profile <name>` takes the backup destinations, the name template,
   the conflict policy and the job code from the YAML file `profiles/<name>.yaml` in the
   configuration folder (`$XDG_CONFIG_HOME/framehive` or `~/.config/framehive` on Linux,
   `~/Library/Application Support/framehive` on macOS). An option given on the command
@@ -144,12 +144,15 @@ All user-visible changes are listed here. The format follows
 
 ### Changed
 
-- **Breaking:** `framehive import` names the destination with `--destination <folder>`
-  (CLI-016, ADR 0036). Every folder on the command line is now a source, also with
-  `--profile`; the destination is no longer the last folder. Without `--destination`
-  the profile's destination is used; without either, the command stops with exit
-  code 2, and after two or more folders a hint shows the command with
-  `--destination`. A command without a source shows an example.
+- `framehive import` names its sources and destination as `cp` does (CLI-016,
+  ADR 0036): `framehive import <source>... <destination>` keeps working, and the new
+  `framehive import --destination <folder> <source>...` makes every folder a source.
+  A command without a source or without a destination, or with a camera where the
+  destination belongs, stops with exit code 2 and an example.
+- **Breaking:** an import profile no longer has the key `destination`; the folder to
+  import into is always given on the command line, so a folder's meaning never
+  depends on `--profile`. A profile that still has it stops the command with exit
+  code 2 and a message at its line (IMPORT-011).
 
 ### Fixed
 

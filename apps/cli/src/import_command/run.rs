@@ -18,15 +18,16 @@ use adapter_sqlite::SqliteImportHistory;
 use files::{Cameras, FileSystem, FreeSpace};
 use import::{
     CAMERA_FORMAT_READINESS_NOTE, DryRunMemory, ImportJob, ImportJobSettings, ImportPorts,
-    ImportRun, ImportSettings, ImportSummary, PlannedRun, ProgressSink, ReservedTargetNames,
-    SessionSequence, SpaceShortage, scan_source,
+    ImportProfile, ImportRun, ImportSettings, ImportSummary, PlannedRun, ProgressSink,
+    ReservedTargetNames, SessionSequence, SpaceShortage, scan_source,
 };
 use jobs::JobQueue;
 use naming::CompatibilityMode;
 
 use super::folders::{Folders, backup_names, resolve_sources, unusable_message};
+use super::locations::Locations;
 use super::sources::{Enqueued, Streams};
-use super::{ChosenSettings, LoadedProfile, choose_settings};
+use super::{ChosenSettings, choose_settings};
 use crate::arguments::ImportArguments;
 use crate::cameras::{OpenedCamera, camera_choice, open_camera};
 use crate::guided::space_text;
@@ -135,11 +136,13 @@ pub(super) type SourceResults = Vec<Result<ImportSummary, NotStarted>>;
 /// not printed yet.
 pub(super) fn import_with(
     arguments: &ImportArguments,
-    profile: Option<LoadedProfile>,
+    locations: &Locations,
+    profile: Option<ImportProfile>,
     surroundings: Surroundings<'_>,
 ) -> Result<SourceResults, NotStarted> {
-    let chosen = choose_settings(arguments, profile)?;
-    let checked = resolve_sources(&arguments.sources, &chosen)?;
+    let chosen = choose_settings(arguments, locations, profile)?;
+    let sources = &locations.sources;
+    let checked = resolve_sources(sources, &chosen)?;
     let mut ports = import_ports(surroundings.state_folder, surroundings.free_space);
     // A dry run counts the numbers and target names across the sources in memory, so
     // it shows what a real run would do (IMPORT-016).
@@ -150,13 +153,12 @@ pub(super) fn import_with(
     });
     let streams = Streams::new(surroundings.output, surroundings.errors);
     let streams = &streams;
-    let several = arguments.sources.len() > 1;
+    let several = sources.len() > 1;
     let (mut queue, _updates) = JobQueue::start();
     // Each opened camera is released once every job ended (CLI-013).
     let mut opened = Vec::new();
     let results = thread::scope(|scope| {
-        let following: Vec<_> = arguments
-            .sources
+        let following: Vec<_> = sources
             .iter()
             .zip(&checked)
             .map(|(source, folders)| {
@@ -179,7 +181,7 @@ pub(super) fn import_with(
             .collect();
         following
             .into_iter()
-            .zip(&arguments.sources)
+            .zip(sources)
             .map(|(following, source)| {
                 following.and_then(|thread| {
                     thread.join().unwrap_or_else(|_| {

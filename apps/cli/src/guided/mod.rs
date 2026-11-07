@@ -96,7 +96,7 @@ pub(crate) struct Environment {
 pub(crate) fn run_guided() -> ExitCode {
     if !io::stdin().is_terminal() || !io::stdout().is_terminal() {
         report_error(
-            "the guided import needs a terminal; use framehive import <source> --destination <folder> in scripts",
+            "the guided import needs a terminal; use framehive import <source> <destination> in scripts",
         );
         return ExitCode::from(NOT_STARTED);
     }

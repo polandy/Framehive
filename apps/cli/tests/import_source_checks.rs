@@ -9,7 +9,7 @@
 mod support;
 
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Output;
 
 use support::{Folders, card, import_in_root as import, picture, stderr, stdout};
@@ -126,5 +126,103 @@ fn a_camera_given_twice_starts_no_source() {
         &folders,
         &output,
         "error: source camera: is given twice; give it once",
+    );
+}
+
+/// The names of the files below `folder`, sorted.
+fn file_names_below(folder: &Path) -> Vec<String> {
+    let mut names = Vec::new();
+    for entry in fs::read_dir(folder).unwrap() {
+        let path = entry.unwrap().path();
+        if path.is_dir() {
+            names.extend(file_names_below(&path));
+        } else {
+            names.push(path.file_name().unwrap().to_string_lossy().into_owned());
+        }
+    }
+    names.sort();
+    names
+}
+
+/// spec: CLI-016.14
+#[test]
+fn the_last_folder_is_the_destination() {
+    let folders = Folders::new();
+    card(&folders, "cardA", &["a.jpg"]);
+    card(&folders, "cardB", &["b.jpg"]);
+
+    let output = import(&folders, &["cardA", "cardB", "library"]);
+
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    assert_eq!(file_names_below(&library(&folders)), ["a.jpg", "b.jpg"]);
+    let card_b = folders.root.path().join("cardB");
+    assert_eq!(file_names_below(&card_b), ["b.jpg"]);
+}
+
+/// spec: CLI-016.14
+#[test]
+fn with_destination_every_folder_is_a_source() {
+    let folders = Folders::new();
+    card(&folders, "cardA", &["a.jpg"]);
+    card(&folders, "cardB", &["b.jpg"]);
+
+    let output = import(&folders, &["--destination", "library", "cardA", "cardB"]);
+
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    assert_eq!(file_names_below(&library(&folders)), ["a.jpg", "b.jpg"]);
+}
+
+/// spec: CLI-016.15
+#[test]
+fn the_arguments_are_checked_before_the_profile() {
+    let folders = Folders::new();
+    card(&folders, "card", &["a.jpg"]);
+
+    let output = import(&folders, &["card", "--profile", "missing"]);
+
+    assert_stopped_before_any_job(
+        &folders,
+        &output,
+        "error: no destination: give the folder to import into after card, or with --destination\n\
+         hint: framehive import card ~/Pictures",
+    );
+}
+
+/// spec: CLI-016.15
+#[test]
+fn the_profile_is_checked_before_the_folders() {
+    let folders = Folders::new();
+    let profile = folders.write_profile("holiday", b"schema_version: 1\ndestination: /a\n");
+
+    let output = import(&folders, &["nowhere", "library", "--profile", "holiday"]);
+
+    assert_stopped_before_any_job(
+        &folders,
+        &output,
+        &format!(
+            "error: {}:2:1: destination is not read from a profile; give the folder to import into on the command line",
+            profile.display()
+        ),
+    );
+}
+
+/// spec: CLI-016.2
+/// spec: CLI-010.17
+#[test]
+fn a_profile_does_not_supply_the_destination() {
+    let folders = Folders::new();
+    card(&folders, "card", &["a.jpg"]);
+    folders.write_profile(
+        "holiday",
+        b"schema_version: 1\nnaming:\n  template: \"{name}.{ext}\"\n",
+    );
+
+    let output = import(&folders, &["card", "--profile", "holiday"]);
+
+    assert_stopped_before_any_job(
+        &folders,
+        &output,
+        "error: no destination: give the folder to import into after card, or with --destination\n\
+         hint: framehive import card ~/Pictures",
     );
 }

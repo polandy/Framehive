@@ -33,7 +33,7 @@ fn the_guided_import_needs_a_terminal() {
 
     assert_eq!(
         stderr(&output),
-        "error: the guided import needs a terminal; use framehive import <source> --destination <folder> in scripts\n"
+        "error: the guided import needs a terminal; use framehive import <source> <destination> in scripts\n"
     );
     assert_eq!(stdout(&output), "");
     assert_eq!(output.status.code(), Some(2));

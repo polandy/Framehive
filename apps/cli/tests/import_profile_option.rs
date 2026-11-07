@@ -28,8 +28,8 @@ fn empty_folder(folders: &Folders, name: &str) -> PathBuf {
     folder
 }
 
-/// The profile `holiday` of CLI-010.1: a destination, a template and one backup
-/// destination, each an empty folder.
+/// The profile `holiday` of CLI-010.1: a template and one backup destination, an
+/// empty folder, and the empty folder to give as the destination.
 struct Holiday {
     destination: PathBuf,
     backup: PathBuf,
@@ -43,8 +43,7 @@ fn holiday(folders: &Folders) -> Holiday {
     folders.write_profile(
         "holiday",
         format!(
-            "schema_version: 1\ndestination: \"{}\"\nnaming:\n  template: \"{{date:%Y%m%d}}-{{name}}.{{ext}}\"\nbackup:\n  destinations:\n    - \"{}\"\n",
-            text(&holiday.destination),
+            "schema_version: 1\nnaming:\n  template: \"{{date:%Y%m%d}}-{{name}}.{{ext}}\"\nbackup:\n  destinations:\n    - \"{}\"\n",
             text(&holiday.backup)
         )
         .as_bytes(),
@@ -76,7 +75,10 @@ fn a_profile_supplies_the_settings() {
     folders.add_raf();
     let holiday = holiday(&folders);
 
-    let output = import(&folders, &["--profile", "holiday"]);
+    let output = import(
+        &folders,
+        &[&text(&holiday.destination), "--profile", "holiday"],
+    );
 
     assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
     assert!(holiday.destination.join(DATED_TARGET).is_file());
@@ -88,13 +90,12 @@ fn a_profile_supplies_the_settings() {
 fn an_option_replaces_the_value_of_the_profile() {
     let folders = Folders::new();
     folders.add_raf();
-    let holiday = holiday(&folders);
+    holiday(&folders);
     let other = empty_folder(&folders, "other");
 
     let output = import(
         &folders,
         &[
-            "--destination",
             &text(&other),
             "--profile",
             "holiday",
@@ -105,7 +106,7 @@ fn an_option_replaces_the_value_of_the_profile() {
 
     assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
     assert!(other.join("DSCF0001.RAF").is_file());
-    assert!(is_empty(&holiday.destination));
+    assert!(!other.join(DATED_TARGET).exists());
 }
 
 /// spec: CLI-010.3
@@ -118,7 +119,13 @@ fn backup_replaces_the_list_of_the_profile() {
 
     let output = import(
         &folders,
-        &["--profile", "holiday", "--backup", &text(&drive)],
+        &[
+            &text(&holiday.destination),
+            "--profile",
+            "holiday",
+            "--backup",
+            &text(&drive),
+        ],
     );
 
     assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
@@ -186,22 +193,26 @@ fn unused_job_codes_of_a_profile_give_no_warning() {
 }
 
 /// spec: CLI-010.6
-/// spec: CLI-016.3
+/// spec: CLI-016.13
 #[test]
-fn a_profile_without_destination_needs_one() {
+fn a_profile_with_a_destination_is_rejected() {
     let folders = Folders::new();
     folders.add_raf();
-    let path = folders.write_profile("holiday", b"schema_version: 1\n");
+    let path = folders.write_profile("holiday", b"schema_version: 1\ndestination: ~/Pictures\n");
 
-    let output = import(&folders, &["--profile", "holiday"]);
+    let output = import(
+        &folders,
+        &[&text(&folders.destination()), "--profile", "holiday"],
+    );
 
     assert_not_started(
         &output,
         &format!(
-            "error: no destination: give --destination <folder>, or set destination in the profile holiday: {}",
+            "error: {}:2:1: destination is not read from a profile; give the folder to import into on the command line",
             path.display()
         ),
     );
+    assert!(!folders.destination().exists());
 }
 
 /// spec: CLI-010.7
@@ -215,7 +226,10 @@ fn an_unknown_profile_names_the_known_ones() {
     folders.write_profile("Big", b"schema_version: 1\n");
     fs::write(folders.profiles_folder().join("notes.txt"), "").unwrap();
 
-    let output = import(&folders, &["--profile", "vacation"]);
+    let output = import(
+        &folders,
+        &[&text(&folders.destination()), "--profile", "vacation"],
+    );
 
     assert_not_started(
         &output,
@@ -233,7 +247,10 @@ fn without_profiles_the_message_points_to_config_init() {
     folders.add_raf();
     fs::create_dir_all(folders.configuration_folder()).unwrap();
 
-    let output = import(&folders, &["--profile", "holiday"]);
+    let output = import(
+        &folders,
+        &[&text(&folders.destination()), "--profile", "holiday"],
+    );
 
     assert_not_started(
         &output,
@@ -280,7 +297,7 @@ fn an_invalid_profile_name_is_rejected() {
 fn an_invalid_profile_names_the_file_and_the_position() {
     let folders = Folders::new();
     folders.add_raf();
-    let path = folders.write_profile("holiday", b"schema_version: 1\ndestinaton: /a\n");
+    let path = folders.write_profile("holiday", b"schema_version: 1\nvideo_destinaton: /a\n");
 
     let output = import(
         &folders,
@@ -295,7 +312,7 @@ fn an_invalid_profile_names_the_file_and_the_position() {
     assert_not_started(
         &output,
         &format!(
-            "error: {}:2:1: unknown key destinaton; did you mean destination?",
+            "error: {}:2:1: unknown key video_destinaton; did you mean video_destination?",
             text(&path)
         ),
     );
@@ -379,20 +396,5 @@ fn an_unknown_home_folder_stops_the_command_even_with_xdg_config_home() {
     assert_not_started(
         &output,
         "error: the home folder is unknown: set HOME to an absolute path",
-    );
-}
-
-/// spec: CLI-016.2
-/// spec: CLI-010.17
-#[test]
-fn without_profile_the_destination_stays_required() {
-    let folders = Folders::new();
-    folders.add_raf();
-
-    let output = import(&folders, &[]);
-
-    assert_not_started(
-        &output,
-        "error: no destination: give --destination <folder>",
     );
 }

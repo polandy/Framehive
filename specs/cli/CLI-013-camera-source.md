@@ -70,8 +70,8 @@ camera source, because none can lie on it.
 `camera:<model>`, with the model the opened camera reports. A camera opened by a port
 that `framehive cameras` does not list is shown as `camera:<port>`.
 
-**Profiles.** A profile (CLI-010) supplies the destination and settings for a camera
-source as for a folder.
+**Profiles.** A profile (CLI-010) supplies the settings for a camera source as for a
+folder.
 
 ## Acceptance criteria
 
@@ -191,3 +191,4 @@ source as for a folder.
 | 2026-11-06 | CLI-013.15: a camera without a storage stops with exit code 2 and a remedy (owner decision E10) |
 | 2026-11-06 | Cross-reference to CLI-014 (cameras in the guided import) |
 | 2026-11-07 | Examples name the destination with `--destination` (CLI-001, ADR 0036) |
+| 2026-11-07 | A profile has no destination (CLI-016, ADR 0036, decision 8) |

@@ -14,21 +14,23 @@ shows every decision the import makes.
 ## Behaviour
 
 ```
-framehive import <source>... [--destination <folder>] [--template <template>]
+framehive import <source>... <destination> [--template <template>]
                  [--job-code <text>] [--on-conflict add_suffix|skip|fail]
                  [--dry-run]
+framehive import --destination <folder> <source>... [...]
 ```
 
 | Argument | Meaning | Default |
 |---|---|---|
 | `<source>...` | Folder to import from (IMPORT-005); several sources: CLI-015 | required |
-| `--destination` | Folder to import into; created with its parents when missing | from `--profile`, else required (CLI-016) |
+| `<destination>` | The last positional argument: folder to import into; created with its parents when missing | required without `--destination` (CLI-016) |
+| `--destination` | Folder to import into, like `cp -t`; every positional argument is then a source | none |
 | `--template` | Name template (IMPORT-001) | `{date:%Y}/{date:%Y-%m-%d}/{name}.{ext}` |
 | `--job-code` | Job code for the `{job}` token (IMPORT-006) | none |
 | `--on-conflict` | Conflict policy (IMPORT-003) | `add_suffix` |
 | `--dry-run` | Make the plan and print it, copy nothing | off |
 
-Every folder given without an option is a source (CLI-016). Compatibility mode
+The last folder is the destination unless `--destination` names it (CLI-016). Compatibility mode
 (IMPORT-001) is on. `framehive --help` and `framehive import --help`
 describe the arguments; `framehive --version` prints `framehive <version>`.
 
@@ -211,4 +213,4 @@ Errors that stop the command, and log messages, go to standard error.
 | 2026-11-04 | Sequence numbers (IMPORT-002), specified in CLI-004 |
 | 2026-11-04 | The import history recognizes a re-run (CLI-008): CLI-001.2 now runs without the history, so it still tests IMPORT-003 |
 | 2026-11-07 | `<source>...`: several sources, specified in CLI-015 (Q5, J3) |
-| 2026-11-07 | Every folder is a source; `--destination` names the destination (CLI-016, ADR 0036); a missing destination is no longer a clap error (CLI-001.11) |
+| 2026-11-07 | The last folder is the destination unless `--destination` names it (CLI-016, ADR 0036); a missing destination is no longer a clap error (CLI-001.11) |

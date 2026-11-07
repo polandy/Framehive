@@ -14,7 +14,7 @@ use std::sync::Arc;
 use files::testing::{MemoryCameras, MemoryFreeSpace, TempDir};
 use import::ImportSummary;
 
-use super::{NotStarted, Surroundings, import_with};
+use super::{NotStarted, Surroundings, import_with, locations};
 use crate::arguments::{Invocation, parse};
 
 /// A card with `DSCF0001.RAF` of 2.5 MB, and the folders of one test run.
@@ -96,8 +96,10 @@ impl Folders {
         let mut output = Vec::new();
         let mut errors = Vec::new();
         // One source: its result is the only one.
+        let locations = locations(&arguments).unwrap();
         let result = import_with(
             &arguments,
+            &locations,
             None,
             Surroundings {
                 state_folder: &self.path("state"),

@@ -3,38 +3,48 @@
 - Status: implemented
 - Module: cli (`apps/cli`)
 - Origin: Q5, J3
-- Depends on: CLI-001, CLI-010, CLI-013, CLI-015
+- Depends on: CLI-001, CLI-010, CLI-013, CLI-015, IMPORT-011
 
 ## Purpose
 
-Every folder on the command line of `framehive import` is a source, and the destination
-is always named by an option. A rule that made the last folder the destination, or not,
-depending on `--profile`, could import one card onto another without a warning: with
-`framehive import SD1 SD2 --profile p`, SD2 would be the destination. Naming the
-destination with `--destination`, as `cp -t` does, removes that guess.
+`framehive import` names its sources and its destination as `cp` does: the last folder
+is the destination, unless `--destination` names it, as `cp -t` does. The model is
+familiar, and `framehive import <source> <destination>` of the first version keeps
+working. The meaning of a folder on the command line never depends on `--profile`, so a
+profile cannot name the destination (IMPORT-011): otherwise
+`framehive import SD1 SD2 --profile p` could mean "import SD1 and SD2 into the
+profile's destination" or "import SD1 onto the card SD2", depending on the profile.
 
 ## Behaviour
 
 ```
-framehive import [OPTIONS] <source>... [--destination <folder>]
+framehive import [OPTIONS] <source>... <destination>
+framehive import [OPTIONS] --destination <folder> <source>...
 ```
 
-**Sources.** Every positional argument is a source: a folder, or `camera:[<model>|<port>]`
-(CLI-013). Its meaning never depends on another option.
-
-**Destination.** `--destination <folder>` names the folder to import into; it is created
-with its parents when missing (CLI-001). Without it, the destination of the profile
-given with `--profile` is used (CLI-010).
+**Without `--destination`**, the last positional argument is the destination and every
+other one is a source, so at least two are needed. **With `--destination <folder>`**,
+every positional argument is a source. A source is a folder, or
+`camera:[<model>|<port>]` (CLI-013). The destination is created with its parents when
+missing (CLI-001). `--destination` has no short form.
 
 **Checks before any job.** These checks run before any source is scanned or any job
 starts. Each failure prints the error to standard error, copies nothing, and exits
-with 2. Each message names the problem, the affected path and the fix.
+with 2. Each message names the problem, the affected path and the fix. They run in this
+order, and the first failure stops the command:
+
+1. The arguments themselves (the first three rows): they depend on nothing else.
+2. The profile of `--profile` (CLI-010), which includes the row about `destination`.
+3. The folders on the file system (the other rows), and the backup and video
+   destinations against each source (CLI-005, CLI-012).
 
 | Problem | Standard error |
 |---|---|
-| No source | `error: no source: give the folders or cameras to import from`, then `hint: framehive import /media/card --destination ~/Pictures` |
-| No destination | `error: no destination: give --destination <folder>` |
-| No destination, with `--profile <name>` | `error: no destination: give --destination <folder>, or set destination in the profile <name>: <path of the profile file>` |
+| No positional argument, without `--destination` | `error: no source: give the folders or cameras to import from, then the folder to import into`, then `hint: framehive import /media/card ~/Pictures` |
+| No positional argument, with `--destination <folder>` | `error: no source: give the folders or cameras to import from`, then `hint: framehive import --destination <folder> /media/card` |
+| One positional argument, without `--destination` | `error: no destination: give the folder to import into after <source>, or with --destination`, then `hint: framehive import <source> ~/Pictures` |
+| The last of two or more positional arguments is a `camera:` source, without `--destination` | `error: <camera:…> cannot be the destination; give the folder to import into last, or with --destination` |
+| The profile has `destination` | `error: <path of the profile file>:<line>:<column>: destination is not read from a profile; give the folder to import into on the command line` (IMPORT-011) |
 | A source does not exist | `error: the source <source> does not exist` |
 | A source is not a folder | `error: the source <source> is not a folder; give the folder that holds it` |
 | The destination is a source or lies inside one | `error: the destination <destination> lies inside the source <source>; choose a destination outside it` |
@@ -45,54 +55,65 @@ Sources are named as given, except in the message about the destination, which n
 both resolved (CLI-001.10). Two folders are compared by their resolved paths, so
 `cardA` and `./cardA` are the same source, named by the later one. A `camera:` source
 is given twice when its text after `camera:` is the same; cameras are not opened for
-this check, and no folder lies inside a camera. The checks of the backup destinations
-and video destinations against the source (CLI-005, CLI-012) also run for every source
-before any job.
+this check, and no folder lies inside a camera. A folder whose name starts with
+`camera:` is written `./camera:…`, as a source and as the destination (CLI-013).
+Arguments in messages and hints are printed as given; the shell quoting of the hints is
+out of scope.
 
 A source that passes these checks but cannot start, for example because it cannot be
 read, does not keep the others from importing (CLI-015).
 
-**The old habit.** When the destination is missing and two or more sources are given,
-the last of them a folder, someone probably meant that folder as the destination. A
-second line then shows the command that does so:
-`hint: every folder is a source; to import into <last folder>, write: framehive import <other sources> --destination <last folder>`.
-The arguments are printed as given. The hint depends only on the arguments, never on
-the file system.
-
 ## Acceptance criteria
 
 ### CLI-016.1 – No source
-- **Given** no source
-- **When** `framehive import --destination /library` runs
-- **Then** standard error is exactly
+- **Given** no positional argument
+- **When** `framehive import` runs, and then `framehive import --destination /library`
+- **Then** standard error of the first is exactly
+  `error: no source: give the folders or cameras to import from, then the folder to import into`
+  and `hint: framehive import /media/card ~/Pictures`; that of the second is exactly
   `error: no source: give the folders or cameras to import from` and
-  `hint: framehive import /media/card --destination ~/Pictures`, standard output is
-  empty, and the exit code is 2
+  `hint: framehive import --destination /library /media/card`; standard output is
+  empty, and each exit code is 2
 
 ### CLI-016.2 – No destination
-- **Given** a source and neither `--destination` nor `--profile`
-- **When** the command runs
-- **Then** standard error is exactly `error: no destination: give --destination <folder>`,
-  nothing is created, and the exit code is 2
-
-### CLI-016.3 – No destination in the profile
-- **Given** a profile `holiday` without a destination
-- **When** `framehive import <source> --profile holiday` runs
+- **Given** a source `card` and no `--destination`
+- **When** `framehive import card` runs
 - **Then** standard error is exactly
-  `error: no destination: give --destination <folder>, or set destination in the profile holiday: <path of holiday.yaml>`,
-  and the exit code is 2
+  `error: no destination: give the folder to import into after card, or with --destination`
+  and `hint: framehive import card ~/Pictures`, nothing is created, and the exit code
+  is 2
 
-### CLI-016.4 – The last folder as destination, in the old way
-- **Given** no `--destination` and no `--profile`
-- **When** `framehive import /cardA /cardB /library` runs
-- **Then** standard error is exactly the error of CLI-016.2 and
-  `hint: every folder is a source; to import into /library, write: framehive import /cardA /cardB --destination /library`,
-  nothing is copied, and the exit code is 2
-
-### CLI-016.5 – No hint for a camera
+### CLI-016.12 – A camera cannot be the destination
 - **Given** no `--destination`
-- **When** `framehive import /cardA camera:` runs
-- **Then** standard error is exactly the error of CLI-016.2, without a hint
+- **When** `framehive import /cardA camera:X-T5` runs
+- **Then** standard error is exactly
+  `error: camera:X-T5 cannot be the destination; give the folder to import into last, or with --destination`,
+  standard output is empty, and the exit code is 2
+
+### CLI-016.13 – A profile with a destination
+- **Given** a profile `holiday.yaml` whose line 2 is `destination: ~/Pictures`
+- **When** `framehive import <source> <destination> --profile holiday` runs
+- **Then** standard error is exactly
+  `error: <path of holiday.yaml>:2:1: destination is not read from a profile; give the folder to import into on the command line`,
+  nothing is scanned, `<destination>` is not created, and the exit code is 2
+
+### CLI-016.14 – The last folder is the destination
+- **Given** sources `cardA` with `a.jpg` and `cardB` with `b.jpg`
+- **When** `framehive import cardA cardB library` runs, and in another empty folder
+  `framehive import --destination library cardA cardB`
+- **Then** each `library` has the files of both sources, `cardB` is unchanged, and each
+  exit code is 0
+
+### CLI-016.15 – The arguments are checked before the profile, the profile before the folders
+- **Given** no profile `missing`, and a profile `holiday` with `destination`
+- **When** `framehive import card --profile missing` runs, and then
+  `framehive import nowhere library --profile holiday`, where `nowhere` does not exist
+- **Then** the first fails with the error of CLI-016.2, the second with that of
+  CLI-016.13, and each exit code is 2
+
+CLI-016.3 to CLI-016.5 are removed (2026-11-07): the destination of a profile and the
+hint for the last folder as destination are gone, because the last folder is the
+destination again.
 
 ### CLI-016.6 – A missing source starts no source
 - **Given** a source `cardA` with `a.jpg`, and no `missing`
@@ -147,3 +168,4 @@ the file system.
 |---|---|
 | 2026-11-07 | Created and implemented: decision C of ADR 0036, accepted by the owner |
 | 2026-11-07 | Every source is checked before any job: CLI-016.6 to CLI-016.11 |
+| 2026-11-07 | The `cp` model: the last folder is the destination unless `--destination` names it; profiles have no destination; the hint for the old habit is gone. CLI-016.1 and .2 changed, .3 to .5 removed, .12 to .15 added (ADR 0036, decision 8); accepted by the owner |

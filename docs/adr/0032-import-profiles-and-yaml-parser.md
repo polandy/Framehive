@@ -76,8 +76,6 @@ key except `schema_version` is optional:
 # yaml-language-server: $schema=https://polandy.github.io/framehive/schemas/import-profile-v1.json
 schema_version: 1
 
-destination: ~/Pictures/Archive
-
 naming:
   template: "{date:%Y}/{date:%Y-%m-%d}_{job}/{name}.{ext}"
   on_conflict: add_suffix          # add_suffix | skip | fail
@@ -89,6 +87,9 @@ backup:
   destinations:
     - /run/media/ada/Backup/Pictures
 ```
+
+The example first had `destination: ~/Pictures/Archive`; ADR 0036, decision 8, removed
+that key, so the folder to import into is always given on the command line.
 
 Paths are absolute, or start with `~/`, which means the home folder. A profile lists
 job codes rather than one, so the guided import can later offer them; `framehive

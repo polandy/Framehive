@@ -15,25 +15,23 @@ use crate::profiles::{process_configuration_folder, profiles_folder};
 use crate::{FILES_FAILED, NOT_STARTED, report_error};
 
 /// The example profile: every key of IMPORT-011 with a comment that explains it and
-/// names its default. `destination`, `video_destination` and
-/// `backup.video_destinations` have no value of their own by default and are left as
-/// comments, so the file reads as the defaults.
+/// names its default. `video_destination` and `backup.video_destinations` have no
+/// value of their own by default and are left as comments, so the file reads as the
+/// defaults. The folder to import into is given on the command line, never here
+/// (IMPORT-011).
 const EXAMPLE_PROFILE: &str = r#"# yaml-language-server: $schema=https://polandy.github.io/framehive/schemas/import-profile-v1.json
 #
-# An import profile of Framehive. `framehive import <source> --profile <name>` uses it,
-# where <name> is the file name without .yaml: 1 to 64 of a-z, 0-9, - and _.
+# An import profile of Framehive. `framehive import --profile <name> <source> <destination>`
+# uses it, where <name> is the file name without .yaml: 1 to 64 of a-z, 0-9, - and _.
+# The folder to import into is always given on the command line, never here.
 # Copy this file to start a profile. An option given on the command line replaces
 # the value here, also for lists.
 
 # Version of the format. Required.
 schema_version: 1
 
-# Folder to import into: an absolute path, ~, or a path that starts with ~/.
-# Default: none; then give the destination on the command line.
-# destination: ~/Pictures/Archive
-
 # Folder to import videos into: an absolute path, ~, or a path that starts with ~/.
-# Default: the destination.
+# Default: the destination given on the command line.
 # video_destination: ~/Videos/Archive
 
 naming:

@@ -26,10 +26,12 @@ by which the history identifies a destination (IMPORT-009).
 
 ## Several sources
 
-Every positional argument is a source; `--destination`, or else the profile, names the
-destination (CLI-010, CLI-015, CLI-016). `import()` stops before any job when no source
-or no destination is given; a missing destination after two or more folders adds a
-hint that names the last folder with `--destination`. Each source becomes an `import::ImportJob` of its own in one
+The last positional argument is the destination, unless `--destination` names it; the
+others are the sources, as `cp` has them (CLI-015, CLI-016). `locations()`
+(`src/import_command/locations.rs`) splits them from the arguments alone, before the
+profile is read and before any folder is looked at, and stops when there is no source,
+no destination, or a camera where the destination belongs. A profile never names the
+destination (CLI-010, IMPORT-011). Each source becomes an `import::ImportJob` of its own in one
 `jobs::JobQueue`, and all of them share one `ImportPorts`: the counters, the session
 and the `ReservedTargetNames`. The settings are chosen once; then each source is
 checked, scanned, planned and enqueued in the order given, so `ImportJob::enqueue`

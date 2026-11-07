@@ -202,46 +202,51 @@ fn an_argument_error_starts_no_source() {
     assert_eq!(output.status.code(), Some(2));
 }
 
+/// A profile `holiday` that names every file by its own name only.
+fn holiday_profile(folders: &Folders) {
+    folders.write_profile(
+        "holiday",
+        b"schema_version: 1\nnaming:\n  template: \"{name}.{ext}\"\n",
+    );
+}
+
+/// Asserts that `library` holds `a.jpg` and `b.jpg` by the template of the profile.
+fn assert_named_by_the_profile(folders: &Folders) {
+    for name in ["a.jpg", "b.jpg"] {
+        assert_eq!(
+            fs::read(library(folders).join(name)).unwrap(),
+            picture(name),
+            "{name}"
+        );
+    }
+}
+
 /// spec: CLI-015.7
 #[test]
-fn with_a_profile_every_folder_is_a_source() {
+fn with_a_profile_the_last_folder_is_still_the_destination() {
     let folders = Folders::new();
     card(&folders, "cardA", &["a.jpg"]);
     card(&folders, "cardB", &["b.jpg"]);
-    let holiday_library = folders.root.path().join("holiday-library");
-    let profile = format!(
-        "schema_version: 1\ndestination: \"{}\"\n",
-        holiday_library.display()
-    );
-    folders.write_profile("holiday", profile.as_bytes());
+    holiday_profile(&folders);
 
-    let output = import(&folders, &["cardA", "cardB", "--profile", "holiday"]);
+    let output = import(
+        &folders,
+        &["cardA", "cardB", "library", "--profile", "holiday"],
+    );
 
     assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
-    assert_eq!(
-        fs::read(holiday_library.join(DAY).join("a.jpg")).unwrap(),
-        picture("a.jpg")
-    );
-    assert_eq!(
-        fs::read(holiday_library.join(DAY).join("b.jpg")).unwrap(),
-        picture("b.jpg")
-    );
+    assert_named_by_the_profile(&folders);
     let card_b = fs::read_dir(folders.root.path().join("cardB")).unwrap();
     assert_eq!(card_b.count(), 1, "nothing is written to cardB");
 }
 
 /// spec: CLI-015.8
 #[test]
-fn destination_replaces_the_destination_of_the_profile() {
+fn with_destination_and_a_profile_every_folder_is_a_source() {
     let folders = Folders::new();
     card(&folders, "cardA", &["a.jpg"]);
     card(&folders, "cardB", &["b.jpg"]);
-    let holiday_library = folders.root.path().join("holiday-library");
-    let profile = format!(
-        "schema_version: 1\ndestination: \"{}\"\n",
-        holiday_library.display()
-    );
-    folders.write_profile("holiday", profile.as_bytes());
+    holiday_profile(&folders);
 
     let output = import(
         &folders,
@@ -256,15 +261,7 @@ fn destination_replaces_the_destination_of_the_profile() {
     );
 
     assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
-    assert_eq!(
-        fs::read(library(&folders).join(DAY).join("a.jpg")).unwrap(),
-        picture("a.jpg")
-    );
-    assert_eq!(
-        fs::read(library(&folders).join(DAY).join("b.jpg")).unwrap(),
-        picture("b.jpg")
-    );
-    assert!(!holiday_library.exists());
+    assert_named_by_the_profile(&folders);
 }
 
 /// spec: CLI-015.9

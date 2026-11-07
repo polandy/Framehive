@@ -12,7 +12,8 @@ and the imports run at the same time when they do not compete for a device or a 
 
 ## Behaviour
 
-`framehive import <source>... --destination <folder>` takes one or more sources
+`framehive import <source>... <destination>` and
+`framehive import --destination <folder> <source>...` take one or more sources
 (CLI-001, CLI-016).
 
 **One job per source.** Each source is imported by an import job of its own
@@ -23,8 +24,8 @@ as it is planned, so its sequence numbers follow those of the source before it
 no file system run in parallel; the others run one after another (IMPORT-015,
 "Resources").
 
-**Arguments.** Every folder is a source, also with `--profile`; `--destination`, or else
-the profile, names the destination (CLI-016). Arguments that hold for every source, such
+**Arguments.** The last folder is the destination unless `--destination` names it, with
+or without `--profile` (CLI-016). Arguments that hold for every source, such
 as the template or the job code, are checked once, before any source; so are the sources themselves (CLI-016). An
 error there starts no source. A source that passes these checks but cannot start, for
 example because it cannot be read or its destination is short of space, does not keep the others from importing: each of its errors goes to standard
@@ -82,18 +83,17 @@ start, else 1 when a file failed, else 0.
 - **Then** standard error names `{job}`, no destination is created, and the exit code
   is 2
 
-### CLI-015.7 – With a profile, every folder is a source
-- **Given** a profile `holiday` that names the destination `holiday-library`, and the
-  sources `cardA` with `a.jpg` and `cardB` with `b.jpg`
-- **When** `framehive import cardA cardB --profile holiday` runs
-- **Then** both pictures are imported into `holiday-library`, and nothing is written to
-  `cardB`
+### CLI-015.7 – With a profile, the last folder is still the destination
+- **Given** a profile `holiday` with the template `{name}.{ext}`, and the sources
+  `cardA` with `a.jpg` and `cardB` with `b.jpg`
+- **When** `framehive import cardA cardB library --profile holiday` runs
+- **Then** both pictures are imported into `library` by the template of the profile,
+  and nothing is written to `cardB`
 
-### CLI-015.8 – `--destination` replaces the destination of the profile
+### CLI-015.8 – With `--destination` and a profile, every folder is a source
 - **Given** the profile and the sources of CLI-015.7
 - **When** `framehive import cardA cardB --destination library --profile holiday` runs
-- **Then** both pictures are imported into `library`, and `holiday-library` is not
-  created
+- **Then** both pictures are imported into `library` by the template of the profile
 
 ### CLI-015.9 – The error of a source comes at once
 - **Given** a source `cardB` that cannot be read and a source `cardA` with `a.jpg`
@@ -130,3 +130,4 @@ start, else 1 when a file failed, else 0.
 | 2026-11-07 | The sources are checked before any job (CLI-016): CLI-015.3 uses a source that cannot be read |
 | 2026-11-07 | The error of a source that cannot start is printed at once: CLI-015.9 |
 | 2026-11-07 | A dry run of several sources counts in memory (IMPORT-016): CLI-015.10 |
+| 2026-11-07 | The `cp` model (CLI-016, ADR 0036, decision 8): the last folder is the destination again, also with a profile; CLI-015.7 and CLI-015.8 changed |

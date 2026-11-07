@@ -20,12 +20,13 @@ with `clap` (builder API, ADR 0020 §6) and is one of the two places, with
 
 ```
 framehive
-framehive import <source>... --destination <folder> [--backup <folder>]...
+framehive import <source>... <destination> [--backup <folder>]...
                  [--video-destination <folder>] [--video-backup <folder>]...
                  [--template <template>] [--job-code <text>]
                  [--on-conflict add_suffix|skip|fail] [--dry-run]
-framehive import <source>... [--destination <folder>] --profile <name> [other options]
-framehive import camera:[<model>|<port>] [--destination <folder>] [other options]
+framehive import --destination <folder> <source>... [other options]
+framehive import <source>... <destination> --profile <name> [other options]
+framehive import camera:[<model>|<port>] <destination> [other options]
 framehive cameras
 framehive import-log [<run>|last] [--format text|json|csv]
 framehive config init

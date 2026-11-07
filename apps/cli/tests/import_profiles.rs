@@ -115,7 +115,7 @@ fn adr_0032_example() -> String {
 #[test]
 fn a_minimal_profile_takes_the_defaults() {
     let profile = read("schema_version: 1\n");
-    assert_eq!(profile.destination, None);
+    assert_eq!(profile.video_destination, None);
     assert_eq!(profile.template.as_str(), DEFAULT_NAME_TEMPLATE);
     assert_eq!(
         DEFAULT_NAME_TEMPLATE,
@@ -130,10 +130,6 @@ fn a_minimal_profile_takes_the_defaults() {
 #[test]
 fn a_full_profile() {
     let profile = read(&adr_0032_example());
-    assert_eq!(
-        profile.destination,
-        Some(PathBuf::from("/home/ada/Pictures/Archive"))
-    );
     assert_eq!(
         profile.template.as_str(),
         "{date:%Y}/{date:%Y-%m-%d}_{job}/{name}.{ext}"
@@ -150,8 +146,8 @@ fn a_full_profile() {
 #[test]
 fn relative_paths_are_rejected() {
     assert_eq!(
-        located_message("schema_version: 1\ndestination: Pictures\n"),
-        "2:14: destination must be an absolute path or start with ~/"
+        located_message("schema_version: 1\nvideo_destination: Videos\n"),
+        "2:20: video_destination must be an absolute path or start with ~/"
     );
     assert_eq!(
         located_message(
@@ -160,18 +156,18 @@ fn relative_paths_are_rejected() {
         "5:7: backup.destinations must be an absolute path or start with ~/"
     );
     assert_eq!(
-        located_message("schema_version: 1\ndestination: ~Pictures\n"),
-        "2:14: destination must be an absolute path or start with ~/"
+        located_message("schema_version: 1\nvideo_destination: ~Videos\n"),
+        "2:20: video_destination must be an absolute path or start with ~/"
     );
 }
 
 /// spec: IMPORT-011.4
 #[test]
 fn a_tilde_alone_is_the_home_folder() {
-    let profile = read("schema_version: 1\ndestination: \"~\"\n");
-    assert_eq!(profile.destination, Some(PathBuf::from(HOME)));
-    let profile = read("schema_version: 1\ndestination: ~/\n");
-    assert_eq!(profile.destination, Some(PathBuf::from(HOME)));
+    let profile = read("schema_version: 1\nvideo_destination: \"~\"\n");
+    assert_eq!(profile.video_destination, Some(PathBuf::from(HOME)));
+    let profile = read("schema_version: 1\nvideo_destination: ~/\n");
+    assert_eq!(profile.video_destination, Some(PathBuf::from(HOME)));
 }
 
 /// spec: IMPORT-011.5
@@ -224,6 +220,19 @@ fn an_unknown_key_inside_a_section_gets_a_suggestion() {
     assert_eq!(
         located_message("schema_version: 1\nnaming:\n  templte: \"{name}.{ext}\"\n"),
         "3:3: unknown key templte; did you mean template?"
+    );
+}
+
+/// spec: IMPORT-011.13
+#[test]
+fn a_destination_in_a_profile_says_where_the_folder_goes() {
+    assert_eq!(
+        located_message("schema_version: 1\ndestination: ~/Pictures\n"),
+        "2:1: destination is not read from a profile; give the folder to import into on the command line"
+    );
+    assert_eq!(
+        located_message("schema_version: 1\nnaming:\n  destination: /a\n"),
+        "3:3: unknown key destination"
     );
 }
 
