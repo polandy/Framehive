@@ -35,7 +35,12 @@ holds for the destinations of that file.
 **One plan.** The name template, the conflict policy, the job code and the sequence
 numbers are the same for photos and videos: the plan decides one target path per file
 (IMPORT-001, IMPORT-002) and then places it below that file's destinations. A name
-conflict is a conflict at the file's own destination.
+conflict is a conflict at the file's own destination. A photo and a video never get
+the same file, even when the video destination lies inside the import destination:
+every token value is free of `/` (IMPORT-001, IMPORT-006), so one template gives every
+target the same number of segments, and a video's path below the import destination
+has the segments of the video destination on top. A name template of its own for
+videos (see "Out of scope") would have to check that again.
 
 **Imported before.** The import history (IMPORT-009) is searched at the file's own
 destination. A video imported to the import destination by an earlier run is therefore
@@ -148,3 +153,4 @@ before, so the import log (IMPORT-010) lists videos under their own folders.
 |---|---|
 | 2026-11-06 | Initial draft; owner decisions: separate destinations only, a setting for videos that is not given takes the setting for photos, a video destination may lie inside the import destination, shared sequence counters; accepted by the owner |
 | 2026-11-07 | Missing destinations are created once the free-space check passes (IMPORT-012) |
+| 2026-11-07 | Why photos and videos never get the same file at nested destinations |
