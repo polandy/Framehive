@@ -7,14 +7,16 @@
 #![allow(clippy::unwrap_used, reason = "test helpers may panic on bad fixtures")]
 
 use std::ffi::{OsStr, OsString};
-use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::{fs, io};
 
 use files::testing::{MemoryCameras, MemoryFreeSpace, TempDir};
+use files::{FileSystemId, FreeSpace, SpaceOnFileSystem};
 use import::ImportSummary;
 
-use super::{NotStarted, Surroundings, import_with, locations};
+use super::{NotStarted, Surroundings, exit_code, import_with, locations};
 use crate::arguments::{Invocation, parse};
 
 /// A card with `DSCF0001.RAF` of 2.5 MB, and the folders of one test run.
@@ -48,7 +50,7 @@ impl Folders {
         self.import_from(
             self.path("card").as_os_str(),
             arguments,
-            free_space,
+            Arc::new(free_space.clone()),
             &MemoryCameras::new(),
         )
     }
@@ -67,7 +69,7 @@ impl Folders {
         self.import_from(
             source.as_ref(),
             &arguments,
-            &MemoryFreeSpace::unlimited(),
+            Arc::new(MemoryFreeSpace::unlimited()),
             cameras,
         )
     }
@@ -78,7 +80,7 @@ impl Folders {
         &self,
         source: &OsStr,
         arguments: &[&Path],
-        free_space: &MemoryFreeSpace,
+        free_space: Arc<dyn FreeSpace + Send + Sync>,
         cameras: &MemoryCameras,
     ) -> Run {
         // The first of `arguments` is the destination.
@@ -103,7 +105,7 @@ impl Folders {
             None,
             Surroundings {
                 state_folder: &self.path("state"),
-                free_space: Arc::new(free_space.clone()),
+                free_space,
                 cameras,
                 output: &mut output,
                 errors: &mut errors,
@@ -231,5 +233,95 @@ fn unknown_free_space_warns_and_the_import_goes_on() {
     assert!(
         run.output
             .contains("copied  DCIM/100_FUJI/DSCF0001.RAF -> ")
+    );
+}
+
+/// One file system with more space than any test writes at the first question, and
+/// `later` bytes at every later one: another job filled it meanwhile.
+struct FillingFreeSpace {
+    asked: AtomicUsize,
+    later: u64,
+}
+
+impl FreeSpace for FillingFreeSpace {
+    fn free_space(&self, _folder: &Path) -> io::Result<SpaceOnFileSystem> {
+        let first = self.asked.fetch_add(1, Ordering::SeqCst) == 0;
+        Ok(SpaceOnFileSystem {
+            file_system: FileSystemId::new(1),
+            available_bytes: if first { u64::MAX } else { self.later },
+        })
+    }
+}
+
+/// spec: CLI-011.8
+#[test]
+fn a_shortage_found_when_the_job_starts_creates_nothing() {
+    let folders = Folders::new();
+    let library = folders.path("new/library");
+    let free_space = FillingFreeSpace {
+        asked: AtomicUsize::new(0),
+        later: 1_000_000,
+    };
+
+    let run = folders.import_from(
+        folders.path("card").as_os_str(),
+        &[&library],
+        Arc::new(free_space),
+        &MemoryCameras::new(),
+    );
+
+    let line = format!(
+        "not enough space at {}: needs 2.5 MB, 1.0 MB free",
+        library.display()
+    );
+    assert_eq!(run.not_started(), std::slice::from_ref(&line));
+    assert_eq!(run.errors, format!("error: {line}\n"));
+    assert!(!folders.path("new").exists());
+    assert_eq!(exit_code(&run.result), 2);
+}
+
+/// The folders of `framehive import /card --destination /library --backup backup`,
+/// with the backup resolved to `/disk/backup`.
+fn folders_with_backup() -> super::folders::Folders {
+    let destination = |path: &str| crate::paths::Destination {
+        path: PathBuf::from(path),
+    };
+    super::folders::Folders {
+        source: PathBuf::from("/card"),
+        source_is_camera: false,
+        destination: destination("/library"),
+        given_destination: PathBuf::from("/library"),
+        backups: vec![(destination("/disk/backup"), PathBuf::from("backup"))],
+        video_destination: None,
+        video_backups: Vec::new(),
+    }
+}
+
+fn not_created(destination: &str, folder: &str) -> import::DestinationNotCreated {
+    import::DestinationNotCreated {
+        destination: PathBuf::from(destination),
+        folder: PathBuf::from(folder),
+        error: io::Error::other("the disk is read-only"),
+    }
+}
+
+#[test]
+fn a_destination_the_job_cannot_create_is_named_by_its_folder() {
+    let message = folders_with_backup().not_created_message(not_created("/library", "/library"));
+
+    assert_eq!(
+        message,
+        "the destination /library cannot be created: the disk is read-only"
+    );
+}
+
+#[test]
+fn a_backup_destination_the_job_cannot_create_is_named_as_given() {
+    let message = folders_with_backup().not_created_message(not_created("/disk/backup", "/disk"));
+
+    assert_eq!(
+        message,
+        "the backup destination backup cannot be used: \
+         the destination /disk cannot be created: the disk is read-only"
     );
 }

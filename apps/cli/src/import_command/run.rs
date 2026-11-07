@@ -15,23 +15,22 @@ use adapter_clock::SystemClock;
 use adapter_fs::StdFileSystem;
 use adapter_sequence_counters::FileSequenceCounters;
 use adapter_sqlite::SqliteImportHistory;
-use files::{Cameras, FileSystem, FreeSpace};
+use files::{Cameras, FreeSpace};
 use import::{
     CAMERA_FORMAT_READINESS_NOTE, DryRunMemory, ImportJob, ImportJobSettings, ImportPorts,
     ImportProfile, ImportRun, ImportSettings, ImportSummary, PlannedRun, ProgressSink,
-    ReservedTargetNames, SessionSequence, SpaceShortage, scan_source,
+    ReservedTargetNames, RunError, SessionSequence, SpaceShortage, scan_source,
 };
 use jobs::JobQueue;
 use naming::CompatibilityMode;
 
-use super::folders::{Folders, backup_names, resolve_sources, unusable_message};
+use super::folders::{Folders, backup_names, resolve_sources};
 use super::locations::Locations;
 use super::sources::{Enqueued, Streams};
 use super::{ChosenSettings, choose_settings};
 use crate::arguments::ImportArguments;
 use crate::cameras::{OpenedCamera, camera_choice, open_camera};
 use crate::guided::space_text;
-use crate::paths::create_destination;
 use crate::report::ReportPrinter;
 use crate::{JOB_ENDED_UNEXPECTEDLY, write_warning};
 
@@ -201,13 +200,13 @@ pub(super) fn import_with(
 /// # Errors
 ///
 /// Returns the messages of the errors that kept the source from starting.
-fn enqueue_source(
-    (arguments, source, chosen, folders): Given<'_>,
+fn enqueue_source<'f>(
+    (arguments, source, chosen, folders): Given<'f>,
     (ports, dry_run_memory): (&ImportPorts, Option<&Arc<DryRunMemory>>),
     cameras: &dyn Cameras,
     queue: &mut JobQueue,
     streams: &Streams<'_>,
-) -> Result<(Enqueued, Option<OpenedCamera>), NotStarted> {
+) -> Result<(Enqueued<'f>, Option<OpenedCamera>), NotStarted> {
     let camera = open_source_camera(source, cameras)?;
     let backup_paths = folders.backup_paths();
     let video_backup_paths = folders.video_backup_paths();
@@ -248,9 +247,6 @@ fn enqueue_source(
         }
         return Err(shortages);
     }
-    if !arguments.dry_run {
-        create_destinations(&*ports.file_system, folders)?;
-    }
     let (job, reports) = ImportJob::new(ports.clone(), ImportJobSettings::of(&settings));
     let mut job = job.with_plan(plan);
     if let Some(memory) = dry_run_memory {
@@ -260,8 +256,13 @@ fn enqueue_source(
         job = job.with_source(Box::new(camera.file_system.clone()), camera.name.clone());
     }
     job.enqueue(queue)
-        .map_err(|error| NotStarted::from(error.to_string()))?;
-    Ok((Enqueued { reports, printer }, camera))
+        .map_err(|error| start_error(error, folders))?;
+    let enqueued = Enqueued {
+        reports,
+        printer,
+        folders,
+    };
+    Ok((enqueued, camera))
 }
 
 /// The ports of the import: the library on this machine, the state in `state_folder`.
@@ -324,34 +325,22 @@ fn shortage_message(shortage: &SpaceShortage, folders: &Folders) -> String {
     format!("not enough space at {shown}: {}", space_text(shortage))
 }
 
-/// Creates the destination, the video destination and each backup destination and
-/// video backup destination. A folder that is two of them is created once, and the
-/// second attempt finds it there.
-///
-/// # Errors
-///
-/// Returns the message for the first folder that cannot be created.
-fn create_destinations(file_system: &dyn FileSystem, folders: &Folders) -> Result<(), String> {
-    create_destination(file_system, &folders.destination).map_err(|error| error.to_string())?;
-    let named = folders
-        .video_destination
-        .iter()
-        .map(|folder| ("video destination", folder))
-        .chain(
-            folders
-                .backups
+/// The messages for the run error of a job that did not start, naming the folders as
+/// given (CLI-001, CLI-011, CLI-012). The job creates the missing destinations only
+/// after its own free-space check (IMPORT-012).
+pub(super) fn start_error(error: RunError, folders: &Folders) -> NotStarted {
+    match error {
+        RunError::NotEnoughSpace(not_enough) => NotStarted {
+            messages: not_enough
+                .shortages
                 .iter()
-                .map(|folder| ("backup destination", folder)),
-        )
-        .chain(
-            folders
-                .video_backups
-                .iter()
-                .map(|folder| ("video backup destination", folder)),
-        );
-    for (kind, (folder, given)) in named {
-        create_destination(file_system, folder)
-            .map_err(|error| unusable_message(kind, given, &error))?;
+                .map(|shortage| shortage_message(shortage, folders))
+                .collect(),
+            hint: None,
+        },
+        RunError::DestinationNotCreated(not_created) => {
+            NotStarted::from(folders.not_created_message(not_created))
+        }
+        error => NotStarted::from(error.to_string()),
     }
-    Ok(())
 }

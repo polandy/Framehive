@@ -247,3 +247,39 @@ fn a_dry_run_checks_too() {
     assert_eq!(shortages(result), [shortage(&[DESTINATION], 1000, 999)]);
     assert!(!file_system.paths().contains(&PathBuf::from(DESTINATION)));
 }
+
+/// spec: IMPORT-012.10
+#[test]
+fn the_destinations_are_created_when_the_run_starts() {
+    let file_system = files_of(&[], false);
+    let backup = "/disk/new/backup";
+
+    Setup::new(FLAT, &[backup])
+        .try_start_on(&file_system, || {})
+        .unwrap();
+
+    let paths = file_system.paths();
+    for folder in [DESTINATION, "/disk", "/disk/new", backup] {
+        assert!(paths.contains(&PathBuf::from(folder)), "{folder} missing");
+    }
+}
+
+/// spec: IMPORT-012.11
+#[test]
+fn a_destination_that_cannot_be_created_stops_the_run() {
+    let file_system = two_files(true);
+    file_system.add_file(Path::new("/disk"), b"not a folder", modified());
+    let backup = "/disk/backup";
+
+    let result = Setup::new(FLAT, &[backup]).try_on(&file_system);
+
+    let Err(RunError::DestinationNotCreated(error)) = result else {
+        panic!("destination not created expected, got {result:?}");
+    };
+    assert_eq!(error.destination, Path::new(backup));
+    assert_eq!(error.folder, Path::new(backup));
+    assert_eq!(
+        paths_below(&file_system, DESTINATION),
+        Vec::<PathBuf>::new()
+    );
+}

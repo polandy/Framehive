@@ -75,3 +75,13 @@ backed up before. Destinations are grouped by the `FileSystemId` the `FreeSpace`
 reports. A short file system stops the run with `RunError::NotEnoughSpace`, listing
 every short one; a destination whose free space cannot be read is kept in
 `ImportSummary::free_space_unknown`, and the run goes on.
+
+Creating the destinations (IMPORT-012): only once these checks pass, and not in a dry
+run, `start` creates every missing destination of `ImportSettings::all_destinations`
+with its parents through the `FileSystem` port, and syncs each new folder into its
+parent. A folder that already exists, also one created meanwhile, is used as it is.
+Callers therefore never create the destinations themselves: a run that cannot start,
+also one whose job waited in the job queue while another job filled the disk, leaves
+no folder behind. A folder that cannot be created stops the run with
+`RunError::DestinationNotCreated` before anything is reserved or recorded; it names
+the destination, the folder that failed and the reason.

@@ -19,7 +19,6 @@ use super::dialog::{Dialog, Interrupted, Stop};
 use super::error_lines::{history_line, plan_error_line, start_error_line};
 use super::progress::{ImportContext, LazyProgress};
 use super::source::Source;
-use super::state::create_folders;
 use super::summary::Action;
 use crate::JOB_ENDED_UNEXPECTEDLY;
 use crate::format_readiness::format_readiness_lines;
@@ -208,8 +207,9 @@ impl Dialog<'_> {
         }
     }
 
-    /// Creates the destination and the backup destinations and imports `plan` with the
-    /// progress line, then reports with the format readiness (CLI-007).
+    /// Imports `plan` with the progress line, then reports with the format readiness
+    /// (CLI-007). The job creates the destination and the backup destinations once its
+    /// free-space check passes (IMPORT-012).
     fn import(
         &mut self,
         source: &Source,
@@ -218,14 +218,6 @@ impl Dialog<'_> {
     ) -> Imported {
         let ports = self.ports;
         let card = source.device();
-        let folders = std::iter::once(settings.destination)
-            .chain(settings.backup_destinations.iter().map(PathBuf::as_path));
-        for folder in folders {
-            if let Err(error) = create_folders(ports.file_system(), folder) {
-                self.say(&format!("Could not create {}: {error}", folder.display()));
-                return Imported::NotStarted;
-            }
-        }
         if let Some(job_code) = settings.job_code {
             self.state.job_codes.mark_used(job_code.clone());
             self.remember();

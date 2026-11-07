@@ -15,7 +15,7 @@ use naming::{RenderError, SequenceError};
 
 use crate::backup::{BackupCounts, BackupDestinationError, BackupReport};
 use crate::conflicts::ConflictError;
-use crate::destinations::VideoDestinationError;
+use crate::destinations::{DestinationNotCreated, VideoDestinationError};
 use crate::free_space::{FreeSpaceUnknown, NotEnoughSpace};
 use crate::job_code::MissingJobCode;
 use crate::scan::{LeftOut, LeftOutReason, ScanError, SourceScan};
@@ -178,6 +178,9 @@ pub enum RunError {
     /// A file system cannot hold what the run writes to it (IMPORT-012).
     #[error(transparent)]
     NotEnoughSpace(#[from] NotEnoughSpace),
+    /// A missing destination cannot be created when the run starts (IMPORT-012).
+    #[error(transparent)]
+    DestinationNotCreated(#[from] DestinationNotCreated),
     /// The import history cannot be used (IMPORT-009).
     #[error(transparent)]
     History(#[from] HistoryError),

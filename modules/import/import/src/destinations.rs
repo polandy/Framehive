@@ -1,13 +1,15 @@
 // SPDX-FileCopyrightText: 2026 Framehive contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//! The destinations of each file of an import run, and the checks of the video
-//! destination and the video backup destinations before the run (IMPORT-013).
+//! The destinations of each file of an import run, the checks of the video
+//! destination and the video backup destinations before the run (IMPORT-013), and the
+//! creation of the missing destinations when the run starts (IMPORT-012).
 
-use std::fmt;
 use std::path::{Path, PathBuf};
+use std::{fmt, io};
 
 use domain::AssetFileRole;
+use files::FileSystem;
 
 use crate::backup::{check_against_video_destination, check_backup_destinations};
 use crate::report::RunError;
@@ -145,4 +147,76 @@ pub(crate) fn check_destinations(
             .map_err(RunError::VideoBackupDestination)?;
     }
     Ok(())
+}
+
+/// A destination of the run, or one of its parents, cannot be created when the run
+/// starts (IMPORT-012). Nothing is reserved or copied; the folders created before
+/// it stay.
+#[derive(Debug, thiserror::Error)]
+#[error(
+    "the destination {} cannot be created: the folder {} cannot be created: {error}",
+    .destination.display(),
+    .folder.display()
+)]
+pub struct DestinationNotCreated {
+    /// The destination as the settings give it.
+    pub destination: PathBuf,
+    /// The folder that could not be created: the destination or one of its parents.
+    pub folder: PathBuf,
+    /// Why it could not be created.
+    pub error: io::Error,
+}
+
+/// Creates every missing destination of `settings` with its parents, outermost first
+/// (IMPORT-012). A folder that exists, also one another program created meanwhile, is
+/// left as it is.
+pub(crate) fn create_destinations(
+    file_system: &dyn FileSystem,
+    settings: &ImportSettings<'_>,
+) -> Result<(), DestinationNotCreated> {
+    for destination in settings.all_destinations() {
+        create_with_parents(file_system, destination).map_err(|(folder, error)| {
+            DestinationNotCreated {
+                destination: destination.to_path_buf(),
+                folder,
+                error,
+            }
+        })?;
+    }
+    Ok(())
+}
+
+/// Creates `folder` and its missing parents, and syncs each new folder into its
+/// parent, so that it survives a crash as the folders of a copy do (IMPORT-004).
+fn create_with_parents(
+    file_system: &dyn FileSystem,
+    folder: &Path,
+) -> Result<(), (PathBuf, io::Error)> {
+    let mut missing = Vec::new();
+    for ancestor in folder.ancestors() {
+        if ancestor.as_os_str().is_empty() || exists(file_system, ancestor)? {
+            break;
+        }
+        missing.push(ancestor);
+    }
+    for path in missing.into_iter().rev() {
+        match file_system.create_folder(path) {
+            Ok(()) => {}
+            Err(error) if error.kind() == io::ErrorKind::AlreadyExists => continue,
+            Err(error) => return Err((path.to_path_buf(), error)),
+        }
+        let parent = path.parent().unwrap_or(Path::new(""));
+        file_system
+            .sync_folder(parent)
+            .map_err(|error| (path.to_path_buf(), error))?;
+    }
+    Ok(())
+}
+
+/// Whether anything is at `path`.
+fn exists(file_system: &dyn FileSystem, path: &Path) -> Result<bool, (PathBuf, io::Error)> {
+    let entry = file_system
+        .entry(path)
+        .map_err(|error| (path.to_path_buf(), error))?;
+    Ok(entry.is_some())
 }

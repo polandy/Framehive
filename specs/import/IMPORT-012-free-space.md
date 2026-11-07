@@ -46,6 +46,16 @@ goes on, and the result has a warning that names the destination and the reason.
 **When.** The check runs after the plan and after the checks of the backup destinations
 (IMPORT-007), before the first file is copied. A dry run checks too.
 
+**Creating the destinations.** When the run starts, it checks the destinations
+(IMPORT-007, IMPORT-013) and the free space first, and only then creates every missing
+destination with its parents: the import destination, the video destination, the backup
+destinations and the video backup destinations, also when the plan copies no file. A
+folder that exists already, or that another program creates meanwhile, is used as it
+is. A dry run creates nothing. A folder that cannot be created stops the run before any
+sequence number is reserved, the start is recorded or a file is read; the result names
+the destination and the folder that could not be created, with the reason. The folders
+created before it stay.
+
 ## Acceptance criteria
 
 ### IMPORT-012.1 – An import that fits starts
@@ -107,6 +117,20 @@ goes on, and the result has a warning that names the destination and the reason.
 - **When** a dry run runs
 - **Then** the result is "not enough space" as in IMPORT-012.2
 
+### IMPORT-012.10 – The destinations are created when the run starts
+- **Given** a source with no file, an import destination that does not exist yet, and a
+  backup destination `<dir>/new/backup` whose parents do not exist
+- **When** the run starts
+- **Then** the import destination and the backup destination exist, with the parents
+  of the backup destination
+
+### IMPORT-012.11 – A destination that cannot be created stops the run
+- **Given** the files of IMPORT-012.1, and a backup destination `<file>/backup` below a
+  file
+- **When** the run starts
+- **Then** the result is "destination not created" with the backup destination, the
+  folder `<file>/backup` and the reason, and no file is copied
+
 ## Out of scope
 
 - How the command line and the guided import report the shortage: CLI-011.
@@ -124,3 +148,4 @@ goes on, and the result has a warning that names the destination and the reason.
 |---|---|
 | 2026-11-05 | Initial draft for I1 (ADR 0033); accepted by the owner |
 | 2026-11-05 | Implemented in `files`, `adapter-free-space`, `import` and `framehive-cli`; `implemented` |
+| 2026-11-07 | The run creates the missing destinations itself, after the free-space check; add IMPORT-012.10 and IMPORT-012.11 |

@@ -56,7 +56,8 @@ run before it starts, with a reason that names the folder:
 
 A video destination may be the import destination or lie inside it. A folder may be
 both a backup destination and a video backup destination. A missing video destination
-or video backup destination is created with its parents.
+or video backup destination is created with its parents, once the checks and the
+free-space check pass (IMPORT-012).
 
 **The record of the run.** The import history records the video destination of a run,
 or none (ADR 0031, addendum of 2026-11-06). Each copy keeps its own destination as
@@ -146,3 +147,4 @@ before, so the import log (IMPORT-010) lists videos under their own folders.
 | Date | Change |
 |---|---|
 | 2026-11-06 | Initial draft; owner decisions: separate destinations only, a setting for videos that is not given takes the setting for photos, a video destination may lie inside the import destination, shared sequence counters; accepted by the owner |
+| 2026-11-07 | Missing destinations are created once the free-space check passes (IMPORT-012) |
