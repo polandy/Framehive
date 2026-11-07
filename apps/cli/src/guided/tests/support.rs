@@ -17,7 +17,9 @@ use devices::testing::MemoryDeviceSource;
 use domain::testing::ManualClock;
 use domain::{Timestamp, UtcOffset};
 use files::testing::{FnvHasher, MemoryCameras, MemoryFileSystem, MemoryFreeSpace};
-use files::{EntryKind, FileSystem, FolderEntry, ReadOnlyFileSystem, ReadSeek, WriteFile};
+use files::{
+    EntryKind, FileSystem, FolderEntry, FreeSpace, ReadOnlyFileSystem, ReadSeek, WriteFile,
+};
 use import::{ImportPorts, RecentJobCodes, ReservedTargetNames, SessionSequence};
 use naming::NameTemplate;
 use naming::testing::MemorySequenceCounters;
@@ -91,7 +93,7 @@ pub(super) struct Harness {
     /// state folder is kept across program runs.
     pub(super) history: Arc<dyn ImportHistory + Send + Sync>,
     /// The free space of the destinations; unlimited unless a test sets it.
-    pub(super) free_space: MemoryFreeSpace,
+    pub(super) free_space: Arc<dyn FreeSpace + Send + Sync>,
     /// Resolves a folder to its canonical path; the paths of the memory file system are
     /// canonical already, so it returns them unchanged unless a test replaces it.
     pub(super) resolve_folder: fn(&Path) -> Result<PathBuf, PathError>,
@@ -153,7 +155,7 @@ impl Harness {
             counters: Arc::new(MemorySequenceCounters::new()),
             session: Arc::new(SessionSequence::new()),
             history: Arc::new(MemoryImportHistory::new()),
-            free_space: MemoryFreeSpace::unlimited(),
+            free_space: Arc::new(MemoryFreeSpace::unlimited()),
             resolve_folder: |folder| Ok(folder.to_path_buf()),
         }
     }
@@ -220,7 +222,7 @@ impl Harness {
             counters: Arc::clone(&self.counters) as _,
             session: Arc::clone(&self.session),
             history: Arc::clone(&self.history),
-            free_space: Arc::new(self.free_space.clone()),
+            free_space: Arc::clone(&self.free_space),
             reserved_names: Arc::new(ReservedTargetNames::new()),
         };
         let ports = Ports {

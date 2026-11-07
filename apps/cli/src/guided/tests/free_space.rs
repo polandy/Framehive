@@ -4,6 +4,7 @@
 //! The free space of the destinations at the plan summary (CLI-011).
 
 use std::path::Path;
+use std::sync::Arc;
 
 use files::testing::MemoryFreeSpace;
 
@@ -29,9 +30,11 @@ fn with_short_destination() -> Harness {
         OCTOBER_17,
     );
     harness.pretend_size("EOS_DIGITAL", "DCIM/100_FUJI/DSCF0001.RAF", 2_500_000);
-    harness.free_space = MemoryFreeSpace::unlimited()
-        .with_file_system(PICTURES, 1_000_000)
-        .with_file_system(ARCHIVE, 10_000_000);
+    harness.free_space = Arc::new(
+        MemoryFreeSpace::unlimited()
+            .with_file_system(PICTURES, 1_000_000)
+            .with_file_system(ARCHIVE, 10_000_000),
+    );
     harness
 }
 
@@ -81,8 +84,9 @@ fn changing_the_destination_checks_again() {
 #[test]
 fn unknown_free_space_warns_and_enter_starts() {
     let mut harness = with_short_destination();
-    harness.free_space =
-        MemoryFreeSpace::unlimited().with_unreadable(PICTURES, "the file system does not say");
+    harness.free_space = Arc::new(
+        MemoryFreeSpace::unlimited().with_unreadable(PICTURES, "the file system does not say"),
+    );
 
     let transcript = harness.run(vec![Step::Line("")]);
 
