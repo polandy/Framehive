@@ -32,7 +32,9 @@ every destination can hold the files it is about to write (IMPORT-012).
 
 ## Conformance
 
-`tests/conformance.rs` runs `files::testing::check_free_space` in a `TempDir`.
+`tests/conformance.rs` runs `files::testing::check_free_space` in a `TempDir`. Unit
+tests in `src/lib.rs` cover the `f_bavail × f_frsize` conversion and its overflow,
+which no real file system reaches.
 
 ## Dependencies
 
