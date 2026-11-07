@@ -7,8 +7,8 @@
 
 ## Purpose
 
-A photographer imports the same way again and again: the same library folder, the same
-backup drive, the same template. An import profile keeps these settings under a name,
+A photographer imports the same way again and again: the same backup drive, the same
+template, the same job codes. An import profile keeps these settings under a name,
 in a YAML file the user can read, edit, copy to another machine and keep in a dotfile
 repository.
 
@@ -20,8 +20,7 @@ An import profile is a configuration file (CORE-006) of the file type
 | Key | Kind | Default | Meaning |
 |---|---|---|---|
 | `schema_version` | whole number, required | – | Version of the format, `1` |
-| `destination` | path | none | Folder to import into |
-| `video_destination` | path | the destination | Folder to import videos into (IMPORT-013) |
+| `video_destination` | path | the destination given on the command line | Folder to import videos into (IMPORT-013); left out, videos go to the destination given on the command line |
 | `naming.template` | text | `{date:%Y}/{date:%Y-%m-%d}/{name}.{ext}` | Name template (IMPORT-001) |
 | `naming.on_conflict` | text | `add_suffix` | Conflict policy (IMPORT-003): `add_suffix`, `skip` or `fail` |
 | `job_codes` | list of text | empty | Job codes of the profile (IMPORT-006), the one to use first |
@@ -30,6 +29,15 @@ An import profile is a configuration file (CORE-006) of the file type
 
 `naming` and `backup` are mappings; either can be left out, and then each of its keys
 takes its default.
+
+**No destination.** The folder to import into is always given on the command line, so
+that the meaning of the folders there never depends on a profile (ADR 0036, decision 8).
+A top-level key `destination` is therefore an error at the key, in the form of
+CORE-006, with a message that says where the folder goes instead:
+`destination is not read from a profile; give the folder to import into on the command
+line`. It replaces the message for an unknown key; `destination` inside `naming` or
+`backup` is an ordinary unknown key. The format had no release with the key, so the
+version stays 1.
 
 **Paths.** A path is text that is absolute, or is `~`, or starts with `~/`. `~` means the
 home folder that the caller passes when it reads the profile, so `~/Pictures` becomes
@@ -69,29 +77,29 @@ The schema's descriptions are the "Meaning" column above.
 ### IMPORT-011.1 – A minimal profile takes the defaults
 - **Given** the text `schema_version: 1\n`
 - **When** it is read as an import profile
-- **Then** it has no destination, the template `{date:%Y}/{date:%Y-%m-%d}/{name}.{ext}`,
+- **Then** it has no video destination, the template `{date:%Y}/{date:%Y-%m-%d}/{name}.{ext}`,
   the policy `add_suffix`, no job codes and no backup destinations
 
 ### IMPORT-011.2 – A full profile
 - **Given** the example profile of ADR 0032, decision 4, and the home folder `/home/ada`
 - **When** it is read as an import profile
-- **Then** its destination is `/home/ada/Pictures/Archive`, its template and policy are
+- **Then** its template and policy are
   those of the file, its job codes are `Smith wedding`, and its backup destination is
   `/run/media/ada/Backup/Pictures`
 
 ### IMPORT-011.3 – Relative paths are rejected
-- **Given** the text `schema_version: 1\ndestination: Pictures\n`, and a text whose
+- **Given** the text `schema_version: 1\nvideo_destination: Videos\n`, and a text whose
   `backup.destinations` holds `../Backup`
 - **When** each is read as an import profile
-- **Then** the first is an error at line 2, column 14: `destination must be an absolute
-  path or start with ~/`; the second is the same error for `backup.destinations` at that
-  entry
+- **Then** the first is an error at line 2, column 20: `video_destination must be an
+  absolute path or start with ~/`; the second is the same error for
+  `backup.destinations` at that entry
 
 ### IMPORT-011.4 – `~` alone is the home folder
-- **Given** the text `schema_version: 1\ndestination: "~"\n` and the home folder
+- **Given** the text `schema_version: 1\nvideo_destination: "~"\n` and the home folder
   `/home/ada`
 - **When** it is read as an import profile
-- **Then** its destination is `/home/ada`
+- **Then** its video destination is `/home/ada`
 
 ### IMPORT-011.5 – Invalid template
 - **Given** a profile whose `naming.template` is `{date:%Y}/{unknown}.{ext}`
@@ -131,11 +139,19 @@ The schema's descriptions are the "Meaning" column above.
   destination; the second has neither; the third is an error at the value with the
   message above
 
+### IMPORT-011.13 – A destination in a profile
+- **Given** the text `schema_version: 1\ndestination: ~/Pictures\n`, and a text with
+  `destination: /a` inside `naming`
+- **When** each is read as an import profile
+- **Then** the first is an error at line 2, column 1: `destination is not read from a
+  profile; give the folder to import into on the command line`; the second is an error
+  at that key: `unknown key destination`
+
 ### IMPORT-011.10 – The published schema is the generated one
 - **Given** the file type `import-profile`
 - **When** its JSON Schema is generated
 - **Then** it is identical to `schemas/import-profile-v1.json`, has the `$id` above, and
-  lists `destination`, `video_destination`, `naming`, `job_codes` and `backup`
+  lists `video_destination`, `naming`, `job_codes` and `backup`, and not `destination`
 
 ### IMPORT-011.11 – Examples validate
 - **Given** every import profile shown in `docs/`, `specs/` and the output of
@@ -165,3 +181,4 @@ The schema's descriptions are the "Meaning" column above.
 | 2026-11-05 | Initial draft (N8, N25, ADR 0032); accepted by the owner |
 | 2026-11-05 | Implemented (reading and schema); the conflict policy is a choice of CORE-006 (CORE-006.20); value errors are at the start of the value |
 | 2026-11-06 | `video_destination` and `backup.video_destinations` (IMPORT-013), optional in version 1; accepted by the owner |
+| 2026-11-07 | `destination` removed: the folder to import into is given on the command line (ADR 0036, decision 8); a profile with it gets IMPORT-011.13; accepted by the owner |

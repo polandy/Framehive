@@ -146,6 +146,28 @@ fn a_dry_run_creates_no_history_file() {
     assert!(!folders.history_file().parent().unwrap().exists());
 }
 
+/// spec: CLI-008.11
+#[test]
+fn a_dry_run_leaves_the_state_folder_as_it_was() {
+    let folders = Folders::new();
+    folders.add_raf();
+    let first = folders.import(&[]);
+    assert_eq!(summary_line(&first), FIRST_RUN_SUMMARY);
+    let state_folder = folders.history_file().parent().unwrap().to_path_buf();
+    let files_before = files_below(&state_folder);
+    let history_before = fs::read(folders.history_file()).unwrap();
+
+    let output = folders.import(&["--dry-run"]);
+
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    assert!(
+        stdout(&output).contains(IMPORTED_BEFORE),
+        "the history was read"
+    );
+    assert_eq!(files_below(&state_folder), files_before);
+    assert_eq!(fs::read(folders.history_file()).unwrap(), history_before);
+}
+
 /// spec: CLI-008.10
 #[test]
 fn an_import_without_a_state_folder_stops() {

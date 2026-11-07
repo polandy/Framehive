@@ -37,9 +37,10 @@ fn help_describes_the_import_arguments() {
 
     let help = text(&output.stdout);
     for argument in [
-        "<source>",
-        // Optional, because a profile can name it (CLI-010).
-        "[destination]",
+        // The last folder is the destination, unless --destination names it (CLI-016).
+        "framehive import [OPTIONS] <source>... <destination>",
+        "framehive import [OPTIONS] --destination <folder> <source>...",
+        "then the folder to import into",
         "--profile <name>",
         "--template",
         "--job-code",
@@ -57,6 +58,7 @@ fn an_unknown_conflict_policy_is_rejected() {
     let output = framehive(&[
         "import",
         "/source",
+        "--destination",
         "/library",
         "--on-conflict",
         "overwrite",
@@ -70,14 +72,58 @@ fn an_unknown_conflict_policy_is_rejected() {
     assert_eq!(output.status.code(), Some(2));
 }
 
-/// spec: CLI-001.11
+/// spec: CLI-016.1
 #[test]
-fn a_missing_destination_is_rejected() {
-    let output = framehive(&["import", "/source"]);
+fn a_command_without_a_source_shows_an_example() {
+    let output = framehive(&["import"]);
 
-    let error = text(&output.stderr);
-    assert!(error.contains("<destination>"), "{error}");
-    assert!(error.contains("--help"), "{error}");
+    assert_eq!(
+        text(&output.stderr),
+        "error: no source: give the folders or cameras to import from, then the folder to import into\n\
+         hint: framehive import /media/card ~/Pictures\n"
+    );
+    assert!(output.stdout.is_empty());
+    assert_eq!(output.status.code(), Some(2));
+}
+
+/// spec: CLI-016.1
+#[test]
+fn a_destination_without_a_source_shows_an_example_with_it() {
+    let output = framehive(&["import", "--destination", "/library"]);
+
+    assert_eq!(
+        text(&output.stderr),
+        "error: no source: give the folders or cameras to import from\n\
+         hint: framehive import --destination /library /media/card\n"
+    );
+    assert!(output.stdout.is_empty());
+    assert_eq!(output.status.code(), Some(2));
+}
+
+/// spec: CLI-016.2
+#[test]
+fn a_single_folder_needs_a_destination() {
+    let output = framehive(&["import", "/nowhere/card"]);
+
+    assert_eq!(
+        text(&output.stderr),
+        "error: no destination: give the folder to import into after /nowhere/card, or with --destination\n\
+         hint: framehive import /nowhere/card ~/Pictures\n"
+    );
+    assert!(output.stdout.is_empty());
+    assert_eq!(output.status.code(), Some(2));
+}
+
+/// spec: CLI-016.12
+#[test]
+fn a_camera_cannot_be_the_destination() {
+    let output = framehive(&["import", "/cardA", "camera:X-T5"]);
+
+    assert_eq!(
+        text(&output.stderr),
+        "error: camera:X-T5 cannot be the destination; give the folder to import into last, or with --destination\n"
+    );
+    assert!(output.stdout.is_empty());
     assert_eq!(output.status.code(), Some(2));
 }
 

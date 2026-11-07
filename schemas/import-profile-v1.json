@@ -9,12 +9,8 @@
       "type": "integer",
       "const": 1
     },
-    "destination": {
-      "description": "Folder to import into",
-      "type": "string"
-    },
     "video_destination": {
-      "description": "Folder to import videos into (IMPORT-013); left out, videos go to the destination",
+      "description": "Folder to import videos into (IMPORT-013); left out, videos go to the destination given on the command line",
       "type": "string"
     },
     "naming": {

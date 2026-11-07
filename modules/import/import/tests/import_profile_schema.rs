@@ -22,15 +22,11 @@ fn the_published_schema_is_the_generated_one() {
         "https://polandy.github.io/framehive/schemas/import-profile-v1.json"
     );
     assert!(generated.contains(&format!("\"$id\": \"{IMPORT_PROFILE_SCHEMA_ID}\"")));
-    for key in [
-        "destination",
-        "video_destination",
-        "naming",
-        "job_codes",
-        "backup",
-    ] {
+    for key in ["video_destination", "naming", "job_codes", "backup"] {
         assert!(generated.contains(&format!("\n    \"{key}\": {{")), "{key}");
     }
+    // The folder to import into is given on the command line (ADR 0036, decision 8).
+    assert!(!generated.contains("\n    \"destination\": {"));
     assert_eq!(
         fs::read_to_string(published).unwrap(),
         generated,

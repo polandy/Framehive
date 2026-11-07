@@ -8,7 +8,7 @@ use domain::LocalDateTime;
 use naming::{CounterDate, NameTemplate};
 
 use super::recognition::Recognized;
-use super::rename::import_plan;
+use super::rename::{import_plan, rename};
 use super::{FilePlan, ImportRun, ImportSettings, PlannedRun, RunFile};
 use crate::plan::AssetFile;
 use crate::report::{FileError, RunError};
@@ -24,9 +24,56 @@ pub(super) struct PlanInputs {
     pub(super) assets: Vec<AssetFile>,
     pub(super) import_time: LocalDateTime,
     pub(super) first_sequence_number: u32,
+    /// Whether the numbers from `first_sequence_number` on are reserved.
+    pub(super) reserved: bool,
 }
 
 impl ImportRun<'_> {
+    /// Reserves the sequence numbers of `plan`, unless it is a dry run or they are
+    /// reserved already, and names its files again if another import took the numbers
+    /// the plan showed (IMPORT-002, "Reservation"). An import job reserves when it is
+    /// enqueued (IMPORT-015, "Enqueueing"); [`ImportRun::start`] reserves otherwise.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RunError::Sequence`] if the persisted counters cannot be read or
+    /// stored, or the numbers do not fit the template; then nothing is reserved.
+    pub(crate) fn reserve(
+        &self,
+        settings: &ImportSettings<'_>,
+        plan: PlannedRun,
+    ) -> Result<PlannedRun, RunError> {
+        if settings.dry_run {
+            return Ok(plan);
+        }
+        self.reserve_numbers(settings, plan)
+    }
+
+    /// Reserves the sequence numbers of `plan` as [`ImportRun::reserve`] does, also for
+    /// a dry run: an import job does so with the dry-run memory as its counters
+    /// (IMPORT-016).
+    ///
+    /// # Errors
+    ///
+    /// As [`ImportRun::reserve`].
+    pub(crate) fn reserve_numbers(
+        &self,
+        settings: &ImportSettings<'_>,
+        mut plan: PlannedRun,
+    ) -> Result<PlannedRun, RunError> {
+        if plan.naming.reserved {
+            return Ok(plan);
+        }
+        let first =
+            self.first_sequence_number(settings.template, &plan.naming, Reservation::Reserve)?;
+        if first != plan.naming.first_sequence_number {
+            plan.naming.first_sequence_number = first;
+            rename(&mut plan, settings);
+        }
+        plan.naming.reserved = true;
+        Ok(plan)
+    }
+
     /// The first sequence number of the import of `naming`, shown or reserved.
     pub(super) fn first_sequence_number(
         &self,
@@ -73,6 +120,7 @@ impl ImportRun<'_> {
                 .collect(),
             import_time,
             first_sequence_number: 1,
+            reserved: false,
         };
         naming.first_sequence_number =
             self.first_sequence_number(settings.template, &naming, Reservation::Preview)?;

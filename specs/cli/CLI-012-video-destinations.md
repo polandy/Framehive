@@ -14,7 +14,7 @@ photos and videos in one run.
 ## Behaviour
 
 ```
-framehive import <source> <destination> [--video-destination <folder>]
+framehive import <source> --destination <destination> [--video-destination <folder>]
                  [--video-backup <folder>]... [other arguments]
 ```
 
@@ -55,7 +55,7 @@ The guided import (CLI-002) has no video destinations (IMPORT-013, "Out of scope
 ### CLI-012.1 – Import with a video destination
 - **Given** a source with `DSCF0001.RAF` and `clip.MOV` taken on 2026-10-17, and empty
   folders `<destination>` and `<videos>`
-- **When** the user runs `framehive import <source> <destination> --video-destination
+- **When** the user runs `framehive import <source> --destination <destination> --video-destination
   <videos>`
 - **Then** `<destination>` has `2026/2026-10-17/DSCF0001.RAF`, `<videos>` has
   `2026/2026-10-17/clip.MOV`, the line of the video starts with `copied  clip.MOV ->
@@ -79,7 +79,7 @@ The guided import (CLI-002) has no video destinations (IMPORT-013, "Out of scope
 ### CLI-012.4 – The profile supplies the video settings
 - **Given** a profile `holiday` with `video_destination` and
   `backup.video_destinations` set to empty folders
-- **When** the user runs `framehive import --profile holiday <source> <destination>`
+- **When** the user runs `framehive import --profile holiday <source> --destination <destination>`
 - **Then** the video goes to the profile's video destination and its video backup
   destination; and with `--video-destination <other>` on the command line, it goes to
   `<other>` instead
@@ -105,3 +105,4 @@ The guided import (CLI-002) has no video destinations (IMPORT-013, "Out of scope
 |---|---|
 | 2026-11-06 | Initial draft; owner decisions: options `--video-destination` and `--video-backup`, profile keys `video_destination` and `backup.video_destinations`; accepted by the owner |
 | 2026-11-06 | The mark ends the line after any other note; CLI-012.1 matches the start and end of the line |
+| 2026-11-07 | Examples name the destination with `--destination` (CLI-001, ADR 0036) |

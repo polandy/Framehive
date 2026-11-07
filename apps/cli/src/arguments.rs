@@ -64,9 +64,12 @@ pub(crate) enum LogFormat {
 /// The arguments of `framehive import`, checked by the parser.
 #[derive(Debug)]
 pub(crate) struct ImportArguments {
-    /// The folder to import from, as given, or `camera:…` for a camera (CLI-013).
-    pub(crate) source: PathBuf,
-    /// The folder to import into, as given; `None` only with `--profile` (CLI-010).
+    /// The positional arguments, as given, in the order given: the sources, each a
+    /// folder or `camera:…` for a camera (CLI-013, CLI-015), and last the destination
+    /// when `--destination` is not given (CLI-016); empty when none was given.
+    pub(crate) positionals: Vec<PathBuf>,
+    /// The folder of `--destination`, as given; then every positional argument is a
+    /// source (CLI-016).
     pub(crate) destination: Option<PathBuf>,
     /// The backup destinations, as given, in the order of the command line (CLI-005).
     pub(crate) backups: Vec<PathBuf>,
@@ -187,19 +190,27 @@ fn import_log_arguments(matches: &ArgMatches) -> ImportLogArguments {
 
 fn import_command() -> Command {
     Command::new("import")
-        .about("Copy the photos and videos of a folder, memory card or camera into a library folder")
+        .about("Copy the photos and videos of folders, memory cards or cameras into a library folder")
+        .override_usage(
+            "framehive import [OPTIONS] <source>... <destination>\n       \
+             framehive import [OPTIONS] --destination <folder> <source>...",
+        )
         .arg(
-            Arg::new("source")
-                .required(true)
+            // Not required here, and split into sources and destination only after
+            // parsing, so that a missing source or destination gets the message of
+            // CLI-016 with an example instead of clap's.
+            Arg::new("positionals")
+                .num_args(1..)
+                .value_name("source")
                 .value_parser(value_parser!(PathBuf))
-                .help("Folder to import from, or camera:[<model>|<port>] for a camera; ./camera:… for a folder of that name"),
+                .help("Folders or cameras to import from, each a folder or camera:[<model>|<port>] for a camera (./camera:… for a folder of that name), then the folder to import into, created with its parents when missing; with --destination, every one is a source"),
         )
         .arg(
             Arg::new("destination")
-                // A profile can name the destination instead (CLI-010).
-                .required_unless_present("profile")
+                .long("destination")
+                .value_name("folder")
                 .value_parser(value_parser!(PathBuf))
-                .help("Folder to import into; created with its parents when missing"),
+                .help("Folder to import into, created with its parents when missing; then the last folder above is a source too"),
         )
         .arg(
             Arg::new("profile")
@@ -263,7 +274,10 @@ fn destination_arguments() -> [Arg; 3] {
 
 fn import_arguments(matches: &ArgMatches) -> ImportArguments {
     ImportArguments {
-        source: path(matches, "source"),
+        positionals: matches
+            .get_many::<PathBuf>("positionals")
+            .map(|sources| sources.cloned().collect())
+            .unwrap_or_default(),
         destination: matches.get_one::<PathBuf>("destination").cloned(),
         backups: matches
             .get_many::<PathBuf>("backup")
@@ -282,11 +296,6 @@ fn import_arguments(matches: &ArgMatches) -> ImportArguments {
         profile: matches.get_one::<String>("profile").cloned(),
         dry_run: matches.get_flag("dry-run"),
     }
-}
-
-/// Reads a required path; clap has already rejected a missing one.
-fn path(matches: &ArgMatches, id: &str) -> PathBuf {
-    matches.get_one::<PathBuf>(id).cloned().unwrap_or_default()
 }
 
 /// Maps a value that clap has already checked against [`CONFLICT_POLICIES`].

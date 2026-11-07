@@ -14,21 +14,24 @@ shows every decision the import makes.
 ## Behaviour
 
 ```
-framehive import <source> <destination> [--template <template>]
+framehive import <source>... <destination> [--template <template>]
                  [--job-code <text>] [--on-conflict add_suffix|skip|fail]
                  [--dry-run]
+framehive import --destination <folder> <source>... [...]
 ```
 
 | Argument | Meaning | Default |
 |---|---|---|
-| `<source>` | Folder to import from (IMPORT-005) | required |
-| `<destination>` | Folder to import into; created with its parents when missing | required |
+| `<source>...` | Folder to import from (IMPORT-005); several sources: CLI-015 | required |
+| `<destination>` | The last positional argument: folder to import into; created with its parents when missing | required without `--destination` (CLI-016) |
+| `--destination` | Folder to import into, like `cp -t`; every positional argument is then a source | none |
 | `--template` | Name template (IMPORT-001) | `{date:%Y}/{date:%Y-%m-%d}/{name}.{ext}` |
 | `--job-code` | Job code for the `{job}` token (IMPORT-006) | none |
 | `--on-conflict` | Conflict policy (IMPORT-003) | `add_suffix` |
 | `--dry-run` | Make the plan and print it, copy nothing | off |
 
-Compatibility mode (IMPORT-001) is on. `framehive --help` and `framehive import --help`
+The last folder is the destination unless `--destination` names it (CLI-016). Compatibility mode
+(IMPORT-001) is on. `framehive --help` and `framehive import --help`
 describe the arguments; `framehive --version` prints `framehive <version>`.
 
 **Job code.** `--job-code` is checked by the rules of IMPORT-006 whenever it is given;
@@ -80,7 +83,7 @@ Errors that stop the command, and log messages, go to standard error.
 ### CLI-001.1 – Import with the defaults
 - **Given** a source with `DSCF0001.RAF` captured at 2026-10-17 14:05:09, and an empty
   destination
-- **When** `framehive import <source> <destination>` runs
+- **When** `framehive import <source> --destination <destination>` runs
 - **Then** the destination has `2026/2026-10-17/DSCF0001.RAF`, the output has the line
   `copied  DSCF0001.RAF -> 2026/2026-10-17/DSCF0001.RAF` and the summary
   `1 copied, 0 already imported, 0 duplicates, 0 skipped, 0 failed, 0 left out`, and
@@ -94,7 +97,7 @@ Errors that stop the command, and log messages, go to standard error.
 
 ### CLI-001.3 – Own template
 - **Given** the source of CLI-001.1
-- **When** `framehive import <source> <destination> --template '{date:%Y%m%d}-{name}.{ext}'`
+- **When** `framehive import <source> --destination <destination> --template '{date:%Y%m%d}-{name}.{ext}'`
   runs
 - **Then** the destination has `20261017-DSCF0001.RAF`
 
@@ -143,7 +146,7 @@ Errors that stop the command, and log messages, go to standard error.
 - **Then** standard error names both paths, nothing is copied, and the exit code is 2
 
 ### CLI-001.11 – Invalid arguments
-- **Given** `--on-conflict overwrite`, a missing destination, or an unknown subcommand
+- **Given** `--on-conflict overwrite`, or an unknown subcommand
 - **When** the command runs
 - **Then** standard error says what is wrong and points to `--help`, and the exit code
   is 2
@@ -161,7 +164,7 @@ Errors that stop the command, and log messages, go to standard error.
 
 ### CLI-001.14 – Job code in the names
 - **Given** the source of CLI-001.1
-- **When** `framehive import <source> <destination> --template '{job}/{name}.{ext}' --job-code ' Smith wedding '`
+- **When** `framehive import <source> --destination <destination> --template '{job}/{name}.{ext}' --job-code ' Smith wedding '`
   runs
 - **Then** the destination has `Smith wedding/DSCF0001.RAF`, and the exit code is 0
 
@@ -191,6 +194,7 @@ Errors that stop the command, and log messages, go to standard error.
 - Devices: detecting and naming cards and cameras as sources (Q1, Q2): the device spec.
 - Backup destinations (I2): CLI-005. The import log (N6) and resuming (N4): later specs.
 - Progress with throughput and remaining time (N12): the TUI concept and the GUI.
+- Several sources in one command: CLI-015.
 - Translated output (X2): text is English until a spec for languages exists.
 
 ## Open questions
@@ -208,3 +212,5 @@ Errors that stop the command, and log messages, go to standard error.
 | 2026-11-02 | CLI-001.11 names the unknown subcommand, which clap already rejected |
 | 2026-11-04 | Sequence numbers (IMPORT-002), specified in CLI-004 |
 | 2026-11-04 | The import history recognizes a re-run (CLI-008): CLI-001.2 now runs without the history, so it still tests IMPORT-003 |
+| 2026-11-07 | `<source>...`: several sources, specified in CLI-015 (Q5, J3) |
+| 2026-11-07 | The last folder is the destination unless `--destination` names it (CLI-016, ADR 0036); a missing destination is no longer a clap error (CLI-001.11) |

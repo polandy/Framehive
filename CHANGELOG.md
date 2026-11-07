@@ -27,7 +27,7 @@ All user-visible changes are listed here. The format follows
   as the same name (macOS and SMB shares may store names decomposed), and copies each
   file with a verified copy through a `.part` file (IMPORT-004). A file that fails is
   reported and the import goes on.
-- `framehive import <source> <destination>` (CLI-001): imports a folder or a mounted
+- `framehive import <source> --destination <folder>` (CLI-001): imports a folder or a mounted
   memory card into a library folder from the command line, with `--template`,
   `--on-conflict add_suffix|skip|fail` and `--dry-run`. It prints one line per file
   as soon as the file is done and a summary, creates a missing destination, rejects
@@ -38,7 +38,7 @@ All user-visible changes are listed here. The format follows
   must have 1–64 characters, without `/` or control characters, and not dots only. A template with
   `{job}` and no job code, or an invalid job code, stops the command with exit code
   2; a job code the template does not use is accepted with a warning.
-- Nix flake package: `nix run . -- import <source> <destination>` runs the
+- Nix flake package: `nix run . -- import <source> --destination <folder>` runs the
   `framehive` command and `nix profile install .` installs it, built with the pinned
   toolchain.
 - Guided import (CLI-002, CLI-003): `framehive` without a subcommand starts a line-based
@@ -87,7 +87,7 @@ All user-visible changes are listed here. The format follows
   where, with its checksum, as text, JSON or RFC 4180 CSV to redirect into a file. It
   reads the import history without creating or changing it.
 - Import profiles (IMPORT-011, CLI-010, ADR 0032): `framehive import <source>
-  --profile <name>` takes the destination, the backup destinations, the name template,
+  <destination> --profile <name>` takes the backup destinations, the name template,
   the conflict policy and the job code from the YAML file `profiles/<name>.yaml` in the
   configuration folder (`$XDG_CONFIG_HOME/framehive` or `~/.config/framehive` on Linux,
   `~/Library/Application Support/framehive` on macOS). An option given on the command
@@ -111,7 +111,7 @@ All user-visible changes are listed here. The format follows
   own locations, and `framehive import-log` shows a run's video destination. The import
   history moves to layout 2 the first time it is written (ADR 0031).
 - Cameras and phones over PTP and MTP (IMPORT-014, CLI-013, ADR 0034):
-  `framehive import camera: <destination>` imports from the only connected camera, and
+  `framehive import camera: --destination <folder>` imports from the only connected camera, and
   `camera:<model>` or `camera:<port>` picks one of several; `framehive cameras` lists
   the connected cameras by model and port. Only the `DCIM` folder of each storage is
   scanned; the camera is read through libgphoto2, never written, and released when the
@@ -132,6 +132,27 @@ All user-visible changes are listed here. The format follows
 - Job queue (CORE-007, IMPORT-015, ADR 0035): imports now run as jobs in a job queue
   with one worker thread, first in, first out. `framehive import` and the guided import
   show the same output as before; a pulled card or camera still stops the import.
+- Several sources in one command (CLI-015, IMPORT-015, ADR 0036):
+  `framehive import <source>... --destination <folder>` imports each source as a job of its
+  own. Jobs whose sources are on separate devices and whose destinations share no disk
+  run at the same time; the others run one after another. Each job reserves its
+  sequence numbers and target names when it is queued, so parallel imports never take
+  the same ones. With several sources, each summary follows a line `<source>:`, and
+  the exit code is the worst of the sources. A dry run of several sources counts the
+  numbers and target names across them in memory (IMPORT-016), so it shows what the
+  real run would do, and stores nothing.
+
+### Changed
+
+- `framehive import` names its sources and destination as `cp` does (CLI-016,
+  ADR 0036): `framehive import <source>... <destination>` keeps working, and the new
+  `framehive import --destination <folder> <source>...` makes every folder a source.
+  A command without a source or without a destination, or with a camera where the
+  destination belongs, stops with exit code 2 and an example.
+- **Breaking:** an import profile no longer has the key `destination`; the folder to
+  import into is always given on the command line, so a folder's meaning never
+  depends on `--profile`. A profile that still has it stops the command with exit
+  code 2 and a message at its line (IMPORT-011).
 
 ### Fixed
 

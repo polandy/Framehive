@@ -13,7 +13,7 @@ use import::{
 };
 
 use super::ChosenSettings;
-use crate::arguments::ImportArguments;
+use crate::cameras::camera_choice;
 use crate::paths::{Destination, PathError, check_outside, resolve_destination, resolve_source};
 use crate::report::BackupName;
 
@@ -80,22 +80,86 @@ fn paths_of(folders: &[(Destination, PathBuf)]) -> Vec<PathBuf> {
         .collect()
 }
 
-/// Resolves the source and the destinations and checks them against each other
+/// Resolves the folders of every source and checks them against each other before any
+/// job starts (CLI-016): each source with the destinations, and the sources with each
+/// other.
+///
+/// # Errors
+///
+/// Returns the message for the first source or folder that is not usable.
+pub(super) fn resolve_sources(
+    sources: &[PathBuf],
+    chosen: &ChosenSettings,
+) -> Result<Vec<Folders>, String> {
+    let resolved = sources
+        .iter()
+        .map(|source| resolve_folders(source, chosen, camera_choice(source).is_some()))
+        .collect::<Result<Vec<_>, _>>()?;
+    let given_and_resolved: Vec<_> = sources.iter().zip(&resolved).collect();
+    for (index, &later) in given_and_resolved.iter().enumerate() {
+        for &earlier in &given_and_resolved[..index] {
+            if let Some(message) = overlap(earlier, later) {
+                return Err(message);
+            }
+        }
+    }
+    Ok(resolved)
+}
+
+/// A source as given, with its resolved folders.
+type GivenSource<'a> = (&'a PathBuf, &'a Folders);
+
+/// The message when the `later` source is the `earlier` one, or one lies inside the
+/// other: compared by resolved path for folders, by the text after `camera:` for
+/// cameras (CLI-016).
+fn overlap(
+    (earlier_given, earlier): GivenSource<'_>,
+    (later_given, later): GivenSource<'_>,
+) -> Option<String> {
+    let given_twice = || {
+        format!(
+            "source {} is given twice; give it once",
+            later_given.display()
+        )
+    };
+    let inside = |inner: &Path, outer: &Path| {
+        format!(
+            "source {} lies inside the source {}; give it once",
+            inner.display(),
+            outer.display()
+        )
+    };
+    match (earlier.source_is_camera, later.source_is_camera) {
+        (true, true) => {
+            (camera_choice(earlier_given) == camera_choice(later_given)).then(given_twice)
+        }
+        (false, false) if earlier.source == later.source => Some(given_twice()),
+        (false, false) if later.source.starts_with(&earlier.source) => {
+            Some(inside(later_given, earlier_given))
+        }
+        (false, false) if earlier.source.starts_with(&later.source) => {
+            Some(inside(earlier_given, later_given))
+        }
+        _ => None,
+    }
+}
+
+/// Resolves `given_source` and the destinations and checks them against each other
 /// (CLI-001, CLI-005). A camera source (CLI-013) has the root `/` and is not resolved,
 /// and no destination is checked against it.
 ///
 /// # Errors
 ///
 /// Returns the message for the first folder that cannot be resolved or is invalid.
-pub(super) fn resolve_folders(
-    arguments: &ImportArguments,
+fn resolve_folders(
+    given_source: &Path,
     chosen: &ChosenSettings,
     source_is_camera: bool,
 ) -> Result<Folders, String> {
     let source = if source_is_camera {
         PathBuf::from("/")
     } else {
-        resolve_source(&arguments.source).map_err(|error| error.to_string())?
+        resolve_source(given_source).map_err(|error| error.to_string())?
     };
     let destination =
         resolve_destination(&chosen.destination).map_err(|error| error.to_string())?;

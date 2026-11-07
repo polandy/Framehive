@@ -1,12 +1,15 @@
 // SPDX-FileCopyrightText: 2026 Framehive contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//! `framehive import` (CLI-001, CLI-010, CLI-013): wires the adapters to an import run.
+//! `framehive import` (CLI-001, CLI-010, CLI-013, CLI-015): wires the adapters to the
+//! import job of each source.
 
 #[cfg(test)]
 mod camera_tests;
 mod folders;
+mod locations;
 mod run;
+mod sources;
 #[cfg(test)]
 mod tests;
 
@@ -31,42 +34,63 @@ use crate::profiles::{
     read_profile,
 };
 use crate::report::has_backup_failures;
-use crate::{FILES_FAILED, NOT_STARTED, report_error, report_warning};
-use run::{NotStarted, Surroundings, import_with};
+use crate::{FILES_FAILED, NOT_STARTED, report_error, report_hint, report_warning};
+use locations::{Locations, locations};
+use run::{NotStarted, SourceResults, Surroundings, import_with};
 
-/// Runs the import and returns the exit code of CLI-001.
+/// Runs the import of each source and returns the highest of their exit codes
+/// (CLI-001, CLI-015).
 pub(crate) fn run_import(arguments: &ImportArguments) -> ExitCode {
-    match import(arguments) {
-        Ok(summary) if summary.has_failures() || has_backup_failures(&summary) => {
-            ExitCode::from(FILES_FAILED)
+    let results = match import(arguments) {
+        Ok(results) => results,
+        Err(not_started) => {
+            report_not_started(&not_started);
+            return ExitCode::from(NOT_STARTED);
         }
-        Ok(_) => ExitCode::SUCCESS,
-        Err(NotStarted(messages)) => {
-            for message in &messages {
-                report_error(message);
-            }
-            ExitCode::from(NOT_STARTED)
-        }
+    };
+    let worst = results.iter().map(exit_code).max().unwrap_or_default();
+    ExitCode::from(worst)
+}
+
+/// The exit code of one source (CLI-001); its errors are already reported.
+fn exit_code(result: &Result<ImportSummary, NotStarted>) -> u8 {
+    match result {
+        Ok(summary) if summary.has_failures() || has_backup_failures(summary) => FILES_FAILED,
+        Ok(_) => 0,
+        Err(_) => NOT_STARTED,
     }
 }
 
-/// Reads the profile and the state folder from the process environment, and imports
-/// with the real free space, standard output and standard error.
+/// Reports each error that kept every source from starting, and then its hint.
+fn report_not_started(not_started: &NotStarted) {
+    for message in &not_started.messages {
+        report_error(message);
+    }
+    if let Some(hint) = &not_started.hint {
+        report_hint(hint);
+    }
+}
+
+/// Splits the arguments into sources and destination, reads the profile and the state
+/// folder from the process environment, in this order (CLI-016), and imports with the
+/// real free space, standard output and standard error.
 ///
 /// # Errors
 ///
-/// Returns the messages of the errors that kept the import from starting.
-fn import(arguments: &ImportArguments) -> Result<ImportSummary, NotStarted> {
+/// Returns the messages of the errors that kept every source from starting.
+fn import(arguments: &ImportArguments) -> Result<SourceResults, NotStarted> {
+    let locations = locations(arguments)?;
     let profile = arguments.profile.as_deref().map(load_profile).transpose()?;
     let state_folder = process_state_folder()?;
     import_with(
         arguments,
+        &locations,
         profile,
         Surroundings {
             state_folder: &state_folder,
             free_space: Arc::new(StatvfsFreeSpace::new()),
             cameras: &Gphoto2Cameras::new(),
-            output: &mut io::stdout().lock(),
+            output: &mut io::stdout(),
             errors: &mut io::stderr(),
         },
     )
@@ -88,16 +112,18 @@ struct ChosenSettings {
 }
 
 /// Takes each setting from the command line, else from `profile`, else the default. An
-/// option replaces the profile's value, lists included (ADR 0032, decision 5).
+/// option replaces the profile's value, lists included (ADR 0032, decision 5). The
+/// destination always comes from the command line (CLI-016).
 ///
 /// # Errors
 ///
-/// Returns the message for a missing destination, an invalid template or job code, or
-/// a template with `{job}` and no job code.
+/// Returns the message for an invalid template or job code, or a template with `{job}`
+/// and no job code.
 fn choose_settings(
     arguments: &ImportArguments,
+    locations: &Locations,
     profile: Option<ImportProfile>,
-) -> Result<ChosenSettings, String> {
+) -> Result<ChosenSettings, NotStarted> {
     let video_destination = arguments.video_destination.clone().or_else(|| {
         profile
             .as_ref()
@@ -108,22 +134,16 @@ fn choose_settings(
         Some(profile) => profile.video_backup_destinations.clone(),
         None => Vec::new(),
     };
-    let (profile_destination, profile_template, profile_policy, profile_job_code, profile_backups) =
-        match profile {
-            Some(profile) => (
-                profile.destination,
-                Some(profile.template),
-                Some(profile.on_conflict),
-                profile.job_codes.into_iter().next(),
-                profile.backup_destinations,
-            ),
-            None => (None, None, None, None, Vec::new()),
-        };
-    let destination = arguments
-        .destination
-        .clone()
-        .or(profile_destination)
-        .ok_or_else(|| missing_destination_message(arguments.profile.as_deref()))?;
+    let (profile_template, profile_policy, profile_job_code, profile_backups) = match profile {
+        Some(profile) => (
+            Some(profile.template),
+            Some(profile.on_conflict),
+            profile.job_codes.into_iter().next(),
+            profile.backup_destinations,
+        ),
+        None => (None, None, None, Vec::new()),
+    };
+    let destination = locations.destination.clone();
     let template = match (&arguments.template, profile_template) {
         (Some(text), _) => NameTemplate::parse(text)
             .map_err(|error| format!("invalid name template {text}: {error}"))?,
@@ -153,15 +173,6 @@ fn choose_settings(
     })
 }
 
-/// The message when neither the command line nor the profile names a destination;
-/// without a profile, clap has already required one.
-fn missing_destination_message(profile: Option<&str>) -> String {
-    format!(
-        "no destination: give one, or set destination in the profile {}",
-        profile.unwrap_or_default()
-    )
-}
-
 /// Checks the name of `--profile`, finds the configuration folder and reads the
 /// profile (CLI-010, "Finding the profile"), before anything is scanned.
 ///
@@ -172,10 +183,11 @@ fn load_profile(name: &str) -> Result<ImportProfile, String> {
     check_profile_name(name)?;
     let folder = process_configuration_folder()?;
     let home = process_home_folder()?;
+    let profiles = profiles_folder(&folder);
     read_profile(
         &StdFileSystem::new(),
         &SaphyrParser::new(),
-        &profiles_folder(&folder),
+        &profiles,
         name,
         &home,
     )

@@ -13,15 +13,22 @@ use std::sync::mpsc::{self, Receiver, Sender};
 use domain::Clock;
 use files::{FileSystem, FreeSpace, Hasher, ReadOnlyFileSystem};
 use history::ImportHistory;
-use jobs::{Job, JobControl, JobEnd};
+use jobs::{Job, JobControl, JobEnd, ResourceKey};
 use naming::{CompatibilityMode, NameTemplate, SequenceCounters};
 
 use crate::conflicts::ConflictPolicy;
+use crate::dry_run::DryRunMemory;
 use crate::job_code::JobCode;
 use crate::report::{FileReport, ImportSummary, ProgressSink, RunError};
-use crate::run::{ImportRun, ImportSettings, PlannedRun, RunSteps};
+use crate::reserved_names::{ReservedNames, ReservedTargetNames};
+use crate::run::{ImportRun, ImportSettings, PlannedRun};
 use crate::scan::SourceScan;
 use crate::sequence::SessionSequence;
+
+mod enqueue;
+mod sending;
+
+use sending::{Answer, SendingSteps};
 
 /// The ports an import job works through, owned so they can move to the worker
 /// thread and be shared with the application that enqueued it.
@@ -42,6 +49,8 @@ pub struct ImportPorts {
     pub history: Arc<dyn ImportHistory + Send + Sync>,
     /// How much the destinations can hold (IMPORT-012).
     pub free_space: Arc<dyn FreeSpace + Send + Sync>,
+    /// The target names the import jobs of this application reserved (IMPORT-015).
+    pub reserved_names: Arc<ReservedTargetNames>,
 }
 
 impl ImportPorts {
@@ -57,6 +66,7 @@ impl ImportPorts {
             &*self.history,
             &*self.free_space,
         )
+        .with_reserved_names(&self.reserved_names, None)
     }
 }
 
@@ -145,6 +155,10 @@ pub struct ImportJob {
     plan: Option<PlannedRun>,
     asks: bool,
     reports: Sender<Report>,
+    /// The target names reserved when the job was enqueued, until it ends.
+    reserved: Option<ReservedNames>,
+    /// The memory of the command's dry run, for a dry-run job (IMPORT-016).
+    dry_run_memory: Option<Arc<DryRunMemory>>,
 }
 
 /// What an import job sends to its enqueuer, in this order.
@@ -152,8 +166,8 @@ enum Report {
     ScanFinished(SourceScan),
     FileStarted(PathBuf),
     FileFinished(FileReport),
-    /// Asks whether to go on with the next file; the answer goes back on the sender.
-    GoOn(Sender<bool>),
+    /// Asks whether to go on with the next file.
+    GoOn(Answer),
     Ended(ImportJobEnd),
 }
 
@@ -170,6 +184,8 @@ impl ImportJob {
             plan: None,
             asks: false,
             reports,
+            reserved: None,
+            dry_run_memory: None,
         };
         (job, ImportJobReports { receiver })
     }
@@ -201,6 +217,20 @@ impl ImportJob {
         self
     }
 
+    /// Gives a dry-run job the `memory` of the command's dry run: the job reserves its
+    /// numbers and target names at enqueue in `memory` and the shared register, as a
+    /// real job does, and its target names stay reserved after it ended (IMPORT-016).
+    /// A job that is not a dry run ignores it.
+    #[must_use]
+    pub fn with_dry_run_memory(mut self, memory: Arc<DryRunMemory>) -> Self {
+        if self.settings.dry_run {
+            // Its counters are the memory's, so the job cannot store a number.
+            self.ports.counters = Arc::clone(&memory) as _;
+            self.dry_run_memory = Some(memory);
+        }
+        self
+    }
+
     /// Runs the import and sends its end report; returns how it ended.
     fn import(self, control: &JobControl) -> JobEnd {
         let ImportJob {
@@ -210,15 +240,15 @@ impl ImportJob {
             plan,
             asks,
             reports,
+            reserved,
+            dry_run_memory,
         } = self;
         let settings = settings.settings();
-        let mut steps = SendingSteps {
-            reports: &reports,
-            control,
-            asks,
-        };
+        let mut steps = SendingSteps::new(&reports, control, asks);
         let result = {
-            let mut run = ports.import_run();
+            let mut run = ports
+                .import_run()
+                .with_reserved_names(&ports.reserved_names, reserved.as_ref());
             if let Some((file_system, name)) = &source {
                 run = run.with_source(&**file_system).with_source_name(name);
             }
@@ -235,54 +265,24 @@ impl ImportJob {
             Err(error) => JobEnd::Failed(error.to_string()),
         };
         let source = source.map(|(file_system, _)| file_system);
+        // Released before the enqueuer hears of the end, so a job it enqueues next
+        // finds the names free; a dry run keeps them, as it created no file.
+        match (dry_run_memory, reserved) {
+            (Some(memory), Some(names)) => memory.keep(names),
+            (_, names) => drop(names),
+        }
         let _ = reports.send(Report::Ended(ImportJobEnd { result, source }));
         end
     }
 }
 
 impl Job for ImportJob {
+    fn resources(&self) -> Vec<ResourceKey> {
+        self.resource_keys()
+    }
+
     fn run(self: Box<Self>, control: &JobControl) -> JobEnd {
         self.import(control)
-    }
-}
-
-/// Sends the steps of the run to the enqueuer. Nobody listening is not an error: the
-/// import still runs.
-struct SendingSteps<'s> {
-    reports: &'s Sender<Report>,
-    control: &'s JobControl,
-    asks: bool,
-}
-
-impl RunSteps for SendingSteps<'_> {
-    fn scan_finished(&mut self, scan: &SourceScan) {
-        let _ = self.reports.send(Report::ScanFinished(scan.clone()));
-    }
-
-    fn file_started(&mut self, path: &Path) {
-        let _ = self.reports.send(Report::FileStarted(path.to_path_buf()));
-    }
-
-    fn file_finished(&mut self, report: FileReport) {
-        let _ = self.reports.send(Report::FileFinished(report));
-    }
-
-    /// The enqueuer is asked first, so that a stop it asked for while it followed
-    /// the reports is seen before the next file.
-    fn should_continue(&mut self) -> bool {
-        (!self.asks || self.enqueuer_goes_on()) && self.control.should_continue()
-    }
-}
-
-impl SendingSteps<'_> {
-    /// Asks the enqueuer whether to go on and waits for the answer. An enqueuer that
-    /// no longer listens cannot answer; the import goes on.
-    fn enqueuer_goes_on(&self) -> bool {
-        let (answer, answered) = mpsc::channel();
-        if self.reports.send(Report::GoOn(answer)).is_err() {
-            return true;
-        }
-        answered.recv().unwrap_or(true)
     }
 }
 
@@ -327,9 +327,7 @@ impl ImportJobReports {
                     progress.file_finished(&report);
                     files.push(report);
                 }
-                Report::GoOn(answer) => {
-                    let _ = answer.send(progress.should_continue());
-                }
+                Report::GoOn(answer) => answer.give(progress.should_continue()),
                 Report::Ended(mut end) => {
                     if let Ok(summary) = &mut end.result {
                         summary.files = files;

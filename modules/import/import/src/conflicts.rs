@@ -11,9 +11,11 @@ use std::path::{Path, PathBuf};
 use domain::Checksum;
 use files::{EntryKind, FileSystem, Hasher, ReadOnlyFileSystem, checksum_file};
 
+mod reserved;
 mod target_names;
 
-use target_names::{candidates, caseless_key, join_target, split_target};
+pub(crate) use target_names::caseless_key;
+use target_names::{candidates, join_target, split_target};
 
 /// What the import does when a target name holds a different file or a folder
 /// (glossary: Conflict policy).
@@ -126,6 +128,8 @@ pub struct TargetResolver<'a> {
     source_checksums: HashMap<PathBuf, Checksum>,
     /// Checksums of destination files by absolute path, so that no file is read twice.
     checksums: HashMap<PathBuf, Checksum>,
+    /// The target names other import jobs reserved (IMPORT-015).
+    reserved: Option<reserved::Reserved<'a>>,
 }
 
 #[derive(Debug, Clone)]
@@ -171,6 +175,7 @@ impl<'a> TargetResolver<'a> {
             folders: HashMap::new(),
             source_checksums: HashMap::new(),
             checksums: HashMap::new(),
+            reserved: None,
         }
     }
 
@@ -238,6 +243,9 @@ impl<'a> TargetResolver<'a> {
             } else {
                 Holder::Different
             });
+        }
+        if self.reserved_by_another_job(candidate) {
+            return Ok(Holder::Different);
         }
         let entries = self.existing(candidate)?;
         if entries.is_empty() {

@@ -18,7 +18,7 @@ Part of the [requirements](README.md).
 
 | ID | Requirement | Priority |
 |---|---|---|
-| N8 | **Profiles/presets**: destination, naming, folders, backup, metadata as a named profile ("Vacation", "Client job", "Phone"). A profile can be automatically bound to a device | M |
+| N8 | **Profiles/presets**: naming, folders, backup, metadata as a named profile ("Vacation", "Client job", "Phone"). A profile can be automatically bound to a device. The destination is not part of a profile; it is given on the command line (ADR 0036) | M |
 | N9 | **Template language with live preview**: e.g. `{date:%Y}/{date:%Y-%m-%d}_{job}/{date:%Y%m%d}-{seq:4}.{ext}`. Graphical block editor *and* text mode; preview shows 5 real files from the current selection including conflict detection | M |
 | N10 | **Large preview / loupe** with keyboard control (space bar, arrow keys) and **culling** (pick/reject, star ratings). Reject = not imported; stars are written to XMP | M |
 | N11 | **Grouping**: RAW+JPEG as one asset (B23–B28, M); burst shots and exposure sequences as stacks in the grid (B5, S) | M/S |

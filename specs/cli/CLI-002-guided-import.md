@@ -244,3 +244,4 @@ has none.
 | 2026-11-01 | Exit code 2 also covers an unknown home folder or current folder, as implemented |
 | 2026-11-02 | Criterion CLI-002.15 for the unknown home folder or current folder |
 | 2026-11-06 | Cameras in the guided import (CLI-014): cross-reference; the waiting texts name cameras |
+| 2026-11-07 | No-terminal message names `<source> <destination>` (CLI-016) |

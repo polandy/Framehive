@@ -16,9 +16,8 @@ use import::{IMPORT_PROFILE_SCHEMA_ID, ImportProfile};
 use support::{Folders, stderr, stdout};
 
 /// Every key of IMPORT-011, as it is written in a file.
-const KEYS: [&str; 10] = [
+const KEYS: [&str; 9] = [
     "schema_version:",
-    "destination:",
     "video_destination:",
     "naming:",
     "template:",
@@ -54,6 +53,8 @@ fn config_init_writes_the_example() {
     for key in KEYS {
         assert!(text.contains(key), "{key} is missing:\n{text}");
     }
+    // A profile no longer names the folder to import into (IMPORT-011).
+    assert!(!text.contains("# destination:"), "{text}");
     assert!(text.contains(&format!(
         "# yaml-language-server: $schema={IMPORT_PROFILE_SCHEMA_ID}"
     )));

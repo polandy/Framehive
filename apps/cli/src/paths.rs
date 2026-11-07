@@ -26,6 +26,8 @@ pub(crate) enum PathError {
     SourceMissing(PathBuf),
     /// The source path cannot be resolved.
     SourceCannotBeRead(PathBuf, io::Error),
+    /// The source exists, but is not a folder.
+    SourceNotAFolder(PathBuf),
     /// The working folder, needed for a relative path, cannot be read.
     WorkingFolder(io::Error),
     /// The missing part of the destination steps up with `..`, which cannot be
@@ -59,6 +61,11 @@ impl fmt::Display for PathError {
                     path.display()
                 )
             }
+            PathError::SourceNotAFolder(path) => write!(
+                formatter,
+                "the source {} is not a folder; give the folder that holds it",
+                path.display()
+            ),
             PathError::WorkingFolder(error) => {
                 write!(formatter, "the working folder cannot be read: {error}")
             }
@@ -101,19 +108,26 @@ impl fmt::Display for PathError {
     }
 }
 
-/// Resolves the source to an absolute path without `..` or symbolic links.
+/// Resolves the source to an absolute path without `..` or symbolic links, and checks
+/// that it is a folder (CLI-016).
 ///
 /// # Errors
 ///
-/// Returns a [`PathError`] if the source does not exist or cannot be resolved.
+/// Returns a [`PathError`] if the source does not exist, cannot be resolved or is not
+/// a folder.
 pub(crate) fn resolve_source(source: &Path) -> Result<PathBuf, PathError> {
-    std::fs::canonicalize(source).map_err(|error| {
+    let unreadable = |error: io::Error| {
         if error.kind() == io::ErrorKind::NotFound {
             PathError::SourceMissing(source.to_path_buf())
         } else {
             PathError::SourceCannotBeRead(source.to_path_buf(), error)
         }
-    })
+    };
+    let resolved = std::fs::canonicalize(source).map_err(unreadable)?;
+    if !std::fs::metadata(&resolved).map_err(unreadable)?.is_dir() {
+        return Err(PathError::SourceNotAFolder(source.to_path_buf()));
+    }
+    Ok(resolved)
 }
 
 /// Resolves the destination: its longest existing part without symbolic links, with

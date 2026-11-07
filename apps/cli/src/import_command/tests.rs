@@ -14,7 +14,7 @@ use std::sync::Arc;
 use files::testing::{MemoryCameras, MemoryFreeSpace, TempDir};
 use import::ImportSummary;
 
-use super::{NotStarted, Surroundings, import_with};
+use super::{NotStarted, Surroundings, import_with, locations};
 use crate::arguments::{Invocation, parse};
 
 /// A card with `DSCF0001.RAF` of 2.5 MB, and the folders of one test run.
@@ -43,7 +43,7 @@ impl Folders {
         self.root.join(name)
     }
 
-    /// Runs `framehive import <card> <arguments>` against `free_space`.
+    /// Runs `framehive import <card> --destination <arguments>` against `free_space`.
     fn import(&self, arguments: &[&Path], free_space: &MemoryFreeSpace) -> Run {
         self.import_from(
             self.path("card").as_os_str(),
@@ -53,7 +53,8 @@ impl Folders {
         )
     }
 
-    /// Runs `framehive import <source> <library> <options>` with `cameras` connected.
+    /// Runs `framehive import <source> --destination <library> <options>` with `cameras`
+    /// connected.
     pub(super) fn import_camera(
         &self,
         source: &str,
@@ -71,8 +72,8 @@ impl Folders {
         )
     }
 
-    /// Runs `framehive import <source> <arguments>` against `free_space` and
-    /// `cameras`.
+    /// Runs `framehive import <source> --destination <arguments>` against `free_space`
+    /// and `cameras`.
     fn import_from(
         &self,
         source: &OsStr,
@@ -80,8 +81,10 @@ impl Folders {
         free_space: &MemoryFreeSpace,
         cameras: &MemoryCameras,
     ) -> Run {
+        // The first of `arguments` is the destination.
         let mut line: Vec<OsString> = vec!["framehive".into(), "import".into()];
         line.push(source.to_owned());
+        line.push("--destination".into());
         line.extend(
             arguments
                 .iter()
@@ -92,8 +95,11 @@ impl Folders {
         };
         let mut output = Vec::new();
         let mut errors = Vec::new();
+        // One source: its result is the only one.
+        let locations = locations(&arguments).unwrap();
         let result = import_with(
             &arguments,
+            &locations,
             None,
             Surroundings {
                 state_folder: &self.path("state"),
@@ -102,7 +108,8 @@ impl Folders {
                 output: &mut output,
                 errors: &mut errors,
             },
-        );
+        )
+        .and_then(|mut results| results.remove(0));
         Run {
             result,
             output: String::from_utf8(output).unwrap(),
@@ -122,7 +129,7 @@ impl Run {
     /// The lines of the error that kept the import from starting.
     pub(super) fn not_started(&self) -> &[String] {
         match &self.result {
-            Err(NotStarted(lines)) => lines,
+            Err(NotStarted { messages, .. }) => messages,
             Ok(_) => panic!("the import ran: {}", self.output),
         }
     }

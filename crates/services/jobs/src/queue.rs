@@ -2,15 +2,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 //! The job queue: enqueue, stop, remove and shut down, none of which waits for a job
-//! (CORE-007, ADR 0035 §2).
+//! (CORE-007, ADR 0035, ADR 0036).
 
 use std::collections::VecDeque;
 use std::sync::mpsc::{self, Receiver, Sender};
-use std::sync::{Arc, Condvar, Mutex, MutexGuard, PoisonError};
+use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::thread::JoinHandle;
 
-use crate::job::{Job, JobControl, JobId, JobState, JobUpdate};
-use crate::worker::run_worker;
+use crate::job::{Job, JobControl, JobId, JobState, JobUpdate, ResourceKey};
+use crate::worker::start_ready_jobs;
 
 /// The job asked for is neither queued nor running: it has ended, or the queue does
 /// not know it. Nothing changed (CORE-007.7).
@@ -18,31 +18,45 @@ use crate::worker::run_worker;
 #[error("{0} is not queued or running")]
 pub struct NotQueuedOrRunning(pub JobId);
 
-/// Runs jobs one after another, in the order they were enqueued, on a worker thread
-/// of its own (glossary: Job queue).
+/// Runs jobs in the background, each on a worker thread of its own; jobs that name a
+/// common resource run one after another, in the order they were enqueued (glossary:
+/// Job queue).
 ///
 /// Each change of a job's state is sent, as a [`JobUpdate`], to the receiver that
 /// [`JobQueue::start`] returns. Dropping the queue shuts it down.
 pub struct JobQueue {
     shared: Arc<Shared>,
     last_id: u64,
-    worker: Option<JoinHandle<()>>,
+    closed: bool,
 }
 
-/// What the queue and its worker share.
+/// What the queue and its worker threads share.
 pub(crate) struct Shared {
     lineup: Mutex<Lineup>,
-    /// Wakes the worker when a job is enqueued or the queue shuts down.
-    pub(crate) wake: Condvar,
 }
 
-/// The jobs that wait and the one that runs. Every state is sent while the lineup is
+/// A job that waits, with the resources it named when it was enqueued.
+pub(crate) struct Waiting {
+    pub(crate) id: JobId,
+    pub(crate) job: Box<dyn Job>,
+    pub(crate) resources: Vec<ResourceKey>,
+}
+
+/// A job that a worker thread runs.
+pub(crate) struct Running {
+    pub(crate) id: JobId,
+    pub(crate) control: JobControl,
+    pub(crate) resources: Vec<ResourceKey>,
+}
+
+/// The jobs that wait and the ones that run. Every state is sent while the lineup is
 /// locked, so the states of each job arrive in the order they happened.
 pub(crate) struct Lineup {
-    pub(crate) waiting: VecDeque<(JobId, Box<dyn Job>)>,
-    pub(crate) running: Option<(JobId, JobControl)>,
-    /// The queue is shutting down: the worker ends once the lineup is empty.
-    pub(crate) closing: bool,
+    /// In the order the jobs were enqueued.
+    pub(crate) waiting: VecDeque<Waiting>,
+    pub(crate) running: Vec<Running>,
+    /// The worker threads that may still run; finished ones are dropped now and then.
+    pub(crate) workers: Vec<JoinHandle<()>>,
     updates: Sender<JobUpdate>,
 }
 
@@ -54,7 +68,7 @@ impl Lineup {
 
     /// Removes the waiting job `id`, if it waits, and reports it `Removed`.
     fn remove_waiting(&mut self, id: JobId) -> bool {
-        let Some(position) = self.waiting.iter().position(|(job, _)| *job == id) else {
+        let Some(position) = self.waiting.iter().position(|waiting| waiting.id == id) else {
             return false;
         };
         self.waiting.remove(position);
@@ -62,60 +76,58 @@ impl Lineup {
         true
     }
 
-    /// Asks the running job to stop, if it is `id`.
+    /// Asks the running job `id` to stop, if it runs.
     fn stop_running(&self, id: JobId) -> bool {
-        match &self.running {
-            Some((running, control)) if *running == id => {
-                control.request_stop();
+        match self.running.iter().find(|running| running.id == id) {
+            Some(running) => {
+                running.control.request_stop();
                 true
             }
-            _ => false,
+            None => false,
         }
     }
 }
 
 impl Shared {
-    /// The lineup, also after a job panicked while the worker held it: the lineup
-    /// itself is changed only by the short steps of this crate, which do not panic.
+    /// The lineup, also after a job panicked while a worker held it: the lineup itself
+    /// is changed only by the short steps of this crate, which do not panic.
     pub(crate) fn lineup(&self) -> MutexGuard<'_, Lineup> {
         self.lineup.lock().unwrap_or_else(PoisonError::into_inner)
     }
 }
 
 impl JobQueue {
-    /// Starts an empty queue and its worker thread, and returns the queue with the
-    /// receiver of its job updates.
+    /// Starts an empty queue, and returns it with the receiver of its job updates.
     #[must_use]
     pub fn start() -> (JobQueue, Receiver<JobUpdate>) {
         let (updates, receiver) = mpsc::channel();
         let shared = Arc::new(Shared {
             lineup: Mutex::new(Lineup {
                 waiting: VecDeque::new(),
-                running: None,
-                closing: false,
+                running: Vec::new(),
+                workers: Vec::new(),
                 updates,
             }),
-            wake: Condvar::new(),
         });
-        let worker_shared = Arc::clone(&shared);
-        let worker = std::thread::spawn(move || run_worker(&worker_shared));
         let queue = JobQueue {
             shared,
             last_id: 0,
-            worker: Some(worker),
+            closed: false,
         };
         (queue, receiver)
     }
 
-    /// Puts `job` at the end of the queue, reports it `Queued` and returns its job id
+    /// Puts `job` at the end of the queue, reports it `Queued`, starts it if it
+    /// conflicts with no job before it (CORE-007, "Scheduling"), and returns its job id
     /// at once.
     pub fn enqueue(&mut self, job: Box<dyn Job>) -> JobId {
         self.last_id += 1;
         let id = JobId::new(self.last_id);
+        let resources = job.resources();
         let mut lineup = self.shared.lineup();
         lineup.report(id, JobState::Queued);
-        lineup.waiting.push_back((id, job));
-        self.shared.wake.notify_all();
+        lineup.waiting.push_back(Waiting { id, job, resources });
+        start_ready_jobs(&self.shared, &mut lineup);
         id
     }
 
@@ -140,8 +152,8 @@ impl JobQueue {
         self.withdraw(id)
     }
 
-    /// Removes the queued jobs, asks the running job to stop, and returns once it has
-    /// ended and its state is reported.
+    /// Asks every running job to stop, removes the queued jobs, and returns once every
+    /// running job has ended and its state is reported.
     pub fn shut_down(mut self) {
         self.close();
     }
@@ -156,24 +168,26 @@ impl JobQueue {
     }
 
     fn close(&mut self) {
-        let Some(worker) = self.worker.take() else {
+        if std::mem::replace(&mut self.closed, true) {
             return;
-        };
-        {
-            let mut lineup = self.shared.lineup();
-            lineup.closing = true;
-            // The running job is asked first: a frontend that sees a queued job
-            // reported removed can rely on the running one being asked to stop.
-            if let Some((_, control)) = &lineup.running {
-                control.request_stop();
-            }
-            while let Some((id, _job)) = lineup.waiting.pop_front() {
-                lineup.report(id, JobState::Removed);
-            }
-            self.shared.wake.notify_all();
         }
-        // The worker catches the panics of the jobs, so it does not end by one.
-        let _ = worker.join();
+        let workers = {
+            let mut lineup = self.shared.lineup();
+            // The running jobs are asked first: a frontend that sees a queued job
+            // reported removed can rely on the running ones being asked to stop.
+            for running in &lineup.running {
+                running.control.request_stop();
+            }
+            while let Some(waiting) = lineup.waiting.pop_front() {
+                lineup.report(waiting.id, JobState::Removed);
+            }
+            // With nothing waiting, no worker starts another one, so these are all.
+            std::mem::take(&mut lineup.workers)
+        };
+        for worker in workers {
+            // A worker catches the panic of its job, so it does not end by one.
+            let _ = worker.join();
+        }
     }
 }
 

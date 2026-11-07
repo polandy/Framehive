@@ -9,6 +9,7 @@
 mod backup;
 mod conflicts;
 mod destinations;
+mod dry_run;
 mod free_space;
 mod job;
 mod job_code;
@@ -17,6 +18,7 @@ mod profile;
 mod readiness;
 mod recent_job_codes;
 mod report;
+mod reserved_names;
 mod roles;
 mod run;
 mod scan;
@@ -33,6 +35,7 @@ pub use conflicts::{
     ConflictError, ConflictOutcome, ConflictPolicy, TargetRequest, TargetResolver,
 };
 pub use destinations::{VideoDestinationError, VideoDestinationProblem, check_video_destination};
+pub use dry_run::DryRunMemory;
 pub use free_space::{FreeSpaceCheck, FreeSpaceUnknown, NotEnoughSpace, SpaceShortage};
 pub use job::{
     ImportJob, ImportJobEnd, ImportJobReports, ImportJobSettings, ImportPorts, OwnSource,
@@ -50,6 +53,7 @@ pub use recent_job_codes::{MAX_RECENT_JOB_CODES, RecentJobCodes};
 pub use report::{
     FileError, FileOutcome, FileReport, ImportSummary, NoProgress, ProgressSink, RunError,
 };
+pub use reserved_names::ReservedTargetNames;
 pub use run::{FilePlan, ImportRun, ImportSettings, PlannedRun, RunFile};
 pub use scan::{
     FoundFile, LeftOut, LeftOutReason, ScanError, SourceScan, scan_camera, scan_folder, scan_source,

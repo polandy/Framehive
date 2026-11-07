@@ -7,14 +7,15 @@
 
 ## Purpose
 
-`framehive import --profile holiday /run/media/ada/CARD` imports a card with the
+`framehive import --profile holiday /run/media/ada/CARD ~/Pictures` imports a card with the
 settings of a named import profile (IMPORT-011), so nobody repeats them on every run.
 `framehive config init` writes a commented example to start from.
 
 ## Behaviour
 
 ```
-framehive import <source> [<destination>] [--profile <name>] [other arguments]
+framehive import <source>... <destination> [--profile <name>] [other arguments]
+framehive import --destination <folder> <source>... [--profile <name>] [...]
 framehive config init
 ```
 
@@ -56,16 +57,12 @@ replaces the profile's value, also for lists (ADR 0032):
 
 | Setting | Option | Profile key |
 |---|---|---|
-| Destination | `<destination>` | `destination` |
 | Template | `--template` | `naming.template` |
 | Conflict policy | `--on-conflict` | `naming.on_conflict` |
 | Job code | `--job-code` | the first of `job_codes` |
 | Backup destinations | every `--backup` | `backup.destinations` |
 
-`<destination>` is optional with `--profile`; without a destination from either, the
-command stops with exit code 2 and `error: no destination: give one, or set destination
-in the profile <name>`. Without `--profile`, `<destination>` stays required, as in
-CLI-001.
+The destination is never taken from a profile (CLI-016, IMPORT-011).
 
 A job code taken from the profile is checked as in CLI-001. The warning of CLI-001 for a
 job code that the template does not use is printed only for `--job-code`, not for a
@@ -86,10 +83,10 @@ The guided import (CLI-002) does not use profiles.
 ## Acceptance criteria
 
 ### CLI-010.1 – A profile supplies the settings
-- **Given** the source of CLI-001.1, and a profile `holiday` with an empty folder as
-  `destination`, the template `{date:%Y%m%d}-{name}.{ext}` and an empty folder in
+- **Given** the source of CLI-001.1, an empty folder `<destination>`, and a profile
+  `holiday` with the template `{date:%Y%m%d}-{name}.{ext}` and an empty folder in
   `backup.destinations`
-- **When** `framehive import <source> --profile holiday` runs
+- **When** `framehive import <source> <destination> --profile holiday` runs
 - **Then** the destination and the backup destination have `20261017-DSCF0001.RAF`,
   and the exit code is 0
 
@@ -97,8 +94,8 @@ The guided import (CLI-002) does not use profiles.
 - **Given** the profile of CLI-010.1 and another empty folder `<other>`
 - **When** `framehive import <source> <other> --profile holiday --template
   '{name}.{ext}'` runs
-- **Then** `<other>` has `DSCF0001.RAF`, the profile's destination stays empty, and the
-  exit code is 0
+- **Then** `<other>` has `DSCF0001.RAF` and not the name by the profile's template, and
+  the exit code is 0
 
 ### CLI-010.3 – `--backup` replaces the profile's list
 - **Given** the profile of CLI-010.1 and another empty folder `<drive>`
@@ -119,11 +116,11 @@ The guided import (CLI-002) does not use profiles.
 - **When** the command runs
 - **Then** standard error has no warning, and the exit code is 0
 
-### CLI-010.6 – No destination
-- **Given** a profile `holiday` without `destination`
-- **When** `framehive import <source> --profile holiday` runs
-- **Then** nothing is scanned, standard error has `error: no destination: give one, or
-  set destination in the profile holiday`, and the exit code is 2
+### CLI-010.6 – A profile with a destination
+- **Given** a profile `holiday` with `destination`
+- **When** `framehive import <source> <destination> --profile holiday` runs
+- **Then** nothing is scanned, standard error is the error of CLI-016.13, and the exit
+  code is 2
 
 ### CLI-010.7 – Unknown profile
 - **Given** a profiles folder with `client.yaml` and `holiday.yaml`
@@ -144,10 +141,11 @@ The guided import (CLI-002) does not use profiles.
   is read
 
 ### CLI-010.10 – An invalid profile names the file and the position
-- **Given** a profile `holiday.yaml` whose line 2 is `destinaton: /a`
+- **Given** a profile `holiday.yaml` whose line 2 is `video_destinaton: /a`
 - **When** the command runs with `--profile holiday`
-- **Then** standard error has `error: <folder>/holiday.yaml:2:1: unknown key destinaton;
-  did you mean destination?`, nothing is scanned, and the exit code is 2
+- **Then** standard error has `error: <folder>/holiday.yaml:2:1: unknown key
+  video_destinaton; did you mean video_destination?`, nothing is scanned, and the exit
+  code is 2
 
 ### CLI-010.11 – A profile that is not UTF-8
 - **Given** a profile `holiday.yaml` with the byte `0xFF`
@@ -186,10 +184,10 @@ The guided import (CLI-002) does not use profiles.
 - **Then** the file still holds `# mine`, standard error has `error: <path> exists
   already; nothing was written`, and the exit code is 1
 
-### CLI-010.17 – Without `--profile` the destination stays required
-- **Given** the source of CLI-001.1
-- **When** `framehive import <source>` runs
-- **Then** it is an invalid argument as in CLI-001.11, and the exit code is 2
+### CLI-010.17 – A profile does not supply the destination
+- **Given** the source of CLI-001.1 and the profile of CLI-010.1
+- **When** `framehive import <source> --profile holiday` runs
+- **Then** standard error is the error of CLI-016.2, and the exit code is 2
 
 ### CLI-010.18 – Unknown home folder with `XDG_CONFIG_HOME`
 - **Given** Linux, an absolute `XDG_CONFIG_HOME` with the profile, and `HOME` not set
@@ -215,3 +213,4 @@ The guided import (CLI-002) does not use profiles.
 | 2026-11-05 | Initial draft (N8, N18, N25, ADR 0032); accepted by the owner |
 | 2026-11-05 | Implemented in `framehive-cli` |
 | 2026-11-05 | Added CLI-010.18 (unknown home folder) |
+| 2026-11-07 | Profiles have no destination (CLI-016, ADR 0036); CLI-010.1, .2, .6, .10 and .17 changed |

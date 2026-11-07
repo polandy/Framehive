@@ -14,7 +14,7 @@ in one run, and can tell from the exit code whether every copy is verified.
 ## Behaviour
 
 ```
-framehive import <source> <destination> [--backup <folder>]... [other arguments]
+framehive import <source> --destination <destination> [--backup <folder>]... [other arguments]
 ```
 
 `--backup <folder>` adds a backup destination. It can be given more than once; the
@@ -46,7 +46,7 @@ be created, stops the command before any file is copied, with exit code 2.
 ### CLI-005.1 – Import with a backup destination
 - **Given** a source with `DSCF0001.RAF` taken on 2026-10-17, and an empty destination
   and backup folder
-- **When** the user runs `framehive import <source> <destination> --backup <backup>`
+- **When** the user runs `framehive import <source> --destination <destination> --backup <backup>`
 - **Then** both folders have `2026/2026-10-17/DSCF0001.RAF`, the output has the line
   `copied  DSCF0001.RAF -> 2026/2026-10-17/DSCF0001.RAF` followed by
   `  backed up  <backup>`, the summary line is followed by
@@ -95,3 +95,4 @@ be created, stops the command before any file is copied, with exit code 2.
 | 2026-11-04 | Initial draft for backup destinations (IMPORT-007); accepted by the owner |
 | 2026-11-04 | Implemented in `framehive-cli` |
 | 2026-11-04 | The import history recognizes a re-run (CLI-008): CLI-005.2 now runs without the history, so it still tests IMPORT-003 and IMPORT-007 |
+| 2026-11-07 | Examples name the destination with `--destination` (CLI-001, ADR 0036) |

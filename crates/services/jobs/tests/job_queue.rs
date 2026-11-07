@@ -2,91 +2,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 //! The job queue (CORE-007). The jobs of these tests wait on channels the test opens,
-//! so every order is fixed without sleeping.
+//! so every order is fixed without sleeping. Unless a test says otherwise, its jobs
+//! name one common resource, `disk`, so they run one after another.
 
-#![allow(clippy::unwrap_used, clippy::panic, clippy::struct_field_names)]
+#![allow(clippy::unwrap_used, clippy::panic)]
 
-use std::sync::mpsc::{self, Receiver, Sender};
+mod support;
 
-use jobs::{Job, JobControl, JobEnd, JobId, JobQueue, JobState, JobUpdate, NotQueuedOrRunning};
-
-/// A job that ends at once as it is told.
-struct Ends(JobEnd);
-
-impl Job for Ends {
-    fn run(self: Box<Self>, _control: &JobControl) -> JobEnd {
-        self.0
-    }
-}
-
-/// A job that panics.
-struct Panics;
-
-impl Job for Panics {
-    fn run(self: Box<Self>, _control: &JobControl) -> JobEnd {
-        panic!("broken on purpose");
-    }
-}
-
-/// A job of `steps` steps. Before each step it asks whether to go on; then it says
-/// which step it is at and waits until the test opens the gate.
-struct Steps {
-    steps: usize,
-    at_step: Sender<usize>,
-    gate: Receiver<()>,
-}
-
-impl Job for Steps {
-    fn run(self: Box<Self>, control: &JobControl) -> JobEnd {
-        for step in 0..self.steps {
-            if !control.should_continue() {
-                return JobEnd::Stopped;
-            }
-            let _ = self.at_step.send(step);
-            let _ = self.gate.recv();
-        }
-        JobEnd::Finished
-    }
-}
-
-/// The handles a test holds of a [`Steps`] job.
-struct StepHandles {
-    at_step: Receiver<usize>,
-    gate: Sender<()>,
-}
-
-fn steps(count: usize) -> (Box<dyn Job>, StepHandles) {
-    let (at_step_sender, at_step) = mpsc::channel();
-    let (gate, gate_receiver) = mpsc::channel();
-    let job = Steps {
-        steps: count,
-        at_step: at_step_sender,
-        gate: gate_receiver,
-    };
-    (Box::new(job), StepHandles { at_step, gate })
-}
-
-fn finishes() -> Box<dyn Job> {
-    Box::new(Ends(JobEnd::Finished))
-}
-
-fn update(number: u64, state: JobState) -> JobUpdate {
-    JobUpdate {
-        job: JobId::new(number),
-        state,
-    }
-}
-
-/// Shuts the queue down and returns every update reported.
-fn all_updates(queue: JobQueue, updates: &Receiver<JobUpdate>) -> Vec<JobUpdate> {
-    queue.shut_down();
-    updates.try_iter().collect()
-}
-
-/// Waits for the next update.
-fn next(updates: &Receiver<JobUpdate>) -> JobUpdate {
-    updates.recv().unwrap()
-}
+use jobs::{JobEnd, JobId, JobQueue, JobState, JobUpdate, NotQueuedOrRunning};
+use support::*;
 
 /// spec: CORE-007.1
 #[test]
@@ -270,9 +194,10 @@ fn stopping_or_removing_an_ended_or_unknown_job_changes_nothing() {
 #[test]
 fn a_failing_job_does_not_stop_the_queue() {
     let (mut queue, updates) = JobQueue::start();
-    queue.enqueue(Box::new(Ends(JobEnd::Failed(
-        "the disk is full".to_owned(),
-    ))));
+    queue.enqueue(on(
+        &["disk"],
+        Ends(JobEnd::Failed("the disk is full".to_owned())),
+    ));
     queue.enqueue(finishes());
 
     let reported = [(); 6].map(|()| next(&updates));
@@ -288,7 +213,7 @@ fn a_failing_job_does_not_stop_the_queue() {
 #[test]
 fn a_panicking_job_does_not_stop_the_queue() {
     let (mut queue, updates) = JobQueue::start();
-    queue.enqueue(Box::new(Panics));
+    queue.enqueue(on(&["disk"], Panics));
     queue.enqueue(finishes());
 
     let reported = [(); 6].map(|()| next(&updates));

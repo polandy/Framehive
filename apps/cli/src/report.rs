@@ -84,6 +84,13 @@ impl<W: Write> ReportPrinter<W> {
     }
 }
 
+impl ReportPrinter<Vec<u8>> {
+    /// Takes the lines written so far, so they can be passed on as one piece.
+    pub(crate) fn take_written(&mut self) -> Vec<u8> {
+        std::mem::take(&mut self.output)
+    }
+}
+
 impl<W: Write> ProgressSink for ReportPrinter<W> {
     fn scan_finished(&mut self, scan: &SourceScan) {
         for left_out in &scan.left_out {

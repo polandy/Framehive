@@ -8,6 +8,29 @@ use domain::AssetFileRole;
 
 use super::{ImportRun, ImportSettings};
 use crate::conflicts::TargetResolver;
+use crate::reserved_names::{ReservedNames, ReservedTargetNames};
+
+/// The register of reserved target names a run resolves against, and the names its
+/// own job reserved, if any (IMPORT-015, "Reserved target names").
+#[derive(Clone, Copy)]
+pub(super) struct ReservedBy<'a> {
+    register: &'a ReservedTargetNames,
+    own: Option<&'a ReservedNames>,
+}
+
+impl<'a> ImportRun<'a> {
+    /// Counts the target names in `register` that a job other than the one holding
+    /// `own` reserved as taken (IMPORT-015.14).
+    #[must_use]
+    pub(crate) fn with_reserved_names(
+        mut self,
+        register: &'a ReservedTargetNames,
+        own: Option<&'a ReservedNames>,
+    ) -> Self {
+        self.reserved_names = Some(ReservedBy { register, own });
+        self
+    }
+}
 
 /// The target resolver of the import destination, and of the video destination when
 /// it is a folder of its own. A video destination that is the import destination
@@ -21,14 +44,18 @@ impl<'a> Resolvers<'a> {
     /// The resolvers of the destinations of `settings`, through the ports of `run`.
     pub(super) fn new(run: &ImportRun<'a>, settings: &ImportSettings<'a>) -> Self {
         let resolver = |destination| {
-            TargetResolver::new(
+            let resolver = TargetResolver::new(
                 run.source_file_system,
                 run.file_system,
                 run.hasher,
                 settings.source,
                 destination,
                 settings.policy,
-            )
+            );
+            match run.reserved_names {
+                Some(reserved) => resolver.with_reserved_names(reserved.register, reserved.own),
+                None => resolver,
+            }
         };
         Resolvers {
             import_destination: resolver(settings.destination),

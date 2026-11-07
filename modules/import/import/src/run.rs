@@ -20,7 +20,7 @@ use crate::job_code::require_job_code;
 use crate::plan::PlannedFile;
 use crate::report::{FileError, ImportSummary, ProgressSink, RunError};
 use crate::scan::{FoundFile, LeftOut, SourceScan, scan_source};
-use crate::sequence::{Reservation, SessionSequence};
+use crate::sequence::SessionSequence;
 
 mod copy;
 mod dating;
@@ -35,8 +35,7 @@ mod steps;
 
 use planning::PlanInputs;
 use recognition::{Recognition, RecordedRun};
-use rename::rename;
-use resolvers::Resolvers;
+use resolvers::{ReservedBy, Resolvers};
 pub use settings::ImportSettings;
 use steps::Keeping;
 pub(crate) use steps::RunSteps;
@@ -65,6 +64,8 @@ pub struct ImportRun<'a> {
     session: &'a SessionSequence,
     history: &'a dyn ImportHistory,
     free_space: &'a dyn FreeSpace,
+    /// The target names other import jobs reserved (IMPORT-015).
+    reserved_names: Option<ReservedBy<'a>>,
 }
 
 /// An import run that is planned and not yet executed: the selected files of a source
@@ -168,6 +169,7 @@ impl<'a> ImportRun<'a> {
             session,
             history,
             free_space,
+            reserved_names: None,
         }
     }
 
@@ -260,8 +262,8 @@ impl<'a> ImportRun<'a> {
     }
 
     /// Starts the import of `plan`: reserves its sequence numbers before the first
-    /// file is copied, and names its files again if another import took the numbers
-    /// the plan showed (IMPORT-002, "Reservation"). Then it records the start of the
+    /// file is copied, unless they are reserved already, and names its files again if
+    /// another import took the numbers the plan showed (IMPORT-002, "Reservation"). Then it records the start of the
     /// run in the import history (IMPORT-009). A dry run reserves and records nothing.
     /// It checks the backup destinations, the video destination and the video backup
     /// destinations first (IMPORT-007.11, IMPORT-013.8), and then that each file
@@ -295,12 +297,7 @@ impl<'a> ImportRun<'a> {
         if settings.dry_run {
             return Ok(plan);
         }
-        let first =
-            self.first_sequence_number(settings.template, &plan.naming, Reservation::Reserve)?;
-        if first != plan.naming.first_sequence_number {
-            plan.naming.first_sequence_number = first;
-            rename(&mut plan, settings);
-        }
+        let mut plan = self.reserve(settings, plan)?;
         plan.recorded = Some(self.start_recorded_run(settings)?);
         Ok(plan)
     }
