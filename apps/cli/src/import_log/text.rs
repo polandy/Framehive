@@ -8,7 +8,7 @@ use std::path::Path;
 
 use history::{LoggedRun, RecordedTime, RunLog};
 
-use super::shown;
+use super::shown as shown_lossy;
 
 /// What a run without an end shows in place of its end.
 const NOT_FINISHED: &str = "not finished";
@@ -70,11 +70,35 @@ pub(super) fn run_log(log: &RunLog) -> String {
             text,
             "  {} -> {}  {}",
             shown(&copy.source_path),
-            copy.target,
+            on_one_line(&copy.target),
             copy.checksum
         );
     }
     text
+}
+
+/// A path as the text prints it: lossy like the other formats, and on one line.
+fn shown(path: &Path) -> String {
+    on_one_line(&shown_lossy(path))
+}
+
+/// `value` with each control character escaped as in the JSON format (CLI-009), so a
+/// name with a line break cannot split a line of the text.
+fn on_one_line(value: &str) -> String {
+    let mut line = String::with_capacity(value.len());
+    for character in value.chars() {
+        match character {
+            '\n' => line.push_str("\\n"),
+            '\r' => line.push_str("\\r"),
+            '\t' => line.push_str("\\t"),
+            // Writing to a String does not fail.
+            control if control.is_control() => {
+                let _ = write!(line, "\\u{:04x}", u32::from(control));
+            }
+            other => line.push(other),
+        }
+    }
+    line
 }
 
 fn finished(finished_at: Option<RecordedTime>) -> String {
@@ -113,6 +137,14 @@ mod tests {
              \n\
              /backup\n  \
              DCIM/a,\"b\".jpg -> 2026/a,\"b\".jpg  blake3:0101\n"
+        );
+    }
+
+    #[test]
+    fn control_characters_are_escaped_and_everything_else_is_kept() {
+        assert_eq!(
+            on_one_line("a\nb\rc\td\u{1}e\u{7f}f\u{85}g\\h\u{fffd}ü"),
+            "a\\nb\\rc\\td\\u0001e\\u007ff\\u0085g\\h\u{fffd}ü"
         );
     }
 
