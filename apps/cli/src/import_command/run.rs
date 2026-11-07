@@ -126,12 +126,13 @@ type Given<'a> = (
 pub(super) type SourceResults = Vec<Result<ImportSummary, NotStarted>>;
 
 /// Chooses the settings and checks every source (CLI-016), then plans and enqueues the
-/// job of each source in the order given, and prints each job's report as it goes
-/// (CLI-001, CLI-015).
+/// job of each source in the order given, and prints each job's report, and the errors
+/// of a source that cannot start, as they come (CLI-001, CLI-015).
 ///
 /// # Errors
 ///
-/// Returns the messages of the errors that kept every source from starting.
+/// Returns the messages of the errors that kept every source from starting; they are
+/// not printed yet.
 pub(super) fn import_with(
     arguments: &ImportArguments,
     profile: Option<LoadedProfile>,
@@ -153,19 +154,24 @@ pub(super) fn import_with(
             .zip(&checked)
             .map(|(source, folders)| {
                 let given = (arguments, source.as_path(), &chosen, folders);
-                let (enqueued, camera) =
-                    enqueue_source(given, &ports, surroundings.cameras, &mut queue, streams)?;
-                opened.extend(camera);
                 let named = several.then_some(source.as_path());
-                Ok(scope.spawn(move || enqueued.follow(named, streams)))
+                // A source that cannot start is reported at once; the others go on.
+                let (enqueued, camera) = streams.reported(
+                    enqueue_source(given, &ports, surroundings.cameras, &mut queue, streams),
+                    named,
+                )?;
+                opened.extend(camera);
+                Ok(scope.spawn(move || streams.reported(enqueued.follow(named, streams), named)))
             })
             .collect();
         following
             .into_iter()
-            .map(|following| {
+            .zip(&arguments.sources)
+            .map(|(following, source)| {
                 following.and_then(|thread| {
                     thread.join().unwrap_or_else(|_| {
-                        Err(NotStarted::from(JOB_ENDED_UNEXPECTEDLY.to_owned()))
+                        let ended = Err(NotStarted::from(JOB_ENDED_UNEXPECTEDLY.to_owned()));
+                        streams.reported(ended, several.then_some(source.as_path()))
                     })
                 })
             })

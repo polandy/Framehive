@@ -10,7 +10,7 @@ mod support;
 
 use std::fs;
 use std::path::PathBuf;
-use std::process::Output;
+use std::process::{Output, Stdio};
 
 use support::{
     Folders, card, has_line, has_line_starting_with, import_in_root as import, lines, picture,
@@ -265,4 +265,33 @@ fn destination_replaces_the_destination_of_the_profile() {
         picture("b.jpg")
     );
     assert!(!holiday_library.exists());
+}
+
+/// spec: CLI-015.9
+#[test]
+fn the_error_of_a_source_comes_before_the_report_of_the_next() {
+    let folders = Folders::new();
+    card(&folders, "cardA", &["a.jpg"]);
+    card(&folders, "cardB", &["b.jpg"]);
+    let card_b = folders.root.path().join("cardB");
+    set_mode(&card_b, 0o000);
+    let both = folders.root.path().join("output.txt");
+    let file = fs::File::create(&both).unwrap();
+
+    let status = folders
+        .framehive_command(&["import", "cardB", "cardA", "--destination", "library"])
+        .current_dir(folders.root.path())
+        .stdout(Stdio::from(file.try_clone().unwrap()))
+        .stderr(Stdio::from(file))
+        .status()
+        .unwrap();
+
+    set_mode(&card_b, 0o755);
+    let written = fs::read_to_string(&both).unwrap();
+    let position = |wanted: &dyn Fn(&str) -> bool| written.lines().position(wanted);
+    let error = position(&|line| line.starts_with("error: cardB: "));
+    let report = position(&|line| line == "cardA:");
+    assert!(error.is_some() && report.is_some(), "{written}");
+    assert!(error < report, "{written}");
+    assert_eq!(status.code(), Some(2));
 }

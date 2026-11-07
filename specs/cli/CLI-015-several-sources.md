@@ -28,7 +28,8 @@ the profile, names the destination (CLI-016). Arguments that hold for every sour
 as the template or the job code, are checked once, before any source; so are the sources themselves (CLI-016). An
 error there starts no source. A source that passes these checks but cannot start, for
 example because it cannot be read or its destination is short of space, does not keep the others from importing: each of its errors goes to standard
-error as `error: <source as given>: <message>`.
+error as `error: <source as given>: <message>` as soon as it is found, not after the
+other sources ended.
 
 **Report.** The file lines of CLI-001 are unchanged; those of parallel jobs may
 interleave. Each source's summary line, with the lines that follow it (CLI-005,
@@ -93,6 +94,12 @@ start, else 1 when a file failed, else 0.
 - **Then** both pictures are imported into `library`, and `holiday-library` is not
   created
 
+### CLI-015.9 – The error of a source comes at once
+- **Given** a source `cardB` that cannot be read and a source `cardA` with `a.jpg`
+- **When** `framehive import cardB cardA --destination <destination>` runs with standard
+  output and standard error written to one file
+- **Then** the line that starts with `error: cardB: ` comes before the line `cardA:`
+
 ## Out of scope
 
 - Queueing a newly inserted card in the guided import while a job runs: a later step
@@ -111,3 +118,4 @@ start, else 1 when a file failed, else 0.
 | 2026-11-07 | Implemented (J3, Q5); the last folder is the destination also with a profile |
 | 2026-11-07 | Every folder is a source, also with a profile; `--destination` names the destination (CLI-016, ADR 0036); CLI-015.7 changed, CLI-015.8 added |
 | 2026-11-07 | The sources are checked before any job (CLI-016): CLI-015.3 uses a source that cannot be read |
+| 2026-11-07 | The error of a source that cannot start is printed at once: CLI-015.9 |

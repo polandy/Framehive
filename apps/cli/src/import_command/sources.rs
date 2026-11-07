@@ -45,6 +45,27 @@ impl<'a> Streams<'a> {
         let _ = output.flush();
     }
 
+    /// Writes each error of `result` to standard error at once, after `named_source`
+    /// when there are several sources, and returns `result` (CLI-015).
+    pub(super) fn reported<T>(
+        &self,
+        result: Result<T, NotStarted>,
+        named_source: Option<&Path>,
+    ) -> Result<T, NotStarted> {
+        if let Err(not_started) = &result {
+            let mut errors = self.errors();
+            for message in &not_started.messages {
+                match named_source {
+                    Some(source) => {
+                        write_error(&mut **errors, &format!("{}: {message}", source.display()));
+                    }
+                    None => write_error(&mut **errors, message),
+                }
+            }
+        }
+        result
+    }
+
     /// Standard error, for as long as the caller holds it.
     pub(super) fn errors(&self) -> MutexGuard<'_, &'a mut (dyn Write + Send)> {
         self.errors.lock().unwrap_or_else(PoisonError::into_inner)

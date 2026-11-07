@@ -19,7 +19,8 @@ before the eject question. Errors that stop the command go to standard error as
 `error: <message>`, and so does an import history that fails during the run, after the
 summary. With several sources (CLI-015), each source's summary block follows a line
 `<source as given>:`, and each error that kept a source from starting reads
-`error: <source as given>: <message>`; the exit code is the highest of the sources'.
+`error: <source as given>: <message>` at once (`Streams::reported`); the exit code is
+the highest of the sources'.
 A job code that the template does not use is accepted and reported on
 standard error as `warning: <message>`; there is no other log output yet.
 

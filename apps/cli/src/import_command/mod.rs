@@ -43,42 +43,27 @@ pub(crate) fn run_import(arguments: &ImportArguments) -> ExitCode {
     let results = match import(arguments) {
         Ok(results) => results,
         Err(not_started) => {
-            report_not_started(&not_started, None);
+            report_not_started(&not_started);
             return ExitCode::from(NOT_STARTED);
         }
     };
-    let several = arguments.sources.len() > 1;
-    let worst = arguments
-        .sources
-        .iter()
-        .zip(&results)
-        .map(|(source, result)| exit_code(result, several.then_some(source.as_path())))
-        .max()
-        .unwrap_or_default();
+    let worst = results.iter().map(exit_code).max().unwrap_or_default();
     ExitCode::from(worst)
 }
 
-/// The exit code of one source (CLI-001), after reporting each error that kept it from
-/// starting, after `named_source` when there are several sources (CLI-015).
-fn exit_code(result: &Result<ImportSummary, NotStarted>, named_source: Option<&Path>) -> u8 {
+/// The exit code of one source (CLI-001); its errors are already reported.
+fn exit_code(result: &Result<ImportSummary, NotStarted>) -> u8 {
     match result {
         Ok(summary) if summary.has_failures() || has_backup_failures(summary) => FILES_FAILED,
         Ok(_) => 0,
-        Err(not_started) => {
-            report_not_started(not_started, named_source);
-            NOT_STARTED
-        }
+        Err(_) => NOT_STARTED,
     }
 }
 
-/// Reports each error that kept the import from starting, after `named_source` when
-/// there are several sources (CLI-015), and then its hint.
-fn report_not_started(not_started: &NotStarted, named_source: Option<&Path>) {
+/// Reports each error that kept every source from starting, and then its hint.
+fn report_not_started(not_started: &NotStarted) {
     for message in &not_started.messages {
-        match named_source {
-            Some(source) => report_error(&format!("{}: {message}", source.display())),
-            None => report_error(message),
-        }
+        report_error(message);
     }
     if let Some(hint) = &not_started.hint {
         report_hint(hint);
