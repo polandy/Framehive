@@ -13,7 +13,6 @@ feature live in its spec, decisions in `docs/adr/`. Add items with `/todo`.
 - [ ] Add the `cargo public-api` snapshot check for `kernel` and the services (architecture §7, ADR 0004) (2026-11-03)
 - [ ] Make release builds reproducible: `SOURCE_DATE_EPOCH`, `--remap-path-prefix` and a bit-for-bit check in CI, with the first release build (ADR 0007) (2026-11-03)
 - [ ] Store reference pixel hashes for aarch64-darwin in the LibRaw version test — on macOS it compares only sizes until the hashes are measured on a Mac (PREVIEWS-001, ADR 0028) (2026-11-03)
-- [ ] Add a CLI-009 acceptance criterion for a missing state folder and mark its test `without_a_state_folder_the_command_stops` — it tests prose-only behavior today (CLI-009, PR #40 review) (2026-11-05)
 - [ ] Merge the duplicated `capture_time_text` into one `LocalDateTime` formatter — it exists in both `apps/cli/src/import_log/mod.rs` and `crates/adapters/sqlite/src/text.rs` and both write the ADR 0031 format (ADR 0031, PR #40 review) (2026-11-05)
 - [ ] Keep the text format of `framehive import-log` on one line per file when a target or original file name contains a newline — JSON and CSV already escape it (CLI-009, PR #40 review) (2026-11-05)
 - [ ] Give `schema_version:` without a value its own message — it says "leave the key out to use the default", but the key is required (CORE-006, PR #41 review) (2026-11-05)

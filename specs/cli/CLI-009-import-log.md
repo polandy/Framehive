@@ -159,6 +159,12 @@ for example `framehive import-log 3 --format csv > import-3.csv`.
   destination and the block of `<videos>` with `clip.MOV`, and the JSON has
   `"video_destination": "<videos>"`
 
+### CLI-009.14 – No state folder
+- **Given** `XDG_STATE_HOME` unset and `HOME` not an absolute path
+- **When** `framehive import-log` runs
+- **Then** standard error has `error: the home folder is unknown; set HOME`, nothing is
+  written, and the exit code is 2
+
 ## Out of scope
 
 - What the log holds: IMPORT-010.
@@ -177,3 +183,4 @@ for example `framehive import-log 3 --format csv > import-3.csv`.
 | 2026-11-04 | Initial draft; owner decisions: `framehive import-log`, runs oldest first, `--format` only for one run, paths that are not valid UTF-8 printed with U+FFFD, `framehive import` does not print its run number; accepted by the owner |
 | 2026-11-04 | Implemented in `framehive-cli`; `implemented` |
 | 2026-11-06 | The video destination of a run (CLI-012); accepted by the owner |
+| 2026-11-07 | CLI-009.14 for the error without a state folder, which the table above already defined |

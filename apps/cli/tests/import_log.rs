@@ -313,11 +313,17 @@ fn format_without_a_run_is_a_usage_error() {
     }
 }
 
-/// Without a state folder the command stops as the import does (CLI-008, CLI-009).
+/// Without a state folder the command stops as the import does (CLI-008.10).
+/// spec: CLI-009.14
 #[test]
 fn without_a_state_folder_the_command_stops() {
+    let folders = Folders::new();
+    let working_folder = folders.root.path().join("work");
+    fs::create_dir(&working_folder).unwrap();
+
     let output = std::process::Command::new(env!("CARGO_BIN_EXE_framehive"))
         .arg("import-log")
+        .current_dir(&working_folder)
         .env_remove("XDG_STATE_HOME")
         .env("HOME", "not-absolute")
         .output()
@@ -328,6 +334,7 @@ fn without_a_state_folder_the_command_stops() {
         "error: the home folder is unknown; set HOME\n"
     );
     assert_eq!(output.status.code(), Some(2));
+    assert_eq!(fs::read_dir(&working_folder).unwrap().count(), 0);
 }
 
 /// Paths that are not valid UTF-8 are printed with U+FFFD in every format (CLI-009,
