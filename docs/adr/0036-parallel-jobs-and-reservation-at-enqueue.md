@@ -80,6 +80,20 @@ before each file waits on one answer channel, and the stop notification sends `f
 into it, so a queue that shuts down never waits for an enqueuer that holds the reports
 but does not follow them.
 
+### 8. Every positional argument of `framehive import` is a source
+
+`framehive import [OPTIONS] <source>... [--destination <folder>]`: every positional
+argument is a source, a folder or `camera:[<model>|<port>]`, and only `--destination`
+names the destination, else the profile does (CLI-016). The meaning of a positional
+argument never depends on `--profile`. The first syntax of this decision (D5) took the
+last folder as the destination, except with `--profile` and a single folder; with that
+rule, `framehive import SD1 SD2 --profile p` would have imported SD1 onto the card SD2
+without a warning. The owner decided (C) to name the destination by an option, as
+`cp -t` does. This replaces the positional destination of CLI-001, CLI-010 and ADR 0034
+§5; there is no release yet, so no script depends on it. A missing source or
+destination stops the command before any job, and for the old habit of a last folder
+as destination, a hint shows the command with `--destination`.
+
 ## Alternatives
 
 - **A fixed pool of N worker threads:** a limit the owner did not want (D3), and a
@@ -91,11 +105,13 @@ but does not follow them.
   disk.
 - **Plan every job inside `enqueue`:** would scan on the caller's thread for jobs that
   were meant to scan in the background; the frontends already plan first.
+- **The last folder as destination (D5):** the usual syntax of `cp`, but whether a
+  folder is a source then depended on the other arguments (§8).
 
 ## Consequences
 
 - Imports on separate devices run in parallel, and the CLI imports several sources with
-  one command (CLI-001).
+  one command (CLI-001). `--destination` is a breaking change of the command line (§8).
 - A planned job's numbers are fixed at enqueue; a dry run reserves nothing, so a dry run
   of several sources shows each source's numbers as if it were alone.
 - A job that panics still fails alone; the worker threads of other jobs go on.

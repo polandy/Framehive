@@ -41,14 +41,14 @@ unknown free space is shown in the summary as on standard error, and Enter start
 
 ### CLI-011.1 – `framehive import` stops when a destination is short
 - **Given** a source with `DSCF0001.RAF` of 2.5 MB, and a destination with 1.0 MB free
-- **When** the user runs `framehive import <source> <destination>`
+- **When** the user runs `framehive import <source> --destination <destination>`
 - **Then** standard error has `not enough space at <destination>: needs 2.5 MB, 1.0 MB free`,
   the destination folder is not created, and the exit code is 2
 
 ### CLI-011.2 – Destinations on one file system are named together
 - **Given** the source of CLI-011.1, and a destination and a backup folder on one file
   system with 4.0 MB free
-- **When** the user runs `framehive import <source> <destination> --backup <backup>`
+- **When** the user runs `framehive import <source> --destination <destination> --backup <backup>`
 - **Then** standard error has
   `not enough space at <destination>, <backup>: needs 5.0 MB, 4.0 MB free`, nothing is
   created, and the exit code is 2
@@ -99,3 +99,4 @@ unknown free space is shown in the summary as on standard error, and Enter start
 | 2026-11-05 | Initial draft for I1 (IMPORT-012, ADR 0033); accepted by the owner |
 | 2026-11-05 | Add CLI-011.7: the guided import warns about unknown free space, as the behaviour says |
 | 2026-11-05 | Implemented in `framehive-cli`; `implemented` |
+| 2026-11-07 | Examples name the destination with `--destination` (CLI-001, ADR 0036) |

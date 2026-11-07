@@ -1,6 +1,6 @@
 # 0034 – Cameras and phones through libgphoto2
 
-- Status: accepted
+- Status: accepted; the positional destination of §5 superseded by ADR 0036
 - Date: 2026-11-06
 
 ## Context

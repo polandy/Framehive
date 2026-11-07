@@ -177,6 +177,7 @@ impl Folders {
         let mut arguments = vec![
             "import".to_owned(),
             self.source().display().to_string(),
+            "--destination".to_owned(),
             destination.display().to_string(),
         ];
         arguments.extend(options.iter().map(|option| (*option).to_owned()));

@@ -17,16 +17,16 @@ use adapter_sequence_counters::FileSequenceCounters;
 use adapter_sqlite::SqliteImportHistory;
 use files::{Cameras, FileSystem, FreeSpace};
 use import::{
-    CAMERA_FORMAT_READINESS_NOTE, ImportJob, ImportJobSettings, ImportPorts, ImportProfile,
-    ImportRun, ImportSettings, ImportSummary, PlannedRun, ProgressSink, ReservedTargetNames,
-    SessionSequence, SpaceShortage, scan_source,
+    CAMERA_FORMAT_READINESS_NOTE, ImportJob, ImportJobSettings, ImportPorts, ImportRun,
+    ImportSettings, ImportSummary, PlannedRun, ProgressSink, ReservedTargetNames, SessionSequence,
+    SpaceShortage, scan_source,
 };
 use jobs::JobQueue;
 use naming::CompatibilityMode;
 
 use super::folders::{Folders, backup_names, resolve_folders, unusable_message};
 use super::sources::{Enqueued, Streams};
-use super::{ChosenSettings, choose_settings};
+use super::{ChosenSettings, LoadedProfile, choose_settings};
 use crate::arguments::ImportArguments;
 use crate::cameras::{OpenedCamera, camera_choice, open_camera};
 use crate::guided::space_text;
@@ -49,13 +49,29 @@ pub(super) struct Surroundings<'a> {
 }
 
 /// The import did not start: the messages for standard error, one per line, without
-/// `error: `.
+/// `error: `, and a hint that shows what to write instead, without `hint: `.
 #[derive(Debug)]
-pub(super) struct NotStarted(pub(super) Vec<String>);
+pub(super) struct NotStarted {
+    pub(super) messages: Vec<String>,
+    pub(super) hint: Option<String>,
+}
+
+impl NotStarted {
+    /// One message and the hint that follows it.
+    pub(super) fn with_hint(message: String, hint: String) -> Self {
+        NotStarted {
+            messages: vec![message],
+            hint: Some(hint),
+        }
+    }
+}
 
 impl From<String> for NotStarted {
     fn from(message: String) -> Self {
-        NotStarted(vec![message])
+        NotStarted {
+            messages: vec![message],
+            hint: None,
+        }
     }
 }
 
@@ -114,7 +130,7 @@ pub(super) type SourceResults = Vec<Result<ImportSummary, NotStarted>>;
 /// Returns the messages of the errors that kept every source from starting.
 pub(super) fn import_with(
     arguments: &ImportArguments,
-    profile: Option<ImportProfile>,
+    profile: Option<LoadedProfile>,
     surroundings: Surroundings<'_>,
 ) -> Result<SourceResults, NotStarted> {
     let chosen = choose_settings(arguments, profile)?;
@@ -257,13 +273,14 @@ fn check_free_space(
     if check.shortages.is_empty() {
         return Ok(());
     }
-    Err(NotStarted(
-        check
+    Err(NotStarted {
+        messages: check
             .shortages
             .iter()
             .map(|shortage| shortage_message(shortage, folders))
             .collect(),
-    ))
+        hint: None,
+    })
 }
 
 /// `not enough space at <folders as given>: needs 12.8 GB, 3.1 GB free` (CLI-011).

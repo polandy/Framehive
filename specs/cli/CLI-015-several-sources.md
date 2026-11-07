@@ -3,7 +3,7 @@
 - Status: implemented
 - Module: cli (`apps/cli`)
 - Origin: Q5, J3
-- Depends on: CLI-001, CLI-007, IMPORT-002, IMPORT-015
+- Depends on: CLI-001, CLI-007, CLI-016, IMPORT-002, IMPORT-015
 
 ## Purpose
 
@@ -12,7 +12,8 @@ and the imports run at the same time when they do not compete for a device or a 
 
 ## Behaviour
 
-`framehive import <source>... <destination>` takes one or more sources (CLI-001).
+`framehive import <source>... --destination <folder>` takes one or more sources
+(CLI-001, CLI-016).
 
 **One job per source.** Each source is imported by an import job of its own
 (IMPORT-015), with the same destinations and settings. The command checks, scans and
@@ -22,10 +23,9 @@ as it is planned, so its sequence numbers follow those of the source before it
 no file system run in parallel; the others run one after another (IMPORT-015,
 "Resources").
 
-**Arguments.** The last folder is the destination. With `--profile`, a single folder is
-the source and the profile names the destination (CLI-010); with more folders, the last
-is the destination as without a profile. Arguments that hold for every source, such as the template or the job
-code, are checked once, before any source; an error there starts no source. A source
+**Arguments.** Every folder is a source, also with `--profile`; `--destination`, or else
+the profile, names the destination (CLI-016). Arguments that hold for every source, such
+as the template or the job code, are checked once, before any source; an error there starts no source. A source
 that cannot start, for example because it does not exist or its destination is short of
 space, does not keep the others from importing: each of its errors goes to standard
 error as `error: <source as given>: <message>`.
@@ -46,7 +46,7 @@ start, else 1 when a file failed, else 0.
 ### CLI-015.1 – Two sources
 - **Given** a source `cardA` with `a.jpg` and a source `cardB` with `b.jpg`, both
   captured at 2026-10-17 14:05:09, and an empty destination
-- **When** `framehive import cardA cardB <destination>` runs
+- **When** `framehive import cardA cardB --destination <destination>` runs
 - **Then** both files are copied, the output has the line `cardA:` followed by
   `1 copied, 0 already imported, 0 duplicates, 0 skipped, 0 failed, 0 left out`, and the
   line `cardB:` followed by the same summary, and the exit code is 0
@@ -59,7 +59,7 @@ start, else 1 when a file failed, else 0.
 
 ### CLI-015.3 – A source that cannot start
 - **Given** a source `cardA` with `a.jpg`, and a source `missing` that does not exist
-- **When** `framehive import cardA missing <destination>` runs
+- **When** `framehive import cardA missing --destination <destination>` runs
 - **Then** `a.jpg` is copied, standard error has a line that starts with
   `error: missing: `, and the exit code is 2
 
@@ -71,7 +71,7 @@ start, else 1 when a file failed, else 0.
 ### CLI-015.5 – Sources continue each other's sequence numbers
 - **Given** sources `cardA` with two pictures and `cardB` with one, the template
   `{seq_stored:3}.{ext}` and the stored counter at 0
-- **When** `framehive import cardA cardB <destination>` runs
+- **When** `framehive import cardA cardB --destination <destination>` runs
 - **Then** the pictures of `cardA` get `001` and `002`, and the picture of `cardB` `003`
 
 ### CLI-015.6 – An argument error starts no source
@@ -80,11 +80,17 @@ start, else 1 when a file failed, else 0.
 - **Then** standard error names `{job}`, no destination is created, and the exit code
   is 2
 
-### CLI-015.7 – With a profile, the last of several folders is the destination
+### CLI-015.7 – With a profile, every folder is a source
 - **Given** a profile `holiday` that names the destination `holiday-library`, and the
-  sources `cardA` and `cardB`
-- **When** `framehive import cardA cardB library --profile holiday` runs
-- **Then** both sources are imported into `library`, and `holiday-library` is not
+  sources `cardA` with `a.jpg` and `cardB` with `b.jpg`
+- **When** `framehive import cardA cardB --profile holiday` runs
+- **Then** both pictures are imported into `holiday-library`, and nothing is written to
+  `cardB`
+
+### CLI-015.8 – `--destination` replaces the destination of the profile
+- **Given** the profile and the sources of CLI-015.7
+- **When** `framehive import cardA cardB --destination library --profile holiday` runs
+- **Then** both pictures are imported into `library`, and `holiday-library` is not
   created
 
 ## Out of scope
@@ -103,3 +109,4 @@ start, else 1 when a file failed, else 0.
 |---|---|
 | 2026-11-07 | Created (Q5, J3, ADR 0036) |
 | 2026-11-07 | Implemented (J3, Q5); the last folder is the destination also with a profile |
+| 2026-11-07 | Every folder is a source, also with a profile; `--destination` names the destination (CLI-016, ADR 0036); CLI-015.7 changed, CLI-015.8 added |

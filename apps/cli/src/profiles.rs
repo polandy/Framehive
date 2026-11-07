@@ -130,7 +130,7 @@ pub(crate) fn read_profile(
     name: &str,
     home: &Path,
 ) -> Result<ImportProfile, String> {
-    let path = profiles.join(format!("{name}{PROFILE_EXTENSION}"));
+    let path = profile_path(profiles, name);
     let bytes = match read_bytes(file_system, &path) {
         Ok(bytes) => bytes,
         Err(error) if error.kind() == io::ErrorKind::NotFound => {
@@ -147,6 +147,11 @@ pub(crate) fn read_profile(
         .map_err(|_| format!("the profile {} is not valid UTF-8", path.display()))?;
     ImportProfile::read(parser, &path.display().to_string(), &text, home)
         .map_err(|error| error.to_string())
+}
+
+/// The file of the profile `name` in the folder `profiles`.
+pub(crate) fn profile_path(profiles: &Path, name: &str) -> PathBuf {
+    profiles.join(format!("{name}{PROFILE_EXTENSION}"))
 }
 
 fn read_bytes(file_system: &dyn FileSystem, path: &Path) -> io::Result<Vec<u8>> {

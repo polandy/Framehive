@@ -133,12 +133,21 @@ All user-visible changes are listed here. The format follows
   with one worker thread, first in, first out. `framehive import` and the guided import
   show the same output as before; a pulled card or camera still stops the import.
 - Several sources in one command (CLI-015, IMPORT-015, ADR 0036):
-  `framehive import <source>... <destination>` imports each source as a job of its
+  `framehive import <source>... --destination <folder>` imports each source as a job of its
   own. Jobs whose sources are on separate devices and whose destinations share no disk
   run at the same time; the others run one after another. Each job reserves its
   sequence numbers and target names when it is queued, so parallel imports never take
   the same ones. With several sources, each summary follows a line `<source>:`, and
   the exit code is the worst of the sources.
+
+### Changed
+
+- **Breaking:** `framehive import` names the destination with `--destination <folder>`
+  (CLI-016, ADR 0036). Every folder on the command line is now a source, also with
+  `--profile`; the destination is no longer the last folder. Without `--destination`
+  the profile's destination is used; without either, the command stops with exit
+  code 2, and after two or more folders a hint shows the command with
+  `--destination`. A command without a source shows an example.
 
 ### Fixed
 

@@ -64,7 +64,7 @@ the guided import.
 
 ### CLI-008.1 – A second run with a persisted counter
 - **Given** a run of
-  `framehive import <source> <destination> --template '{seq_stored:4}.{ext}'` that
+  `framehive import <source> --destination <destination> --template '{seq_stored:4}.{ext}'` that
   copied `DSCF0001.RAF` as `0001.RAF`
 - **When** the same command runs again
 - **Then** the output has `imported before  DSCF0001.RAF -> 0001.RAF`, the summary
@@ -92,7 +92,7 @@ the guided import.
 
 ### CLI-008.5 – A history that cannot be used
 - **Given** an `import-history.sqlite` in the state folder that is not a SQLite database
-- **When** `framehive import <source> <destination>` runs
+- **When** `framehive import <source> --destination <destination>` runs
 - **Then** standard error has
   `error: the import history <path> cannot be used: …`, no file is copied, the file is
   unchanged, and the exit code is 2
@@ -124,7 +124,7 @@ the guided import.
 
 ### CLI-008.10 – No state folder
 - **Given** `XDG_STATE_HOME` unset and `HOME` not an absolute path
-- **When** `framehive import <source> <destination> --dry-run` runs
+- **When** `framehive import <source> --destination <destination> --dry-run` runs
 - **Then** standard error has `error: the home folder is unknown; set HOME`, nothing is
   written, and the exit code is 2
 
@@ -147,3 +147,4 @@ the guided import.
 | 2026-11-04 | Implemented in `framehive-cli`; the template preview shows a file imported before with the line of the file list, CLI-008.6 counts the resumed files in the summary; `implemented` |
 | 2026-11-04 | CLI-008.8 and CLI-008.9: the messages for a folder that cannot be resolved |
 | 2026-11-04 | CLI-008.10: `framehive import` always needs the state folder; owner decision |
+| 2026-11-07 | Examples name the destination with `--destination` (CLI-001, ADR 0036) |

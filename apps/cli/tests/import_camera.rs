@@ -22,7 +22,12 @@ fn a_camera_given_by_its_port_is_imported() {
     let source = format!("camera:disk:{}", folders.source().display());
     let destination = folders.destination();
 
-    let output = folders.framehive(&["import", &source, destination.to_str().unwrap()]);
+    let output = folders.framehive(&[
+        "import",
+        &source,
+        "--destination",
+        destination.to_str().unwrap(),
+    ]);
 
     assert!(
         has_line(
@@ -47,7 +52,12 @@ fn a_folder_named_like_a_camera_is_imported_as_a_folder() {
     let destination = folders.destination();
 
     let output = folders
-        .framehive_command(&["import", "./camera:x", destination.to_str().unwrap()])
+        .framehive_command(&[
+            "import",
+            "./camera:x",
+            "--destination",
+            destination.to_str().unwrap(),
+        ])
         .current_dir(folders.root.path())
         .output()
         .unwrap();

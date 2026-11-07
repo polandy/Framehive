@@ -24,8 +24,10 @@ by which the history identifies a destination (IMPORT-009).
 
 ## Several sources
 
-The last folder is the destination; with `--profile`, a single folder is the source
-(CLI-010, CLI-015). Each source becomes an `import::ImportJob` of its own in one
+Every positional argument is a source; `--destination`, or else the profile, names the
+destination (CLI-010, CLI-015, CLI-016). `import()` stops before any job when no source
+or no destination is given; a missing destination after two or more folders adds a
+hint that names the last folder with `--destination`. Each source becomes an `import::ImportJob` of its own in one
 `jobs::JobQueue`, and all of them share one `ImportPorts`: the counters, the session
 and the `ReservedTargetNames`. The settings are chosen once; then each source is
 checked, scanned, planned and enqueued in the order given, so `ImportJob::enqueue`

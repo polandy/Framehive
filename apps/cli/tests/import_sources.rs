@@ -73,7 +73,7 @@ fn two_sources_are_imported_each_with_its_summary() {
     card(&folders, "cardA", &["a.jpg"]);
     card(&folders, "cardB", &["b.jpg"]);
 
-    let output = import(&folders, &["cardA", "cardB", "library"]);
+    let output = import(&folders, &["cardA", "cardB", "--destination", "library"]);
 
     assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
     assert_eq!(
@@ -106,7 +106,14 @@ fn the_exit_code_is_the_worst_of_the_sources() {
 
     let output = import(
         &folders,
-        &["cardA", "cardB", "library", "--on-conflict", "fail"],
+        &[
+            "cardA",
+            "cardB",
+            "--destination",
+            "library",
+            "--on-conflict",
+            "fail",
+        ],
     );
 
     assert_eq!(
@@ -123,7 +130,7 @@ fn a_source_that_cannot_start_keeps_no_other_from_importing() {
     let folders = Folders::new();
     card(&folders, "cardA", &["a.jpg"]);
 
-    let output = import(&folders, &["cardA", "missing", "library"]);
+    let output = import(&folders, &["cardA", "missing", "--destination", "library"]);
 
     assert_eq!(
         fs::read(library(&folders).join(DAY).join("a.jpg")).unwrap(),
@@ -175,6 +182,7 @@ fn sources_continue_each_others_sequence_numbers() {
         &[
             "cardA",
             "cardB",
+            "--destination",
             "library",
             "--template",
             "{seq_stored:3}.{ext}",
@@ -203,6 +211,7 @@ fn an_argument_error_starts_no_source() {
         &[
             "cardA",
             "cardB",
+            "--destination",
             "library",
             "--template",
             "{job}/{name}.{ext}",
@@ -216,7 +225,35 @@ fn an_argument_error_starts_no_source() {
 
 /// spec: CLI-015.7
 #[test]
-fn with_a_profile_the_last_of_several_folders_is_the_destination() {
+fn with_a_profile_every_folder_is_a_source() {
+    let folders = Folders::new();
+    card(&folders, "cardA", &["a.jpg"]);
+    card(&folders, "cardB", &["b.jpg"]);
+    let holiday_library = folders.root.path().join("holiday-library");
+    let profile = format!(
+        "schema_version: 1\ndestination: \"{}\"\n",
+        holiday_library.display()
+    );
+    folders.write_profile("holiday", profile.as_bytes());
+
+    let output = import(&folders, &["cardA", "cardB", "--profile", "holiday"]);
+
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    assert_eq!(
+        fs::read(holiday_library.join(DAY).join("a.jpg")).unwrap(),
+        picture("a.jpg")
+    );
+    assert_eq!(
+        fs::read(holiday_library.join(DAY).join("b.jpg")).unwrap(),
+        picture("b.jpg")
+    );
+    let card_b = fs::read_dir(folders.root.path().join("cardB")).unwrap();
+    assert_eq!(card_b.count(), 1, "nothing is written to cardB");
+}
+
+/// spec: CLI-015.8
+#[test]
+fn destination_replaces_the_destination_of_the_profile() {
     let folders = Folders::new();
     card(&folders, "cardA", &["a.jpg"]);
     card(&folders, "cardB", &["b.jpg"]);
@@ -229,7 +266,14 @@ fn with_a_profile_the_last_of_several_folders_is_the_destination() {
 
     let output = import(
         &folders,
-        &["cardA", "cardB", "library", "--profile", "holiday"],
+        &[
+            "cardA",
+            "cardB",
+            "--destination",
+            "library",
+            "--profile",
+            "holiday",
+        ],
     );
 
     assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));

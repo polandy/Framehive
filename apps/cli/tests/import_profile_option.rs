@@ -94,6 +94,7 @@ fn an_option_replaces_the_value_of_the_profile() {
     let output = import(
         &folders,
         &[
+            "--destination",
             &text(&other),
             "--profile",
             "holiday",
@@ -140,11 +141,21 @@ fn the_first_job_code_of_the_profile_is_used() {
     let first = folders.root.path().join("first");
     let second = folders.root.path().join("second");
 
-    let output = import(&folders, &[&text(&first), "--profile", "client"]);
+    let output = import(
+        &folders,
+        &["--destination", &text(&first), "--profile", "client"],
+    );
     assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
     let output = import(
         &folders,
-        &[&text(&second), "--profile", "client", "--job-code", "Jones"],
+        &[
+            "--destination",
+            &text(&second),
+            "--profile",
+            "client",
+            "--job-code",
+            "Jones",
+        ],
     );
     assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
 
@@ -161,7 +172,12 @@ fn unused_job_codes_of_a_profile_give_no_warning() {
 
     let output = import(
         &folders,
-        &[&text(&folders.destination()), "--profile", "client"],
+        &[
+            "--destination",
+            &text(&folders.destination()),
+            "--profile",
+            "client",
+        ],
     );
 
     assert_eq!(stderr(&output), "");
@@ -170,17 +186,21 @@ fn unused_job_codes_of_a_profile_give_no_warning() {
 }
 
 /// spec: CLI-010.6
+/// spec: CLI-016.3
 #[test]
 fn a_profile_without_destination_needs_one() {
     let folders = Folders::new();
     folders.add_raf();
-    folders.write_profile("holiday", b"schema_version: 1\n");
+    let path = folders.write_profile("holiday", b"schema_version: 1\n");
 
     let output = import(&folders, &["--profile", "holiday"]);
 
     assert_not_started(
         &output,
-        "error: no destination: give one, or set destination in the profile holiday",
+        &format!(
+            "error: no destination: give --destination <folder>, or set destination in the profile holiday: {}",
+            path.display()
+        ),
     );
 }
 
@@ -240,7 +260,12 @@ fn an_invalid_profile_name_is_rejected() {
     for name in ["../holiday", "Holiday"] {
         let output = import(
             &folders,
-            &[&text(&folders.destination()), "--profile", name],
+            &[
+                "--destination",
+                &text(&folders.destination()),
+                "--profile",
+                name,
+            ],
         );
 
         assert_not_started(
@@ -259,7 +284,12 @@ fn an_invalid_profile_names_the_file_and_the_position() {
 
     let output = import(
         &folders,
-        &[&text(&folders.destination()), "--profile", "holiday"],
+        &[
+            "--destination",
+            &text(&folders.destination()),
+            "--profile",
+            "holiday",
+        ],
     );
 
     assert_not_started(
@@ -281,7 +311,12 @@ fn a_profile_that_is_not_utf8_is_rejected() {
 
     let output = import(
         &folders,
-        &[&text(&folders.destination()), "--profile", "holiday"],
+        &[
+            "--destination",
+            &text(&folders.destination()),
+            "--profile",
+            "holiday",
+        ],
     );
 
     assert_not_started(
@@ -299,7 +334,14 @@ fn an_unknown_configuration_folder_stops_the_command() {
     let destination = text(&folders.destination());
 
     let output = folders
-        .framehive_command(&["import", &source, &destination, "--profile", "holiday"])
+        .framehive_command(&[
+            "import",
+            &source,
+            "--destination",
+            &destination,
+            "--profile",
+            "holiday",
+        ])
         .env("HOME", "not-absolute")
         .output()
         .unwrap();
@@ -321,7 +363,14 @@ fn an_unknown_home_folder_stops_the_command_even_with_xdg_config_home() {
     let config_home = folders.root.path().join("config");
 
     let output = folders
-        .framehive_command(&["import", &source, &destination, "--profile", "holiday"])
+        .framehive_command(&[
+            "import",
+            &source,
+            "--destination",
+            &destination,
+            "--profile",
+            "holiday",
+        ])
         .env_remove("HOME")
         .env("XDG_CONFIG_HOME", &config_home)
         .output()
@@ -333,6 +382,7 @@ fn an_unknown_home_folder_stops_the_command_even_with_xdg_config_home() {
     );
 }
 
+/// spec: CLI-016.2
 /// spec: CLI-010.17
 #[test]
 fn without_profile_the_destination_stays_required() {
@@ -341,9 +391,8 @@ fn without_profile_the_destination_stays_required() {
 
     let output = import(&folders, &[]);
 
-    let error = stderr(&output);
-    assert!(error.contains("<destination>"), "{error}");
-    assert!(error.contains("--help"), "{error}");
-    assert!(stdout(&output).is_empty());
-    assert_eq!(output.status.code(), Some(2));
+    assert_not_started(
+        &output,
+        "error: no destination: give --destination <folder>",
+    );
 }

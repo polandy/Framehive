@@ -78,7 +78,7 @@ folders by capture date, verifies every copy, and skips files that are already
 there:
 
 ```sh
-cargo run --locked -p framehive-cli -- import <source> <destination> [--dry-run]
+cargo run --locked -p framehive-cli -- import <source> --destination <folder> [--dry-run]
 ```
 
 `--template` sets the folders and names, `--on-conflict add_suffix|skip|fail` decides
@@ -89,7 +89,7 @@ With Nix, the flake builds the `framehive` command with the pinned toolchain. Ru
 without installing, or install it into your profile:
 
 ```sh
-nix run . -- import <source> <destination> [--dry-run]
+nix run . -- import <source> --destination <folder> [--dry-run]
 nix profile install .
 ```
 

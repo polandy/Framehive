@@ -30,7 +30,7 @@ stored, stop the import before any file is copied, with exit code 2 (CLI-001,
 ### CLI-004.1 – Persisted sequence counter
 - **Given** a counter file with `stored_last=250` in the state folder, and a source with
   `a.MOV` and `b.MOV`
-- **When** the user runs `framehive import <source> <destination> --template '{seq_stored:4}.{ext}'`
+- **When** the user runs `framehive import <source> --destination <destination> --template '{seq_stored:4}.{ext}'`
 - **Then** the files are copied as `0251.MOV` and `0252.MOV`, the counter file holds
   `stored_last=252`, standard error has no warning, and the exit code is 0
 
@@ -43,7 +43,7 @@ stored, stop the import before any file is copied, with exit code 2 (CLI-001,
 ### CLI-004.3 – Sequence numbers that cannot be reserved
 - **Given** the source of CLI-004.1 and a counter file with `stored_last=99`, or one
   with the line `stored_last=many`
-- **When** the user runs `framehive import <source> <destination> --template '{seq_stored:2}.{ext}'`
+- **When** the user runs `framehive import <source> --destination <destination> --template '{seq_stored:2}.{ext}'`
 - **Then** no file is copied, the counter file is unchanged, the exit code is 2, and
   the error suggests `{seq_stored:3}.{ext}`, or names the counter file and line 2
 
@@ -61,3 +61,4 @@ stored, stop the import before any file is copied, with exit code 2 (CLI-001,
 |---|---|
 | 2026-11-04 | Split from CLI-001, which reached the size limit; implemented in `framehive-cli` |
 | 2026-11-04 | The import history recognizes files imported before (CLI-008): the warning about a persisted counter is removed; CLI-004.1 now checks that no warning is printed |
+| 2026-11-07 | Examples name the destination with `--destination` (CLI-001, ADR 0036) |

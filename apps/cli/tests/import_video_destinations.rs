@@ -195,7 +195,14 @@ fn the_profile_supplies_the_video_settings_and_an_option_replaces_them() {
     let source = text(&folders.source());
     let destination = text(&folders.destination());
 
-    let output = folders.framehive(&["import", "--profile", "holiday", &source, &destination]);
+    let output = folders.framehive(&[
+        "import",
+        "--profile",
+        "holiday",
+        &source,
+        "--destination",
+        &destination,
+    ]);
 
     assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
     assert_eq!(files_below(&videos), [VIDEO_TARGET]);
@@ -208,6 +215,7 @@ fn the_profile_supplies_the_video_settings_and_an_option_replaces_them() {
         "--profile",
         "holiday",
         &source,
+        "--destination",
         &destination,
         "--video-destination",
         &text(&other),

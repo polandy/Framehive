@@ -58,7 +58,7 @@ still exits with 0.
 
 ### CLI-007.2 – Without backup destinations
 - **Given** a source with `DSCF0001.RAF` and an empty destination
-- **When** the user runs `framehive import <source> <destination>`
+- **When** the user runs `framehive import <source> --destination <destination>`
 - **Then** the last line is
   `The source can be formatted: every file is verified in 1 location.`
 
@@ -144,3 +144,4 @@ still exits with 0.
 |---|---|
 | 2026-11-04 | Initial draft; owner decisions: no change to exit codes or to the eject question; accepted by the owner |
 | 2026-11-06 | Per-file numbers and the verdict without a number when files require different numbers of locations (IMPORT-013) |
+| 2026-11-07 | Examples name the destination with `--destination` (CLI-001, ADR 0036) |

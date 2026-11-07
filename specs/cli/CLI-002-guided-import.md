@@ -21,7 +21,7 @@ CLI-003; cameras in CLI-014.
 
 `framehive` without a subcommand starts the guided import. When standard input or
 standard output is not a terminal, it writes
-`error: the guided import needs a terminal; use framehive import <source> <destination> in scripts`
+`error: the guided import needs a terminal; use framehive import <source> --destination <folder> in scripts`
 to standard error and exits with code 2.
 
 It reads the remembered state (ADR 0025) and prints
@@ -244,3 +244,4 @@ has none.
 | 2026-11-01 | Exit code 2 also covers an unknown home folder or current folder, as implemented |
 | 2026-11-02 | Criterion CLI-002.15 for the unknown home folder or current folder |
 | 2026-11-06 | Cameras in the guided import (CLI-014): cross-reference; the waiting texts name cameras |
+| 2026-11-07 | No-terminal message uses `--destination` (CLI-016) |

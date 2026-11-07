@@ -8,7 +8,6 @@ use std::ffi::OsString;
 use std::path::PathBuf;
 
 use clap::builder::PossibleValuesParser;
-use clap::error::ErrorKind;
 use clap::{Arg, ArgAction, ArgMatches, Command, value_parser};
 use import::DEFAULT_NAME_TEMPLATE;
 
@@ -66,9 +65,9 @@ pub(crate) enum LogFormat {
 #[derive(Debug)]
 pub(crate) struct ImportArguments {
     /// The folders to import from, as given, each of them `camera:…` for a camera
-    /// (CLI-013); one or more, in the order given (CLI-015).
+    /// (CLI-013), in the order given (CLI-015); empty when none was given (CLI-001).
     pub(crate) sources: Vec<PathBuf>,
-    /// The folder to import into, as given; `None` only with `--profile` (CLI-010).
+    /// The folder of `--destination`, as given; `None` takes the profile's (CLI-010).
     pub(crate) destination: Option<PathBuf>,
     /// The backup destinations, as given, in the order of the command line (CLI-005).
     pub(crate) backups: Vec<PathBuf>,
@@ -112,7 +111,7 @@ pub(crate) fn parse(
     let matches = command().try_get_matches_from(arguments)?;
     // clap rejects any other subcommand before this point.
     Ok(match matches.subcommand() {
-        Some(("import", import)) => Invocation::Import(import_arguments(import)?),
+        Some(("import", import)) => Invocation::Import(import_arguments(import)),
         Some(("config", _)) => Invocation::ConfigInit,
         Some(("cameras", _)) => Invocation::Cameras,
         Some((_, import_log)) => Invocation::ImportLog(import_log_arguments(import_log)),
@@ -190,16 +189,22 @@ fn import_log_arguments(matches: &ArgMatches) -> ImportLogArguments {
 fn import_command() -> Command {
     Command::new("import")
         .about("Copy the photos and videos of folders, memory cards or cameras into a library folder")
-        .override_usage("framehive import [OPTIONS] <source>... <destination>")
+        .override_usage("framehive import [OPTIONS] <source>... [--destination <folder>]")
         .arg(
-            // One list, because clap allows no optional positional argument after one
-            // that takes several values; `import_arguments` splits off the destination.
-            Arg::new("paths")
-                .required(true)
+            // Not required here, so that a command without a source gets the message of
+            // CLI-001 with an example instead of clap's.
+            Arg::new("sources")
                 .num_args(1..)
-                .value_name("path")
+                .value_name("source")
                 .value_parser(value_parser!(PathBuf))
-                .help("Folders to import from, each a folder or camera:[<model>|<port>] for a camera (./camera:… for a folder of that name), then the folder to import into, created with its parents when missing; with --profile and a single folder, the profile's destination"),
+                .help("Folders or cameras to import from, each a folder or camera:[<model>|<port>] for a camera (./camera:… for a folder of that name); every folder given here is a source"),
+        )
+        .arg(
+            Arg::new("destination")
+                .long("destination")
+                .value_name("folder")
+                .value_parser(value_parser!(PathBuf))
+                .help("Folder to import into, created with its parents when missing [default: the destination of --profile]"),
         )
         .arg(
             Arg::new("profile")
@@ -261,22 +266,13 @@ fn destination_arguments() -> [Arg; 3] {
     ]
 }
 
-fn import_arguments(matches: &ArgMatches) -> Result<ImportArguments, clap::Error> {
-    let mut paths: Vec<PathBuf> = matches
-        .get_many::<PathBuf>("paths")
-        .map(|paths| paths.cloned().collect())
-        .unwrap_or_default();
-    let has_profile = matches.contains_id("profile");
-    // With a profile, a single folder is the source and the profile names the
-    // destination (CLI-010); otherwise the last folder is the destination.
-    let destination = match paths.len() {
-        0 | 1 if has_profile => None,
-        0 | 1 => return Err(missing_destination()),
-        _ => paths.pop(),
-    };
-    Ok(ImportArguments {
-        sources: paths,
-        destination,
+fn import_arguments(matches: &ArgMatches) -> ImportArguments {
+    ImportArguments {
+        sources: matches
+            .get_many::<PathBuf>("sources")
+            .map(|sources| sources.cloned().collect())
+            .unwrap_or_default(),
+        destination: matches.get_one::<PathBuf>("destination").cloned(),
         backups: matches
             .get_many::<PathBuf>("backup")
             .map(|backups| backups.cloned().collect())
@@ -293,15 +289,7 @@ fn import_arguments(matches: &ArgMatches) -> Result<ImportArguments, clap::Error
             .map(|value| on_conflict(value)),
         profile: matches.get_one::<String>("profile").cloned(),
         dry_run: matches.get_flag("dry-run"),
-    })
-}
-
-/// The error clap gives for a missing required argument, for `<destination>`.
-fn missing_destination() -> clap::Error {
-    import_command().error(
-        ErrorKind::MissingRequiredArgument,
-        "the following required arguments were not provided:\n  <destination>",
-    )
+    }
 }
 
 /// Maps a value that clap has already checked against [`CONFLICT_POLICIES`].
