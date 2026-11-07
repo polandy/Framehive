@@ -92,6 +92,7 @@ impl Folders {
         };
         let mut output = Vec::new();
         let mut errors = Vec::new();
+        // One source: its result is the only one.
         let result = import_with(
             &arguments,
             None,
@@ -102,7 +103,8 @@ impl Folders {
                 output: &mut output,
                 errors: &mut errors,
             },
-        );
+        )
+        .and_then(|mut results| results.remove(0));
         Run {
             result,
             output: String::from_utf8(output).unwrap(),

@@ -1,17 +1,19 @@
 // SPDX-FileCopyrightText: 2026 Framehive contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//! `framehive import` (CLI-001, CLI-010, CLI-013): wires the adapters to an import run.
+//! `framehive import` (CLI-001, CLI-010, CLI-013, CLI-015): wires the adapters to the
+//! import job of each source.
 
 #[cfg(test)]
 mod camera_tests;
 mod folders;
 mod run;
+mod sources;
 #[cfg(test)]
 mod tests;
 
 use std::io;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::sync::Arc;
 
@@ -32,20 +34,40 @@ use crate::profiles::{
 };
 use crate::report::has_backup_failures;
 use crate::{FILES_FAILED, NOT_STARTED, report_error, report_warning};
-use run::{NotStarted, Surroundings, import_with};
+use run::{NotStarted, SourceResults, Surroundings, import_with};
 
-/// Runs the import and returns the exit code of CLI-001.
+/// Runs the import of each source and returns the highest of their exit codes
+/// (CLI-001, CLI-015).
 pub(crate) fn run_import(arguments: &ImportArguments) -> ExitCode {
-    match import(arguments) {
-        Ok(summary) if summary.has_failures() || has_backup_failures(&summary) => {
-            ExitCode::from(FILES_FAILED)
-        }
-        Ok(_) => ExitCode::SUCCESS,
+    let results = match import(arguments) {
+        Ok(results) => results,
+        Err(not_started) => return ExitCode::from(exit_code(&Err(not_started), None)),
+    };
+    let several = arguments.sources.len() > 1;
+    let worst = arguments
+        .sources
+        .iter()
+        .zip(&results)
+        .map(|(source, result)| exit_code(result, several.then_some(source.as_path())))
+        .max()
+        .unwrap_or_default();
+    ExitCode::from(worst)
+}
+
+/// The exit code of one source (CLI-001), after reporting each error that kept it from
+/// starting, after `named_source` when there are several sources (CLI-015).
+fn exit_code(result: &Result<ImportSummary, NotStarted>, named_source: Option<&Path>) -> u8 {
+    match result {
+        Ok(summary) if summary.has_failures() || has_backup_failures(summary) => FILES_FAILED,
+        Ok(_) => 0,
         Err(NotStarted(messages)) => {
-            for message in &messages {
-                report_error(message);
+            for message in messages {
+                match named_source {
+                    Some(source) => report_error(&format!("{}: {message}", source.display())),
+                    None => report_error(message),
+                }
             }
-            ExitCode::from(NOT_STARTED)
+            NOT_STARTED
         }
     }
 }
@@ -55,8 +77,8 @@ pub(crate) fn run_import(arguments: &ImportArguments) -> ExitCode {
 ///
 /// # Errors
 ///
-/// Returns the messages of the errors that kept the import from starting.
-fn import(arguments: &ImportArguments) -> Result<ImportSummary, NotStarted> {
+/// Returns the messages of the errors that kept every source from starting.
+fn import(arguments: &ImportArguments) -> Result<SourceResults, NotStarted> {
     let profile = arguments.profile.as_deref().map(load_profile).transpose()?;
     let state_folder = process_state_folder()?;
     import_with(
@@ -66,7 +88,7 @@ fn import(arguments: &ImportArguments) -> Result<ImportSummary, NotStarted> {
             state_folder: &state_folder,
             free_space: Arc::new(StatvfsFreeSpace::new()),
             cameras: &Gphoto2Cameras::new(),
-            output: &mut io::stdout().lock(),
+            output: &mut io::stdout(),
             errors: &mut io::stderr(),
         },
     )

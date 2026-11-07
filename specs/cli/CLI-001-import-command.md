@@ -1,6 +1,6 @@
 # CLI-001 – `framehive import`
 
-- Status: accepted
+- Status: implemented
 - Module: cli (`apps/cli`)
 - Origin: N18, X1, N26, R9
 - Depends on: IMPORT-001, IMPORT-003, IMPORT-004, IMPORT-005, IMPORT-006, CORE-005

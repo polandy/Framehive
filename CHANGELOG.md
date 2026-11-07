@@ -132,6 +132,13 @@ All user-visible changes are listed here. The format follows
 - Job queue (CORE-007, IMPORT-015, ADR 0035): imports now run as jobs in a job queue
   with one worker thread, first in, first out. `framehive import` and the guided import
   show the same output as before; a pulled card or camera still stops the import.
+- Several sources in one command (CLI-015, IMPORT-015, ADR 0036):
+  `framehive import <source>... <destination>` imports each source as a job of its
+  own. Jobs whose sources are on separate devices and whose destinations share no disk
+  run at the same time; the others run one after another. Each job reserves its
+  sequence numbers and target names when it is queued, so parallel imports never take
+  the same ones. With several sources, each summary follows a line `<source>:`, and
+  the exit code is the worst of the sources.
 
 ### Fixed
 

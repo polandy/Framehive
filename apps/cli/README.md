@@ -20,11 +20,11 @@ with `clap` (builder API, ADR 0020 §6) and is one of the two places, with
 
 ```
 framehive
-framehive import <source> <destination> [--backup <folder>]...
+framehive import <source>... <destination> [--backup <folder>]...
                  [--video-destination <folder>] [--video-backup <folder>]...
                  [--template <template>] [--job-code <text>]
                  [--on-conflict add_suffix|skip|fail] [--dry-run]
-framehive import <source> [<destination>] --profile <name> [other options]
+framehive import <source>... [<destination>] --profile <name> [other options]
 framehive import camera:[<model>|<port>] [<destination>] [other options]
 framehive cameras
 framehive import-log [<run>|last] [--format text|json|csv]
@@ -33,75 +33,18 @@ framehive --help
 framehive --version
 ```
 
-`framehive import` parses the name template, checks `--job-code` with
-`import::JobCode` and `import::require_job_code` (IMPORT-006), resolves the source without symbolic
-links, resolves the longest existing part of the destination and appends the missing
-folders (rejecting `..` among them), and rejects a destination inside the source.
-Each `--backup` folder (CLI-005) is resolved the same way and checked with
-`import::check_backup_destinations` (IMPORT-007.11), also in a dry run.
-So are `--video-destination` and `--video-backup` (CLI-012, IMPORT-013.8). It scans and
-plans, and checks the free space with `adapter-free-space` (CLI-011): a short file system
-stops it with exit code 2 before any folder is created, a dry run after its lines.
-Unless it is a dry run, it then creates the missing folders of all destinations, and
-starts and executes the run with
-`adapter-fs`, `adapter-blake3` and `adapter-clock`, in compatibility mode. The persisted sequence counters (CLI-004, ADR 0029) come from
-`adapter-sequence-counters`, and the import history (CLI-008, ADR 0031) from
-`adapter-sqlite`, both in the state folder; the command stops when the state folder is
-unknown (no absolute `XDG_STATE_HOME` and no home folder). The run gets the resolved paths,
-by which the history identifies a destination (IMPORT-009).
-
 ## Sections
 
+- [The import command](docs/import-command.md): `framehive import`, from the arguments
+  to the jobs of its sources (CLI-001, CLI-004, CLI-005, CLI-011, CLI-012, CLI-015)
+- [Import profiles](docs/import-profiles.md): `--profile` and `framehive config init`
+  (CLI-010)
 - [Cameras](docs/cameras.md): `camera:` sources and `framehive cameras` (CLI-013)
 - [Guided import](docs/guided-import.md): `framehive` without a subcommand (CLI-002,
   CLI-003, CLI-014)
-
-## Import profiles
-
-`framehive import --profile <name>` (CLI-010, `src/profiles.rs`) checks the name
-(ADR 0032), finds the configuration folder (from the platform,
-`XDG_CONFIG_HOME` and `HOME`) and reads
-`profiles/<name>.yaml` through the `FileSystem` port with `import::ImportProfile::read`
-and `adapter-yaml`, with `HOME` for `~`, before anything is scanned. Each setting comes
-from the command line, else the profile, else the default of CLI-001; `--backup`
-and `--video-backup` replace the profile's lists. Only `--job-code` gets the unused job code warning. Every
-failure is `error: …` with exit code 2. `framehive config init` (`src/config_init.rs`)
-writes `profiles/example.yaml` as `<file>.part` renamed without replacing, so an
-existing file is kept (exit code 1).
-
-## Import log
-
-`framehive import-log` (CLI-009) opens the import history of the state folder with
-`SqliteImportHistory::read_only`, so it never creates the history or the state folder.
-Without `<run>` it prints one line per run from `ImportHistory::list_runs`; with a run
-number or `last` it prints `ImportHistory::read_run_log` as text, JSON or RFC 4180 CSV
-(`src/import_log/`, own writers, ADR 0009). Paths are printed
-lossy (U+FFFD for invalid UTF-8). `--format` without `<run>` is a
-usage error. A run that does not exist, `last` without runs, a history that cannot be
-used and an unknown state folder print `error: …` and exit with 2.
-
-## Report and exit codes
-
-The report texts live here, not in the import module. Standard output gets one line
-per file as soon as it is done (`copied`, `would copy`, `already imported`,
-`imported before`, `duplicate`, `skipped`, `failed`), each followed by one indented line
-per backup destination (`backed up`, `already backed up`, `backed up before`,
-`backup failed`) that names the folder
-as given, the files and folders the scan left out (`left out`), a summary line, and one
-`backup <folder>: …` line per backup destination; in a dry run `copied` reads
-`would copy`, in the summary as well, and there are no backup lines. The format
-readiness (CLI-007, `format_readiness_lines`) ends the report of a run that is not a
-dry run: `framehive import` says `source`, the guided import says `card` and prints it
-before the eject question. Errors that stop the command go to standard error as
-`error: <message>`, and so does an import history that fails during the run, after the
-summary. A job code that the template does not use is accepted and reported on
-standard error as `warning: <message>`; there is no other log output yet.
-
-| Code | Meaning |
-|---|---|
-| 0 | Every file was copied, already imported, imported before, a duplicate, skipped or left out |
-| 1 | A file failed, or a folder could not be read (`ImportSummary::has_failures`), a file failed at a backup destination, or the import history failed during the run |
-| 2 | The import did not start: invalid arguments, template or job code, missing source, destination inside the source or not creatable, an invalid or not creatable backup destination, sequence numbers that do not fit, counters that cannot be read or stored, an unknown state folder, an import history that cannot be used, a file system without enough space, or a profile that cannot be found, read or used (CLI-010) |
+- [Import log](docs/import-log.md): `framehive import-log` (CLI-009)
+- [Report and exit codes](docs/report.md): the report lines and the exit codes
+- [Tests](docs/tests.md): how the tests run the binary
 
 ## Modules
 
@@ -109,7 +52,7 @@ standard error as `warning: <message>`; there is no other log output yet.
 |---|---|
 | `arguments` | The `clap` command line and the parsed `Invocation` |
 | `paths` | Source and destination resolution, the inside check, creating the destination |
-| `import_command` | Wires the adapters to the import run (`run.rs`, tested in-crate with `MemoryFreeSpace` and `MemoryCameras`) and maps the result to the exit code |
+| `import_command` | Wires the adapters to the import job of each source (`run.rs`, tested in-crate with `MemoryFreeSpace` and `MemoryCameras`), follows the jobs on threads of their own (`sources.rs`) and maps the results to the exit code |
 | `cameras` | `camera:` sources and `framehive cameras` (CLI-013): naming, finding and opening a camera |
 | `report` | The `ProgressSink` that prints the report lines and the summary |
 | `profiles` | The configuration folder, profile names, and reading the profile of `--profile` (CLI-010) |
@@ -117,20 +60,6 @@ standard error as `warning: <message>`; there is no other log output yet.
 | `import_log` | `framehive import-log` (CLI-009): reading the history, and the `text`, `json` and `csv` writers |
 | `format_readiness` | The format readiness lines (CLI-007), shared by `framehive import` and the guided import |
 | `guided` | The guided import (CLI-002, CLI-003, CLI-014): `dialog` (prompts, waiting, remembered answers), `source` (a card or an opened camera), `device` (opening and reading, eject or release), `card` (summary, import, report), `summary` (plan summary, blockers), `template` (template step, job code), `progress` (progress line, stop on a pulled card), `format` (sizes, rate, time left), `state` (state file), `events` (input events) |
-
-## Tests
-
-`tests/` runs the real binary (`CARGO_BIN_EXE_framehive`) in a temporary folder with
-`TZ=UTC`, with test files from `metadata::testing`. Unreadable files and folders use
-mode 000; when the tests run as root, which reads them anyway, the expectation
-follows what the file system allows. `tests/import_profiles.rs` reads import profiles (IMPORT-011) with the real YAML
-parser, including every profile shown in `docs/` and `specs/` and the example of
-`framehive config init`. `tests/import_profile_option.rs` and `tests/config_init.rs`
-(CLI-010) set `HOME` to a temporary folder and unset `XDG_CONFIG_HOME`. `tests/memory_card.rs` checks the milestone 1
-guarantees end to end on a folder laid out like a memory card: a dry run writes
-nothing, the import fails only the unreadable file, a second run copies nothing, and
-the source keeps its paths, bytes and modification times. `tests/import_log.rs` reads
-the log after real imports, or of a history written with `adapter-sqlite`.
 
 ## Dependencies
 

@@ -37,9 +37,10 @@ fn help_describes_the_import_arguments() {
 
     let help = text(&output.stdout);
     for argument in [
-        "<source>",
-        // Optional, because a profile can name it (CLI-010).
-        "[destination]",
+        // Several sources, then the destination (CLI-015).
+        "<source>... <destination>",
+        // A profile can name the destination (CLI-010).
+        "the profile's destination",
         "--profile <name>",
         "--template",
         "--job-code",

@@ -13,7 +13,6 @@ use import::{
 };
 
 use super::ChosenSettings;
-use crate::arguments::ImportArguments;
 use crate::paths::{Destination, PathError, check_outside, resolve_destination, resolve_source};
 use crate::report::BackupName;
 
@@ -80,7 +79,7 @@ fn paths_of(folders: &[(Destination, PathBuf)]) -> Vec<PathBuf> {
         .collect()
 }
 
-/// Resolves the source and the destinations and checks them against each other
+/// Resolves `given_source` and the destinations and checks them against each other
 /// (CLI-001, CLI-005). A camera source (CLI-013) has the root `/` and is not resolved,
 /// and no destination is checked against it.
 ///
@@ -88,14 +87,14 @@ fn paths_of(folders: &[(Destination, PathBuf)]) -> Vec<PathBuf> {
 ///
 /// Returns the message for the first folder that cannot be resolved or is invalid.
 pub(super) fn resolve_folders(
-    arguments: &ImportArguments,
+    given_source: &Path,
     chosen: &ChosenSettings,
     source_is_camera: bool,
 ) -> Result<Folders, String> {
     let source = if source_is_camera {
         PathBuf::from("/")
     } else {
-        resolve_source(&arguments.source).map_err(|error| error.to_string())?
+        resolve_source(given_source).map_err(|error| error.to_string())?
     };
     let destination =
         resolve_destination(&chosen.destination).map_err(|error| error.to_string())?;

@@ -1,6 +1,6 @@
 # CLI-015 – Several sources in one import command
 
-- Status: accepted
+- Status: implemented
 - Module: cli (`apps/cli`)
 - Origin: Q5, J3
 - Depends on: CLI-001, CLI-007, IMPORT-002, IMPORT-015
@@ -22,7 +22,9 @@ as it is planned, so its sequence numbers follow those of the source before it
 no file system run in parallel; the others run one after another (IMPORT-015,
 "Resources").
 
-**Arguments.** Arguments that hold for every source, such as the template or the job
+**Arguments.** The last folder is the destination. With `--profile`, a single folder is
+the source and the profile names the destination (CLI-010); with more folders, the last
+is the destination as without a profile. Arguments that hold for every source, such as the template or the job
 code, are checked once, before any source; an error there starts no source. A source
 that cannot start, for example because it does not exist or its destination is short of
 space, does not keep the others from importing: each of its errors goes to standard
@@ -51,8 +53,8 @@ start, else 1 when a file failed, else 0.
 
 ### CLI-015.2 – The worst exit code of the sources
 - **Given** a source `cardA` with a file that can be copied, and a source `cardB` with a
-  file that cannot be read
-- **When** both are imported with one command
+  file whose target name is taken by another file
+- **When** both are imported with one command and `--on-conflict fail`
 - **Then** the file of `cardA` is copied, and the exit code is 1
 
 ### CLI-015.3 – A source that cannot start
@@ -78,6 +80,13 @@ start, else 1 when a file failed, else 0.
 - **Then** standard error names `{job}`, no destination is created, and the exit code
   is 2
 
+### CLI-015.7 – With a profile, the last of several folders is the destination
+- **Given** a profile `holiday` that names the destination `holiday-library`, and the
+  sources `cardA` and `cardB`
+- **When** `framehive import cardA cardB library --profile holiday` runs
+- **Then** both sources are imported into `library`, and `holiday-library` is not
+  created
+
 ## Out of scope
 
 - Queueing a newly inserted card in the guided import while a job runs: a later step
@@ -93,3 +102,4 @@ start, else 1 when a file failed, else 0.
 | Date | Change |
 |---|---|
 | 2026-11-07 | Created (Q5, J3, ADR 0036) |
+| 2026-11-07 | Implemented (J3, Q5); the last folder is the destination also with a profile |

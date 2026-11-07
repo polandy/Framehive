@@ -8,6 +8,7 @@
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::thread;
 
 use adapter_blake3::Blake3Hasher;
 use adapter_clock::SystemClock;
@@ -16,21 +17,22 @@ use adapter_sequence_counters::FileSequenceCounters;
 use adapter_sqlite::SqliteImportHistory;
 use files::{Cameras, FileSystem, FreeSpace};
 use import::{
-    CAMERA_FORMAT_READINESS_NOTE, ImportJob, ImportJobReports, ImportJobSettings, ImportPorts,
-    ImportProfile, ImportRun, ImportSettings, ImportSummary, PlannedRun, ProgressSink,
-    ReservedTargetNames, SessionSequence, SpaceShortage, scan_source,
+    CAMERA_FORMAT_READINESS_NOTE, ImportJob, ImportJobSettings, ImportPorts, ImportProfile,
+    ImportRun, ImportSettings, ImportSummary, PlannedRun, ProgressSink, ReservedTargetNames,
+    SessionSequence, SpaceShortage, scan_source,
 };
 use jobs::JobQueue;
 use naming::CompatibilityMode;
 
 use super::folders::{Folders, backup_names, resolve_folders, unusable_message};
+use super::sources::{Enqueued, Streams};
 use super::{ChosenSettings, choose_settings};
 use crate::arguments::ImportArguments;
 use crate::cameras::{OpenedCamera, camera_choice, open_camera};
 use crate::guided::space_text;
 use crate::paths::create_destination;
 use crate::report::ReportPrinter;
-use crate::{JOB_ENDED_UNEXPECTEDLY, write_error, write_warning};
+use crate::{JOB_ENDED_UNEXPECTEDLY, write_warning};
 
 /// What the import takes from the process: the tests give their own.
 pub(super) struct Surroundings<'a> {
@@ -41,9 +43,9 @@ pub(super) struct Surroundings<'a> {
     /// The connected cameras, for a `camera:` source (CLI-013).
     pub(super) cameras: &'a dyn Cameras,
     /// Standard output, for the report.
-    pub(super) output: &'a mut dyn Write,
+    pub(super) output: &'a mut (dyn Write + Send),
     /// Standard error, for the warnings and the errors of a run that started.
-    pub(super) errors: &'a mut dyn Write,
+    pub(super) errors: &'a mut (dyn Write + Send),
 }
 
 /// The import did not start: the messages for standard error, one per line, without
@@ -64,12 +66,12 @@ impl From<String> for NotStarted {
 ///
 /// Returns the messages for unusable folders or a camera that cannot be opened.
 fn folders_and_camera(
-    arguments: &ImportArguments,
+    source: &Path,
     chosen: &ChosenSettings,
     cameras: &dyn Cameras,
 ) -> Result<(Folders, Option<OpenedCamera>), NotStarted> {
-    let choice = camera_choice(&arguments.source);
-    let folders = resolve_folders(arguments, chosen, choice.is_some())?;
+    let choice = camera_choice(source);
+    let folders = resolve_folders(source, chosen, choice.is_some())?;
     let camera = choice
         .map(|choice| open_camera(cameras, &choice))
         .transpose()?;
@@ -98,32 +100,83 @@ fn import_settings<'a>(
     }
 }
 
-/// Checks the arguments, checks the free space, prepares the destinations and runs the
-/// import, printing the report as it goes.
+/// The arguments, one source as given and the settings chosen for every source.
+type Given<'a> = (&'a ImportArguments, &'a Path, &'a ChosenSettings);
+
+/// What became of each source, in the order given (CLI-015).
+pub(super) type SourceResults = Vec<Result<ImportSummary, NotStarted>>;
+
+/// Chooses the settings, then checks, plans and enqueues the job of each source in the
+/// order given, and prints each job's report as it goes (CLI-001, CLI-015).
 ///
 /// # Errors
 ///
-/// Returns the messages of the errors that kept the import from starting.
+/// Returns the messages of the errors that kept every source from starting.
 pub(super) fn import_with(
     arguments: &ImportArguments,
     profile: Option<ImportProfile>,
     surroundings: Surroundings<'_>,
-) -> Result<ImportSummary, NotStarted> {
+) -> Result<SourceResults, NotStarted> {
     let chosen = choose_settings(arguments, profile)?;
-    // The camera is released when this function returns (CLI-013).
-    let (folders, camera) = folders_and_camera(arguments, &chosen, surroundings.cameras)?;
+    let ports = import_ports(surroundings.state_folder, surroundings.free_space);
+    let streams = Streams::new(surroundings.output, surroundings.errors);
+    let streams = &streams;
+    let several = arguments.sources.len() > 1;
+    let (mut queue, _updates) = JobQueue::start();
+    // Each opened camera is released once every job ended (CLI-013).
+    let mut opened = Vec::new();
+    let results = thread::scope(|scope| {
+        let following: Vec<_> = arguments
+            .sources
+            .iter()
+            .map(|source| {
+                let given = (arguments, source.as_path(), &chosen);
+                let (enqueued, camera) =
+                    enqueue_source(given, &ports, surroundings.cameras, &mut queue, streams)?;
+                opened.extend(camera);
+                let named = several.then_some(source.as_path());
+                Ok(scope.spawn(move || enqueued.follow(named, streams)))
+            })
+            .collect();
+        following
+            .into_iter()
+            .map(|following| {
+                following.and_then(|thread| {
+                    thread.join().unwrap_or_else(|_| {
+                        Err(NotStarted::from(JOB_ENDED_UNEXPECTEDLY.to_owned()))
+                    })
+                })
+            })
+            .collect()
+    });
+    Ok(results)
+}
+
+/// Checks the folders and the free space of one source, prepares its destinations,
+/// plans its import and enqueues its job.
+///
+/// # Errors
+///
+/// Returns the messages of the errors that kept the source from starting.
+fn enqueue_source(
+    (arguments, source, chosen): Given<'_>,
+    ports: &ImportPorts,
+    cameras: &dyn Cameras,
+    queue: &mut JobQueue,
+    streams: &Streams<'_>,
+) -> Result<(Enqueued, Option<OpenedCamera>), NotStarted> {
+    let (folders, camera) = folders_and_camera(source, chosen, cameras)?;
     let backup_paths = folders.backup_paths();
     let video_backup_paths = folders.video_backup_paths();
     let settings = import_settings(
         &folders,
-        &chosen,
+        chosen,
         (&backup_paths, &video_backup_paths),
         arguments.dry_run,
     );
-    let ports = import_ports(surroundings.state_folder, surroundings.free_space);
     let mut run = ports.import_run();
-    let mut printer = ReportPrinter::new(surroundings.output, arguments.dry_run)
-        .with_backup_names(backup_names(&folders));
+    let mut printer =
+        ReportPrinter::new(Vec::new(), arguments.dry_run).with_backup_names(backup_names(&folders));
     let scan = if let Some(camera) = &camera {
         run = run
             .with_source(&camera.file_system)
@@ -139,14 +192,16 @@ pub(super) fn import_with(
         .map_err(|error| error.to_string())
     }?;
     printer.scan_finished(&scan);
+    streams.print(&printer.take_written());
     let plan = run
         .plan(&settings, &scan)
         .map_err(|error| error.to_string())?;
-    if let Err(shortages) = check_free_space(&run, &settings, &folders, &plan, surroundings.errors)
-    {
+    let space = check_free_space(&run, &settings, &folders, &plan, &mut **streams.errors());
+    if let Err(shortages) = space {
         if arguments.dry_run {
             // A dry run still lists what it would do (CLI-011.3).
             run.execute(&settings, plan, &mut printer);
+            streams.print(&printer.take_written());
         }
         return Err(shortages);
     }
@@ -158,12 +213,9 @@ pub(super) fn import_with(
     if let Some(camera) = &camera {
         job = job.with_source(Box::new(camera.file_system.clone()), camera.name.clone());
     }
-    let summary = run_job(job, reports, &mut printer)?;
-    printer.print_summary(&summary);
-    if let Some(error) = &summary.history_error {
-        write_error(surroundings.errors, &error.to_string());
-    }
-    Ok(summary)
+    job.enqueue(queue)
+        .map_err(|error| NotStarted::from(error.to_string()))?;
+    Ok((Enqueued { reports, printer }, camera))
 }
 
 /// The ports of the import: the library on this machine, the state in `state_folder`.
@@ -178,28 +230,6 @@ fn import_ports(state_folder: &Path, free_space: Arc<dyn FreeSpace + Send + Sync
         free_space,
         reserved_names: Arc::new(ReservedTargetNames::new()),
     }
-}
-
-/// Runs `job` in a job queue of its own (IMPORT-015) and shows its reports with
-/// `printer` as they come.
-///
-/// # Errors
-///
-/// Returns the message of the run error when the planned run cannot start.
-fn run_job(
-    job: ImportJob,
-    reports: ImportJobReports,
-    printer: &mut dyn ProgressSink,
-) -> Result<ImportSummary, NotStarted> {
-    let (mut queue, _updates) = JobQueue::start();
-    job.enqueue(&mut queue)
-        .map_err(|error| NotStarted::from(error.to_string()))?;
-    let end = reports
-        .follow(printer)
-        .ok_or_else(|| JOB_ENDED_UNEXPECTEDLY.to_owned())?;
-    // An opened camera comes back with the end report; the caller still holds it.
-    end.result
-        .map_err(|error| NotStarted::from(error.to_string()))
 }
 
 /// Checks that each file system can hold what the run writes to it, before any folder

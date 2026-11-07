@@ -27,7 +27,6 @@ feature live in its spec, decisions in `docs/adr/`. Add items with `/todo`.
 - [ ] Show `ImportSummary::free_space_unknown` in the CLI or drop the field — the CLI prints the warnings of its own first check, and only tests read the field (IMPORT-012, I1 review) (2026-11-05)
 - [ ] A shortage that only the second free-space check in `ImportRun::start` finds comes after `framehive import` created the folders — rare, but it contradicts "nothing is created" (IMPORT-012, CLI-011, I1 review) (2026-11-05)
 - [ ] Give videos a name template of their own — today they use the import's name template (IMPORT-013, R7, owner decision D2) (2026-11-06)
-- [ ] Split `apps/cli/README.md` into one file per section with a `README.md` index — it is at 10238 of 10240 bytes, so the next CLI change cannot add a line (architecture §7, R7+I4) (2026-11-06)
 - [ ] Catch a photo target that collides with a video target when the video destination lies inside the import destination — they use separate target resolvers; the standard templates cannot produce it (IMPORT-013, R7+I4 review) (2026-11-06)
 - [ ] Count only the photo backups in `FormatReadiness::of` for a run without files — `summary.backups` now holds the video backups too, so the verdict of an empty run can name too many locations (IMPORT-008, R7+I4 review) (2026-11-06)
 - [ ] Test the CLI line "the import stopped unexpectedly" — it shows only after a panicking import, which the test harnesses cannot inject today (`apps/cli/src/guided/card.rs`, `apps/cli/src/import_command/run.rs`; IMPORT-015, PR #46 review) (2026-11-07)
