@@ -5,7 +5,7 @@
 
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
-use std::process::ExitCode;
+use std::process::{self, ExitCode};
 
 use adapter_fs::StdFileSystem;
 use files::FileSystem;
@@ -69,7 +69,8 @@ pub(crate) fn run_config_init() -> ExitCode {
             return ExitCode::from(NOT_STARTED);
         }
     };
-    match write_example(&StdFileSystem::new(), &profiles_folder(&folder)) {
+    let profiles = profiles_folder(&folder);
+    match write_example(&StdFileSystem::new(), &profiles, process::id()) {
         Ok(path) => {
             // Nothing more can be reported when standard output is gone.
             let _ = writeln!(io::stdout().lock(), "wrote {}", path.display());
@@ -84,13 +85,19 @@ pub(crate) fn run_config_init() -> ExitCode {
 
 /// Writes the example profile into `profiles`, creating missing folders, and returns
 /// its path. An existing file is never replaced: the file is written as
-/// `<file>.part` and renamed without replacing.
+/// `<file>.<run>.part` and renamed without replacing. `run` tells overlapping runs
+/// apart: with one shared `.part` name, a second run would truncate the file that the
+/// first run had just linked to the example's name.
 ///
 /// # Errors
 ///
 /// Returns the message of CLI-010 when the file exists or a folder or the file cannot
 /// be written.
-fn write_example(file_system: &dyn FileSystem, profiles: &Path) -> Result<PathBuf, String> {
+fn write_example(
+    file_system: &dyn FileSystem,
+    profiles: &Path,
+    run: u32,
+) -> Result<PathBuf, String> {
     let path = profiles.join(EXAMPLE_FILE);
     let exists = || format!("{} exists already; nothing was written", path.display());
     create_folders(file_system, profiles).map_err(|error| {
@@ -103,7 +110,7 @@ fn write_example(file_system: &dyn FileSystem, profiles: &Path) -> Result<PathBu
     if file_system.entry(&path).map_err(cannot_write)?.is_some() {
         return Err(exists());
     }
-    let part = part_path(&path);
+    let part = part_path(&path, run);
     write_part(file_system, &part).map_err(cannot_write)?;
     match file_system.rename_no_replace(&part, &path) {
         Ok(()) => {}
@@ -121,9 +128,9 @@ fn write_example(file_system: &dyn FileSystem, profiles: &Path) -> Result<PathBu
     Ok(path)
 }
 
-fn part_path(path: &Path) -> PathBuf {
+fn part_path(path: &Path, run: u32) -> PathBuf {
     let mut name = path.as_os_str().to_owned();
-    name.push(".part");
+    name.push(format!(".{run}.part"));
     PathBuf::from(name)
 }
 
@@ -135,9 +142,35 @@ fn write_part(file_system: &dyn FileSystem, part: &Path) -> io::Result<()> {
 
 #[cfg(test)]
 mod tests {
+    use domain::Timestamp;
+    use files::testing::MemoryFileSystem;
     use import::IMPORT_PROFILE_SCHEMA_ID;
 
     use super::*;
+
+    const PROFILES: &str = "/config/framehive/profiles";
+
+    #[test]
+    fn another_run_keeps_its_part_file() {
+        let file_system = MemoryFileSystem::new();
+        let example = Path::new(PROFILES).join(EXAMPLE_FILE);
+        let other_part = part_path(&example, 7);
+        file_system.add_folder(Path::new(PROFILES));
+        file_system.add_file(&other_part, b"# other run", Timestamp::from_unix_seconds(0));
+
+        let path = write_example(&file_system, Path::new(PROFILES), 8);
+
+        assert_eq!(path, Ok(example.clone()));
+        assert_eq!(
+            file_system.content(&other_part),
+            Some(b"# other run".to_vec())
+        );
+        assert_eq!(
+            file_system.content(&example),
+            Some(EXAMPLE_PROFILE.as_bytes().to_vec())
+        );
+        assert_eq!(file_system.content(&part_path(&example, 8)), None);
+    }
 
     #[test]
     fn the_example_names_the_published_schema() {
