@@ -21,20 +21,7 @@ impl fmt::Display for InvalidTime {
 
 impl std::error::Error for InvalidTime {}
 
-/// A capture time as `YYYY-MM-DDTHH:MM:SS`.
-pub(crate) fn capture_time_text(time: LocalDateTime) -> String {
-    format!(
-        "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}",
-        time.year(),
-        time.month(),
-        time.day(),
-        time.hour(),
-        time.minute(),
-        time.second()
-    )
-}
-
-/// Reads a capture time written by [`capture_time_text`].
+/// Reads a capture time written by `LocalDateTime`'s `Display`.
 pub(crate) fn parse_capture_time(text: &str) -> Result<LocalDateTime, InvalidTime> {
     parse_local(text).ok_or_else(|| InvalidTime(text.to_owned()))
 }
@@ -113,7 +100,7 @@ mod tests {
     fn a_capture_time_reads_back_as_written() {
         let time = LocalDateTime::new(2026, 10, 17, 14, 5, 9).unwrap();
 
-        assert_eq!(parse_capture_time(&capture_time_text(time)).unwrap(), time);
+        assert_eq!(parse_capture_time(&time.to_string()).unwrap(), time);
     }
 
     #[test]

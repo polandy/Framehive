@@ -13,7 +13,6 @@ use std::path::Path;
 use std::process::ExitCode;
 
 use adapter_sqlite::SqliteImportHistory;
-use domain::LocalDateTime;
 use history::{ImportHistory, RunId, RunLog};
 
 use crate::arguments::{ImportLogArguments, LogFormat, RunSelection};
@@ -94,19 +93,6 @@ fn read_log(history: &dyn ImportHistory, selection: RunSelection) -> Result<RunL
 /// U+FFFD.
 fn shown(path: &Path) -> String {
     path.to_string_lossy().into_owned()
-}
-
-/// A capture time as `YYYY-MM-DDTHH:MM:SS`, as the import history records it.
-fn capture_time_text(time: LocalDateTime) -> String {
-    format!(
-        "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}",
-        time.year(),
-        time.month(),
-        time.day(),
-        time.hour(),
-        time.minute(),
-        time.second()
-    )
 }
 
 #[cfg(test)]

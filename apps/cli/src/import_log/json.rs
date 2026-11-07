@@ -8,7 +8,7 @@ use std::fmt::Write;
 
 use history::{CopyRecord, RunLog};
 
-use super::{capture_time_text, shown};
+use super::shown;
 
 /// The log as one JSON object on one line, followed by a newline.
 pub(super) fn run_log(log: &RunLog) -> String {
@@ -36,7 +36,7 @@ fn copy_object(copy: &CopyRecord) -> String {
         string(&shown(&copy.source_path)),
         string(&copy.original_file_name),
         copy.size,
-        optional(copy.capture_time.map(capture_time_text)),
+        optional(copy.capture_time.map(|time| time.to_string())),
         string(&copy.checksum.to_string()),
         string(&copy.target),
         string(&copy.recorded_at.to_string()),
