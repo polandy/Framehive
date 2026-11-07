@@ -18,6 +18,7 @@ use import::ImportSummary;
 
 use super::{NotStarted, Surroundings, exit_code, import_with, locations};
 use crate::arguments::{Invocation, parse};
+use crate::testing::PanickingInTheJob;
 
 /// A card with `DSCF0001.RAF` of 2.5 MB, and the folders of one test run.
 pub(super) struct Folders {
@@ -277,6 +278,25 @@ fn a_shortage_found_when_the_job_starts_creates_nothing() {
     assert_eq!(run.not_started(), std::slice::from_ref(&line));
     assert_eq!(run.errors, format!("error: {line}\n"));
     assert!(!folders.path("new").exists());
+    assert_eq!(exit_code(&run.result), 2);
+}
+
+/// spec: CLI-015.11
+#[test]
+fn an_import_that_stops_unexpectedly_did_not_start() {
+    let folders = Folders::new();
+
+    let run = folders.import_from(
+        folders.path("card").as_os_str(),
+        &[&folders.path("library")],
+        Arc::new(PanickingInTheJob::new()),
+        &MemoryCameras::new(),
+    );
+
+    let line = "the import stopped unexpectedly";
+    assert_eq!(run.not_started(), [line.to_owned()]);
+    assert_eq!(run.errors, format!("error: {line}\n"));
+    assert!(!run.output.contains("copied"), "{}", run.output);
     assert_eq!(exit_code(&run.result), 2);
 }
 

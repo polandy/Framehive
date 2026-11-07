@@ -44,6 +44,10 @@ with one source (CLI-001, CLI-004), it creates no file or folder and stores no n
 **Exit code.** The highest of the sources' exit codes (CLI-001): 2 when a source did not
 start, else 1 when a file failed, else 0.
 
+**A job that stops unexpectedly.** An import job that ends without an end report, as
+after a fault in the import itself (CORE-007), counts as a source that did not start:
+its error is `the import stopped unexpectedly`.
+
 ## Acceptance criteria
 
 ### CLI-015.1 – Two sources
@@ -113,6 +117,12 @@ start, else 1 when a file failed, else 0.
 - **Then** the output has `would copy` lines to `001.jpg` and `002.jpg` for `cardA` and
   to `003.jpg` for `cardB`, the stored counter is still 0, `library` does not exist, and
   the exit code is 0
+
+### CLI-015.11 – An import that stops unexpectedly
+- **Given** a source whose import job fails with a fault in the import itself
+- **When** it is imported
+- **Then** standard error has `error: the import stopped unexpectedly`, nothing is
+  copied, and the exit code is 2
 
 ## Out of scope
 

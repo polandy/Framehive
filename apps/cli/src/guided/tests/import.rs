@@ -4,9 +4,12 @@
 //! The import, its progress and report, the eject and a card pulled meanwhile.
 
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::time::Duration;
 
 use devices::DeviceSource;
+
+use crate::testing::PanickingInTheJob;
 
 use super::support::{Harness, OCTOBER_17, PICTURES, PRESET_1, Step};
 
@@ -154,4 +157,23 @@ fn a_card_pulled_during_the_import_is_imported_again_when_it_is_back() {
             Some(vec![number; MEGABYTES_10])
         );
     }
+}
+
+/// spec: CLI-003.15
+#[test]
+fn an_import_that_stops_unexpectedly_shows_the_summary_again() {
+    let mut harness = with_three_files();
+    harness.free_space = Arc::new(PanickingInTheJob::new());
+
+    let transcript = harness.run(vec![Step::Line("")]);
+
+    let output = &transcript.output;
+    let line = output
+        .find("Could not import EOS_DIGITAL: the import stopped unexpectedly\n")
+        .unwrap_or_else(|| panic!("{output}"));
+    assert!(
+        output[line..].contains(&format!("\x20 named     {PRESET_1}\n")),
+        "{output}"
+    );
+    assert!(!harness.memory.paths().contains(&imported(1)), "{output}");
 }

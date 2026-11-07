@@ -15,6 +15,8 @@ mod import_log;
 mod paths;
 mod profiles;
 mod report;
+#[cfg(test)]
+mod testing;
 
 use std::io::{self, Write};
 use std::process::ExitCode;
