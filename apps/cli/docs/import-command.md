@@ -34,6 +34,9 @@ hint that names the last folder with `--destination`. Each source becomes an `im
 and the `ReservedTargetNames`. The settings are chosen once; then each source is
 checked, scanned, planned and enqueued in the order given, so `ImportJob::enqueue`
 reserves its numbers and target names after those of the source before it (IMPORT-015).
+In a dry run, the ports' counters are an `import::DryRunMemory` over the persisted
+ones, and each job gets it with `with_dry_run_memory`, so the jobs reserve in memory
+and the preview matches a real run (IMPORT-016).
 The queue runs the jobs whose sources and destinations share no device in parallel.
 A thread per job (`std::thread::scope`, `src/import_command/sources.rs`) follows its
 reports with a `ReportPrinter` that writes to a buffer, and passes each report to

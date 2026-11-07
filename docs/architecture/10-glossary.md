@@ -55,6 +55,7 @@ Names in the code follow this glossary.
 | Resource key | `ResourceKey` | An opaque name of something a job uses, such as a source device or a destination file system; two jobs that name a common resource key conflict and run one after another (CORE-007, ADR 0036) |
 | Job ID | `JobId` | Names a job in its job queue; numbered from 1 per queue in the order the jobs were enqueued (CORE-007) |
 | Job state | `JobState` | Where a job is: `Queued`, `Running`, `Finished`, `Stopped`, `Failed` with a message, or `Removed` (CORE-007) |
+| Dry-run memory | `DryRunMemory` | The sequence counters and target names that the dry-run import jobs of one command reserve in memory, so a dry run of several sources shows what a real run would do; the persisted counters are never written (IMPORT-016) |
 | Import job | `ImportJob` | An import run as a job: it owns its settings, ports and source, reports each step to whoever enqueued it, and hands an opened camera back when it ends; enqueued with its plan, it reserves its sequence range and target names (IMPORT-015, ADR 0036) |
 | Reserved target names | `ReservedTargetNames` | The target names that the import jobs of one application reserved when they were enqueued; a reserved name counts as taken for the conflicts of the other jobs (IMPORT-015, ADR 0036) |
 | Index | `Index` | Machine-local database, reconstructible from files |

@@ -9,6 +9,7 @@
 mod backup;
 mod conflicts;
 mod destinations;
+mod dry_run;
 mod free_space;
 mod job;
 mod job_code;
@@ -34,6 +35,7 @@ pub use conflicts::{
     ConflictError, ConflictOutcome, ConflictPolicy, TargetRequest, TargetResolver,
 };
 pub use destinations::{VideoDestinationError, VideoDestinationProblem, check_video_destination};
+pub use dry_run::DryRunMemory;
 pub use free_space::{FreeSpaceCheck, FreeSpaceUnknown, NotEnoughSpace, SpaceShortage};
 pub use job::{
     ImportJob, ImportJobEnd, ImportJobReports, ImportJobSettings, ImportPorts, OwnSource,

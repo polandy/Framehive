@@ -138,7 +138,9 @@ All user-visible changes are listed here. The format follows
   run at the same time; the others run one after another. Each job reserves its
   sequence numbers and target names when it is queued, so parallel imports never take
   the same ones. With several sources, each summary follows a line `<source>:`, and
-  the exit code is the worst of the sources.
+  the exit code is the worst of the sources. A dry run of several sources counts the
+  numbers and target names across them in memory (IMPORT-016), so it shows what the
+  real run would do, and stores nothing.
 
 ### Changed
 

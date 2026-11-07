@@ -45,8 +45,8 @@ enqueued with its plan reserves it, session numbers too, when it is enqueued (IM
 parallel never share numbers. An import run, and an import job that scans its source
 itself, reserve when the import starts, before the first file is copied. In the guided
 import this is Enter; `framehive import` reserves when it enqueues each source's job.
-A dry run (CLI-001) and the plan summary of the guided import (CLI-003) show the numbers the import would get if no
-other import started in between, and reserve nothing. Two imports that start at the same
+A dry run and the guided plan summary (CLI-001, CLI-003) show the numbers the import would get if no
+other import started in between, and reserve nothing but in memory (IMPORT-016). Two imports that start at the same
 time, in two processes, get ranges one after the other. When an import is cancelled,
 fails or is removed from the queue, its unused numbers are not returned, and an asset
 that is not copied (IMPORT-003) keeps its number unused. Gaps are acceptable; duplicates are not. Session and letter numbers start at 1 in every run and
@@ -117,7 +117,7 @@ card gets the same names again there.
 
 ### IMPORT-002.9 – A dry run reserves nothing
 - **Given** the template `{seq_stored:4}.{ext}` and the stored counter at 250
-- **When** the user makes a dry run of 3 pictures, and then starts the import
+- **When** a dry run of 3 pictures runs, and then the import
 - **Then** the dry run shows `0251`–`0253`, the import gets `0251`–`0253`, and the
   counter is at 253
 

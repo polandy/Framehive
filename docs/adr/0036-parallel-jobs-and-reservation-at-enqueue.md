@@ -112,8 +112,9 @@ as destination, a hint shows the command with `--destination`.
 
 - Imports on separate devices run in parallel, and the CLI imports several sources with
   one command (CLI-001). `--destination` is a breaking change of the command line (§8).
-- A planned job's numbers are fixed at enqueue; a dry run reserves nothing, so a dry run
-  of several sources shows each source's numbers as if it were alone.
+- A planned job's numbers are fixed at enqueue. A dry run of several sources reserves
+  in a dry-run memory instead (IMPORT-016): its numbers and target names continue
+  across the sources as in a real run, and nothing persisted is written.
 - A job that panics still fails alone; the worker threads of other jobs go on.
 - The guided import queueing a newly inserted card while a job runs is a later step of
   J2.

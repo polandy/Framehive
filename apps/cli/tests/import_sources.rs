@@ -295,3 +295,44 @@ fn the_error_of_a_source_comes_before_the_report_of_the_next() {
     assert!(error < report, "{written}");
     assert_eq!(status.code(), Some(2));
 }
+
+/// spec: CLI-015.10
+#[test]
+fn a_dry_run_of_several_sources_counts_across_them() {
+    let folders = Folders::new();
+    card(&folders, "cardA", &["a.jpg", "b.jpg"]);
+    card(&folders, "cardB", &["c.jpg"]);
+    let stored = "format_version=1\nstored_last=0\n";
+    folders.write_counters(stored);
+
+    let output = import(
+        &folders,
+        &[
+            "cardA",
+            "cardB",
+            "--destination",
+            "library",
+            "--dry-run",
+            "--template",
+            "{seq_stored:3}.{ext}",
+        ],
+    );
+
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    let mut first_card: Vec<_> = lines(&output)
+        .into_iter()
+        .filter(|line| {
+            line.starts_with("would copy  a.jpg") || line.starts_with("would copy  b.jpg")
+        })
+        .map(|line| line.rsplit(' ').next().unwrap().to_owned())
+        .collect();
+    first_card.sort();
+    assert_eq!(first_card, ["001.jpg", "002.jpg"], "{}", stdout(&output));
+    assert!(
+        has_line(&output, "would copy  c.jpg -> 003.jpg"),
+        "{}",
+        stdout(&output)
+    );
+    assert_eq!(fs::read_to_string(folders.counter_file()).unwrap(), stored);
+    assert!(!library(&folders).exists());
+}

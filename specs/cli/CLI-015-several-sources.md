@@ -36,8 +36,9 @@ interleave. Each source's summary line, with the lines that follow it (CLI-005,
 CLI-007), is printed when that source's job ends, after a line `<source as given>:`.
 With one source there is no such line, and the output is that of CLI-001.
 
-**Dry run.** A dry run reserves nothing, so a dry run of several sources shows each
-source's sequence numbers as if it were imported alone.
+**Dry run.** A dry run of several sources counts the sequence numbers and target names
+across the sources in memory (IMPORT-016), so it shows what a real run would do. As
+with one source (CLI-001, CLI-004), it creates no file or folder and stores no number.
 
 **Exit code.** The highest of the sources' exit codes (CLI-001): 2 when a source did not
 start, else 1 when a file failed, else 0.
@@ -100,6 +101,15 @@ start, else 1 when a file failed, else 0.
   output and standard error written to one file
 - **Then** the line that starts with `error: cardB: ` comes before the line `cardA:`
 
+### CLI-015.10 – A dry run of several sources
+- **Given** a source `cardA` with `a.jpg` and `b.jpg`, a source `cardB` with `c.jpg`,
+  and the stored counter at 0
+- **When** `framehive import cardA cardB --destination library --dry-run --template '{seq_stored:3}.{ext}'`
+  runs
+- **Then** the output has `would copy` lines to `001.jpg` and `002.jpg` for `cardA` and
+  to `003.jpg` for `cardB`, the stored counter is still 0, `library` does not exist, and
+  the exit code is 0
+
 ## Out of scope
 
 - Queueing a newly inserted card in the guided import while a job runs: a later step
@@ -119,3 +129,4 @@ start, else 1 when a file failed, else 0.
 | 2026-11-07 | Every folder is a source, also with a profile; `--destination` names the destination (CLI-016, ADR 0036); CLI-015.7 changed, CLI-015.8 added |
 | 2026-11-07 | The sources are checked before any job (CLI-016): CLI-015.3 uses a source that cannot be read |
 | 2026-11-07 | The error of a source that cannot start is printed at once: CLI-015.9 |
+| 2026-11-07 | A dry run of several sources counts in memory (IMPORT-016): CLI-015.10 |

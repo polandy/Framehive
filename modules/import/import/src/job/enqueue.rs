@@ -16,7 +16,8 @@ use crate::run::{FilePlan, ImportSettings, PlannedRun};
 impl ImportJob {
     /// Enqueues the job in `queue`. A job given its plan first reserves the sequence
     /// range of the plan and the target names of its planned files, unless it is a
-    /// dry run; a job without a plan reserves its numbers when it starts.
+    /// dry run without the dry-run memory (IMPORT-016); a job without a plan reserves
+    /// its numbers when it starts.
     ///
     /// # Errors
     ///
@@ -25,8 +26,13 @@ impl ImportJob {
     pub fn enqueue(mut self, queue: &mut JobQueue) -> Result<JobId, RunError> {
         if let Some(plan) = self.plan.take() {
             let settings = self.settings.settings();
-            let plan = self.ports.import_run().reserve(&settings, plan)?;
-            if !settings.dry_run {
+            let reserves = !settings.dry_run || self.dry_run_memory.is_some();
+            let plan = if reserves {
+                self.ports.import_run().reserve_numbers(&settings, plan)?
+            } else {
+                plan
+            };
+            if reserves {
                 let targets = planned_targets(&plan, &settings);
                 self.reserved = Some(
                     self.ports

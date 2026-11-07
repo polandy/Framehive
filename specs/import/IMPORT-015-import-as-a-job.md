@@ -24,8 +24,8 @@ before it enqueues: an import job given its plan (see "Starting from a plan") re
 the sequence range of its plan (IMPORT-002, "Reservation") and the target names of its
 planned files at the import destination and the video destination. A job that cannot
 reserve its numbers is not enqueued; the enqueuer gets the run error instead. An import
-job without a plan, and a dry run, reserve nothing when they are enqueued: the job
-reserves its numbers when it starts, as an import run does.
+job without a plan reserves its numbers when it starts, as an import run does. A dry
+run reserves nothing, or only in memory (IMPORT-016).
 
 **Reserved target names.** The import jobs of one application share one register of
 reserved target names. A name is reserved from the enqueueing until its job ends or is

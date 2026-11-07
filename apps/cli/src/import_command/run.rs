@@ -17,9 +17,9 @@ use adapter_sequence_counters::FileSequenceCounters;
 use adapter_sqlite::SqliteImportHistory;
 use files::{Cameras, FileSystem, FreeSpace};
 use import::{
-    CAMERA_FORMAT_READINESS_NOTE, ImportJob, ImportJobSettings, ImportPorts, ImportRun,
-    ImportSettings, ImportSummary, PlannedRun, ProgressSink, ReservedTargetNames, SessionSequence,
-    SpaceShortage, scan_source,
+    CAMERA_FORMAT_READINESS_NOTE, DryRunMemory, ImportJob, ImportJobSettings, ImportPorts,
+    ImportRun, ImportSettings, ImportSummary, PlannedRun, ProgressSink, ReservedTargetNames,
+    SessionSequence, SpaceShortage, scan_source,
 };
 use jobs::JobQueue;
 use naming::CompatibilityMode;
@@ -140,7 +140,14 @@ pub(super) fn import_with(
 ) -> Result<SourceResults, NotStarted> {
     let chosen = choose_settings(arguments, profile)?;
     let checked = resolve_sources(&arguments.sources, &chosen)?;
-    let ports = import_ports(surroundings.state_folder, surroundings.free_space);
+    let mut ports = import_ports(surroundings.state_folder, surroundings.free_space);
+    // A dry run counts the numbers and target names across the sources in memory, so
+    // it shows what a real run would do (IMPORT-016).
+    let dry_run_memory = arguments.dry_run.then(|| {
+        let memory = Arc::new(DryRunMemory::new(Arc::clone(&ports.counters)));
+        ports.counters = Arc::clone(&memory) as _;
+        memory
+    });
     let streams = Streams::new(surroundings.output, surroundings.errors);
     let streams = &streams;
     let several = arguments.sources.len() > 1;
@@ -157,7 +164,13 @@ pub(super) fn import_with(
                 let named = several.then_some(source.as_path());
                 // A source that cannot start is reported at once; the others go on.
                 let (enqueued, camera) = streams.reported(
-                    enqueue_source(given, &ports, surroundings.cameras, &mut queue, streams),
+                    enqueue_source(
+                        given,
+                        (&ports, dry_run_memory.as_ref()),
+                        surroundings.cameras,
+                        &mut queue,
+                        streams,
+                    ),
                     named,
                 )?;
                 opened.extend(camera);
@@ -181,14 +194,14 @@ pub(super) fn import_with(
 }
 
 /// Opens the camera of one source, checks its free space, prepares its destinations,
-/// plans its import and enqueues its job.
+/// plans its import and enqueues its job, in a dry run with the dry-run memory.
 ///
 /// # Errors
 ///
 /// Returns the messages of the errors that kept the source from starting.
 fn enqueue_source(
     (arguments, source, chosen, folders): Given<'_>,
-    ports: &ImportPorts,
+    (ports, dry_run_memory): (&ImportPorts, Option<&Arc<DryRunMemory>>),
     cameras: &dyn Cameras,
     queue: &mut JobQueue,
     streams: &Streams<'_>,
@@ -238,6 +251,9 @@ fn enqueue_source(
     }
     let (job, reports) = ImportJob::new(ports.clone(), ImportJobSettings::of(&settings));
     let mut job = job.with_plan(plan);
+    if let Some(memory) = dry_run_memory {
+        job = job.with_dry_run_memory(Arc::clone(memory));
+    }
     if let Some(camera) = &camera {
         job = job.with_source(Box::new(camera.file_system.clone()), camera.name.clone());
     }

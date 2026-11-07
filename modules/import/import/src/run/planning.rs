@@ -41,9 +41,27 @@ impl ImportRun<'_> {
     pub(crate) fn reserve(
         &self,
         settings: &ImportSettings<'_>,
+        plan: PlannedRun,
+    ) -> Result<PlannedRun, RunError> {
+        if settings.dry_run {
+            return Ok(plan);
+        }
+        self.reserve_numbers(settings, plan)
+    }
+
+    /// Reserves the sequence numbers of `plan` as [`ImportRun::reserve`] does, also for
+    /// a dry run: an import job does so with the dry-run memory as its counters
+    /// (IMPORT-016).
+    ///
+    /// # Errors
+    ///
+    /// As [`ImportRun::reserve`].
+    pub(crate) fn reserve_numbers(
+        &self,
+        settings: &ImportSettings<'_>,
         mut plan: PlannedRun,
     ) -> Result<PlannedRun, RunError> {
-        if settings.dry_run || plan.naming.reserved {
+        if plan.naming.reserved {
             return Ok(plan);
         }
         let first =

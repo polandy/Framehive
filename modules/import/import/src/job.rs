@@ -17,6 +17,7 @@ use jobs::{Job, JobControl, JobEnd, ResourceKey};
 use naming::{CompatibilityMode, NameTemplate, SequenceCounters};
 
 use crate::conflicts::ConflictPolicy;
+use crate::dry_run::DryRunMemory;
 use crate::job_code::JobCode;
 use crate::report::{FileReport, ImportSummary, ProgressSink, RunError};
 use crate::reserved_names::{ReservedNames, ReservedTargetNames};
@@ -156,6 +157,8 @@ pub struct ImportJob {
     reports: Sender<Report>,
     /// The target names reserved when the job was enqueued, until it ends.
     reserved: Option<ReservedNames>,
+    /// The memory of the command's dry run, for a dry-run job (IMPORT-016).
+    dry_run_memory: Option<Arc<DryRunMemory>>,
 }
 
 /// What an import job sends to its enqueuer, in this order.
@@ -182,6 +185,7 @@ impl ImportJob {
             asks: false,
             reports,
             reserved: None,
+            dry_run_memory: None,
         };
         (job, ImportJobReports { receiver })
     }
@@ -213,6 +217,20 @@ impl ImportJob {
         self
     }
 
+    /// Gives a dry-run job the `memory` of the command's dry run: the job reserves its
+    /// numbers and target names at enqueue in `memory` and the shared register, as a
+    /// real job does, and its target names stay reserved after it ended (IMPORT-016).
+    /// A job that is not a dry run ignores it.
+    #[must_use]
+    pub fn with_dry_run_memory(mut self, memory: Arc<DryRunMemory>) -> Self {
+        if self.settings.dry_run {
+            // Its counters are the memory's, so the job cannot store a number.
+            self.ports.counters = Arc::clone(&memory) as _;
+            self.dry_run_memory = Some(memory);
+        }
+        self
+    }
+
     /// Runs the import and sends its end report; returns how it ended.
     fn import(self, control: &JobControl) -> JobEnd {
         let ImportJob {
@@ -223,6 +241,7 @@ impl ImportJob {
             asks,
             reports,
             reserved,
+            dry_run_memory,
         } = self;
         let settings = settings.settings();
         let mut steps = SendingSteps::new(&reports, control, asks);
@@ -247,8 +266,11 @@ impl ImportJob {
         };
         let source = source.map(|(file_system, _)| file_system);
         // Released before the enqueuer hears of the end, so a job it enqueues next
-        // finds the names free.
-        drop(reserved);
+        // finds the names free; a dry run keeps them, as it created no file.
+        match (dry_run_memory, reserved) {
+            (Some(memory), Some(names)) => memory.keep(names),
+            (_, names) => drop(names),
+        }
         let _ = reports.send(Report::Ended(ImportJobEnd { result, source }));
         end
     }
