@@ -2,21 +2,17 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 //! Turns the source and destination of the command line into the absolute paths
-//! without `..` that an import run needs, and creates a missing destination.
+//! without `..` that an import run needs; the import run creates a missing destination.
 
 use std::fmt;
 use std::io;
 use std::path::{Component, Path, PathBuf};
 
-use files::FileSystem;
-
-/// The import destination, resolved, with the folders of it that do not exist yet.
+/// The import destination, resolved; its folders need not exist yet.
 #[derive(Debug)]
 pub(crate) struct Destination {
     /// The absolute path of the destination.
     pub(crate) path: PathBuf,
-    /// The folders of `path` that are missing, outermost first.
-    missing: Vec<PathBuf>,
 }
 
 /// Why the source or destination cannot be used; the import does not start.
@@ -181,21 +177,17 @@ fn with_missing(
     rest: &[Component<'_>],
 ) -> Result<Destination, PathError> {
     let mut path = existing.clone();
-    let mut missing = Vec::with_capacity(rest.len());
     for component in rest {
         match component {
-            Component::Normal(name) => {
-                path.push(name);
-                missing.push(path.clone());
-            }
+            Component::Normal(name) => path.push(name),
             Component::CurDir => {}
             _ => return Err(PathError::ParentStepInDestination(given.to_path_buf())),
         }
     }
-    if missing.is_empty() && !existing.is_dir() {
+    if path == existing && !existing.is_dir() {
         return Err(PathError::DestinationNotAFolder(existing));
     }
-    Ok(Destination { path, missing })
+    Ok(Destination { path })
 }
 
 /// Rejects a destination inside the source, or equal to it (CLI-001, exit code 2).
@@ -209,27 +201,6 @@ pub(crate) fn check_outside(source: &Path, destination: &Destination) -> Result<
             source: source.to_path_buf(),
             destination: destination.path.clone(),
         });
-    }
-    Ok(())
-}
-
-/// Creates the missing folders of the destination, outermost first.
-///
-/// # Errors
-///
-/// Returns [`PathError::DestinationCannotBeCreated`] for the first folder that cannot
-/// be created; the folders created before it stay.
-pub(crate) fn create_destination(
-    file_system: &dyn FileSystem,
-    destination: &Destination,
-) -> Result<(), PathError> {
-    for folder in &destination.missing {
-        match file_system.create_folder(folder) {
-            Ok(()) => {}
-            // Created by someone else in the meantime; the import checks it is a folder.
-            Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {}
-            Err(error) => return Err(PathError::DestinationCannotBeCreated(folder.clone(), error)),
-        }
     }
     Ok(())
 }

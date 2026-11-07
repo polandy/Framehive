@@ -162,6 +162,12 @@ All user-visible changes are listed here. The format follows
 
 ### Fixed
 
+- `framehive import` and the guided import no longer create the destination folders
+  of an import that does not start because its job, when it starts, finds too little
+  free space, for example after another import to the same disk filled it. The import
+  run now creates the missing destinations itself, after its free-space check
+  (IMPORT-012, CLI-011). `framehive import` reports that shortage with the sizes and
+  folders as given, as its first check does.
 - Two `framehive config init` commands at the same time no longer damage the example:
   each one writes its own `.part` file, so the second cannot empty the file the
   first one just put in place (CLI-010).

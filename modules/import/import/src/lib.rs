@@ -34,7 +34,9 @@ pub use backup::{
 pub use conflicts::{
     ConflictError, ConflictOutcome, ConflictPolicy, TargetRequest, TargetResolver,
 };
-pub use destinations::{VideoDestinationError, VideoDestinationProblem, check_video_destination};
+pub use destinations::{
+    DestinationNotCreated, VideoDestinationError, VideoDestinationProblem, check_video_destination,
+};
 pub use dry_run::DryRunMemory;
 pub use free_space::{FreeSpaceCheck, FreeSpaceUnknown, NotEnoughSpace, SpaceShortage};
 pub use job::{
