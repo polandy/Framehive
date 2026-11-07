@@ -102,7 +102,7 @@ impl Reader<'_> {
         if style == ScalarStyle::Plain {
             match core_schema::resolve(text) {
                 CoreType::Null => {
-                    return Err(self.error(entry.key.position, no_value(SCHEMA_VERSION)));
+                    return Err(self.error(entry.key.position, Problem::VersionNoValue));
                 }
                 CoreType::Integer => return self.version_number(text, value.position, file_type),
                 CoreType::Float => {

@@ -35,10 +35,10 @@ a top level that is a sequence or a scalar is an error at line 1, column 1:
 `expected a mapping of keys`.
 
 **`schema_version`.** Every file has the key `schema_version` with a plain integer. A
-missing key is an error at line 1, column 1. A value that is not a positive integer is
-an error at the value. A version above the highest version the file type knows is an
-error at the value: `schema_version <n> is newer than this Framehive supports
-(<highest>); update Framehive`.
+missing key, or one with no value, is an error at line 1, column 1. A value that is not
+a positive integer is an error at the value. A version above the highest version the
+file type knows is an error at the value: `schema_version <n> is newer than this
+Framehive supports (<highest>); update Framehive`.
 
 **Keys.** A key is a plain or quoted string. A key that the file type does not know is
 an error at the key: `unknown key <key>`, followed by `; did you mean <known>?` when a
@@ -50,10 +50,9 @@ it: `missing key <key>`.
 
 **Values.** A key with no value (YAML null, written as nothing, `~` or `null`) is an
 error at the key: `<key> has no value; leave the key out to use the default`. A value of
-the wrong kind is an error at the value that names what was expected: `expected
-<expected>, found <found>`, where each is one of `text`, `a whole number`, `true or
-false`, `a list` and `a mapping`. A null list entry is an error at it: `<key> has
-an entry with no value`.
+the wrong kind is an error at the value: `expected <expected>, found <found>`, each
+named as in the table below. A null list entry is an error at it: `<key> has an entry
+with no value`.
 
 | Expected | Accepted |
 |---|---|
@@ -97,8 +96,7 @@ highest version. The generated text is the same on every run.
 ### CORE-006.3 – Unknown key without a suggestion
 - **Given** the file type of CORE-006.2 and the text `schema_version: 1\ncolour: red\n`
 - **When** it is read
-- **Then** the error is at line 2, column 1, is `unknown key colour`, and has no
-  suggestion
+- **Then** the error is at line 2, column 1: `unknown key colour`, with no suggestion
 
 ### CORE-006.4 – Repeated key
 - **Given** the text `schema_version: 1\ndestination: /a\ndestination: /b\n`
@@ -121,7 +119,7 @@ highest version. The generated text is the same on every run.
 - **Then** the error is at line 2, column 14: `tags are not allowed`
 
 ### CORE-006.8 – One document only
-- **Given** the text `schema_version: 1\n---\nschema_version: 1\n`, and the text
+- **Given** the texts `schema_version: 1\n---\nschema_version: 1\n` and
   `---\nschema_version: 1\n`
 - **When** each is read
 - **Then** the first is an error at line 2, column 1: `only one document is allowed`;
@@ -151,12 +149,12 @@ highest version. The generated text is the same on every run.
   to use the default`
 
 ### CORE-006.13 – Missing or invalid `schema_version`
-- **Given** the texts `destination: /a\n`, `schema_version: "1"\n` and
-  `schema_version: 0\n`
+- **Given** the texts `destination: /a\n`, `schema_version: "1"\n`,
+  `schema_version: 0\n` and `schema_version:\n`
 - **When** each is read
-- **Then** the first is an error at line 1, column 1: `missing key schema_version`; the
-  second is `expected a whole number, found text` at line 1, column 17; the third is an
-  error at line 1, column 17 that says the version must be a positive whole number
+- **Then** the errors are `1:1: missing key schema_version`, `1:17: expected a whole
+  number, found text`, `1:17: schema_version must be a positive whole number` and
+  `1:1: schema_version has no value; it must be a positive whole number`
 
 ### CORE-006.14 – A newer `schema_version`
 - **Given** a file type whose highest version is 1, and the text `schema_version: 2\n`
@@ -173,8 +171,8 @@ highest version. The generated text is the same on every run.
 - **Given** the text `schema_version: 1\ndestination: "/a\n` (an unclosed quote) in
   the file `holiday.yaml`
 - **When** it is read
-- **Then** the error starts with `holiday.yaml:` followed by the line and column the
-  parser reports, and nothing is read
+- **Then** the error starts with `holiday.yaml:` and the parser's line and column, and
+  nothing is read
 
 ### CORE-006.17 – Missing required key
 - **Given** a file type with a mapping `backup` whose key `destinations` is required,
@@ -221,3 +219,4 @@ highest version. The generated text is the same on every run.
 | 2026-11-05 | Initial draft with the import profiles (N8, N25, ADR 0032); accepted by the owner |
 | 2026-11-05 | Implemented; error order and null list entries made explicit |
 | 2026-11-05 | Choices (CORE-006.20) |
+| 2026-11-07 | `schema_version:` without a value (CORE-006.13) |

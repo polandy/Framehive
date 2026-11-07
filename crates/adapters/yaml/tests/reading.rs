@@ -199,6 +199,17 @@ fn schema_version_must_be_present_and_a_positive_whole_number() {
         located_message("schema_version: 0\n"),
         "1:17: schema_version must be a positive whole number"
     );
+    for text in [
+        "schema_version:\n",
+        "schema_version: ~\n",
+        "schema_version: null\n",
+    ] {
+        assert_eq!(
+            located_message(text),
+            "1:1: schema_version has no value; it must be a positive whole number",
+            "{text:?}"
+        );
+    }
 }
 
 /// spec: CORE-006.14

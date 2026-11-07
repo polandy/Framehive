@@ -90,6 +90,7 @@ pub config::Problem::Tag
 pub config::Problem::UnknownKey
 pub config::Problem::UnknownKey::key: alloc::string::String
 pub config::Problem::UnknownKey::suggestion: core::option::Option<alloc::string::String>
+pub config::Problem::VersionNoValue
 pub config::Problem::VersionNotPositive
 pub config::Problem::VersionTooNew
 pub config::Problem::VersionTooNew::highest: u32
