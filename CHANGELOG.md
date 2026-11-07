@@ -162,6 +162,8 @@ All user-visible changes are listed here. The format follows
 
 ### Fixed
 
+- `framehive import-log` no longer leaves the `-wal` and `-shm` files of SQLite next to
+  the import history in the state folder (IMPORT-010).
 - After an import that found no file, the format readiness no longer counts the video
   backup destinations as locations: with one backup destination and a video backup
   destination of its own, it says "verified in 2 locations", the import destination and

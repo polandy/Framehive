@@ -14,7 +14,7 @@ shows this for each import run, read from the import history (IMPORT-009, ADR 00
 ## Behaviour
 
 The import log is a view of the import history. It never writes the history and never
-creates it.
+creates it, and it leaves no other file next to it.
 
 **Runs.** The log lists every recorded import run, oldest first, with its run number,
 its start, its end, its source, its import destination, its video destination when it
@@ -96,6 +96,12 @@ names the file; the history is not changed.
   destination, the video destination, then the backup destination; a run recorded
   before video destinations existed has none
 
+### IMPORT-010.10 – Reading leaves the state folder as it was
+- **Given** a history that an import recorded and closed
+- **When** the runs are listed and the history is closed again
+- **Then** the state folder holds the same files as before, and the history file is
+  unchanged
+
 ## Out of scope
 
 - What the history records and when: IMPORT-009.
@@ -114,3 +120,4 @@ names the file; the history is not changed.
 | 2026-11-04 | Initial draft; the history is read without being created or changed; accepted by the owner |
 | 2026-11-04 | Implemented in `history` (`ImportHistory::list_runs`, `ImportHistory::read_run_log`) and `adapter-sqlite` (`SqliteImportHistory::read_only`); `implemented` |
 | 2026-11-06 | The video destination of a run (IMPORT-013); accepted by the owner |
+| 2026-11-08 | Reading leaves no SQLite side files behind (IMPORT-010.10) |
