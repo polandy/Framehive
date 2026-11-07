@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2026 Framehive contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+use std::fmt;
+
 use thiserror::Error;
 
 use crate::{Timestamp, UtcOffset};
@@ -191,6 +193,18 @@ fn is_leap_year(year: u16) -> bool {
     (year.is_multiple_of(4) && !year.is_multiple_of(100)) || year.is_multiple_of(400)
 }
 
+impl fmt::Display for LocalDateTime {
+    /// Writes `YYYY-MM-DDTHH:MM:SS`, the extended ISO 8601 form without a time zone
+    /// that the import history stores (ADR 0031, section 3).
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            formatter,
+            "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}",
+            self.year, self.month, self.day, self.hour, self.minute, self.second
+        )
+    }
+}
+
 /// Days in `month` of `year`; 0 for a month outside 1–12, which `new` rejects first.
 fn days_in_month(year: u16, month: u8) -> u8 {
     match month {
@@ -225,6 +239,13 @@ mod tests {
         assert!(LocalDateTime::new(2024, 2, 29, 0, 0, 0).is_ok());
         assert!(LocalDateTime::new(2000, 2, 29, 0, 0, 0).is_ok());
         assert!(LocalDateTime::new(1900, 2, 29, 0, 0, 0).is_err());
+    }
+
+    #[test]
+    fn displays_as_iso_8601_with_padded_parts() {
+        let time = LocalDateTime::new(987, 3, 4, 5, 6, 7).unwrap();
+
+        assert_eq!(time.to_string(), "0987-03-04T05:06:07");
     }
 
     #[test]

@@ -42,19 +42,13 @@ impl RecordedTime {
 impl fmt::Display for RecordedTime {
     /// Writes RFC 3339. RFC 3339 has no seconds in an offset; they are left out.
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let local = &self.local;
         let seconds = self.offset.seconds();
         let sign = if seconds < 0 { '-' } else { '+' };
         let minutes = seconds.abs() / 60;
         write!(
             formatter,
-            "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}{sign}{:02}:{:02}",
-            local.year(),
-            local.month(),
-            local.day(),
-            local.hour(),
-            local.minute(),
-            local.second(),
+            "{}{sign}{:02}:{:02}",
+            self.local,
             minutes / 60,
             minutes % 60,
         )

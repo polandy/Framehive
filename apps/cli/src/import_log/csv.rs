@@ -6,7 +6,7 @@
 
 use history::{CopyRecord, RunLog};
 
-use super::{capture_time_text, shown};
+use super::shown;
 
 /// The header row.
 const HEADER: [&str; 9] = [
@@ -36,7 +36,9 @@ fn fields(run: &str, copy: &CopyRecord) -> [String; 9] {
         shown(&copy.source_path),
         copy.original_file_name.clone(),
         copy.size.to_string(),
-        copy.capture_time.map(capture_time_text).unwrap_or_default(),
+        copy.capture_time
+            .map(|time| time.to_string())
+            .unwrap_or_default(),
         copy.checksum.to_string(),
         copy.target.clone(),
         copy.recorded_at.to_string(),
