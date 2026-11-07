@@ -85,9 +85,9 @@ pub(crate) fn run_config_init() -> ExitCode {
 
 /// Writes the example profile into `profiles`, creating missing folders, and returns
 /// its path. An existing file is never replaced: the file is written as
-/// `<file>.<run>.part` and renamed without replacing. `run` tells overlapping runs
-/// apart: with one shared `.part` name, a second run would truncate the file that the
-/// first run had just linked to the example's name.
+/// `<file>.<process_id>.part` and renamed without replacing. The process ID keeps
+/// overlapping invocations apart: with one shared `.part` name, a second one would
+/// truncate the file that the first one had just linked to the example's name.
 ///
 /// # Errors
 ///
@@ -96,7 +96,7 @@ pub(crate) fn run_config_init() -> ExitCode {
 fn write_example(
     file_system: &dyn FileSystem,
     profiles: &Path,
-    run: u32,
+    process_id: u32,
 ) -> Result<PathBuf, String> {
     let path = profiles.join(EXAMPLE_FILE);
     let exists = || format!("{} exists already; nothing was written", path.display());
@@ -110,7 +110,7 @@ fn write_example(
     if file_system.entry(&path).map_err(cannot_write)?.is_some() {
         return Err(exists());
     }
-    let part = part_path(&path, run);
+    let part = part_path(&path, process_id);
     write_part(file_system, &part).map_err(cannot_write)?;
     match file_system.rename_no_replace(&part, &path) {
         Ok(()) => {}
@@ -128,9 +128,9 @@ fn write_example(
     Ok(path)
 }
 
-fn part_path(path: &Path, run: u32) -> PathBuf {
+fn part_path(path: &Path, process_id: u32) -> PathBuf {
     let mut name = path.as_os_str().to_owned();
-    name.push(format!(".{run}.part"));
+    name.push(format!(".{process_id}.part"));
     PathBuf::from(name)
 }
 
@@ -151,7 +151,7 @@ mod tests {
     const PROFILES: &str = "/config/framehive/profiles";
 
     #[test]
-    fn another_run_keeps_its_part_file() {
+    fn another_process_keeps_its_part_file() {
         let file_system = MemoryFileSystem::new();
         let example = Path::new(PROFILES).join(EXAMPLE_FILE);
         let other_part = part_path(&example, 7);

@@ -162,8 +162,8 @@ All user-visible changes are listed here. The format follows
 
 ### Fixed
 
-- Two `framehive config init` runs at the same time no longer damage the example:
-  each run writes its own `.part` file, so a second run cannot empty the file the
+- Two `framehive config init` commands at the same time no longer damage the example:
+  each one writes its own `.part` file, so the second cannot empty the file the
   first one just put in place (CLI-010).
 - A configuration file with `schema_version:` but no value now says that the key needs
   a positive whole number; before, it suggested leaving the required key out (CORE-006).
