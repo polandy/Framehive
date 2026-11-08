@@ -257,7 +257,10 @@ fn a_job_asked_to_stop_after_its_last_step_finishes() {
     let job = queue.enqueue(job);
     handles.at_step.recv().unwrap();
 
-    queue.stop(job).unwrap();
+    assert!(
+        queue.stop(job).is_ok(),
+        "asking succeeds until the end is reported"
+    );
     handles.gate.send(()).unwrap();
 
     assert_eq!(
