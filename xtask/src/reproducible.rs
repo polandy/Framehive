@@ -46,11 +46,12 @@ pub(crate) fn check(root: &Path) -> Result<Vec<String>, String> {
     let first = build(root, root, &work.join("first"))?;
     let second = build(root, &copy, &work.join("second"))?;
     let builder_paths = [path_text(root), path_text(&cargo_home())];
-    Ok(compare_builds(
-        &read(&first)?,
-        &read(&second)?,
-        &builder_paths,
-    ))
+    let problems = compare_builds(&read(&first)?, &read(&second)?, &builder_paths);
+    // Kept on failure for inspection; otherwise it would only bloat the CI cache of `target`.
+    if problems.is_empty() {
+        remove_directory(&work)?;
+    }
+    Ok(problems)
 }
 
 /// Runs a release build of `source` into `target` and returns the binary's path.
