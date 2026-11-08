@@ -8,7 +8,7 @@ way.
 
 | Area | Standard | Implementation |
 |---|---|---|
-| XMP | ISO 16684-1 (XMP Data Model), Adobe XMP Specification Part 3 (sidecars) | Sidecar naming per spec (`image.xmp`), optionally `image.ARW.xmp` for darktable/digiKam; unknown namespaces and fields are preserved unchanged |
+| XMP | ISO 16684-1 (XMP Data Model), Adobe XMP Specification Part 3 (sidecars) | Sidecar naming `image.ARW.xmp` by default (`original_with_extension`, darktable/digiKam), optionally `image.xmp` (`original_without_extension`, XMP Part 3); both are read (ADR 0040); parser and serializer per ADR 0039; unknown namespaces and fields are preserved unchanged |
 | Metadata reconciliation | MWG Guidelines for Handling Image Metadata 2.0 | Priority EXIF/IPTC/XMP on read, synchronization on write, rating (`xmp:Rating`), regions (`mwg-rs`), hierarchical keywords (`mwg-kw`) |
 | IPTC | IPTC Photo Metadata Standard (Core + Extension) | Title, description, creator, copyright, locations, people |
 | Hierarchical tags | MWG `mwg-kw:Keywords` + de facto `lr:hierarchicalSubject` + flat `dc:subject` | Write all three (compatibility with Lightroom, darktable, digiKam), read `digiKam:TagsList` |

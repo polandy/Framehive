@@ -43,4 +43,8 @@ acceptance (a change means a new ADR that supersedes the old one).
 | [0034](../adr/0034-cameras-through-libgphoto2.md) | Cameras and phones through libgphoto2 | accepted |
 | [0035](../adr/0035-job-queue.md) | Job queue on a worker thread | accepted |
 | [0036](../adr/0036-parallel-jobs-and-reservation-at-enqueue.md) | Parallel jobs and reservation at enqueue | accepted |
-| [0037](../adr/0037-sync-records-in-the-framehive-xmp-namespace.md) | Sync records in the Framehive XMP namespace | accepted |
+| [0037](../adr/0037-coverage-guided-fuzzing-with-cargo-fuzz.md) | Coverage-guided fuzzing with cargo-fuzz | accepted |
+| [0038](../adr/0038-public-api-snapshots.md) | Public API snapshots with cargo-public-api on the stable toolchain | accepted |
+| [0039](../adr/0039-xmp-parser-and-serializer.md) | XMP parser and serializer: quick-xml and an own model | accepted |
+| [0040](../adr/0040-xmp-sidecars-written-by-the-import.md) | XMP sidecars written by the import | accepted |
+| [0041](../adr/0041-sync-records-in-the-framehive-xmp-namespace.md) | Sync records in the Framehive XMP namespace (numbered 0037 until 2026-11-08) | accepted |

@@ -3,7 +3,7 @@
 Framehive writes metadata into standard XMP properties (architecture §8). Its own
 namespace holds only what no standard covers: today, the records with which a sync
 remembers which values it wrote, so it never overwrites a value the user changed
-(ADR 0013, IMMICH-001). The design and its alternatives are in ADR 0037.
+(ADR 0013, IMMICH-001). The design and its alternatives are in ADR 0041.
 
 | | |
 |---|---|
