@@ -146,3 +146,15 @@ have no video destination. A migration that fails leaves the database as it was 
 the error of section 6. Opened read-only for the import log, a database with layout 1 or
 2 is read as it is, without migrating it. Any other `user_version` stays the error of
 section 6. Later layouts migrate the same way, one step per version.
+
+Addendum (2026-11-08, IMPORT-010.10): a read-only connection cannot remove the `-wal`
+and `-shm` side files when it closes, so the import log left them in the state folder.
+For the import log, `adapter-sqlite` therefore opens the database with a read-write
+connection, without the flag that creates it, and sets `PRAGMA query_only`, which makes
+every statement that would write fail. As the last connection to close, it removes the
+side files, as an import does. A `-wal` file that a killed import left behind is then
+checkpointed into the database: its committed rows become part of the file, which is
+what the next import would do too. A history file the user cannot write is opened
+read-only by SQLite and may still leave the side files. The rest of the addendum of
+2026-11-04 stands: a missing database is not created, and a broken one or one with another layout
+is the error of section 6.

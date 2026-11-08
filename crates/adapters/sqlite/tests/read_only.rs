@@ -100,11 +100,9 @@ fn a_history_of_another_version_is_an_error_and_unchanged() {
     assert_eq!(fs::read(&file).unwrap(), before);
 }
 
-/// The import log reads what an import recorded and leaves the database as it was.
-/// SQLite may add its empty `-wal` and `-shm` side files next to a database in WAL
-/// mode, which a read-only connection cannot remove; they hold no data.
+/// spec: IMPORT-010.10
 #[test]
-fn a_read_only_history_reads_what_was_recorded() {
+fn a_read_only_history_reads_what_was_recorded_and_leaves_no_side_files() {
     let folder = TempDir::new();
     let writer = SqliteImportHistory::new(folder.path());
     let run = writer.start_run(&run_start()).unwrap();
@@ -121,11 +119,7 @@ fn a_read_only_history_reads_what_was_recorded() {
     assert_eq!(runs.len(), 1);
     assert_eq!(runs[0].id, run);
     assert_eq!(runs[0].finished_at, Some(now()));
-    let after: Vec<String> = entries(folder.path())
-        .into_iter()
-        .filter(|name| !name.ends_with("-wal") && !name.ends_with("-shm"))
-        .collect();
-    assert_eq!(after, before);
+    assert_eq!(entries(folder.path()), before);
     assert_eq!(fs::read(&file).unwrap(), content);
 }
 

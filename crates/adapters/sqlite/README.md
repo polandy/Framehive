@@ -28,9 +28,10 @@ read-only for `framehive import-log` (CLI-009).
   5 s for a second process that writes at the same time. Each copy is one statement and
   so one transaction.
 - **Read-only for the import log.** `SqliteImportHistory::read_only` opens the database
-  with a read-only connection (IMPORT-010, ADR 0031 section 7): it never creates the
-  database or its folder, every write fails, and SQLite may only add its empty `-wal`
-  and `-shm` side files next to a database in WAL mode.
+  with a read-write connection that has `query_only` set (IMPORT-010, ADR 0031 section 7
+  and addendum of 2026-11-08): it never creates the database or its folder, every write fails,
+  and the last connection to close removes the `-wal` and `-shm` side files, so the
+  state folder is left as it was.
 - **Exact paths.** Folder and source paths are stored as their bytes (BLOB), so a path
   that is not valid UTF-8 is found again.
 

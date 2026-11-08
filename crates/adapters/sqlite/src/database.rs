@@ -96,20 +96,18 @@ pub(crate) struct Database {
 }
 
 impl Database {
-    /// Opens `file` for `access`, with a read-only connection when `read_only`.
-    /// `None` for [`Access::Read`] when the file does not exist. Nothing is written to
-    /// a database with another layout, and opening never migrates one.
+    /// Opens `file` for `access`, with a connection that refuses every write when
+    /// `read_only`. `None` for [`Access::Read`] when the file does not exist. Nothing
+    /// is written to a database with another layout, and opening never migrates one.
     pub(crate) fn open(
         file: &Path,
         access: Access,
         read_only: bool,
     ) -> Result<Option<Self>, OpenError> {
-        let mode = if read_only {
-            OpenFlags::SQLITE_OPEN_READ_ONLY
-        } else {
-            OpenFlags::SQLITE_OPEN_READ_WRITE
-        };
-        let mut flags = mode | OpenFlags::SQLITE_OPEN_NO_MUTEX;
+        // Even a read-only history opens a read-write connection: only that one may
+        // remove the `-wal` and `-shm` side files when it closes (ADR 0031, addendum
+        // of 2026-11-08). `query_only` below keeps it from writing.
+        let mut flags = OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_NO_MUTEX;
         if access == Access::Write {
             if let Some(folder) = file.parent() {
                 fs::create_dir_all(folder).map_err(OpenError::Folder)?;
@@ -119,6 +117,9 @@ impl Database {
             return Ok(None);
         }
         let connection = Connection::open_with_flags(file, flags)?;
+        if read_only {
+            connection.pragma_update(None, "query_only", true)?;
+        }
         connection.busy_timeout(BUSY_TIMEOUT)?;
         let layout = check_layout(&connection)?;
         // Per connection, not stored in the file: a recorded row survives a power loss.
@@ -240,5 +241,26 @@ mod tests {
             .unwrap();
         assert_eq!(journal, "wal");
         assert_eq!(pragma(&database, "user_version"), SCHEMA_VERSION);
+    }
+
+    /// The read-only connection is read-write for SQLite, so `query_only` alone keeps
+    /// the import log from changing the history (IMPORT-010).
+    #[test]
+    fn a_read_only_connection_refuses_to_write() {
+        let folder = TempDir::new();
+        let file = folder.path().join("import-history.sqlite");
+        let mut writer = Database::open(&file, Access::Write, false)
+            .unwrap()
+            .unwrap();
+        writer.prepare_for_writing().unwrap();
+        drop(writer);
+        let reader = Database::open(&file, Access::Read, true).unwrap().unwrap();
+
+        let written = reader
+            .connection
+            .execute_batch("CREATE TABLE anything (value TEXT)");
+
+        assert!(written.is_err());
+        assert_eq!(pragma(&reader, "query_only"), 1);
     }
 }
