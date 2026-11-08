@@ -22,7 +22,7 @@ use import::{
     ImportSummary, JobCode, Keyword, NoProgress, RunError, SessionSequence,
 };
 use metadata::testing::{ByteOrder, DATE_TIME_ORIGINAL, RecordedXml, Tiff, jpeg, raf};
-use metadata::xmp::{SidecarNaming, XmpName, XmpPacket, XmpValue, parse_xmp};
+use metadata::xmp::{SidecarNaming, XmpName, XmpPacket, XmpValue, parse_xmp, serialize_xmp};
 use naming::testing::MemorySequenceCounters;
 use naming::{CompatibilityMode, NameTemplate};
 
@@ -35,6 +35,8 @@ pub(crate) const DATED: &str = "{date:%Y%m%d}-0042.{ext}";
 pub(crate) const MODIFIED_2025: i64 = 1_767_139_200;
 /// 2026-11-08 09:00:00 UTC, the import date.
 pub(crate) const NOW: i64 = 1_794_128_400;
+/// A namespace no standard defines.
+pub(crate) const UNKNOWN: &str = "http://example.com/camera/1.0/";
 
 /// A RAF captured at `capture_time`, such as `2026:10:17 14:05:09`.
 pub(crate) fn raw_taken_at(capture_time: &str) -> Vec<u8> {
@@ -234,4 +236,28 @@ pub(crate) fn text(packet: &XmpPacket, name: &XmpName) -> Option<String> {
         XmpValue::Text(text) => Some(text.clone()),
         _ => None,
     }
+}
+
+/// A source sidecar with a property of a namespace no standard defines.
+pub(crate) fn camera_packet() -> XmpPacket {
+    let mut packet = XmpPacket::new();
+    packet
+        .set_text(&XmpName::new(UNKNOWN, "FilmMode"), "Classic Chrome")
+        .unwrap();
+    packet
+}
+
+/// The bytes of `packet` as the machine's XML syntax writes them.
+pub(crate) fn bytes_of(machine: &Machine, packet: &XmpPacket) -> Vec<u8> {
+    serialize_xmp(packet, &machine.clock, &machine.xml)
+        .unwrap()
+        .into_bytes()
+}
+
+/// A card with `DSCF0042.RAF` captured on 2026-10-17 and `extra` files.
+pub(crate) fn raw_card_with(extra: &[(&str, &[u8])]) -> MemoryFileSystem {
+    let raw = raw_taken_at("2026:10:17 14:05:09");
+    let mut files: Vec<(&str, &[u8])> = vec![("DSCF0042.RAF", &raw)];
+    files.extend_from_slice(extra);
+    card_with(&files)
 }

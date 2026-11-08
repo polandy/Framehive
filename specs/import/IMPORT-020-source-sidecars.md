@@ -42,7 +42,13 @@ The summary lists each replaced and each kept value with its file.
 A carried-along sidecar is written, verified, backed up and recorded as IMPORT-019
 describes, and shares its file's conflict outcome. Without values to merge it is
 copied byte for byte like any file. It counts as saved at a location only when it was
-written and verified there.
+written and verified there, or, for a file already imported (IMPORT-003, IMPORT-009),
+when the sidecar found there has the checksum the import history recorded for it; a
+sidecar copied byte for byte also counts with the checksum of its source. The re-run
+reads the sidecar at the file's target and at each backup that has the file, and
+writes nothing, so a card already saved can be formatted with no extra copying. A
+sidecar changed since, or one with values that the history holds no record of, does
+not count there.
 
 ## Acceptance criteria
 
@@ -95,6 +101,20 @@ written and verified there.
 - **Then** the card cannot be formatted, and `DSCF0042.RAF.xmp` is listed with one
   location
 
+### IMPORT-020.9 – A re-run counts the sidecar the first run saved
+- **Given** `DSCF0042.RAF` with `DSCF0042.RAF.xmp` imported with the job code `Lisbon`
+  to the import destination and two backup destinations
+- **When** the same import runs again
+- **Then** the file is imported before, `DSCF0042.RAF.xmp` counts at three locations
+  with no sidecar written, and the card can be formatted
+
+### IMPORT-020.10 – A sidecar changed since does not count there
+- **Given** the import of IMPORT-020.9, and the sidecar at one backup destination edited
+  since
+- **When** the same import runs again
+- **Then** `DSCF0042.RAF.xmp` counts at two locations, the edited sidecar is kept, and
+  the card cannot be formatted
+
 ## Out of scope
 
 - The values, their configuration, conflicts, verification and backups: IMPORT-019.
@@ -111,3 +131,4 @@ written and verified there.
 |---|---|
 | 2026-11-08 | Created and accepted with the owner's XMP decisions D2 and D18 (ADR 0040 §4, §5); replaces IMPORT-005.12 and IMPORT-008.9 for `.xmp` files when implemented |
 | 2026-11-08 | Implemented: the scan attaches each `.xmp` to its file, the run merges the values into it or copies it byte for byte, the summary lists each replaced and kept value, and the format readiness counts it where it was written and verified; IMPORT-005.12 and IMPORT-008.9 updated |
+| 2026-11-08 | Owner decision on issue #98 (option 1): a re-run reads the carried sidecar at each location of a file already imported and counts it where it has the recorded checksum (.9, .10 added) |

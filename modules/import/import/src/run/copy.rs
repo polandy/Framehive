@@ -43,17 +43,28 @@ impl ImportRun<'_> {
         let role = file.found.role;
         let resolver = resolvers.of(role);
         let recognition = file.recognition.as_ref();
+        let recorded_sidecars = recognition.map_or(&[][..], Recognition::recorded_sidecars);
         let mut imported = match file.planned {
             Ok(FilePlan::Named(planned)) => {
                 let mut imported =
                     self.import_planned(settings, resolver, &file.found, &planned, recognition);
                 if let Some(sidecars) = sidecars {
-                    sidecars.add_to(&file.found, &planned, &mut imported);
+                    sidecars.add_to(&file.found, &planned, recorded_sidecars, &mut imported);
                 }
                 imported
             }
             Ok(FilePlan::ImportedBefore { target }) => {
-                self.back_up_imported_before(settings, resolver, &file.found, target, recognition)
+                let mut imported = self.back_up_imported_before(
+                    settings,
+                    resolver,
+                    &file.found,
+                    target,
+                    recognition,
+                );
+                if let Some(sidecars) = sidecars {
+                    sidecars.count_imported_before(&file.found, recorded_sidecars, &mut imported);
+                }
+                imported
             }
             Err(error) => Imported::without_backups(FileOutcome::Failed(error)),
         };

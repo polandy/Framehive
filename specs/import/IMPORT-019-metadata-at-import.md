@@ -72,8 +72,8 @@ verified against them.
 
 **Failure.** A sidecar that cannot be written or verified fails its file, with an error
 that names the sidecar path; the file's copy stays in place. A failed file keeps the
-card from being formatted (IMPORT-008). A sidecar counts as saved at a location only
-when it was written and verified there.
+card from being formatted (IMPORT-008). A sidecar counts as saved at a location when
+it was written and verified there, or as IMPORT-020.9 says.
 
 ## Acceptance criteria
 

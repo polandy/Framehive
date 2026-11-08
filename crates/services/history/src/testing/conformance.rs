@@ -88,7 +88,8 @@ pub(super) fn start(
     }
 }
 
-/// A copy of `DSCF0001.RAF`, 10 bytes, captured 2026-10-17 14:05:09, at `destination`.
+/// A copy of `DSCF0001.RAF`, 10 bytes, captured 2026-10-17 14:05:09, at `destination`,
+/// with its sidecar.
 pub(super) fn copy(run: crate::RunId, destination: &Path, byte: u8, target: &str) -> CopyRecord {
     CopyRecord {
         run,
@@ -100,7 +101,10 @@ pub(super) fn copy(run: crate::RunId, destination: &Path, byte: u8, target: &str
         checksum: checksum(byte),
         target: target.to_owned(),
         recorded_at: now(),
-        sidecar: None,
+        sidecar: Some(crate::SidecarRecord {
+            target: format!("{target}.xmp"),
+            checksum: checksum(byte.wrapping_add(100)),
+        }),
     }
 }
 
@@ -140,6 +144,7 @@ fn found(copy: &CopyRecord) -> FoundCopy {
     FoundCopy {
         target: copy.target.clone(),
         checksum: copy.checksum.clone(),
+        sidecar: copy.sidecar.clone(),
     }
 }
 

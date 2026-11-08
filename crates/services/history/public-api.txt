@@ -102,6 +102,7 @@ impl core::panic::unwind_safe::RefUnwindSafe for history::CopyRecord
 impl core::panic::unwind_safe::UnwindSafe for history::CopyRecord
 pub struct history::FoundCopy
 pub history::FoundCopy::checksum: domain::checksum::Checksum
+pub history::FoundCopy::sidecar: core::option::Option<history::SidecarRecord>
 pub history::FoundCopy::target: alloc::string::String
 impl core::clone::Clone for history::FoundCopy
 pub fn history::FoundCopy::clone(&self) -> history::FoundCopy

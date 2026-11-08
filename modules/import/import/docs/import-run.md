@@ -120,6 +120,10 @@ are kept, keywords are added, and unknown namespaces stay. Each replaced or kept
 is listed in `FileReport::existing_values`; each carried sidecar in
 `FileReport::carried_sidecars` with the number of locations it was written and verified
 at. It shares its file's conflict outcome, so a file that is not copied carries none.
+For a file already imported, a carried sidecar already at a location is read and counts
+there when its checksum is one the import history recorded next to the file's copies
+(`FoundCopy::sidecar`), or, copied byte for byte, its source's (IMPORT-020.9); the run
+writes nothing for it.
 
 The run writes XML through the `XmlSyntax` that `ImportRun::with_xml_syntax` gives
 it. A run that would write or carry sidecars without one does not start:
