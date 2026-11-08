@@ -129,6 +129,21 @@ pub trait FileSystem: ReadOnlyFileSystem {
     /// [`io::ErrorKind::NotFound`] if no file exists at `from`.
     fn rename_no_replace(&self, from: &Path, to: &Path) -> io::Result<()>;
 
+    /// Renames the file `from` over the existing file `to` in one step: `to` always
+    /// names either the old or the new file. The new file takes over the permissions
+    /// of the old one, so a replace never changes them (CORE-009).
+    ///
+    /// The new name is durable only after [`FileSystem::sync_folder`] on the folder
+    /// of `to`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`io::ErrorKind::NotFound`] if no file exists at `from` or at `to`, and
+    /// [`io::ErrorKind::PermissionDenied`] if the file at `to` is read-only or the
+    /// user may not write it; a read-only file is refused for every user alike. Both
+    /// files then stay unchanged.
+    fn replace_file(&self, from: &Path, to: &Path) -> io::Result<()>;
+
     /// Removes the file `path`.
     ///
     /// # Errors

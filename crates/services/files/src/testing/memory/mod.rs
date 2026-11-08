@@ -44,6 +44,9 @@ pub enum Fault {
         /// Its content.
         content: Vec<u8>,
     },
+    /// Renaming a file to the path fails with an I/O error; both files stay
+    /// unchanged.
+    RenameFails,
 }
 
 /// A [`FileSystem`] in memory, for tests.
@@ -124,6 +127,15 @@ impl MemoryFileSystem {
         state
             .durable_entries
             .insert(path.to_path_buf(), Entry::SymbolicLink);
+    }
+
+    /// Makes the file `path` read-only: [`FileSystem::replace_file`] refuses to
+    /// replace it. Does nothing if there is no file at `path`.
+    pub fn set_read_only(&self, path: &Path) {
+        let mut state = self.lock();
+        if let Ok(id) = state.file_id(path) {
+            state.file_mut(id).read_only = true;
+        }
     }
 
     /// Returns the current content of the file `path`, or `None` if there is none.
@@ -282,6 +294,24 @@ impl FileSystem for MemoryFileSystem {
             let id = state.file_id(from)?;
             state.require_absent(to)?;
             state.require_parent_folder(to)?;
+            refuse_a_failing_rename(state, to)?;
+            state.entries.remove(from);
+            state.entries.insert(to.to_path_buf(), Entry::File(id));
+            Ok(())
+        })
+    }
+
+    fn replace_file(&self, from: &Path, to: &Path) -> io::Result<()> {
+        self.operate(|state| {
+            let id = state.file_id(from)?;
+            let replaced = state.file_id(to)?;
+            if state.file(replaced).read_only {
+                return Err(io::Error::new(
+                    io::ErrorKind::PermissionDenied,
+                    format!("{} is read-only", to.display()),
+                ));
+            }
+            refuse_a_failing_rename(state, to)?;
             state.entries.remove(from);
             state.entries.insert(to.to_path_buf(), Entry::File(id));
             Ok(())
@@ -298,5 +328,15 @@ impl FileSystem for MemoryFileSystem {
 
     fn sync_folder(&self, path: &Path) -> io::Result<()> {
         self.operate(|state| state.sync_folder(path))
+    }
+}
+
+fn refuse_a_failing_rename(state: &mut State, to: &Path) -> io::Result<()> {
+    match state.fault_for(to) {
+        Some(Fault::RenameFails) => Err(io::Error::other(format!(
+            "renaming to {} failed",
+            to.display()
+        ))),
+        _ => Ok(()),
     }
 }

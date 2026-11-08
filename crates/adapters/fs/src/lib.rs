@@ -28,7 +28,7 @@
 
 mod system_time;
 
-use std::fs::{self, File};
+use std::fs::{self, File, OpenOptions};
 use std::io::{self, Write};
 use std::path::Path;
 
@@ -152,6 +152,23 @@ impl FileSystem for StdFileSystem {
             }
             Err(error) => Err(error),
         }
+    }
+
+    /// Checks the mode bits too: the superuser may open a read-only file for writing.
+    fn replace_file(&self, from: &Path, to: &Path) -> io::Result<()> {
+        let replaced = fs::symlink_metadata(to)?;
+        if !replaced.is_file() {
+            return Err(io::Error::other(format!("{} is not a file", to.display())));
+        }
+        if replaced.permissions().readonly() {
+            return Err(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                format!("{} is read-only", to.display()),
+            ));
+        }
+        OpenOptions::new().write(true).open(to)?;
+        fs::set_permissions(from, replaced.permissions())?;
+        fs::rename(from, to)
     }
 
     fn remove_file(&self, path: &Path) -> io::Result<()> {

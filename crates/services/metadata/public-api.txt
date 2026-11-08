@@ -78,6 +78,78 @@ impl core::marker::Unpin for metadata::xmp::ArrayKind
 impl core::marker::UnsafeUnpin for metadata::xmp::ArrayKind
 impl core::panic::unwind_safe::RefUnwindSafe for metadata::xmp::ArrayKind
 impl core::panic::unwind_safe::UnwindSafe for metadata::xmp::ArrayKind
+pub enum metadata::xmp::SidecarErrorKind
+pub metadata::xmp::SidecarErrorKind::Appeared
+pub metadata::xmp::SidecarErrorKind::Changed
+pub metadata::xmp::SidecarErrorKind::Clock(metadata::xmp::ClockOutOfRange)
+pub metadata::xmp::SidecarErrorKind::Edit(metadata::xmp::XmpEditError)
+pub metadata::xmp::SidecarErrorKind::Io
+pub metadata::xmp::SidecarErrorKind::Io::source: core::io::error::Error
+pub metadata::xmp::SidecarErrorKind::Io::step: metadata::xmp::SidecarStep
+pub metadata::xmp::SidecarErrorKind::NotAFile
+pub metadata::xmp::SidecarErrorKind::Unreadable(metadata::xmp::XmpErrorReason)
+impl core::error::Error for metadata::xmp::SidecarErrorKind
+pub fn metadata::xmp::SidecarErrorKind::source(&self) -> core::option::Option<&(dyn core::error::Error + 'static)>
+impl core::fmt::Debug for metadata::xmp::SidecarErrorKind
+pub fn metadata::xmp::SidecarErrorKind::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for metadata::xmp::SidecarErrorKind
+pub fn metadata::xmp::SidecarErrorKind::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for metadata::xmp::SidecarErrorKind
+impl core::marker::Send for metadata::xmp::SidecarErrorKind
+impl core::marker::Sync for metadata::xmp::SidecarErrorKind
+impl core::marker::Unpin for metadata::xmp::SidecarErrorKind
+impl core::marker::UnsafeUnpin for metadata::xmp::SidecarErrorKind
+impl !core::panic::unwind_safe::RefUnwindSafe for metadata::xmp::SidecarErrorKind
+impl !core::panic::unwind_safe::UnwindSafe for metadata::xmp::SidecarErrorKind
+pub enum metadata::xmp::SidecarNaming
+pub metadata::xmp::SidecarNaming::OriginalWithExtension
+pub metadata::xmp::SidecarNaming::OriginalWithoutExtension
+impl metadata::xmp::SidecarNaming
+pub fn metadata::xmp::SidecarNaming::sidecar_path(self, &std::path::Path) -> std::path::PathBuf
+impl core::clone::Clone for metadata::xmp::SidecarNaming
+pub fn metadata::xmp::SidecarNaming::clone(&self) -> metadata::xmp::SidecarNaming
+impl core::cmp::Eq for metadata::xmp::SidecarNaming
+impl core::cmp::PartialEq for metadata::xmp::SidecarNaming
+pub fn metadata::xmp::SidecarNaming::eq(&self, &metadata::xmp::SidecarNaming) -> bool
+impl core::default::Default for metadata::xmp::SidecarNaming
+pub fn metadata::xmp::SidecarNaming::default() -> metadata::xmp::SidecarNaming
+impl core::fmt::Debug for metadata::xmp::SidecarNaming
+pub fn metadata::xmp::SidecarNaming::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for metadata::xmp::SidecarNaming
+pub fn metadata::xmp::SidecarNaming::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for metadata::xmp::SidecarNaming
+impl core::marker::StructuralPartialEq for metadata::xmp::SidecarNaming
+impl core::marker::Freeze for metadata::xmp::SidecarNaming
+impl core::marker::Send for metadata::xmp::SidecarNaming
+impl core::marker::Sync for metadata::xmp::SidecarNaming
+impl core::marker::Unpin for metadata::xmp::SidecarNaming
+impl core::marker::UnsafeUnpin for metadata::xmp::SidecarNaming
+impl core::panic::unwind_safe::RefUnwindSafe for metadata::xmp::SidecarNaming
+impl core::panic::unwind_safe::UnwindSafe for metadata::xmp::SidecarNaming
+pub enum metadata::xmp::SidecarStep
+pub metadata::xmp::SidecarStep::Check
+pub metadata::xmp::SidecarStep::Read
+pub metadata::xmp::SidecarStep::Rename
+pub metadata::xmp::SidecarStep::SyncFolder
+pub metadata::xmp::SidecarStep::WritePart
+impl core::clone::Clone for metadata::xmp::SidecarStep
+pub fn metadata::xmp::SidecarStep::clone(&self) -> metadata::xmp::SidecarStep
+impl core::cmp::Eq for metadata::xmp::SidecarStep
+impl core::cmp::PartialEq for metadata::xmp::SidecarStep
+pub fn metadata::xmp::SidecarStep::eq(&self, &metadata::xmp::SidecarStep) -> bool
+impl core::fmt::Debug for metadata::xmp::SidecarStep
+pub fn metadata::xmp::SidecarStep::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for metadata::xmp::SidecarStep
+pub fn metadata::xmp::SidecarStep::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for metadata::xmp::SidecarStep
+impl core::marker::StructuralPartialEq for metadata::xmp::SidecarStep
+impl core::marker::Freeze for metadata::xmp::SidecarStep
+impl core::marker::Send for metadata::xmp::SidecarStep
+impl core::marker::Sync for metadata::xmp::SidecarStep
+impl core::marker::Unpin for metadata::xmp::SidecarStep
+impl core::marker::UnsafeUnpin for metadata::xmp::SidecarStep
+impl core::panic::unwind_safe::RefUnwindSafe for metadata::xmp::SidecarStep
+impl core::panic::unwind_safe::UnwindSafe for metadata::xmp::SidecarStep
 pub enum metadata::xmp::XmlEvent
 pub metadata::xmp::XmlEvent::End
 pub metadata::xmp::XmlEvent::Start(metadata::xmp::XmlStart)
@@ -205,6 +277,73 @@ impl core::marker::Unpin for metadata::xmp::ClockOutOfRange
 impl core::marker::UnsafeUnpin for metadata::xmp::ClockOutOfRange
 impl core::panic::unwind_safe::RefUnwindSafe for metadata::xmp::ClockOutOfRange
 impl core::panic::unwind_safe::UnwindSafe for metadata::xmp::ClockOutOfRange
+pub struct metadata::xmp::FoundSidecar(_)
+impl metadata::xmp::FoundSidecar
+pub fn metadata::xmp::FoundSidecar::is_nothing(&self) -> bool
+impl core::clone::Clone for metadata::xmp::FoundSidecar
+pub fn metadata::xmp::FoundSidecar::clone(&self) -> metadata::xmp::FoundSidecar
+impl core::cmp::Eq for metadata::xmp::FoundSidecar
+impl core::cmp::PartialEq for metadata::xmp::FoundSidecar
+pub fn metadata::xmp::FoundSidecar::eq(&self, &metadata::xmp::FoundSidecar) -> bool
+impl core::fmt::Debug for metadata::xmp::FoundSidecar
+pub fn metadata::xmp::FoundSidecar::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for metadata::xmp::FoundSidecar
+impl core::marker::Freeze for metadata::xmp::FoundSidecar
+impl core::marker::Send for metadata::xmp::FoundSidecar
+impl core::marker::Sync for metadata::xmp::FoundSidecar
+impl core::marker::Unpin for metadata::xmp::FoundSidecar
+impl core::marker::UnsafeUnpin for metadata::xmp::FoundSidecar
+impl core::panic::unwind_safe::RefUnwindSafe for metadata::xmp::FoundSidecar
+impl core::panic::unwind_safe::UnwindSafe for metadata::xmp::FoundSidecar
+pub struct metadata::xmp::ReadSidecar
+pub metadata::xmp::ReadSidecar::found: metadata::xmp::FoundSidecar
+pub metadata::xmp::ReadSidecar::packet: metadata::xmp::XmpPacket
+impl core::clone::Clone for metadata::xmp::ReadSidecar
+pub fn metadata::xmp::ReadSidecar::clone(&self) -> metadata::xmp::ReadSidecar
+impl core::fmt::Debug for metadata::xmp::ReadSidecar
+pub fn metadata::xmp::ReadSidecar::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for metadata::xmp::ReadSidecar
+impl core::marker::Send for metadata::xmp::ReadSidecar
+impl core::marker::Sync for metadata::xmp::ReadSidecar
+impl core::marker::Unpin for metadata::xmp::ReadSidecar
+impl core::marker::UnsafeUnpin for metadata::xmp::ReadSidecar
+impl core::panic::unwind_safe::RefUnwindSafe for metadata::xmp::ReadSidecar
+impl core::panic::unwind_safe::UnwindSafe for metadata::xmp::ReadSidecar
+pub struct metadata::xmp::SidecarError
+pub metadata::xmp::SidecarError::kind: metadata::xmp::SidecarErrorKind
+pub metadata::xmp::SidecarError::part_left: core::option::Option<std::path::PathBuf>
+pub metadata::xmp::SidecarError::path: std::path::PathBuf
+impl core::error::Error for metadata::xmp::SidecarError
+impl core::fmt::Debug for metadata::xmp::SidecarError
+pub fn metadata::xmp::SidecarError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for metadata::xmp::SidecarError
+pub fn metadata::xmp::SidecarError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for metadata::xmp::SidecarError
+impl core::marker::Send for metadata::xmp::SidecarError
+impl core::marker::Sync for metadata::xmp::SidecarError
+impl core::marker::Unpin for metadata::xmp::SidecarError
+impl core::marker::UnsafeUnpin for metadata::xmp::SidecarError
+impl !core::panic::unwind_safe::RefUnwindSafe for metadata::xmp::SidecarError
+impl !core::panic::unwind_safe::UnwindSafe for metadata::xmp::SidecarError
+pub struct metadata::xmp::SidecarFiles<'a>
+pub metadata::xmp::SidecarFiles::clock: &'a dyn domain::clock::Clock
+pub metadata::xmp::SidecarFiles::files: &'a dyn files::ports::FileSystem
+pub metadata::xmp::SidecarFiles::hasher: &'a dyn files::ports::Hasher
+pub metadata::xmp::SidecarFiles::xml: &'a dyn metadata::xmp::XmlSyntax
+impl metadata::xmp::SidecarFiles<'_>
+pub fn metadata::xmp::SidecarFiles<'_>::merge(&self, &std::path::Path, impl core::ops::function::FnOnce(&mut metadata::xmp::XmpPacket) -> core::result::Result<(), metadata::xmp::XmpEditError>) -> core::result::Result<(), metadata::xmp::SidecarError>
+pub fn metadata::xmp::SidecarFiles<'_>::read(&self, &std::path::Path) -> core::result::Result<metadata::xmp::ReadSidecar, metadata::xmp::SidecarError>
+pub fn metadata::xmp::SidecarFiles<'_>::write(&self, &std::path::Path, &[u8], &metadata::xmp::FoundSidecar) -> core::result::Result<(), metadata::xmp::SidecarError>
+impl<'a> core::clone::Clone for metadata::xmp::SidecarFiles<'a>
+pub fn metadata::xmp::SidecarFiles<'a>::clone(&self) -> metadata::xmp::SidecarFiles<'a>
+impl<'a> core::marker::Copy for metadata::xmp::SidecarFiles<'a>
+impl<'a> core::marker::Freeze for metadata::xmp::SidecarFiles<'a>
+impl<'a> !core::marker::Send for metadata::xmp::SidecarFiles<'a>
+impl<'a> !core::marker::Sync for metadata::xmp::SidecarFiles<'a>
+impl<'a> core::marker::Unpin for metadata::xmp::SidecarFiles<'a>
+impl<'a> core::marker::UnsafeUnpin for metadata::xmp::SidecarFiles<'a>
+impl<'a> !core::panic::unwind_safe::RefUnwindSafe for metadata::xmp::SidecarFiles<'a>
+impl<'a> !core::panic::unwind_safe::UnwindSafe for metadata::xmp::SidecarFiles<'a>
 pub struct metadata::xmp::XmlAttribute
 pub metadata::xmp::XmlAttribute::name: metadata::xmp::XmlName
 pub metadata::xmp::XmlAttribute::value: alloc::string::String
@@ -386,6 +525,7 @@ impl core::panic::unwind_safe::UnwindSafe for metadata::xmp::XmpPacket
 pub trait metadata::xmp::XmlSyntax
 pub fn metadata::xmp::XmlSyntax::read(&self, &str) -> core::result::Result<alloc::vec::Vec<metadata::xmp::XmlEvent>, metadata::xmp::XmlSyntaxError>
 pub fn metadata::xmp::XmlSyntax::write(&self, &[metadata::xmp::XmlEvent]) -> alloc::string::String
+pub fn metadata::xmp::find_sidecars(&dyn files::ports::ReadOnlyFileSystem, &std::path::Path) -> core::io::error::Result<alloc::vec::Vec<std::path::PathBuf>>
 pub fn metadata::xmp::parse_xmp(&std::path::Path, &[u8], &dyn metadata::xmp::XmlSyntax) -> core::result::Result<metadata::xmp::XmpPacket, metadata::xmp::XmpError>
 pub fn metadata::xmp::serialize_xmp(&metadata::xmp::XmpPacket, &dyn domain::clock::Clock, &dyn metadata::xmp::XmlSyntax) -> core::result::Result<alloc::string::String, metadata::xmp::ClockOutOfRange>
 pub enum metadata::CaptureTimeError

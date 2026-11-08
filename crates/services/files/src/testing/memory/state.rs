@@ -40,6 +40,7 @@ pub(super) struct FileData {
     pub(super) modified: Timestamp,
     pub(super) durable_content: Vec<u8>,
     pub(super) durable_modified: Timestamp,
+    pub(super) read_only: bool,
 }
 
 impl FileData {
@@ -49,6 +50,7 @@ impl FileData {
             modified: Timestamp::UNIX_EPOCH,
             durable_content: Vec::new(),
             durable_modified: Timestamp::UNIX_EPOCH,
+            read_only: false,
         }
     }
 }
@@ -86,6 +88,7 @@ impl State {
             modified,
             durable_content: Vec::new(),
             durable_modified: modified,
+            read_only: false,
         };
         self.files.insert(id, data);
         id

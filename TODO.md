@@ -16,7 +16,6 @@ feature live in its spec, decisions in `docs/adr/`. Add items with `/todo`.
 
 Owner decisions D1–D27 of 2026-11-08 (requirements §12, ADR 0039, ADR 0040), in this order.
 
-- [ ] XMP PR 3: merge into an existing packet and the atomic sidecar write through the `files` port with the check before the rename (CORE-009.15–.21, ADR 0040 §7) (2026-11-08)
 - [ ] XMP PR 4: `config.yaml` (file type `configuration`) and profile `schema_version` 2 with `metadata`, schemas via `cargo xtask schemas`; the import writes job code (IPTC Job Id, `photoshop:TransmissionReference`, N16, R9), creator, copyright and keywords to every destination and backup, and move the `metadata` keys into IMPORT-011 (IMPORT-019) (2026-11-08)
 - [ ] XMP PR 5: source `.xmp` sidecars come with their file, lifting IMPORT-005.12 and IMPORT-008.9 for `.xmp` (IMPORT-020, ADR 0040 §4, §5) (2026-11-08)
 - [ ] XMP PR 6: CLI and guided-import output of written, replaced and kept values, dry-run listing and `framehive config init` with a `metadata` section, in the CLI specs (IMPORT-019, D5) (2026-11-08)

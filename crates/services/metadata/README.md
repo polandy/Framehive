@@ -36,6 +36,16 @@ form. XML tokens come through the `XmlSyntax` port, which `adapter-xmp` implemen
   keeps the file's prefix, with a number when it clashes (`dc1`). `xmp:MetadataDate`
   is set from the `Clock` port in local time with offset; `xmp:ModifyDate`,
   `xmp:CreatorTool` and `xmpMM:History` are never touched.
+- **Sidecar files** (ADR 0040 §1, §7). `SidecarNaming` makes a sidecar's name in
+  either naming; `find_sidecars` lists the sidecars of a file in both, with the
+  extension in any case. `SidecarFiles` reads, merges and saves them through the
+  `FileSystem` port: the content goes to `<name>.part`, is synced, and replaces the
+  sidecar only if the sidecar's size, modification time and checksum (BLAKE3 in the
+  apps, from the `Hasher` port) are still what was read, or nothing appeared where
+  there was none. A new sidecar is renamed with `rename_no_replace`, an existing one
+  with `replace_file`, which keeps its permissions and refuses a read-only file. A
+  sidecar that cannot be parsed is never overwritten, and a failed write removes its
+  `.part` file.
 
 ## Public API
 
@@ -50,6 +60,9 @@ form. XML tokens come through the `XmlSyntax` port, which `adapter-xmp` implemen
 | `xmp::serialize_xmp` | Writes an `XmpPacket` in the canonical form, setting `xmp:MetadataDate` |
 | `xmp::XmpError`, `XmpErrorReason` | Why a sidecar cannot be read, with its path |
 | `xmp::XmpEditError`, `ClockOutOfRange` | Why an edit or a write is refused |
+| `xmp::SidecarNaming`, `find_sidecars` | A sidecar's name in either naming, and the sidecars next to a file |
+| `xmp::SidecarFiles`, `ReadSidecar`, `FoundSidecar` | Reads, merges and atomically saves sidecar files through the `FileSystem` and `Hasher` ports, refusing to replace a sidecar another program created or changed meanwhile |
+| `xmp::SidecarError`, `SidecarErrorKind`, `SidecarStep` | Why a sidecar file could not be read or saved, with its path |
 | `xmp::XmlSyntax`, `XmlEvent`, `XmlStart`, `XmlName`, `XmlAttribute`, `XmlSyntaxError`, `XmlSyntaxErrorKind` | The port that reads and writes XML tokens |
 | `xmp::namespaces` | The namespace URIs used by name, and the preferred prefix of each known namespace |
 | `testing::Tiff`, `testing::ByteOrder`, `testing::jpeg`, `testing::raf` | Builders for test files with EXIF text tags |
@@ -58,5 +71,5 @@ form. XML tokens come through the `XmlSyntax` port, which `adapter-xmp` implemen
 ## Dependencies
 
 - `domain`
-- `files` (the `ReadOnlyFileSystem` port)
+- `files` (the `ReadOnlyFileSystem`, `FileSystem` and `Hasher` ports)
 - `thiserror` (ADR 0016)

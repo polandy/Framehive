@@ -159,6 +159,11 @@ All user-visible changes are listed here. The format follows
   Framehive's canonical form with `xmp:MetadataDate`; `adapter-xmp` provides the XML
   tokens with `quick-xml`. Document type declarations, other encodings than UTF-8 and
   conflicting values are refused. A mutation test and the fuzz target `xmp` check it.
+- XMP sidecar files (CORE-009.15–.21, ADR 0040 §1, §7): `metadata::xmp` names sidecars
+  as `DSCF0042.RAF.xmp` or `DSCF0042.xmp`, finds both next to a file, and merges into a
+  sidecar through a `.part` file and a rename that never replaces a sidecar another
+  program created or changed meanwhile, a read-only one, or one it cannot parse. The
+  `files` port gains `replace_file`, which keeps the replaced file's permissions.
 
 ### Changed
 

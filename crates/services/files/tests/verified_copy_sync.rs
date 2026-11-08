@@ -53,6 +53,10 @@ impl FileSystem for FailingFolderSync<'_> {
         self.inner.rename_no_replace(from, to)
     }
 
+    fn replace_file(&self, from: &Path, to: &Path) -> std::io::Result<()> {
+        self.inner.replace_file(from, to)
+    }
+
     fn remove_file(&self, path: &Path) -> std::io::Result<()> {
         self.inner.remove_file(path)
     }

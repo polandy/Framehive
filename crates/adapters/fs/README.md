@@ -28,6 +28,10 @@ the source scan of the import (ADR 0020 §3, §4). It adds no dependency.
   accepts this race, because these file systems offer no rename that refuses to
   replace.
 
+- `replace_file` refuses a file that is read-only by its mode bits, for the superuser
+  too, and one the user cannot open for writing; it then copies the old file's
+  permissions to `from` and renames with `std::fs::rename` (CORE-009).
+
 ## Public API
 
 | Item | Meaning |
@@ -39,7 +43,8 @@ the source scan of the import (ADR 0020 §3, §4). It adds no dependency.
 `tests/conformance.rs` runs `files::testing::check_file_system` on the real file
 system in a `files::testing::TempDir`, with real symbolic links on Unix. The unit tests run the same suite with a hard
 link that fails as on exFAT, to cover the fallback, and check that it never replaces
-an existing file.
+an existing file. A Unix test checks that `replace_file` keeps permissions and refuses
+a read-only file.
 
 ## Dependencies
 

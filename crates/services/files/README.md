@@ -50,7 +50,7 @@ Boundaries:
 | Item | Meaning |
 |---|---|
 | `ReadOnlyFileSystem`, `ReadSeek`, `EntryKind`, `FolderEntry` | Port for reading files and folders (`entry`, `list_folder`, `file_size`, `modification_time`, `open_read`); files are read from any offset (ADR 0021); folders are listed without following symbolic links (IMPORT-005); the import reads its source only through it (ADR 0034) |
-| `FileSystem`, `WriteFile` | Port for files and folders: `ReadOnlyFileSystem` with creating, renaming, removing and explicit syncing |
+| `FileSystem`, `WriteFile` | Port for files and folders: `ReadOnlyFileSystem` with creating, renaming, replacing a file in one step (keeping its permissions, refusing a read-only file), removing and explicit syncing |
 | `FreeSpace`, `SpaceOnFileSystem`, `FileSystemId` | Port for the free space and the identity of the file system a folder lies on; a missing folder is answered for its nearest existing parent (ADR 0033) |
 | `Hasher`, `HashState` | Port for a hash function that yields a `domain::Checksum` with its algorithm id |
 | `checksum_file` | Reads a file in full and returns its checksum; used to compare content (IMPORT-003) and to read a copy back |
@@ -58,7 +58,7 @@ Boundaries:
 | `copy_verified_to_all`, `VerifiedCopies` | Copies one file to several targets with one read and verifies each, with one result per target (IMPORT-007); the source may lie on its own `ReadOnlyFileSystem` |
 | `CopyError`, `CopyStep`, `CopyErrorKind`, `CleanupFailure` | The failed step, why, and a file that could not be removed |
 | `Cameras`, `Camera`, `CameraError` | Port for cameras and phones over PTP or MTP: lists them sorted by port, opens one as a `ReadOnlyFileSystem`, and tells a camera in use by another program from other failures (ADR 0034) |
-| `testing::MemoryFileSystem`, `testing::Fault` | `FileSystem` in memory with simulated crashes, symbolic links, read, write, read-back and listing faults, and stops after a number of operations |
+| `testing::MemoryFileSystem`, `testing::Fault` | `FileSystem` in memory with simulated crashes, symbolic links, read-only files, read, write, read-back, rename and listing faults, and stops after a number of operations |
 | `testing::MemoryCameras` | `Cameras` that serve `MemoryFileSystem`s as cameras, with cameras in use, cameras disconnected again, a failing list, and whether a camera is still open |
 | `testing::FnvHasher` | Non-cryptographic `Hasher` for tests; its checksums are written `fnv:<hex>` |
 | `testing::TempDir` | A temporary folder on the real file system, removed when dropped |
