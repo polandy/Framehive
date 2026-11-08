@@ -99,7 +99,9 @@ sidecar or XMP embedded in a DNG (ADR 0015).
 
 ## Example
 
-An asset with the Immich rating 3 and the tag `Holiday/Beach`, written by the sync:
+An asset with the Immich rating 3 and the tag `Holiday/Beach`, written by the sync. The
+fragment shows the values only; the bytes Framehive writes follow the canonical form of
+ADR 0039 (`x:xmpmeta` root, properties ordered by prefix):
 
 ```xml
 <rdf:Description rdf:about=""
