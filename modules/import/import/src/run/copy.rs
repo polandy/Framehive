@@ -36,6 +36,8 @@ struct Imported {
     sidecar: Option<String>,
     /// The sidecar written next to the copies that are verified, for the history.
     sidecar_record: Option<SidecarRecord>,
+    /// The backup destinations where a sidecar was there already and was kept.
+    sidecar_kept_at: Vec<PathBuf>,
 }
 
 impl Imported {
@@ -46,6 +48,7 @@ impl Imported {
             checksum: None,
             sidecar: None,
             sidecar_record: None,
+            sidecar_kept_at: Vec::new(),
         }
     }
 }
@@ -97,6 +100,7 @@ impl ImportRun<'_> {
                 &report,
                 imported.checksum.as_ref(),
                 imported.sidecar_record.as_ref(),
+                &imported.sidecar_kept_at,
             ),
             _ => Ok(()),
         };
@@ -125,6 +129,7 @@ impl ImportRun<'_> {
             checksum: copied.source_checksum,
             sidecar: None,
             sidecar_record: None,
+            sidecar_kept_at: Vec::new(),
         }
     }
 
@@ -161,6 +166,7 @@ impl ImportRun<'_> {
                     checksum: copied.source_checksum,
                     sidecar: None,
                     sidecar_record: None,
+                    sidecar_kept_at: Vec::new(),
                 }
             }
             // A file already imported is backed up, so that a re-run fills a new or a
@@ -179,6 +185,7 @@ impl ImportRun<'_> {
                     checksum,
                     sidecar: None,
                     sidecar_record: None,
+                    sidecar_kept_at: Vec::new(),
                 }
             }
             ConflictOutcome::AlreadyImported { target } => {

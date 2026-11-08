@@ -169,7 +169,8 @@ impl ImportRun<'_> {
     /// the file's import destination, when the file was copied or already imported,
     /// and at each backup destination where it was backed up or already backed up.
     /// `checksum` is the source's, when the run read it; `sidecar` is the one written
-    /// next to each of these copies (IMPORT-019.15).
+    /// next to each of these copies (IMPORT-019.15) except at `sidecar_kept_at`, where
+    /// one that was there was kept.
     pub(super) fn record_copies(
         &self,
         destination: &Path,
@@ -178,6 +179,7 @@ impl ImportRun<'_> {
         report: &FileReport,
         checksum: Option<&Checksum>,
         sidecar: Option<&SidecarRecord>,
+        sidecar_kept_at: &[PathBuf],
     ) -> Result<(), HistoryError> {
         let (target, at_import_destination, checksum) = match &report.outcome {
             FileOutcome::Copied { target, checksum } => (target, true, Some(checksum)),
@@ -214,7 +216,9 @@ impl ImportRun<'_> {
                 // A clock that left the years 1 to 9999 during the run cannot be
                 // recorded; the start of the run is the closest time that can.
                 recorded_at: self.recorded_now().unwrap_or(run.started_at),
-                sidecar: sidecar.cloned(),
+                sidecar: sidecar
+                    .filter(|_| !sidecar_kept_at.iter().any(|kept| kept == destination))
+                    .cloned(),
             })?;
         }
         Ok(())

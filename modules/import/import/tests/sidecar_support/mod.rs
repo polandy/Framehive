@@ -126,7 +126,7 @@ pub(crate) struct Machine {
     pub(crate) history: MemoryImportHistory,
     counters: MemorySequenceCounters,
     session: SessionSequence,
-    clock: ManualClock,
+    pub(crate) clock: ManualClock,
     pub(crate) xml: RecordedXml,
     free_space: MemoryFreeSpace,
 }

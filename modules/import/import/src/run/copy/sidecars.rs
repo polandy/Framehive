@@ -122,13 +122,17 @@ impl<'s> Sidecars<'s> {
                 .needs_writing(&at_backup, keep_existing)
                 .and_then(|needed| {
                     if needed {
-                        self.write_verified(&at_backup, &prepared)
+                        self.write_verified(&at_backup, &prepared).map(|()| true)
                     } else {
-                        Ok(())
+                        Ok(false)
                     }
                 });
-            if let Err(error) = written {
-                backup.outcome = BackupOutcome::Failed(BackupError::Sidecar(error));
+            match written {
+                Ok(true) => {}
+                Ok(false) => imported.sidecar_kept_at.push(backup.destination.clone()),
+                Err(error) => {
+                    backup.outcome = BackupOutcome::Failed(BackupError::Sidecar(error));
+                }
             }
         }
         imported.sidecar_record = Some(SidecarRecord {
