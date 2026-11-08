@@ -25,6 +25,11 @@ there. Their sizes add up to the bytes to write at that destination.
 With a video destination (IMPORT-013), a video counts at the video destination and the
 video backup destinations instead.
 
+**Sidecars.** The XMP sidecar of a photo (IMPORT-019) counts with its file: its
+serialized size is added at every destination where its file is written. A file
+recognized as imported before writes no sidecar. A sidecar written alone, next to a file
+found already there, is not counted.
+
 A file recognized as imported before (IMPORT-009), "already imported" (IMPORT-003),
 skipped or failed by a name conflict, does not count at the import destination. A file
 whose backup target already holds a file is "already backed up" or fails with a name
@@ -131,6 +136,13 @@ created before it stay.
 - **Then** the result is "destination not created" with the backup destination, the
   folder `<file>/backup` and the reason, and no file is copied
 
+### IMPORT-012.12 – Sidecars count with their file
+- **Given** a 400-byte photo and a job code, so that its sidecar is S bytes, and an
+  import destination with 399 + S bytes free
+- **When** the import runs
+- **Then** the result is "not enough space" with the import destination, 400 + S bytes
+  to write and 399 + S bytes free, and nothing is copied
+
 ## Out of scope
 
 - How the command line and the guided import report the shortage: CLI-011.
@@ -149,3 +161,4 @@ created before it stay.
 | 2026-11-05 | Initial draft for I1 (ADR 0033); accepted by the owner |
 | 2026-11-05 | Implemented in `files`, `adapter-free-space`, `import` and `framehive-cli`; `implemented` |
 | 2026-11-07 | The run creates the missing destinations itself, after the free-space check; add IMPORT-012.10 and IMPORT-012.11 |
+| 2026-11-08 | Count the sidecars of written photos (IMPORT-019); add IMPORT-012.12 |

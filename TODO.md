@@ -10,7 +10,6 @@ feature live in its spec, decisions in `docs/adr/`. Add items with `/todo`.
 - [ ] Extend the module template in `xtask/templates/module/` once the kernel has the `Module` contract, `kernel::testing::module_conformance` and `ui-kit`: implement `Module`, call the conformance suite, add a Slint view (architecture §4.5) — gated: waits for the GUI milestone, skip it until then (owner decision #68, 2026-11-08) (2026-10-19)
 - [ ] Store reference pixel hashes for aarch64-darwin in the LibRaw version test — on macOS it compares only sizes until the hashes are measured on a Mac (PREVIEWS-001, ADR 0028) (2026-11-03)
 - [ ] Export a handful of sidecars from darktable and digiKam on own photos as XMP fixtures: cleaned (no GPS, serial number or people), CC0 — owner; Lightroom and Capture One samples only if at hand (CORE-009.23, ADR 0039, D26) (2026-11-08)
-- [ ] Count sidecar bytes in the free-space check (IMPORT-012, IMPORT-019) (2026-11-08)
 - [ ] A leftover sidecar at a backup destination fails that backup instead of taking the file's suffix: decide whether backups follow the sidecar conflict rule (IMPORT-007, IMPORT-019) (2026-11-08)
 - [ ] A sidecar that failed only at a backup destination is never written there on a re-run, because the history knows the file and the backup finds it already backed up (IMPORT-007, IMPORT-019.14) (2026-11-08)
 

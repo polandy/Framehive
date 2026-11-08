@@ -8,6 +8,7 @@ use std::path::{Path, PathBuf};
 
 use files::FileSystemId;
 
+use super::copy::Sidecars;
 use super::resolvers::Resolvers;
 use super::{FilePlan, ImportRun, ImportSettings, PlannedRun, RunFile};
 use crate::backup::{BackupTarget, inspect_backup_target};
@@ -74,6 +75,7 @@ impl ImportRun<'_> {
         destinations: &[&Path],
     ) -> Vec<u64> {
         let mut resolvers = Resolvers::new(self, settings);
+        let sidecars = Sidecars::of_run(self, settings, plan.naming.import_time.year());
         let mut bytes = vec![0_u64; destinations.len()];
         for file in &plan.files {
             let role = file.found.role;
@@ -82,7 +84,10 @@ impl ImportRun<'_> {
             else {
                 continue;
             };
-            let size = file.found.size;
+            let size = file
+                .found
+                .size
+                .saturating_add(sidecar_size(sidecars.as_ref(), file));
             if to_import_destination {
                 add_bytes(
                     &mut bytes,
@@ -140,6 +145,16 @@ fn written_target(
         | ConflictOutcome::FailedNameConflict { .. }
         | ConflictOutcome::TargetFolderIsAFile { .. } => None,
     }
+}
+
+/// The bytes of the sidecar that comes with `file`: none for a file the history knows.
+fn sidecar_size(sidecars: Option<&Sidecars<'_>>, file: &RunFile) -> u64 {
+    let Ok(FilePlan::Named(planned)) = &file.planned else {
+        return 0;
+    };
+    sidecars
+        .and_then(|sidecars| sidecars.size_of(file.found.role, planned))
+        .unwrap_or(0)
 }
 
 /// Adds `size` to the bytes written to `destination`, one of `destinations`.
