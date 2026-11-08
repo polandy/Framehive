@@ -109,7 +109,10 @@ pub(crate) fn run(repository: &Repository, environment: &Environment) -> Result<
     }
 }
 
-fn resolve_range(repository: &Repository, environment: &Environment) -> Result<Range, String> {
+pub(crate) fn resolve_range(
+    repository: &Repository,
+    environment: &Environment,
+) -> Result<Range, String> {
     let current_branch = git(repository, &["branch", "--show-current"])?;
     let has_main = git(
         repository,
@@ -179,7 +182,7 @@ fn check_all(repository: &Repository, commits: &[String]) -> Result<Vec<String>,
 }
 
 /// Runs git and returns its stdout; a non-zero exit is an error.
-fn git(repository: &Repository, arguments: &[&str]) -> Result<String, String> {
+pub(crate) fn git(repository: &Repository, arguments: &[&str]) -> Result<String, String> {
     let output = run_git(repository, arguments)?;
     if !output.status.success() {
         return Err(failure(arguments, &output));

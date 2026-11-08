@@ -71,6 +71,12 @@ a line break is quoted, and a double quote in it is doubled.
 **Paths.** Paths are printed as on the lines of CLI-001; a path that is not valid UTF-8
 has each invalid byte replaced by U+FFFD in every format.
 
+**Control characters in text.** The text format keeps one line per run and per copy: in
+a path or target, a line feed is printed as `\n`, a carriage return as `\r`, a tab as
+`\t` and every other control character (Unicode category Cc) as `\u` and four hex
+digits, as in the JSON format. Everything else, a backslash included, is printed
+unchanged, so the text is for reading; JSON and CSV keep the exact names.
+
 **Exporting.** The log is printed to standard output; it is exported by redirecting it,
 for example `framehive import-log 3 --format csv > import-3.csv`.
 
@@ -159,6 +165,19 @@ for example `framehive import-log 3 --format csv > import-3.csv`.
   destination and the block of `<videos>` with `clip.MOV`, and the JSON has
   `"video_destination": "<videos>"`
 
+### CLI-009.14 – No state folder
+- **Given** `XDG_STATE_HOME` unset and `HOME` not an absolute path
+- **When** `framehive import-log` runs
+- **Then** standard error has `error: the home folder is unknown; set HOME`, nothing is
+  written, and the exit code is 2
+
+### CLI-009.15 – A name with a line break in text
+- **Given** run 1 from the source `/media/a<LF>b` with a copy of `x<LF>y.jpg` to the
+  target `x<CR>y.jpg`, where `<LF>` is a line feed and `<CR>` a carriage return
+- **When** `framehive import-log` runs, and again with `1`
+- **Then** the list has the line `… /media/a\nb -> /library` and the log has the line
+  `  x\ny.jpg -> x\ry.jpg  blake3:01`, each on one line
+
 ## Out of scope
 
 - What the log holds: IMPORT-010.
@@ -177,3 +196,5 @@ for example `framehive import-log 3 --format csv > import-3.csv`.
 | 2026-11-04 | Initial draft; owner decisions: `framehive import-log`, runs oldest first, `--format` only for one run, paths that are not valid UTF-8 printed with U+FFFD, `framehive import` does not print its run number; accepted by the owner |
 | 2026-11-04 | Implemented in `framehive-cli`; `implemented` |
 | 2026-11-06 | The video destination of a run (CLI-012); accepted by the owner |
+| 2026-11-07 | CLI-009.14 for the error without a state folder, which the table above already defined |
+| 2026-11-07 | Control characters are escaped in the text format, so a name with a line break stays on one line (CLI-009.15, PR #40 review) |

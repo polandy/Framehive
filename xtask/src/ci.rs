@@ -20,7 +20,7 @@ struct Step {
 
 const CARGO: &str = "cargo";
 
-const STEPS: [Step; 15] = [
+const STEPS: [Step; 17] = [
     Step {
         title: "format",
         program: CARGO,
@@ -63,6 +63,11 @@ const STEPS: [Step; 15] = [
         title: "schemas",
         program: CARGO,
         arguments: &["xtask", "check-schemas"],
+    },
+    Step {
+        title: "public API",
+        program: CARGO,
+        arguments: &["xtask", "check-public-api"],
     },
     Step {
         title: "specifications",
@@ -109,6 +114,13 @@ const STEPS: [Step; 15] = [
         title: "licenses and advisories",
         program: CARGO,
         arguments: &["deny", "check"],
+    },
+    // The fuzz crate is a workspace of its own and has its own lock file (ADR 0037 §2).
+    // cargo-deny finds deny.toml in the parent directory.
+    Step {
+        title: "licenses and advisories of fuzz",
+        program: CARGO,
+        arguments: &["deny", "--manifest-path", "fuzz/Cargo.toml", "check"],
     },
     Step {
         title: "REUSE compliance",

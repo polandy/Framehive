@@ -16,6 +16,7 @@ layer = "tooling"
 [dependencies]
 import.workspace = true
 kernel.workspace = true
+metadata.workspace = true
 
 [lints]
 workspace = true

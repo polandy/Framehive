@@ -50,16 +50,7 @@ impl<'a> TargetCopy<'a> {
         match self.state {
             State::Verified(checksum) => Ok(checksum),
             State::Failed(error) => Err(error),
-            // Never expected: the copy leaves each target verified or failed;
-            // reported instead of panicking.
-            State::Open | State::Writing(_) => Err(CopyError {
-                step: CopyStep::Verify,
-                kind: CopyErrorKind::Io {
-                    path: self.target.to_path_buf(),
-                    error: io::Error::other("the copy did not finish"),
-                },
-                cleanup: None,
-            }),
+            State::Open | State::Writing(_) => Err(CopyError::unfinished(self.target)),
         }
     }
 

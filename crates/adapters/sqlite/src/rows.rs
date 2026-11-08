@@ -12,7 +12,7 @@ use history::{CopyKey, CopyRecord, FoundCopy, LoggedRun, RecordedTime, RunId, Ru
 use rusqlite::{OptionalExtension, Row, params, types::Type};
 
 use crate::database::Database;
-use crate::text::{capture_time_text, parse_capture_time, parse_recorded_time};
+use crate::text::{parse_capture_time, parse_recorded_time};
 
 /// The columns of a run with the number of its copies, as [`logged_run`] reads them.
 /// A database of the first layout, read as it is, has no video destinations.
@@ -69,7 +69,7 @@ pub(crate) fn insert_copy(database: &Database, copy: &CopyRecord) -> rusqlite::R
             path_bytes(&copy.source_path),
             copy.original_file_name,
             size_value(copy.size)?,
-            copy.capture_time.map(capture_time_text),
+            copy.capture_time.map(|time| time.to_string()),
             copy.checksum.to_string(),
             copy.target,
             copy.recorded_at.to_string(),
@@ -94,7 +94,7 @@ pub(crate) fn find_copies(
             path_bytes(key.destination),
             key.original_file_name,
             size_value(key.size)?,
-            key.capture_time.map(capture_time_text),
+            key.capture_time.map(|time| time.to_string()),
         ],
         |row| {
             Ok(FoundCopy {

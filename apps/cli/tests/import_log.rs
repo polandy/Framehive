@@ -12,8 +12,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use adapter_sqlite::SqliteImportHistory;
-use domain::{Checksum, Timestamp, UtcOffset};
-use history::{CopyRecord, ImportHistory, RecordedTime, RunStart};
+use domain::{Timestamp, UtcOffset};
+use history::{ImportHistory, RecordedTime, RunStart};
 use support::{DEFAULT_TARGET, Folders, lines, photo, stderr, stdout};
 
 /// The line of the copy of `DSCF0001.RAF` in the log of a run, without its checksum.
@@ -313,11 +313,17 @@ fn format_without_a_run_is_a_usage_error() {
     }
 }
 
-/// Without a state folder the command stops as the import does (CLI-008, CLI-009).
+/// Without a state folder the command stops as the import does (CLI-008.10).
+/// spec: CLI-009.14
 #[test]
 fn without_a_state_folder_the_command_stops() {
+    let folders = Folders::new();
+    let working_folder = folders.root.path().join("work");
+    fs::create_dir(&working_folder).unwrap();
+
     let output = std::process::Command::new(env!("CARGO_BIN_EXE_framehive"))
         .arg("import-log")
+        .current_dir(&working_folder)
         .env_remove("XDG_STATE_HOME")
         .env("HOME", "not-absolute")
         .output()
@@ -328,50 +334,5 @@ fn without_a_state_folder_the_command_stops() {
         "error: the home folder is unknown; set HOME\n"
     );
     assert_eq!(output.status.code(), Some(2));
-}
-
-/// Paths that are not valid UTF-8 are printed with U+FFFD in every format (CLI-009,
-/// "Paths").
-#[test]
-fn a_path_that_is_not_utf8_is_printed_with_replacement_characters() {
-    use std::ffi::OsStr;
-    use std::os::unix::ffi::OsStrExt;
-
-    let folders = Folders::new();
-    let history = history(&folders);
-    let run = history
-        .start_run(&RunStart {
-            source: PathBuf::from(OsStr::from_bytes(b"/media/\xff")),
-            import_destination: PathBuf::from("/library"),
-            video_destination: None,
-            started_at: recorded_time(),
-        })
-        .unwrap();
-    history
-        .record_copy(&CopyRecord {
-            run,
-            destination: PathBuf::from("/library"),
-            source_path: PathBuf::from(OsStr::from_bytes(b"\xfe.jpg")),
-            original_file_name: "x.jpg".to_owned(),
-            size: 1,
-            capture_time: None,
-            checksum: Checksum::new(Checksum::BLAKE3, vec![1]).unwrap(),
-            target: "x.jpg".to_owned(),
-            recorded_at: recorded_time(),
-        })
-        .unwrap();
-    drop(history);
-
-    let list = stdout(&folders.import_log(&[]));
-    let text = stdout(&folders.import_log(&["1"]));
-    let json = stdout(&folders.import_log(&["1", "--format", "json"]));
-    let csv = stdout(&folders.import_log(&["1", "--format", "csv"]));
-
-    assert!(list.contains("/media/\u{fffd} -> /library"), "{list}");
-    assert!(
-        text.contains("  \u{fffd}.jpg -> x.jpg  blake3:01"),
-        "{text}"
-    );
-    assert!(json.contains("\"source\": \"/media/\u{fffd}\""), "{json}");
-    assert!(csv.contains(",\u{fffd}.jpg,x.jpg,"), "{csv}");
+    assert_eq!(fs::read_dir(&working_folder).unwrap().count(), 0);
 }

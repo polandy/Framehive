@@ -34,7 +34,8 @@ destinations; it starts with none.
 **Invalid backup destinations.** A backup destination that lies on the card, or that is
 invalid by IMPORT-007.11, makes the summary say
 `The backup folder <folder> cannot be used: <reason>; type b to change it.`, and Enter
-does not start.
+does not start. A backup destination that cannot be created when the import starts
+makes the dialog say `Could not create <folder>: <reason>`, and nothing is copied.
 
 **Import and report.** The import runs as in CLI-005, and the progress line counts the
 bytes read from the card, not the bytes written to each destination. After the import,
@@ -88,6 +89,12 @@ key `backup`, in their order (ADR 0030), whenever they change.
 - **Then** it uses the destination without a warning, has no backup destination, and
   the next write stores `format_version=2`
 
+### CLI-006.8 – A backup destination that cannot be created
+- **Given** the card of CLI-006.4, and the backup destination `<file>/backup`, where
+  `<file>` is a file
+- **When** the person presses Enter
+- **Then** the dialog says `Could not create <file>/backup: …`, and no file is copied
+
 ## Out of scope
 
 - The "card can be formatted" status (N5): CLI-007.
@@ -103,3 +110,4 @@ key `backup`, in their order (ADR 0030), whenever they change.
 |---|---|
 | 2026-11-04 | Initial draft for backup destinations (IMPORT-007, ADR 0030); accepted by the owner |
 | 2026-11-04 | Implemented in `apps/cli/src/guided` |
+| 2026-11-07 | Add CLI-006.8: the import job creates the backup destinations when it starts (IMPORT-012) |

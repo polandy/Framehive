@@ -1,0 +1,222 @@
+pub mod devices
+pub mod devices::testing
+pub enum devices::testing::DcimFolder
+pub devices::testing::DcimFolder::File
+pub devices::testing::DcimFolder::Folder
+pub devices::testing::DcimFolder::Missing
+impl core::clone::Clone for devices::testing::DcimFolder
+pub fn devices::testing::DcimFolder::clone(&self) -> devices::testing::DcimFolder
+impl core::cmp::Eq for devices::testing::DcimFolder
+impl core::cmp::PartialEq for devices::testing::DcimFolder
+pub fn devices::testing::DcimFolder::eq(&self, &devices::testing::DcimFolder) -> bool
+impl core::fmt::Debug for devices::testing::DcimFolder
+pub fn devices::testing::DcimFolder::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for devices::testing::DcimFolder
+impl core::marker::StructuralPartialEq for devices::testing::DcimFolder
+impl core::marker::Freeze for devices::testing::DcimFolder
+impl core::marker::Send for devices::testing::DcimFolder
+impl core::marker::Sync for devices::testing::DcimFolder
+impl core::marker::Unpin for devices::testing::DcimFolder
+impl core::marker::UnsafeUnpin for devices::testing::DcimFolder
+impl core::panic::unwind_safe::RefUnwindSafe for devices::testing::DcimFolder
+impl core::panic::unwind_safe::UnwindSafe for devices::testing::DcimFolder
+pub struct devices::testing::MemoryDeviceSource
+impl devices::testing::MemoryDeviceSource
+pub fn devices::testing::MemoryDeviceSource::fail_ejects(&self, core::option::Option<&str>)
+pub fn devices::testing::MemoryDeviceSource::fail_listing(&self, core::option::Option<&str>)
+pub fn devices::testing::MemoryDeviceSource::insert(&self, &std::path::Path, devices::testing::DcimFolder)
+pub fn devices::testing::MemoryDeviceSource::insert_card(&self, impl core::convert::Into<std::path::PathBuf>) -> devices::Device
+pub fn devices::testing::MemoryDeviceSource::new() -> Self
+pub fn devices::testing::MemoryDeviceSource::remove(&self, &std::path::Path)
+impl core::default::Default for devices::testing::MemoryDeviceSource
+pub fn devices::testing::MemoryDeviceSource::default() -> devices::testing::MemoryDeviceSource
+impl core::fmt::Debug for devices::testing::MemoryDeviceSource
+pub fn devices::testing::MemoryDeviceSource::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl devices::DeviceSource for devices::testing::MemoryDeviceSource
+pub fn devices::testing::MemoryDeviceSource::eject(&self, &devices::Device) -> core::result::Result<(), devices::EjectError>
+pub fn devices::testing::MemoryDeviceSource::list(&self) -> core::result::Result<alloc::vec::Vec<devices::Device>, devices::ListError>
+impl !core::marker::Freeze for devices::testing::MemoryDeviceSource
+impl core::marker::Send for devices::testing::MemoryDeviceSource
+impl core::marker::Sync for devices::testing::MemoryDeviceSource
+impl core::marker::Unpin for devices::testing::MemoryDeviceSource
+impl core::marker::UnsafeUnpin for devices::testing::MemoryDeviceSource
+impl core::panic::unwind_safe::RefUnwindSafe for devices::testing::MemoryDeviceSource
+impl core::panic::unwind_safe::UnwindSafe for devices::testing::MemoryDeviceSource
+pub trait devices::testing::DeviceSourceUnderTest
+pub fn devices::testing::DeviceSourceUnderTest::break_listing(&mut self) -> alloc::string::String
+pub fn devices::testing::DeviceSourceUnderTest::fail_ejects(&mut self, &str)
+pub fn devices::testing::DeviceSourceUnderTest::insert(&mut self, &str, devices::testing::DcimFolder) -> std::path::PathBuf
+pub fn devices::testing::DeviceSourceUnderTest::remove(&mut self, &std::path::Path)
+pub fn devices::testing::DeviceSourceUnderTest::source(&self) -> &dyn devices::DeviceSource
+pub fn devices::testing::check_device_source<T: devices::testing::DeviceSourceUnderTest>(&mut dyn core::ops::function::FnMut() -> T) -> alloc::vec::Vec<alloc::string::String>
+pub enum devices::DeviceKind
+pub devices::DeviceKind::Camera
+pub devices::DeviceKind::Camera::port: alloc::string::String
+pub devices::DeviceKind::Card
+pub devices::DeviceKind::Card::mount_point: std::path::PathBuf
+impl core::clone::Clone for devices::DeviceKind
+pub fn devices::DeviceKind::clone(&self) -> devices::DeviceKind
+impl core::cmp::Eq for devices::DeviceKind
+impl core::cmp::PartialEq for devices::DeviceKind
+pub fn devices::DeviceKind::eq(&self, &devices::DeviceKind) -> bool
+impl core::fmt::Debug for devices::DeviceKind
+pub fn devices::DeviceKind::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for devices::DeviceKind
+pub fn devices::DeviceKind::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::StructuralPartialEq for devices::DeviceKind
+impl core::marker::Freeze for devices::DeviceKind
+impl core::marker::Send for devices::DeviceKind
+impl core::marker::Sync for devices::DeviceKind
+impl core::marker::Unpin for devices::DeviceKind
+impl core::marker::UnsafeUnpin for devices::DeviceKind
+impl core::panic::unwind_safe::RefUnwindSafe for devices::DeviceKind
+impl core::panic::unwind_safe::UnwindSafe for devices::DeviceKind
+pub enum devices::EjectError
+pub devices::EjectError::Failed
+pub devices::EjectError::Failed::device: devices::Device
+pub devices::EjectError::Failed::message: alloc::string::String
+pub devices::EjectError::List(devices::ListError)
+pub devices::EjectError::NotPresent
+pub devices::EjectError::NotPresent::device: devices::Device
+impl core::convert::From<devices::ListError> for devices::EjectError
+pub fn devices::EjectError::from(devices::ListError) -> Self
+impl core::error::Error for devices::EjectError
+pub fn devices::EjectError::source(&self) -> core::option::Option<&(dyn core::error::Error + 'static)>
+impl core::fmt::Debug for devices::EjectError
+pub fn devices::EjectError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for devices::EjectError
+pub fn devices::EjectError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for devices::EjectError
+impl core::marker::Send for devices::EjectError
+impl core::marker::Sync for devices::EjectError
+impl core::marker::Unpin for devices::EjectError
+impl core::marker::UnsafeUnpin for devices::EjectError
+impl !core::panic::unwind_safe::RefUnwindSafe for devices::EjectError
+impl !core::panic::unwind_safe::UnwindSafe for devices::EjectError
+pub enum devices::PollError
+pub devices::PollError::Cameras(files::cameras::CameraError)
+pub devices::PollError::Cards(devices::ListError)
+impl core::error::Error for devices::PollError
+pub fn devices::PollError::source(&self) -> core::option::Option<&(dyn core::error::Error + 'static)>
+impl core::fmt::Debug for devices::PollError
+pub fn devices::PollError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for devices::PollError
+pub fn devices::PollError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for devices::PollError
+impl core::marker::Send for devices::PollError
+impl core::marker::Sync for devices::PollError
+impl core::marker::Unpin for devices::PollError
+impl core::marker::UnsafeUnpin for devices::PollError
+impl !core::panic::unwind_safe::RefUnwindSafe for devices::PollError
+impl !core::panic::unwind_safe::UnwindSafe for devices::PollError
+pub struct devices::Device
+impl devices::Device
+pub fn devices::Device::at(impl core::convert::Into<std::path::PathBuf>) -> Self
+pub fn devices::Device::camera(impl core::convert::Into<alloc::string::String>, impl core::convert::Into<alloc::string::String>) -> Self
+pub fn devices::Device::is_camera(&self) -> bool
+pub fn devices::Device::kind(&self) -> &devices::DeviceKind
+pub fn devices::Device::mount_point(&self) -> core::option::Option<&std::path::Path>
+pub fn devices::Device::name(&self) -> &str
+pub fn devices::Device::port(&self) -> core::option::Option<&str>
+impl core::clone::Clone for devices::Device
+pub fn devices::Device::clone(&self) -> devices::Device
+impl core::cmp::Eq for devices::Device
+impl core::cmp::Ord for devices::Device
+pub fn devices::Device::cmp(&self, &Self) -> core::cmp::Ordering
+impl core::cmp::PartialEq for devices::Device
+pub fn devices::Device::eq(&self, &devices::Device) -> bool
+impl core::cmp::PartialOrd for devices::Device
+pub fn devices::Device::partial_cmp(&self, &Self) -> core::option::Option<core::cmp::Ordering>
+impl core::fmt::Debug for devices::Device
+pub fn devices::Device::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for devices::Device
+pub fn devices::Device::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for devices::Device
+pub fn devices::Device::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::StructuralPartialEq for devices::Device
+impl core::marker::Freeze for devices::Device
+impl core::marker::Send for devices::Device
+impl core::marker::Sync for devices::Device
+impl core::marker::Unpin for devices::Device
+impl core::marker::UnsafeUnpin for devices::Device
+impl core::panic::unwind_safe::RefUnwindSafe for devices::Device
+impl core::panic::unwind_safe::UnwindSafe for devices::Device
+pub struct devices::DeviceChanges
+pub devices::DeviceChanges::added: alloc::vec::Vec<devices::Device>
+pub devices::DeviceChanges::removed: alloc::vec::Vec<devices::Device>
+impl devices::DeviceChanges
+pub fn devices::DeviceChanges::is_empty(&self) -> bool
+impl core::clone::Clone for devices::DeviceChanges
+pub fn devices::DeviceChanges::clone(&self) -> devices::DeviceChanges
+impl core::cmp::Eq for devices::DeviceChanges
+impl core::cmp::PartialEq for devices::DeviceChanges
+pub fn devices::DeviceChanges::eq(&self, &devices::DeviceChanges) -> bool
+impl core::default::Default for devices::DeviceChanges
+pub fn devices::DeviceChanges::default() -> devices::DeviceChanges
+impl core::fmt::Debug for devices::DeviceChanges
+pub fn devices::DeviceChanges::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for devices::DeviceChanges
+impl core::marker::Freeze for devices::DeviceChanges
+impl core::marker::Send for devices::DeviceChanges
+impl core::marker::Sync for devices::DeviceChanges
+impl core::marker::Unpin for devices::DeviceChanges
+impl core::marker::UnsafeUnpin for devices::DeviceChanges
+impl core::panic::unwind_safe::RefUnwindSafe for devices::DeviceChanges
+impl core::panic::unwind_safe::UnwindSafe for devices::DeviceChanges
+pub struct devices::DevicePoll
+pub devices::DevicePoll::changes: devices::DeviceChanges
+pub devices::DevicePoll::errors: alloc::vec::Vec<devices::PollError>
+impl core::default::Default for devices::DevicePoll
+pub fn devices::DevicePoll::default() -> devices::DevicePoll
+impl core::fmt::Debug for devices::DevicePoll
+pub fn devices::DevicePoll::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for devices::DevicePoll
+impl core::marker::Send for devices::DevicePoll
+impl core::marker::Sync for devices::DevicePoll
+impl core::marker::Unpin for devices::DevicePoll
+impl core::marker::UnsafeUnpin for devices::DevicePoll
+impl !core::panic::unwind_safe::RefUnwindSafe for devices::DevicePoll
+impl !core::panic::unwind_safe::UnwindSafe for devices::DevicePoll
+pub struct devices::DeviceWatch
+impl devices::DeviceWatch
+pub fn devices::DeviceWatch::devices(&self) -> &[devices::Device]
+pub fn devices::DeviceWatch::new() -> Self
+pub fn devices::DeviceWatch::poll(&mut self, &dyn devices::DeviceSource, &dyn files::cameras::Cameras) -> devices::DevicePoll
+impl core::clone::Clone for devices::DeviceWatch
+pub fn devices::DeviceWatch::clone(&self) -> devices::DeviceWatch
+impl core::default::Default for devices::DeviceWatch
+pub fn devices::DeviceWatch::default() -> devices::DeviceWatch
+impl core::fmt::Debug for devices::DeviceWatch
+pub fn devices::DeviceWatch::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for devices::DeviceWatch
+impl core::marker::Send for devices::DeviceWatch
+impl core::marker::Sync for devices::DeviceWatch
+impl core::marker::Unpin for devices::DeviceWatch
+impl core::marker::UnsafeUnpin for devices::DeviceWatch
+impl core::panic::unwind_safe::RefUnwindSafe for devices::DeviceWatch
+impl core::panic::unwind_safe::UnwindSafe for devices::DeviceWatch
+pub struct devices::ListError
+impl devices::ListError
+pub fn devices::ListError::new(impl core::convert::Into<alloc::string::String>, core::io::error::Error) -> Self
+pub fn devices::ListError::what(&self) -> &str
+impl core::convert::From<devices::ListError> for devices::EjectError
+pub fn devices::EjectError::from(devices::ListError) -> Self
+impl core::error::Error for devices::ListError
+pub fn devices::ListError::source(&self) -> core::option::Option<&(dyn core::error::Error + 'static)>
+impl core::fmt::Debug for devices::ListError
+pub fn devices::ListError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for devices::ListError
+pub fn devices::ListError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for devices::ListError
+impl core::marker::Send for devices::ListError
+impl core::marker::Sync for devices::ListError
+impl core::marker::Unpin for devices::ListError
+impl core::marker::UnsafeUnpin for devices::ListError
+impl !core::panic::unwind_safe::RefUnwindSafe for devices::ListError
+impl !core::panic::unwind_safe::UnwindSafe for devices::ListError
+pub trait devices::DeviceSource
+pub fn devices::DeviceSource::eject(&self, &devices::Device) -> core::result::Result<(), devices::EjectError>
+pub fn devices::DeviceSource::list(&self) -> core::result::Result<alloc::vec::Vec<devices::Device>, devices::ListError>
+impl devices::DeviceSource for devices::testing::MemoryDeviceSource
+pub fn devices::testing::MemoryDeviceSource::eject(&self, &devices::Device) -> core::result::Result<(), devices::EjectError>
+pub fn devices::testing::MemoryDeviceSource::list(&self) -> core::result::Result<alloc::vec::Vec<devices::Device>, devices::ListError>

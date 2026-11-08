@@ -114,6 +114,7 @@ fn videos_are_backed_up_to_the_video_backup_destinations() {
 }
 
 /// spec: IMPORT-013.3
+/// spec: IMPORT-008.15
 #[test]
 fn a_folder_may_be_a_backup_and_a_video_backup_destination() {
     let file_system = photo_and_video();
@@ -131,6 +132,8 @@ fn a_folder_may_be_a_backup_and_a_video_backup_destination() {
     );
     assert_eq!(summary.backups.len(), 2);
     assert_eq!(summary.backups[0].backed_up, 2);
+    assert!(summary.backups[0].receives_photos);
+    assert!(!summary.backups[1].receives_photos);
 }
 
 /// spec: IMPORT-013.4

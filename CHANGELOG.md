@@ -17,6 +17,12 @@ All user-visible changes are listed here. The format follows
   Rust toolchain, Nix development shell, and REUSE-compliant licensing
   (GPL-3.0-or-later).
 - `cargo xtask ci` with the file, architecture, dependency and specification checks.
+- Public API snapshots of `kernel` and the services: `cargo xtask check-public-api`
+  fails on an API change without an updated `public-api.txt` and a changelog entry,
+  and `cargo xtask public-api` writes the snapshots (ADR 0038).
+- Coverage-guided fuzzing of the EXIF parser: the fuzz crate in `fuzz/`, the
+  `nix develop .#fuzz` shell with a pinned nightly toolchain, `cargo xtask fuzz` and a
+  nightly workflow (ADR 0037).
 - Name templates (IMPORT-001): the import plan gives each imported file its folders
   and name from a name template, keeps the files of one asset together, and marks
   files that cannot be named or are dated by their modification time.
@@ -156,6 +162,26 @@ All user-visible changes are listed here. The format follows
 
 ### Fixed
 
+- `framehive import-log` no longer leaves the `-wal` and `-shm` files of SQLite next to
+  the import history in the state folder (IMPORT-010).
+- After an import that found no file, the format readiness no longer counts the video
+  backup destinations as locations: with one backup destination and a video backup
+  destination of its own, it says "verified in 2 locations", the import destination and
+  the backup destination a photo would need (IMPORT-008, IMPORT-013).
+- `framehive import` and the guided import no longer create the destination folders
+  of an import that does not start because its job, when it starts, finds too little
+  free space, for example after another import to the same disk filled it. The import
+  run now creates the missing destinations itself, after its free-space check
+  (IMPORT-012, CLI-011). `framehive import` reports that shortage with the sizes and
+  folders as given, as its first check does.
+- Two `framehive config init` commands at the same time no longer damage the example:
+  each one writes its own `.part` file, so the second cannot empty the file the
+  first one just put in place (CLI-010).
+- A configuration file with `schema_version:` but no value now says that the key needs
+  a positive whole number; before, it suggested leaving the required key out (CORE-006).
+- `framehive import-log` keeps its text on one line per run and per copy when a path or
+  target name contains a line break or another control character: it prints them
+  escaped, such as `\n`, as the JSON format does (CLI-009).
 - Files already imported are recognized when the destination tells case or Unicode
   normalization forms apart and holds the same name in several spellings, such as
   `Café.JPG` precomposed and decomposed: every spelling is compared, so a photo

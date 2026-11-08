@@ -27,6 +27,12 @@ allow = [
 ]
 confidence-threshold = 0.9
 
+# libFuzzer's sources are under the old LLVM license, permissive and compatible with the
+# GPL; only the fuzz crate uses them (ADR 0037 §1).
+[[licenses.exceptions]]
+allow = ["NCSA"]
+crate = "libfuzzer-sys"
+
 [licenses.private]
 # Our own crates are GPL-3.0-or-later and never published.
 ignore = true

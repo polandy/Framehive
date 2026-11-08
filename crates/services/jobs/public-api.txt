@@ -1,0 +1,179 @@
+pub mod jobs
+pub enum jobs::JobEnd
+pub jobs::JobEnd::Failed(alloc::string::String)
+pub jobs::JobEnd::Finished
+pub jobs::JobEnd::Stopped
+impl core::clone::Clone for jobs::JobEnd
+pub fn jobs::JobEnd::clone(&self) -> jobs::JobEnd
+impl core::cmp::Eq for jobs::JobEnd
+impl core::cmp::PartialEq for jobs::JobEnd
+pub fn jobs::JobEnd::eq(&self, &jobs::JobEnd) -> bool
+impl core::convert::From<jobs::JobEnd> for jobs::JobState
+pub fn jobs::JobState::from(jobs::JobEnd) -> Self
+impl core::fmt::Debug for jobs::JobEnd
+pub fn jobs::JobEnd::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for jobs::JobEnd
+impl core::marker::Freeze for jobs::JobEnd
+impl core::marker::Send for jobs::JobEnd
+impl core::marker::Sync for jobs::JobEnd
+impl core::marker::Unpin for jobs::JobEnd
+impl core::marker::UnsafeUnpin for jobs::JobEnd
+impl core::panic::unwind_safe::RefUnwindSafe for jobs::JobEnd
+impl core::panic::unwind_safe::UnwindSafe for jobs::JobEnd
+pub enum jobs::JobState
+pub jobs::JobState::Failed(alloc::string::String)
+pub jobs::JobState::Finished
+pub jobs::JobState::Queued
+pub jobs::JobState::Removed
+pub jobs::JobState::Running
+pub jobs::JobState::Stopped
+impl jobs::JobState
+pub fn jobs::JobState::has_ended(&self) -> bool
+impl core::clone::Clone for jobs::JobState
+pub fn jobs::JobState::clone(&self) -> jobs::JobState
+impl core::cmp::Eq for jobs::JobState
+impl core::cmp::PartialEq for jobs::JobState
+pub fn jobs::JobState::eq(&self, &jobs::JobState) -> bool
+impl core::convert::From<jobs::JobEnd> for jobs::JobState
+pub fn jobs::JobState::from(jobs::JobEnd) -> Self
+impl core::fmt::Debug for jobs::JobState
+pub fn jobs::JobState::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for jobs::JobState
+impl core::marker::Freeze for jobs::JobState
+impl core::marker::Send for jobs::JobState
+impl core::marker::Sync for jobs::JobState
+impl core::marker::Unpin for jobs::JobState
+impl core::marker::UnsafeUnpin for jobs::JobState
+impl core::panic::unwind_safe::RefUnwindSafe for jobs::JobState
+impl core::panic::unwind_safe::UnwindSafe for jobs::JobState
+pub struct jobs::JobControl
+impl jobs::JobControl
+pub fn jobs::JobControl::new() -> Self
+pub fn jobs::JobControl::notify_on_stop(&self, impl core::ops::function::FnOnce() + core::marker::Send + 'static)
+pub fn jobs::JobControl::request_stop(&self)
+pub fn jobs::JobControl::should_continue(&self) -> bool
+impl core::clone::Clone for jobs::JobControl
+pub fn jobs::JobControl::clone(&self) -> jobs::JobControl
+impl core::default::Default for jobs::JobControl
+pub fn jobs::JobControl::default() -> jobs::JobControl
+impl core::fmt::Debug for jobs::JobControl
+pub fn jobs::JobControl::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for jobs::JobControl
+impl core::marker::Send for jobs::JobControl
+impl core::marker::Sync for jobs::JobControl
+impl core::marker::Unpin for jobs::JobControl
+impl core::marker::UnsafeUnpin for jobs::JobControl
+impl core::panic::unwind_safe::RefUnwindSafe for jobs::JobControl
+impl core::panic::unwind_safe::UnwindSafe for jobs::JobControl
+pub struct jobs::JobId(_)
+impl jobs::JobId
+pub fn jobs::JobId::new(u64) -> Self
+pub fn jobs::JobId::number(self) -> u64
+impl core::clone::Clone for jobs::JobId
+pub fn jobs::JobId::clone(&self) -> jobs::JobId
+impl core::cmp::Eq for jobs::JobId
+impl core::cmp::Ord for jobs::JobId
+pub fn jobs::JobId::cmp(&self, &jobs::JobId) -> core::cmp::Ordering
+impl core::cmp::PartialEq for jobs::JobId
+pub fn jobs::JobId::eq(&self, &jobs::JobId) -> bool
+impl core::cmp::PartialOrd for jobs::JobId
+pub fn jobs::JobId::partial_cmp(&self, &jobs::JobId) -> core::option::Option<core::cmp::Ordering>
+impl core::fmt::Debug for jobs::JobId
+pub fn jobs::JobId::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for jobs::JobId
+pub fn jobs::JobId::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for jobs::JobId
+pub fn jobs::JobId::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for jobs::JobId
+impl core::marker::StructuralPartialEq for jobs::JobId
+impl core::marker::Freeze for jobs::JobId
+impl core::marker::Send for jobs::JobId
+impl core::marker::Sync for jobs::JobId
+impl core::marker::Unpin for jobs::JobId
+impl core::marker::UnsafeUnpin for jobs::JobId
+impl core::panic::unwind_safe::RefUnwindSafe for jobs::JobId
+impl core::panic::unwind_safe::UnwindSafe for jobs::JobId
+pub struct jobs::JobQueue
+impl jobs::JobQueue
+pub fn jobs::JobQueue::enqueue(&mut self, alloc::boxed::Box<dyn jobs::Job>) -> jobs::JobId
+pub fn jobs::JobQueue::remove(&self, jobs::JobId) -> core::result::Result<(), jobs::NotQueuedOrRunning>
+pub fn jobs::JobQueue::shut_down(self)
+pub fn jobs::JobQueue::start() -> (jobs::JobQueue, std::sync::mpsc::Receiver<jobs::JobUpdate>)
+pub fn jobs::JobQueue::stop(&self, jobs::JobId) -> core::result::Result<(), jobs::NotQueuedOrRunning>
+impl core::ops::drop::Drop for jobs::JobQueue
+pub fn jobs::JobQueue::drop(&mut self)
+impl core::marker::Freeze for jobs::JobQueue
+impl core::marker::Send for jobs::JobQueue
+impl core::marker::Sync for jobs::JobQueue
+impl core::marker::Unpin for jobs::JobQueue
+impl core::marker::UnsafeUnpin for jobs::JobQueue
+impl core::panic::unwind_safe::RefUnwindSafe for jobs::JobQueue
+impl core::panic::unwind_safe::UnwindSafe for jobs::JobQueue
+pub struct jobs::JobUpdate
+pub jobs::JobUpdate::job: jobs::JobId
+pub jobs::JobUpdate::state: jobs::JobState
+impl core::clone::Clone for jobs::JobUpdate
+pub fn jobs::JobUpdate::clone(&self) -> jobs::JobUpdate
+impl core::cmp::Eq for jobs::JobUpdate
+impl core::cmp::PartialEq for jobs::JobUpdate
+pub fn jobs::JobUpdate::eq(&self, &jobs::JobUpdate) -> bool
+impl core::fmt::Debug for jobs::JobUpdate
+pub fn jobs::JobUpdate::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for jobs::JobUpdate
+impl core::marker::Freeze for jobs::JobUpdate
+impl core::marker::Send for jobs::JobUpdate
+impl core::marker::Sync for jobs::JobUpdate
+impl core::marker::Unpin for jobs::JobUpdate
+impl core::marker::UnsafeUnpin for jobs::JobUpdate
+impl core::panic::unwind_safe::RefUnwindSafe for jobs::JobUpdate
+impl core::panic::unwind_safe::UnwindSafe for jobs::JobUpdate
+pub struct jobs::NotQueuedOrRunning(pub jobs::JobId)
+impl core::clone::Clone for jobs::NotQueuedOrRunning
+pub fn jobs::NotQueuedOrRunning::clone(&self) -> jobs::NotQueuedOrRunning
+impl core::cmp::Eq for jobs::NotQueuedOrRunning
+impl core::cmp::PartialEq for jobs::NotQueuedOrRunning
+pub fn jobs::NotQueuedOrRunning::eq(&self, &jobs::NotQueuedOrRunning) -> bool
+impl core::error::Error for jobs::NotQueuedOrRunning
+impl core::fmt::Debug for jobs::NotQueuedOrRunning
+pub fn jobs::NotQueuedOrRunning::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for jobs::NotQueuedOrRunning
+pub fn jobs::NotQueuedOrRunning::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for jobs::NotQueuedOrRunning
+impl core::marker::StructuralPartialEq for jobs::NotQueuedOrRunning
+impl core::marker::Freeze for jobs::NotQueuedOrRunning
+impl core::marker::Send for jobs::NotQueuedOrRunning
+impl core::marker::Sync for jobs::NotQueuedOrRunning
+impl core::marker::Unpin for jobs::NotQueuedOrRunning
+impl core::marker::UnsafeUnpin for jobs::NotQueuedOrRunning
+impl core::panic::unwind_safe::RefUnwindSafe for jobs::NotQueuedOrRunning
+impl core::panic::unwind_safe::UnwindSafe for jobs::NotQueuedOrRunning
+pub struct jobs::ResourceKey(_)
+impl jobs::ResourceKey
+pub fn jobs::ResourceKey::as_str(&self) -> &str
+pub fn jobs::ResourceKey::new(impl core::convert::Into<alloc::string::String>) -> Self
+impl core::clone::Clone for jobs::ResourceKey
+pub fn jobs::ResourceKey::clone(&self) -> jobs::ResourceKey
+impl core::cmp::Eq for jobs::ResourceKey
+impl core::cmp::Ord for jobs::ResourceKey
+pub fn jobs::ResourceKey::cmp(&self, &jobs::ResourceKey) -> core::cmp::Ordering
+impl core::cmp::PartialEq for jobs::ResourceKey
+pub fn jobs::ResourceKey::eq(&self, &jobs::ResourceKey) -> bool
+impl core::cmp::PartialOrd for jobs::ResourceKey
+pub fn jobs::ResourceKey::partial_cmp(&self, &jobs::ResourceKey) -> core::option::Option<core::cmp::Ordering>
+impl core::fmt::Debug for jobs::ResourceKey
+pub fn jobs::ResourceKey::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for jobs::ResourceKey
+pub fn jobs::ResourceKey::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for jobs::ResourceKey
+pub fn jobs::ResourceKey::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::StructuralPartialEq for jobs::ResourceKey
+impl core::marker::Freeze for jobs::ResourceKey
+impl core::marker::Send for jobs::ResourceKey
+impl core::marker::Sync for jobs::ResourceKey
+impl core::marker::Unpin for jobs::ResourceKey
+impl core::marker::UnsafeUnpin for jobs::ResourceKey
+impl core::panic::unwind_safe::RefUnwindSafe for jobs::ResourceKey
+impl core::panic::unwind_safe::UnwindSafe for jobs::ResourceKey
+pub trait jobs::Job: core::marker::Send + 'static
+pub fn jobs::Job::resources(&self) -> alloc::vec::Vec<jobs::ResourceKey>
+pub fn jobs::Job::run(alloc::boxed::Box<Self>, &jobs::JobControl) -> jobs::JobEnd

@@ -118,11 +118,22 @@
             pkgs.b3sum
             pkgs.cargo-deny
             pkgs.cargo-nextest
+            pkgs.cargo-public-api
             pkgs.curl
             pkgs.gh
             pkgs.gnutar
             pkgs.reuse
             pkgs.zstd
+          ];
+        };
+        # `nix develop .#fuzz`: cargo-fuzz needs unstable sanitizer and coverage flags,
+        # so this shell has a nightly toolchain pinned to a date. The default shell, CI
+        # and the release build keep the stable one (ADR 0037 §3). libFuzzer is built
+        # from source by `libfuzzer-sys` with the C++ compiler of the shell.
+        fuzz = pkgs.mkShell {
+          packages = [
+            pkgs.rust-bin.nightly."2026-10-15".minimal
+            pkgs.cargo-fuzz
           ];
         };
       });

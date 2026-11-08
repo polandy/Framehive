@@ -54,7 +54,7 @@ counts, for each backup destination, the files backed up, already backed up and 
 destination that is the import destination, that lies inside the import destination or
 the source, that contains the import destination, or that is given twice, stops the run
 before it starts. A missing backup destination is created with its parents, as the
-import destination is.
+import destination is, once the checks and the free-space check pass (IMPORT-012).
 
 ## Acceptance criteria
 
@@ -169,3 +169,4 @@ import destination is.
 |---|---|
 | 2026-11-04 | Initial draft; owner decisions: the source is read once and each copy is verified against its checksum, a backup never overwrites, a failed backup does not undo the import; accepted by the owner |
 | 2026-11-04 | Implemented in `files` (`copy_verified_to_all`) and the import run; IMPORT-007.2 corrected to the suffix `-1` of IMPORT-003 |
+| 2026-11-07 | Missing destinations are created once the free-space check passes (IMPORT-012) |

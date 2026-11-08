@@ -23,8 +23,7 @@ starts and executes the run with
 `adapter-sqlite`, both in the state folder; the command stops when the state folder is
 unknown (no absolute `XDG_STATE_HOME` and no home folder). A dry run opens the history
 with `SqliteImportHistory::new` and never writes; the last connection to close removes
-the journal files of SQLite. `SqliteImportHistory::read_only` would leave `-wal` and
-`-shm` behind, because a read-only connection cannot remove them. The run gets the resolved paths,
+the journal files of SQLite. The run gets the resolved paths,
 by which the history identifies a destination (IMPORT-009).
 
 ## Several sources

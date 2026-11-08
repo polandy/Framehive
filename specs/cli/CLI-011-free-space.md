@@ -28,6 +28,11 @@ not enough space at <folders>: needs 12.8 GB, 3.1 GB free
 With `--dry-run`, the plan lines are printed first, then the same lines on standard
 error, and the exit code is 2.
 
+The import checks again when its job starts (IMPORT-012), because a job that waits for
+another one in the job queue (IMPORT-015) can find the disk filled by it. A shortage
+found then is reported with the same line and exit code, and the missing destination
+folders are not created either: the import creates them only after that check.
+
 When the free space of a destination cannot be read, standard error gets
 `cannot tell the free space at <folder>: <reason>`, and the command goes on.
 
@@ -83,6 +88,13 @@ unknown free space is shown in the summary as on standard error, and Enter start
 - **Then** standard error has `cannot tell the free space at <destination>: <reason>`,
   and the file is copied
 
+### CLI-011.8 – A shortage found when the job starts creates nothing
+- **Given** the source of CLI-011.1, and a destination that does not exist yet whose
+  file system has enough space at the first check and 1.0 MB free when the job starts
+- **When** the user runs the command of CLI-011.1
+- **Then** standard error has `not enough space at <destination>: needs 2.5 MB, 1.0 MB free`,
+  the destination folder is not created, and the exit code is 2
+
 ## Out of scope
 
 - Which bytes count and how file systems are told apart: IMPORT-012.
@@ -100,3 +112,4 @@ unknown free space is shown in the summary as on standard error, and Enter start
 | 2026-11-05 | Add CLI-011.7: the guided import warns about unknown free space, as the behaviour says |
 | 2026-11-05 | Implemented in `framehive-cli`; `implemented` |
 | 2026-11-07 | Examples name the destination with `--destination` (CLI-001, ADR 0036) |
+| 2026-11-07 | Add CLI-011.8: a shortage found when the job starts creates no folder either |

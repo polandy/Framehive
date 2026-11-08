@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: 2026 Framehive contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+# The fuzz targets of Framehive (ADR 0037). A workspace of its own with its own lock
+# file, so the main workspace, `cargo xtask ci` and the release build never see
+# libFuzzer. Built only in `nix develop .#fuzz`, by `cargo xtask fuzz`.
+
+[package]
+name = "metadata-fuzz"
+description = "Coverage-guided fuzz targets for the EXIF parser of the metadata service"
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0-or-later"
+publish = false
+
+# Marks the crate for cargo-fuzz.
+[package.metadata]
+cargo-fuzz = true
+
+[package.metadata.framehive]
+layer = "tooling"
+
+[dependencies]
+libfuzzer-sys.workspace = true
+metadata.workspace = true
+
+[[bin]]
+name = "capture_time"
+path = "fuzz_targets/capture_time.rs"
+test = false
+doc = false
+bench = false
+
+[workspace]
+members = ["."]
+
+# Pinned once, as in the main workspace (ADR 0009).
+[workspace.dependencies]
+libfuzzer-sys = { version = "0.4", default-features = false, features = ["link_libfuzzer"] }
+metadata = { path = "../crates/services/metadata" }
+
+[workspace.lints.rust]
+missing_docs = "warn"
+
+[workspace.lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+
+[lints]
+workspace = true

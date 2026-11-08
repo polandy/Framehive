@@ -41,8 +41,8 @@ library and no I/O beyond reading bytes, so there is nothing for an adapter to w
 4. **Defensive parsing.** Every offset and length is checked against the file size,
    every IFD is visited at most once (no loops through crafted pointers), and the total
    number of bytes and IFDs read per file is capped. A damaged file gives no capture
-   time and a reason, never a panic. The parser is fuzzed (ADR 0009); the fuzzing tool
-   is chosen when the code is written.
+   time and a reason, never a panic. The parser is fuzzed (ADR 0009); ADR 0037 chooses
+   the fuzzing tool.
 5. **Test files are built by the tests.** Unit tests assemble JPEG, TIFF and RAF bytes
    in code, in both byte orders. No binary file enters the repository (ADR 0017); the
    reference camera files of CORE-001 and CORE-003 come from `framehive-testdata`.

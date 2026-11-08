@@ -40,3 +40,7 @@ acceptance (a change means a new ADR that supersedes the old one).
 | [0031](../adr/0031-import-history-in-sqlite.md) | Import history in SQLite | accepted |
 | [0032](../adr/0032-import-profiles-and-yaml-parser.md) | Import profiles and the YAML parser | accepted |
 | [0033](../adr/0033-free-space-check.md) | Free-space check before an import | accepted |
+| [0034](../adr/0034-cameras-through-libgphoto2.md) | Cameras and phones through libgphoto2 | accepted |
+| [0035](../adr/0035-job-queue.md) | Job queue on a worker thread | accepted |
+| [0036](../adr/0036-parallel-jobs-and-reservation-at-enqueue.md) | Parallel jobs and reservation at enqueue | accepted |
+| [0037](../adr/0037-sync-records-in-the-framehive-xmp-namespace.md) | Sync records in the Framehive XMP namespace | accepted |

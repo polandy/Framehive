@@ -11,7 +11,8 @@ use std::sync::{Mutex, MutexGuard, PoisonError};
 
 use import::{FileReport, ImportJobReports, ImportSummary, ProgressSink, SourceScan};
 
-use super::run::NotStarted;
+use super::folders::Folders;
+use super::run::{NotStarted, start_error};
 use crate::report::ReportPrinter;
 use crate::{JOB_ENDED_UNEXPECTEDLY, write_error};
 
@@ -72,13 +73,15 @@ impl<'a> Streams<'a> {
     }
 }
 
-/// A source whose job is enqueued, and the printer of its report.
-pub(super) struct Enqueued {
+/// A source whose job is enqueued, the printer of its report, and its folders, which
+/// the errors of a job that does not start name as given.
+pub(super) struct Enqueued<'f> {
     pub(super) reports: ImportJobReports,
     pub(super) printer: ReportPrinter<Vec<u8>>,
+    pub(super) folders: &'f Folders,
 }
 
-impl Enqueued {
+impl Enqueued<'_> {
     /// Prints the job's reports as they come and, when it ends, its summary after the
     /// line `<named_source>:`, given only when there are several sources (CLI-015).
     ///
@@ -101,7 +104,7 @@ impl Enqueued {
         // An opened camera comes back with the end report; the caller still holds it.
         let summary = end
             .result
-            .map_err(|error| NotStarted::from(error.to_string()))?;
+            .map_err(|error| start_error(error, self.folders))?;
         let mut block = named_source
             .map(|source| format!("{}:\n", source.display()).into_bytes())
             .unwrap_or_default();

@@ -1,0 +1,425 @@
+pub mod naming
+pub mod naming::testing
+pub struct naming::testing::MemorySequenceCounters
+impl naming::testing::MemorySequenceCounters
+pub fn naming::testing::MemorySequenceCounters::break_at(&self, &str, usize)
+pub fn naming::testing::MemorySequenceCounters::new() -> Self
+pub fn naming::testing::MemorySequenceCounters::set(&self, naming::StoredCounters)
+pub fn naming::testing::MemorySequenceCounters::stored(&self) -> naming::StoredCounters
+impl core::default::Default for naming::testing::MemorySequenceCounters
+pub fn naming::testing::MemorySequenceCounters::default() -> naming::testing::MemorySequenceCounters
+impl core::fmt::Debug for naming::testing::MemorySequenceCounters
+pub fn naming::testing::MemorySequenceCounters::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl naming::SequenceCounters for naming::testing::MemorySequenceCounters
+pub fn naming::testing::MemorySequenceCounters::read(&self) -> core::result::Result<naming::StoredCounters, naming::SequenceCountersError>
+pub fn naming::testing::MemorySequenceCounters::update(&self, &mut dyn core::ops::function::FnMut(naming::StoredCounters) -> core::option::Option<naming::StoredCounters>) -> core::result::Result<naming::StoredCounters, naming::SequenceCountersError>
+impl !core::marker::Freeze for naming::testing::MemorySequenceCounters
+impl core::marker::Send for naming::testing::MemorySequenceCounters
+impl core::marker::Sync for naming::testing::MemorySequenceCounters
+impl core::marker::Unpin for naming::testing::MemorySequenceCounters
+impl core::marker::UnsafeUnpin for naming::testing::MemorySequenceCounters
+impl core::panic::unwind_safe::RefUnwindSafe for naming::testing::MemorySequenceCounters
+impl core::panic::unwind_safe::UnwindSafe for naming::testing::MemorySequenceCounters
+pub trait naming::testing::SequenceCountersUnderTest
+pub fn naming::testing::SequenceCountersUnderTest::break_storage(&mut self) -> alloc::string::String
+pub fn naming::testing::SequenceCountersUnderTest::counters(&self) -> &dyn naming::SequenceCounters
+pub fn naming::testing::SequenceCountersUnderTest::reopen(&mut self)
+pub fn naming::testing::check_sequence_counters<T: naming::testing::SequenceCountersUnderTest>(&mut dyn core::ops::function::FnMut() -> T) -> alloc::vec::Vec<alloc::string::String>
+pub enum naming::CompatibilityMode
+pub naming::CompatibilityMode::Off
+pub naming::CompatibilityMode::On
+impl core::clone::Clone for naming::CompatibilityMode
+pub fn naming::CompatibilityMode::clone(&self) -> naming::CompatibilityMode
+impl core::cmp::Eq for naming::CompatibilityMode
+impl core::cmp::PartialEq for naming::CompatibilityMode
+pub fn naming::CompatibilityMode::eq(&self, &naming::CompatibilityMode) -> bool
+impl core::default::Default for naming::CompatibilityMode
+pub fn naming::CompatibilityMode::default() -> naming::CompatibilityMode
+impl core::fmt::Debug for naming::CompatibilityMode
+pub fn naming::CompatibilityMode::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for naming::CompatibilityMode
+impl core::marker::StructuralPartialEq for naming::CompatibilityMode
+impl core::marker::Freeze for naming::CompatibilityMode
+impl core::marker::Send for naming::CompatibilityMode
+impl core::marker::Sync for naming::CompatibilityMode
+impl core::marker::Unpin for naming::CompatibilityMode
+impl core::marker::UnsafeUnpin for naming::CompatibilityMode
+impl core::panic::unwind_safe::RefUnwindSafe for naming::CompatibilityMode
+impl core::panic::unwind_safe::UnwindSafe for naming::CompatibilityMode
+pub enum naming::DateSource
+pub naming::DateSource::CaptureTime
+pub naming::DateSource::ModificationTime
+impl core::clone::Clone for naming::DateSource
+pub fn naming::DateSource::clone(&self) -> naming::DateSource
+impl core::cmp::Eq for naming::DateSource
+impl core::cmp::PartialEq for naming::DateSource
+pub fn naming::DateSource::eq(&self, &naming::DateSource) -> bool
+impl core::fmt::Debug for naming::DateSource
+pub fn naming::DateSource::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for naming::DateSource
+impl core::marker::StructuralPartialEq for naming::DateSource
+impl core::marker::Freeze for naming::DateSource
+impl core::marker::Send for naming::DateSource
+impl core::marker::Sync for naming::DateSource
+impl core::marker::Unpin for naming::DateSource
+impl core::marker::UnsafeUnpin for naming::DateSource
+impl core::panic::unwind_safe::RefUnwindSafe for naming::DateSource
+impl core::panic::unwind_safe::UnwindSafe for naming::DateSource
+pub enum naming::RenderError
+pub naming::RenderError::FileNotInAsset
+pub naming::RenderError::FileNotInAsset::base_name: alloc::string::String
+pub naming::RenderError::FileNotInAsset::file_name: alloc::string::String
+pub naming::RenderError::InvalidSegment
+pub naming::RenderError::InvalidSegment::segment: alloc::string::String
+pub naming::RenderError::NoImageNumber
+pub naming::RenderError::NoImageNumber::base_name: alloc::string::String
+pub naming::RenderError::NoImageNumber::token: alloc::string::String
+pub naming::RenderError::NoJobCode
+pub naming::RenderError::NoSequenceNumber
+pub naming::RenderError::NoSequenceNumber::token: alloc::string::String
+pub naming::RenderError::SequenceNumberOutOfRange
+pub naming::RenderError::SequenceNumberOutOfRange::number: u32
+pub naming::RenderError::SequenceNumberOutOfRange::token: alloc::string::String
+impl core::clone::Clone for naming::RenderError
+pub fn naming::RenderError::clone(&self) -> naming::RenderError
+impl core::cmp::Eq for naming::RenderError
+impl core::cmp::PartialEq for naming::RenderError
+pub fn naming::RenderError::eq(&self, &naming::RenderError) -> bool
+impl core::error::Error for naming::RenderError
+impl core::fmt::Debug for naming::RenderError
+pub fn naming::RenderError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for naming::RenderError
+pub fn naming::RenderError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for naming::RenderError
+impl core::marker::Freeze for naming::RenderError
+impl core::marker::Send for naming::RenderError
+impl core::marker::Sync for naming::RenderError
+impl core::marker::Unpin for naming::RenderError
+impl core::marker::UnsafeUnpin for naming::RenderError
+impl core::panic::unwind_safe::RefUnwindSafe for naming::RenderError
+impl core::panic::unwind_safe::UnwindSafe for naming::RenderError
+pub enum naming::SequenceCountersError
+pub naming::SequenceCountersError::Broken
+pub naming::SequenceCountersError::Broken::file: std::path::PathBuf
+pub naming::SequenceCountersError::Broken::line: usize
+pub naming::SequenceCountersError::Broken::reason: alloc::string::String
+pub naming::SequenceCountersError::Unavailable
+pub naming::SequenceCountersError::Unavailable::file: std::path::PathBuf
+pub naming::SequenceCountersError::Unavailable::message: alloc::string::String
+impl core::clone::Clone for naming::SequenceCountersError
+pub fn naming::SequenceCountersError::clone(&self) -> naming::SequenceCountersError
+impl core::cmp::Eq for naming::SequenceCountersError
+impl core::cmp::PartialEq for naming::SequenceCountersError
+pub fn naming::SequenceCountersError::eq(&self, &naming::SequenceCountersError) -> bool
+impl core::convert::From<naming::SequenceCountersError> for naming::SequenceError
+pub fn naming::SequenceError::from(naming::SequenceCountersError) -> Self
+impl core::error::Error for naming::SequenceCountersError
+impl core::fmt::Debug for naming::SequenceCountersError
+pub fn naming::SequenceCountersError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for naming::SequenceCountersError
+pub fn naming::SequenceCountersError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for naming::SequenceCountersError
+impl core::marker::Freeze for naming::SequenceCountersError
+impl core::marker::Send for naming::SequenceCountersError
+impl core::marker::Sync for naming::SequenceCountersError
+impl core::marker::Unpin for naming::SequenceCountersError
+impl core::marker::UnsafeUnpin for naming::SequenceCountersError
+impl core::panic::unwind_safe::RefUnwindSafe for naming::SequenceCountersError
+impl core::panic::unwind_safe::UnwindSafe for naming::SequenceCountersError
+pub enum naming::SequenceError
+pub naming::SequenceError::Counters(naming::SequenceCountersError)
+pub naming::SequenceError::Overflow(naming::SequenceOverflow)
+impl core::clone::Clone for naming::SequenceError
+pub fn naming::SequenceError::clone(&self) -> naming::SequenceError
+impl core::cmp::Eq for naming::SequenceError
+impl core::cmp::PartialEq for naming::SequenceError
+pub fn naming::SequenceError::eq(&self, &naming::SequenceError) -> bool
+impl core::convert::From<naming::SequenceCountersError> for naming::SequenceError
+pub fn naming::SequenceError::from(naming::SequenceCountersError) -> Self
+impl core::convert::From<naming::SequenceOverflow> for naming::SequenceError
+pub fn naming::SequenceError::from(naming::SequenceOverflow) -> Self
+impl core::error::Error for naming::SequenceError
+pub fn naming::SequenceError::source(&self) -> core::option::Option<&(dyn core::error::Error + 'static)>
+impl core::fmt::Debug for naming::SequenceError
+pub fn naming::SequenceError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for naming::SequenceError
+pub fn naming::SequenceError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for naming::SequenceError
+impl core::marker::Freeze for naming::SequenceError
+impl core::marker::Send for naming::SequenceError
+impl core::marker::Sync for naming::SequenceError
+impl core::marker::Unpin for naming::SequenceError
+impl core::marker::UnsafeUnpin for naming::SequenceError
+impl core::panic::unwind_safe::RefUnwindSafe for naming::SequenceError
+impl core::panic::unwind_safe::UnwindSafe for naming::SequenceError
+pub enum naming::SequenceKind
+pub naming::SequenceKind::ImportedToday
+pub naming::SequenceKind::Letters
+pub naming::SequenceKind::Session
+pub naming::SequenceKind::Stored
+impl naming::SequenceKind
+pub fn naming::SequenceKind::is_persisted(self) -> bool
+impl core::clone::Clone for naming::SequenceKind
+pub fn naming::SequenceKind::clone(&self) -> naming::SequenceKind
+impl core::cmp::Eq for naming::SequenceKind
+impl core::cmp::PartialEq for naming::SequenceKind
+pub fn naming::SequenceKind::eq(&self, &naming::SequenceKind) -> bool
+impl core::fmt::Debug for naming::SequenceKind
+pub fn naming::SequenceKind::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for naming::SequenceKind
+impl core::marker::StructuralPartialEq for naming::SequenceKind
+impl core::marker::Freeze for naming::SequenceKind
+impl core::marker::Send for naming::SequenceKind
+impl core::marker::Sync for naming::SequenceKind
+impl core::marker::Unpin for naming::SequenceKind
+impl core::marker::UnsafeUnpin for naming::SequenceKind
+impl core::panic::unwind_safe::RefUnwindSafe for naming::SequenceKind
+impl core::panic::unwind_safe::UnwindSafe for naming::SequenceKind
+pub enum naming::TemplateErrorKind
+pub naming::TemplateErrorKind::DotSegment
+pub naming::TemplateErrorKind::DotSegment::segment: alloc::string::String
+pub naming::TemplateErrorKind::EmptySegment
+pub naming::TemplateErrorKind::LeadingSlash
+pub naming::TemplateErrorKind::MissingExtension
+pub naming::TemplateErrorKind::MissingOption
+pub naming::TemplateErrorKind::MissingOption::token: alloc::string::String
+pub naming::TemplateErrorKind::SecondSequenceToken
+pub naming::TemplateErrorKind::SecondSequenceToken::token: alloc::string::String
+pub naming::TemplateErrorKind::SlashInDateFormat
+pub naming::TemplateErrorKind::UnbalancedBrace
+pub naming::TemplateErrorKind::UnknownDateCode
+pub naming::TemplateErrorKind::UnknownDateCode::code: alloc::string::String
+pub naming::TemplateErrorKind::UnknownOption
+pub naming::TemplateErrorKind::UnknownOption::token: alloc::string::String
+pub naming::TemplateErrorKind::UnknownToken
+pub naming::TemplateErrorKind::UnknownToken::token: alloc::string::String
+impl core::clone::Clone for naming::TemplateErrorKind
+pub fn naming::TemplateErrorKind::clone(&self) -> naming::TemplateErrorKind
+impl core::cmp::Eq for naming::TemplateErrorKind
+impl core::cmp::PartialEq for naming::TemplateErrorKind
+pub fn naming::TemplateErrorKind::eq(&self, &naming::TemplateErrorKind) -> bool
+impl core::error::Error for naming::TemplateErrorKind
+impl core::fmt::Debug for naming::TemplateErrorKind
+pub fn naming::TemplateErrorKind::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for naming::TemplateErrorKind
+pub fn naming::TemplateErrorKind::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for naming::TemplateErrorKind
+impl core::marker::Freeze for naming::TemplateErrorKind
+impl core::marker::Send for naming::TemplateErrorKind
+impl core::marker::Sync for naming::TemplateErrorKind
+impl core::marker::Unpin for naming::TemplateErrorKind
+impl core::marker::UnsafeUnpin for naming::TemplateErrorKind
+impl core::panic::unwind_safe::RefUnwindSafe for naming::TemplateErrorKind
+impl core::panic::unwind_safe::UnwindSafe for naming::TemplateErrorKind
+pub struct naming::AssetDate
+pub naming::AssetDate::source: naming::DateSource
+pub naming::AssetDate::time: domain::date_time::LocalDateTime
+impl core::clone::Clone for naming::AssetDate
+pub fn naming::AssetDate::clone(&self) -> naming::AssetDate
+impl core::cmp::Eq for naming::AssetDate
+impl core::cmp::PartialEq for naming::AssetDate
+pub fn naming::AssetDate::eq(&self, &naming::AssetDate) -> bool
+impl core::fmt::Debug for naming::AssetDate
+pub fn naming::AssetDate::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for naming::AssetDate
+impl core::marker::StructuralPartialEq for naming::AssetDate
+impl core::marker::Freeze for naming::AssetDate
+impl core::marker::Send for naming::AssetDate
+impl core::marker::Sync for naming::AssetDate
+impl core::marker::Unpin for naming::AssetDate
+impl core::marker::UnsafeUnpin for naming::AssetDate
+impl core::panic::unwind_safe::RefUnwindSafe for naming::AssetDate
+impl core::panic::unwind_safe::UnwindSafe for naming::AssetDate
+pub struct naming::AssetValues
+pub naming::AssetValues::base_name: alloc::string::String
+pub naming::AssetValues::capture_time: domain::date_time::LocalDateTime
+pub naming::AssetValues::import_time: domain::date_time::LocalDateTime
+pub naming::AssetValues::job_code: core::option::Option<alloc::string::String>
+pub naming::AssetValues::sequence_number: core::option::Option<u32>
+impl core::clone::Clone for naming::AssetValues
+pub fn naming::AssetValues::clone(&self) -> naming::AssetValues
+impl core::cmp::Eq for naming::AssetValues
+impl core::cmp::PartialEq for naming::AssetValues
+pub fn naming::AssetValues::eq(&self, &naming::AssetValues) -> bool
+impl core::fmt::Debug for naming::AssetValues
+pub fn naming::AssetValues::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for naming::AssetValues
+impl core::marker::Freeze for naming::AssetValues
+impl core::marker::Send for naming::AssetValues
+impl core::marker::Sync for naming::AssetValues
+impl core::marker::Unpin for naming::AssetValues
+impl core::marker::UnsafeUnpin for naming::AssetValues
+impl core::panic::unwind_safe::RefUnwindSafe for naming::AssetValues
+impl core::panic::unwind_safe::UnwindSafe for naming::AssetValues
+pub struct naming::CounterDate
+impl naming::CounterDate
+pub fn naming::CounterDate::of(domain::date_time::LocalDateTime) -> Self
+pub fn naming::CounterDate::parse(&str) -> core::option::Option<Self>
+impl core::clone::Clone for naming::CounterDate
+pub fn naming::CounterDate::clone(&self) -> naming::CounterDate
+impl core::cmp::Eq for naming::CounterDate
+impl core::cmp::Ord for naming::CounterDate
+pub fn naming::CounterDate::cmp(&self, &naming::CounterDate) -> core::cmp::Ordering
+impl core::cmp::PartialEq for naming::CounterDate
+pub fn naming::CounterDate::eq(&self, &naming::CounterDate) -> bool
+impl core::cmp::PartialOrd for naming::CounterDate
+pub fn naming::CounterDate::partial_cmp(&self, &naming::CounterDate) -> core::option::Option<core::cmp::Ordering>
+impl core::fmt::Debug for naming::CounterDate
+pub fn naming::CounterDate::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for naming::CounterDate
+pub fn naming::CounterDate::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for naming::CounterDate
+impl core::marker::StructuralPartialEq for naming::CounterDate
+impl core::marker::Freeze for naming::CounterDate
+impl core::marker::Send for naming::CounterDate
+impl core::marker::Sync for naming::CounterDate
+impl core::marker::Unpin for naming::CounterDate
+impl core::marker::UnsafeUnpin for naming::CounterDate
+impl core::panic::unwind_safe::RefUnwindSafe for naming::CounterDate
+impl core::panic::unwind_safe::UnwindSafe for naming::CounterDate
+pub struct naming::FileTimes
+pub naming::FileTimes::capture_time: core::option::Option<domain::capture_time::CaptureTime>
+pub naming::FileTimes::modification_time: domain::date_time::LocalDateTime
+pub naming::FileTimes::role: domain::asset_file::AssetFileRole
+impl core::clone::Clone for naming::FileTimes
+pub fn naming::FileTimes::clone(&self) -> naming::FileTimes
+impl core::cmp::Eq for naming::FileTimes
+impl core::cmp::PartialEq for naming::FileTimes
+pub fn naming::FileTimes::eq(&self, &naming::FileTimes) -> bool
+impl core::fmt::Debug for naming::FileTimes
+pub fn naming::FileTimes::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for naming::FileTimes
+impl core::marker::StructuralPartialEq for naming::FileTimes
+impl core::marker::Freeze for naming::FileTimes
+impl core::marker::Send for naming::FileTimes
+impl core::marker::Sync for naming::FileTimes
+impl core::marker::Unpin for naming::FileTimes
+impl core::marker::UnsafeUnpin for naming::FileTimes
+impl core::panic::unwind_safe::RefUnwindSafe for naming::FileTimes
+impl core::panic::unwind_safe::UnwindSafe for naming::FileTimes
+pub struct naming::NameTemplate
+impl naming::NameTemplate
+pub fn naming::NameTemplate::as_str(&self) -> &str
+pub fn naming::NameTemplate::parse(&str) -> core::result::Result<Self, naming::TemplateError>
+pub fn naming::NameTemplate::uses_job_code(&self) -> bool
+impl naming::NameTemplate
+pub fn naming::NameTemplate::check_sequence_range(&self, u32) -> core::result::Result<(), naming::SequenceOverflow>
+pub fn naming::NameTemplate::sequence_kind(&self) -> core::option::Option<naming::SequenceKind>
+impl naming::NameTemplate
+pub fn naming::NameTemplate::render(&self, &naming::AssetValues, &str, naming::CompatibilityMode) -> core::result::Result<alloc::string::String, naming::RenderError>
+impl core::clone::Clone for naming::NameTemplate
+pub fn naming::NameTemplate::clone(&self) -> naming::NameTemplate
+impl core::cmp::Eq for naming::NameTemplate
+impl core::cmp::PartialEq for naming::NameTemplate
+pub fn naming::NameTemplate::eq(&self, &naming::NameTemplate) -> bool
+impl core::fmt::Debug for naming::NameTemplate
+pub fn naming::NameTemplate::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for naming::NameTemplate
+impl core::marker::Freeze for naming::NameTemplate
+impl core::marker::Send for naming::NameTemplate
+impl core::marker::Sync for naming::NameTemplate
+impl core::marker::Unpin for naming::NameTemplate
+impl core::marker::UnsafeUnpin for naming::NameTemplate
+impl core::panic::unwind_safe::RefUnwindSafe for naming::NameTemplate
+impl core::panic::unwind_safe::UnwindSafe for naming::NameTemplate
+pub struct naming::SequenceOverflow
+pub naming::SequenceOverflow::last: u32
+pub naming::SequenceOverflow::suggestion: core::option::Option<alloc::string::String>
+pub naming::SequenceOverflow::template: alloc::string::String
+pub naming::SequenceOverflow::token: alloc::string::String
+impl core::clone::Clone for naming::SequenceOverflow
+pub fn naming::SequenceOverflow::clone(&self) -> naming::SequenceOverflow
+impl core::cmp::Eq for naming::SequenceOverflow
+impl core::cmp::PartialEq for naming::SequenceOverflow
+pub fn naming::SequenceOverflow::eq(&self, &naming::SequenceOverflow) -> bool
+impl core::convert::From<naming::SequenceOverflow> for naming::SequenceError
+pub fn naming::SequenceError::from(naming::SequenceOverflow) -> Self
+impl core::error::Error for naming::SequenceOverflow
+impl core::fmt::Debug for naming::SequenceOverflow
+pub fn naming::SequenceOverflow::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for naming::SequenceOverflow
+pub fn naming::SequenceOverflow::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for naming::SequenceOverflow
+impl core::marker::Freeze for naming::SequenceOverflow
+impl core::marker::Send for naming::SequenceOverflow
+impl core::marker::Sync for naming::SequenceOverflow
+impl core::marker::Unpin for naming::SequenceOverflow
+impl core::marker::UnsafeUnpin for naming::SequenceOverflow
+impl core::panic::unwind_safe::RefUnwindSafe for naming::SequenceOverflow
+impl core::panic::unwind_safe::UnwindSafe for naming::SequenceOverflow
+pub struct naming::SequenceRange
+pub naming::SequenceRange::first: u32
+pub naming::SequenceRange::last: u32
+impl naming::SequenceRange
+pub fn naming::SequenceRange::after(u32, u32) -> core::option::Option<Self>
+impl core::clone::Clone for naming::SequenceRange
+pub fn naming::SequenceRange::clone(&self) -> naming::SequenceRange
+impl core::cmp::Eq for naming::SequenceRange
+impl core::cmp::PartialEq for naming::SequenceRange
+pub fn naming::SequenceRange::eq(&self, &naming::SequenceRange) -> bool
+impl core::fmt::Debug for naming::SequenceRange
+pub fn naming::SequenceRange::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for naming::SequenceRange
+impl core::marker::StructuralPartialEq for naming::SequenceRange
+impl core::marker::Freeze for naming::SequenceRange
+impl core::marker::Send for naming::SequenceRange
+impl core::marker::Sync for naming::SequenceRange
+impl core::marker::Unpin for naming::SequenceRange
+impl core::marker::UnsafeUnpin for naming::SequenceRange
+impl core::panic::unwind_safe::RefUnwindSafe for naming::SequenceRange
+impl core::panic::unwind_safe::UnwindSafe for naming::SequenceRange
+pub struct naming::StoredCounters
+pub naming::StoredCounters::imported_today_date: core::option::Option<naming::CounterDate>
+pub naming::StoredCounters::imported_today_last: u32
+pub naming::StoredCounters::stored_last: u32
+impl naming::StoredCounters
+pub fn naming::StoredCounters::last(&self, naming::SequenceKind, naming::CounterDate) -> u32
+pub fn naming::StoredCounters::with_last(self, naming::SequenceKind, naming::CounterDate, u32) -> Self
+impl core::clone::Clone for naming::StoredCounters
+pub fn naming::StoredCounters::clone(&self) -> naming::StoredCounters
+impl core::cmp::Eq for naming::StoredCounters
+impl core::cmp::PartialEq for naming::StoredCounters
+pub fn naming::StoredCounters::eq(&self, &naming::StoredCounters) -> bool
+impl core::default::Default for naming::StoredCounters
+pub fn naming::StoredCounters::default() -> naming::StoredCounters
+impl core::fmt::Debug for naming::StoredCounters
+pub fn naming::StoredCounters::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for naming::StoredCounters
+impl core::marker::StructuralPartialEq for naming::StoredCounters
+impl core::marker::Freeze for naming::StoredCounters
+impl core::marker::Send for naming::StoredCounters
+impl core::marker::Sync for naming::StoredCounters
+impl core::marker::Unpin for naming::StoredCounters
+impl core::marker::UnsafeUnpin for naming::StoredCounters
+impl core::panic::unwind_safe::RefUnwindSafe for naming::StoredCounters
+impl core::panic::unwind_safe::UnwindSafe for naming::StoredCounters
+pub struct naming::TemplateError
+pub naming::TemplateError::column: usize
+pub naming::TemplateError::kind: naming::TemplateErrorKind
+impl core::clone::Clone for naming::TemplateError
+pub fn naming::TemplateError::clone(&self) -> naming::TemplateError
+impl core::cmp::Eq for naming::TemplateError
+impl core::cmp::PartialEq for naming::TemplateError
+pub fn naming::TemplateError::eq(&self, &naming::TemplateError) -> bool
+impl core::error::Error for naming::TemplateError
+impl core::fmt::Debug for naming::TemplateError
+pub fn naming::TemplateError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for naming::TemplateError
+pub fn naming::TemplateError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for naming::TemplateError
+impl core::marker::Freeze for naming::TemplateError
+impl core::marker::Send for naming::TemplateError
+impl core::marker::Sync for naming::TemplateError
+impl core::marker::Unpin for naming::TemplateError
+impl core::marker::UnsafeUnpin for naming::TemplateError
+impl core::panic::unwind_safe::RefUnwindSafe for naming::TemplateError
+impl core::panic::unwind_safe::UnwindSafe for naming::TemplateError
+pub trait naming::SequenceCounters
+pub fn naming::SequenceCounters::read(&self) -> core::result::Result<naming::StoredCounters, naming::SequenceCountersError>
+pub fn naming::SequenceCounters::update(&self, &mut dyn core::ops::function::FnMut(naming::StoredCounters) -> core::option::Option<naming::StoredCounters>) -> core::result::Result<naming::StoredCounters, naming::SequenceCountersError>
+impl naming::SequenceCounters for naming::testing::MemorySequenceCounters
+pub fn naming::testing::MemorySequenceCounters::read(&self) -> core::result::Result<naming::StoredCounters, naming::SequenceCountersError>
+pub fn naming::testing::MemorySequenceCounters::update(&self, &mut dyn core::ops::function::FnMut(naming::StoredCounters) -> core::option::Option<naming::StoredCounters>) -> core::result::Result<naming::StoredCounters, naming::SequenceCountersError>
+pub fn naming::asset_date(&[naming::FileTimes]) -> core::option::Option<naming::AssetDate>
+pub fn naming::preview_range(&dyn naming::SequenceCounters, &naming::NameTemplate, naming::CounterDate, u32) -> core::result::Result<core::option::Option<naming::SequenceRange>, naming::SequenceError>
+pub fn naming::reserve_range(&dyn naming::SequenceCounters, &naming::NameTemplate, naming::CounterDate, u32) -> core::result::Result<core::option::Option<naming::SequenceRange>, naming::SequenceError>

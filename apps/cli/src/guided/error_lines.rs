@@ -17,10 +17,15 @@ pub(super) fn plan_error_line(card: &Device, error: &RunError) -> String {
 }
 
 /// The line for an import that could not start: the import history cannot be used
-/// (CLI-008), or another run error.
+/// (CLI-008), a destination cannot be created (CLI-003), or another run error.
 pub(super) fn start_error_line(card: &Device, error: &RunError) -> String {
     match error {
         RunError::History(error) => history_line(error),
+        RunError::DestinationNotCreated(not_created) => format!(
+            "Could not create {}: {}",
+            not_created.destination.display(),
+            not_created.error
+        ),
         error => format!("Could not import {}: {error}", card.name()),
     }
 }

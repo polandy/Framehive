@@ -176,6 +176,12 @@ the dialog goes on.
 - **Then** the dialog prints the reason with the suggestion `{seq_stored:3}.{ext}` and
   runs the template step; with the template chosen there, it shows the summary
 
+### CLI-003.15 – An import that stops unexpectedly
+- **Given** a card whose import job fails with a fault in the import itself (CORE-007)
+- **When** the import starts
+- **Then** the dialog prints `Could not import EOS_DIGITAL: the import stopped
+  unexpectedly`, copies nothing, and shows the summary again
+
 ## Out of scope
 
 - The arguments, output and exit codes of `framehive import`: CLI-001.

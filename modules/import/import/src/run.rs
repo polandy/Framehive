@@ -14,7 +14,7 @@ use metadata::NoCaptureTime;
 use naming::SequenceCounters;
 
 use crate::backup::BackupCounts;
-use crate::destinations::check_destinations;
+use crate::destinations::{check_destinations, create_destinations};
 use crate::free_space::{FreeSpaceUnknown, NotEnoughSpace};
 use crate::job_code::require_job_code;
 use crate::plan::PlannedFile;
@@ -275,7 +275,9 @@ impl<'a> ImportRun<'a> {
     ///
     /// Returns [`RunError::BackupDestination`], [`RunError::VideoDestination`] or
     /// [`RunError::VideoBackupDestination`] if a destination is invalid,
-    /// [`RunError::NotEnoughSpace`] if a file system is short, and
+    /// [`RunError::NotEnoughSpace`] if a file system is short,
+    /// [`RunError::DestinationNotCreated`] if a missing destination cannot be created,
+    /// and
     /// [`RunError::Sequence`] if the persisted counters cannot be read or
     /// stored, or the numbers do not fit the template; then nothing is reserved and
     /// the import must not run. Returns [`RunError::History`] if the import history
@@ -297,6 +299,7 @@ impl<'a> ImportRun<'a> {
         if settings.dry_run {
             return Ok(plan);
         }
+        create_destinations(self.file_system, settings)?;
         let mut plan = self.reserve(settings, plan)?;
         plan.recorded = Some(self.start_recorded_run(settings)?);
         Ok(plan)
@@ -335,7 +338,13 @@ impl<'a> ImportRun<'a> {
         let mut backups: Vec<BackupCounts> = settings
             .all_backup_destinations()
             .into_iter()
-            .map(BackupCounts::new)
+            .map(|destination| {
+                let receives_photos = settings
+                    .backup_destinations
+                    .iter()
+                    .any(|backup| backup == destination);
+                BackupCounts::new(destination, receives_photos)
+            })
             .collect();
         let mut stopped = false;
         let mut history_error = None;

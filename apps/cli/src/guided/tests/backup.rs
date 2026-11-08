@@ -301,3 +301,23 @@ fn backup_lines_are_written_after_the_destination_and_read_back_in_order() {
             .contains("\ndestination=/home/ada/Pictures\nbackup=/mnt/b\nbackup=/mnt/a\n")
     );
 }
+
+/// spec: CLI-006.8
+#[test]
+fn a_backup_destination_that_cannot_be_created_does_not_import() {
+    let harness = with_card(&["/mnt/file/backup"]);
+    harness.memory.add_file(
+        Path::new("/mnt/file"),
+        b"not a folder",
+        Timestamp::from_unix_seconds(OCTOBER_17),
+    );
+
+    let transcript = harness.run(vec![Step::Line("")]);
+
+    let output = &transcript.output;
+    assert!(
+        output.contains("Could not create /mnt/file/backup: "),
+        "{output}"
+    );
+    assert_eq!(harness.memory.content(&imported(PICTURES, FIRST)), None);
+}

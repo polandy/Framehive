@@ -8,8 +8,8 @@
 use std::path::{Path, PathBuf};
 
 use import::{
-    BackupDestinationError, check_against_video_destination, check_backup_destinations,
-    check_video_destination,
+    BackupDestinationError, DestinationNotCreated, check_against_video_destination,
+    check_backup_destinations, check_video_destination,
 };
 
 use super::ChosenSettings;
@@ -69,6 +69,42 @@ impl Folders {
             .chain(&self.video_backups)
             .find(|(folder, _)| folder.path == path)
             .map_or(path, |(_, given)| given.as_path())
+    }
+
+    /// The message for a destination the job could not create when it started: for
+    /// the destination the folder that failed, for the others also the kind and the
+    /// folder as given (CLI-001, CLI-005, CLI-012).
+    pub(super) fn not_created_message(&self, not_created: DestinationNotCreated) -> String {
+        let DestinationNotCreated {
+            destination,
+            folder,
+            error,
+        } = not_created;
+        let cannot = PathError::DestinationCannotBeCreated(folder, error);
+        if destination == self.destination.path {
+            return cannot.to_string();
+        }
+        // A folder that is both a backup and a video backup destination is named as a
+        // backup destination, as the run creates the backup destinations first.
+        let named = self
+            .video_destination
+            .iter()
+            .map(|folder| ("video destination", folder))
+            .chain(
+                self.backups
+                    .iter()
+                    .map(|folder| ("backup destination", folder)),
+            )
+            .chain(
+                self.video_backups
+                    .iter()
+                    .map(|folder| ("video backup destination", folder)),
+            )
+            .find(|(_, (folder, _))| folder.path == destination);
+        match named {
+            Some((kind, (_, given))) => unusable_message(kind, given, &cannot),
+            None => cannot.to_string(),
+        }
     }
 }
 
