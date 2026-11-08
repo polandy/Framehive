@@ -139,6 +139,12 @@ pub enum FileError {
         /// The planned target.
         target: String,
     },
+    /// A folder of the target path is a file at the destination (IMPORT-017).
+    #[error("the target folder {} is a file", folder.display())]
+    TargetFolderIsAFile {
+        /// The file in the way.
+        folder: PathBuf,
+    },
     /// The import plan has no entry for this file. Never expected: the plan has one
     /// entry for each file that could be dated; reported instead of panicking.
     #[error("the import plan has no target for this file")]

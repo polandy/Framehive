@@ -4,6 +4,8 @@
 //! One target resolver per destination of an import run: photos and videos resolve
 //! their conflicts at their own destination (IMPORT-003, IMPORT-013).
 
+use std::path::Path;
+
 use domain::AssetFileRole;
 
 use super::{ImportRun, ImportSettings};
@@ -57,9 +59,15 @@ impl<'a> Resolvers<'a> {
                 None => resolver,
             }
         };
+        let video_destination = settings.separate_video_destination();
+        let mut import_destination = resolver(settings.destination);
+        if let Some(folder) = video_destination.and_then(|video| below(settings.destination, video))
+        {
+            import_destination = import_destination.with_needed_folder(&folder);
+        }
         Resolvers {
-            import_destination: resolver(settings.destination),
-            video_destination: settings.separate_video_destination().map(resolver),
+            import_destination,
+            video_destination: video_destination.map(resolver),
         }
     }
 
@@ -70,4 +78,16 @@ impl<'a> Resolvers<'a> {
             _ => &mut self.import_destination,
         }
     }
+}
+
+/// The path of `inner` below `outer`, with `/` between segments, when `inner` lies
+/// inside `outer` and is valid UTF-8, as targets are (IMPORT-017).
+fn below(outer: &Path, inner: &Path) -> Option<String> {
+    let segments: Option<Vec<&str>> = inner
+        .strip_prefix(outer)
+        .ok()?
+        .components()
+        .map(|component| component.as_os_str().to_str())
+        .collect();
+    Some(segments?.join("/"))
 }

@@ -115,18 +115,9 @@ impl ImportRun<'_> {
         planned: &PlannedFile,
         recognition: Option<&Recognition>,
     ) -> Imported {
-        let target = match &planned.target {
-            Ok(target) => target,
-            Err(error) => return failed(FileError::CannotBeNamed(error.clone())),
-        };
-        let request = TargetRequest {
-            source_path: &file.path,
-            size: file.size,
-            target,
-        };
-        let outcome = match resolver.resolve(&request) {
+        let outcome = match resolve_target(resolver, file, planned) {
             Ok(outcome) => outcome,
-            Err(error) => return failed(FileError::CannotCheckTarget(error)),
+            Err(error) => return failed(error),
         };
         match outcome {
             ConflictOutcome::CopyTo { target } if settings.dry_run => {
@@ -175,6 +166,9 @@ impl ImportRun<'_> {
             }
             ConflictOutcome::FailedNameConflict { target } => {
                 failed(FileError::NameConflict { target })
+            }
+            ConflictOutcome::TargetFolderIsAFile { folder, .. } => {
+                failed(FileError::TargetFolderIsAFile { folder })
             }
         }
     }
@@ -347,6 +341,24 @@ fn targets_to_write<'c>(
         }
     }
     targets
+}
+
+/// What conflict resolution decides for the planned target of `file`.
+fn resolve_target(
+    resolver: &mut TargetResolver<'_>,
+    file: &FoundFile,
+    planned: &PlannedFile,
+) -> Result<ConflictOutcome, FileError> {
+    let target = planned
+        .target
+        .as_ref()
+        .map_err(|error| FileError::CannotBeNamed(error.clone()))?;
+    let request = TargetRequest {
+        source_path: &file.path,
+        size: file.size,
+        target,
+    };
+    Ok(resolver.resolve(&request)?)
 }
 
 fn failed(error: FileError) -> Imported {

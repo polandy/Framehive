@@ -3,7 +3,7 @@
 
 //! Name conflicts and files already imported (IMPORT-003).
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -11,11 +11,13 @@ use std::path::{Path, PathBuf};
 use domain::Checksum;
 use files::{EntryKind, FileSystem, Hasher, ReadOnlyFileSystem, checksum_file};
 
+mod folders;
 mod reserved;
 mod target_names;
 
+use folders::Folders;
 pub(crate) use target_names::caseless_key;
-use target_names::{candidates, join_target, split_target};
+use target_names::{candidates, split_target};
 
 /// What the import does when a target name holds a different file or a folder
 /// (glossary: Conflict policy).
@@ -59,6 +61,14 @@ pub enum ConflictOutcome {
         /// The planned target.
         target: String,
     },
+    /// A folder of the target path is a file at the destination, so the file cannot
+    /// be copied under any policy (IMPORT-017); reported as failed.
+    TargetFolderIsAFile {
+        /// The planned target.
+        target: String,
+        /// The file in the way, spelled as found at the destination.
+        folder: PathBuf,
+    },
 }
 
 impl fmt::Display for ConflictOutcome {
@@ -74,6 +84,13 @@ impl fmt::Display for ConflictOutcome {
             }
             ConflictOutcome::FailedNameConflict { .. } => {
                 formatter.write_str("failed: name conflict")
+            }
+            ConflictOutcome::TargetFolderIsAFile { folder, .. } => {
+                write!(
+                    formatter,
+                    "failed: the target folder {} is a file",
+                    folder.display()
+                )
             }
         }
     }
@@ -119,6 +136,9 @@ pub struct TargetResolver<'a> {
     policy: ConflictPolicy,
     /// Targets given to earlier files, by the canonical caseless key of the target.
     claimed: HashMap<String, Claim>,
+    /// Folders another destination of the run needs, by canonical caseless key, so
+    /// that no file takes their names (IMPORT-017).
+    needed_folders: HashSet<String>,
     /// The listing of each folder at the destination, by its path as found there,
     /// with the entries by canonical caseless key; read once. A destination that
     /// tells case or normalization forms apart may hold several entries under one
@@ -172,6 +192,7 @@ impl<'a> TargetResolver<'a> {
             destination,
             policy,
             claimed: HashMap::new(),
+            needed_folders: HashSet::new(),
             folders: HashMap::new(),
             source_checksums: HashMap::new(),
             checksums: HashMap::new(),
@@ -187,6 +208,13 @@ impl<'a> TargetResolver<'a> {
     /// Returns a [`ConflictError`] if the target folder or a file to compare cannot
     /// be read.
     pub fn resolve(&mut self, file: &TargetRequest<'_>) -> Result<ConflictOutcome, ConflictError> {
+        let (folder, _) = split_target(file.target);
+        if let Folders::FileInTheWay(in_the_way) = self.matching_folders(folder)? {
+            return Ok(ConflictOutcome::TargetFolderIsAFile {
+                target: file.target.to_owned(),
+                folder: self.destination.join(in_the_way),
+            });
+        }
         for candidate in candidates(file.target) {
             match self.holder(file, &candidate)? {
                 Holder::Free => {
@@ -244,7 +272,9 @@ impl<'a> TargetResolver<'a> {
                 Holder::Different
             });
         }
-        if self.reserved_by_another_job(candidate) {
+        if self.needed_folders.contains(&caseless_key(candidate))
+            || self.reserved_by_another_job(candidate)
+        {
             return Ok(Holder::Different);
         }
         let entries = self.existing(candidate)?;
@@ -300,7 +330,10 @@ impl<'a> TargetResolver<'a> {
         let (folder, name) = split_target(target);
         let key = caseless_key(name);
         let mut entries = Vec::new();
-        for found in self.matching_folders(folder)? {
+        let Folders::Found(folders) = self.matching_folders(folder)? else {
+            return Ok(Vec::new());
+        };
+        for found in folders {
             if let Some(matches) = self.listing(&found)?.get(&key) {
                 entries.extend(matches.iter().cloned());
             }
@@ -308,61 +341,6 @@ impl<'a> TargetResolver<'a> {
         entries
             .sort_by(|a, b| (a.target != target, &a.target).cmp(&(b.target != target, &b.target)));
         Ok(entries)
-    }
-
-    /// The folders at the destination whose paths equal `folder`, ignoring case and
-    /// normalization form in every segment, spelled as found there. A destination
-    /// that tells such names apart may hold several of them.
-    fn matching_folders(&mut self, folder: &str) -> Result<Vec<String>, ConflictError> {
-        let mut found = vec![String::new()];
-        for segment in folder.split('/').filter(|segment| !segment.is_empty()) {
-            let key = caseless_key(segment);
-            let mut next = Vec::new();
-            for parent in &found {
-                let Some(matches) = self.listing(parent)?.get(&key) else {
-                    continue;
-                };
-                // A symbolic link may lead to a folder, so only a file is no folder.
-                next.extend(
-                    matches
-                        .iter()
-                        .filter(|entry| entry.kind != EntryKind::File)
-                        .map(|entry| entry.target.clone()),
-                );
-            }
-            found = next;
-        }
-        Ok(found)
-    }
-
-    /// The listing of the folder `folder` at the destination, read on first use.
-    fn listing(&mut self, folder: &str) -> Result<&HashMap<String, Vec<Existing>>, ConflictError> {
-        if !self.folders.contains_key(folder) {
-            let listing = self.list_folder(folder)?;
-            self.folders.insert(folder.to_owned(), listing);
-        }
-        Ok(&self.folders[folder])
-    }
-
-    fn list_folder(&self, folder: &str) -> Result<HashMap<String, Vec<Existing>>, ConflictError> {
-        let path = self.destination.join(folder);
-        let entries = match self.file_system.list_folder(&path) {
-            Ok(entries) => entries,
-            Err(error) if error.kind() == io::ErrorKind::NotFound => Vec::new(),
-            Err(error) => return Err(cannot_read(&path)(error)),
-        };
-        let mut listing: HashMap<String, Vec<Existing>> = HashMap::new();
-        for entry in entries {
-            let name = entry.name.to_string_lossy().into_owned();
-            listing
-                .entry(caseless_key(&name))
-                .or_default()
-                .push(Existing {
-                    target: join_target(folder, &name),
-                    kind: entry.kind,
-                });
-        }
-        Ok(listing)
     }
 }
 
