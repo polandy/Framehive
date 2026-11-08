@@ -18,7 +18,7 @@ use import::ImportSummary;
 
 use super::{NotStarted, Surroundings, exit_code, import_with, locations};
 use crate::arguments::{Invocation, parse};
-use crate::testing::PanickingInTheJob;
+use crate::testing::{PanickingInTheJob, UnreadableInTheJob};
 
 /// A card with `DSCF0001.RAF` of 2.5 MB, and the folders of one test run.
 pub(super) struct Folders {
@@ -235,6 +235,36 @@ fn unknown_free_space_warns_and_the_import_goes_on() {
         run.output
             .contains("copied  DCIM/100_FUJI/DSCF0001.RAF -> ")
     );
+}
+
+/// spec: CLI-011.9
+#[test]
+fn unknown_free_space_found_when_the_job_starts_warns_after_the_job() {
+    let folders = Folders::new();
+    let library = folders.path("library");
+
+    let run = folders.import_from(
+        folders.path("card").as_os_str(),
+        &[&library],
+        Arc::new(UnreadableInTheJob::new()),
+        &MemoryCameras::new(),
+    );
+
+    assert_eq!(
+        run.errors,
+        format!(
+            "warning: cannot tell the free space at {}: {}\n",
+            library.display(),
+            UnreadableInTheJob::REASON
+        )
+    );
+    assert!(
+        run.output
+            .contains("copied  DCIM/100_FUJI/DSCF0001.RAF -> "),
+        "{}",
+        run.output
+    );
+    assert_eq!(exit_code(&run.result), 0);
 }
 
 /// One file system with more space than any test writes at the first question, and

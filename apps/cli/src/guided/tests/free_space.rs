@@ -8,6 +8,8 @@ use std::sync::Arc;
 
 use files::testing::MemoryFreeSpace;
 
+use crate::testing::UnreadableInTheJob;
+
 use super::support::{Harness, OCTOBER_17, PICTURES, PRESET_1, Step};
 
 /// The folder of the other destination of CLI-011.6, on its own file system.
@@ -90,13 +92,35 @@ fn unknown_free_space_warns_and_enter_starts() {
 
     let transcript = harness.run(vec![Step::Line("")]);
 
+    assert_eq!(
+        transcript.warnings,
+        "warning: cannot tell the free space at /home/ada/Pictures: \
+         the file system does not say\n"
+    );
     assert!(
-        transcript.warnings.contains(
-            "warning: cannot tell the free space at /home/ada/Pictures: \
-             the file system does not say\n"
-        ),
+        harness
+            .memory
+            .paths()
+            .contains(&Path::new(PICTURES).join("2026/2026-10-17/DSCF0001.RAF")),
         "{}",
-        transcript.warnings
+        transcript.output
+    );
+}
+
+/// spec: CLI-011.10
+#[test]
+fn unknown_free_space_found_when_the_job_starts_warns_after_the_import() {
+    let mut harness = with_short_destination();
+    harness.free_space = Arc::new(UnreadableInTheJob::new());
+
+    let transcript = harness.run(vec![Step::Line("")]);
+
+    assert_eq!(
+        transcript.warnings,
+        format!(
+            "warning: cannot tell the free space at {PICTURES}: {}\n",
+            UnreadableInTheJob::REASON
+        )
     );
     assert!(
         harness

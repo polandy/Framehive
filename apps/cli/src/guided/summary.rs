@@ -4,7 +4,7 @@
 //! The plan summary of the guided import: what it shows, what keeps Enter from
 //! starting the import, and the choices (CLI-003, CLI-006).
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use devices::Device;
 use domain::LocalDateTime;
@@ -64,15 +64,15 @@ impl Dialog<'_> {
     }
 
     /// The lines that keep the import of `plan` from starting, and a warning for each
-    /// destination whose free space is unknown (CLI-003, CLI-006, CLI-011). A `camera`
-    /// has no destination on the card.
+    /// destination whose free space is unknown (CLI-003, CLI-006, CLI-011), returned
+    /// with those destinations. A `camera` has no destination on the card.
     pub(super) fn blockers(
         &mut self,
         run: &ImportRun<'_>,
         settings: &ImportSettings<'_>,
         plan: &PlannedRun,
         camera: bool,
-    ) -> Vec<String> {
+    ) -> (Vec<String>, Vec<PathBuf>) {
         // No destination can lie on a camera (CLI-014).
         let card = (!camera).then_some(settings.source);
         let mut lines = blockers(settings, card);
@@ -81,7 +81,12 @@ impl Dialog<'_> {
         for unknown in &space.unknown {
             self.warn(&unknown.to_string());
         }
-        lines
+        let warned = space
+            .unknown
+            .into_iter()
+            .map(|unknown| unknown.destination)
+            .collect();
+        (lines, warned)
     }
 
     /// Asks what to do at the plan summary.
