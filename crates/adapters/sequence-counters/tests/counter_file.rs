@@ -54,7 +54,7 @@ fn a_broken_file_names_its_line_and_stays_unchanged() {
     fs::write(counters.file(), text).unwrap();
     let template = NameTemplate::parse("{seq_stored:4}.{ext}").unwrap();
 
-    let error = reserve_range(&counters, &template, today(), 1).unwrap_err();
+    let error = reserve_range(&counters, &[&template], today(), 1).unwrap_err();
 
     let SequenceError::Counters(error @ SequenceCountersError::Broken { line: 3, .. }) = error
     else {
@@ -91,7 +91,7 @@ fn imports_that_reserve_at_the_same_time_never_share_a_number() {
                     let counters = FileSequenceCounters::new(folder.to_path_buf());
                     (0..10)
                         .map(|_| {
-                            reserve_range(&counters, template, today(), worker)
+                            reserve_range(&counters, &[template], today(), worker)
                                 .unwrap()
                                 .unwrap()
                         })

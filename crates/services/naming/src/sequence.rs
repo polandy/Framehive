@@ -33,6 +33,23 @@ impl SequenceKind {
     pub fn is_persisted(self) -> bool {
         matches!(self, SequenceKind::ImportedToday | SequenceKind::Stored)
     }
+
+    /// The token of the kind without its digits, for messages that name it.
+    ///
+    /// ```
+    /// use naming::SequenceKind;
+    ///
+    /// assert_eq!(SequenceKind::Stored.token(), "{seq_stored}");
+    /// ```
+    #[must_use]
+    pub fn token(self) -> &'static str {
+        match self {
+            SequenceKind::ImportedToday => "{seq_today}",
+            SequenceKind::Stored => "{seq_stored}",
+            SequenceKind::Session => "{seq_session}",
+            SequenceKind::Letters => "{seq_letters}",
+        }
+    }
 }
 
 /// How a sequence token formats its number.

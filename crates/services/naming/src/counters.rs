@@ -204,27 +204,32 @@ pub enum SequenceError {
 /// The range a persisted counter would hand out to `count` assets on `today`, without
 /// reserving it: for a dry run and the plan summary (IMPORT-002, "Reservation").
 ///
+/// The counter is the one of the first of `templates` with a sequence token; the
+/// caller makes sure the others with one share its kind (IMPORT-018). The range must
+/// fit every template.
+///
 /// # Errors
 ///
 /// Returns a [`SequenceError`] when the counters cannot be read or the range does not
-/// fit the template.
+/// fit a template.
 pub fn preview_range(
     counters: &dyn SequenceCounters,
-    template: &NameTemplate,
+    templates: &[&NameTemplate],
     today: CounterDate,
     count: u32,
 ) -> Result<Option<SequenceRange>, SequenceError> {
-    let Some(kind) = persisted_kind(template) else {
+    let Some(kind) = persisted_kind(templates) else {
         return Ok(None);
     };
     let range = SequenceRange::after(counters.read()?.last(kind, today), count);
-    check_fits(template, range)?;
+    check_fits(templates, range)?;
     Ok(range)
 }
 
 /// Reserves the range of a persisted counter for `count` assets on `today` and stores
-/// it, before the import copies its first file (IMPORT-002, "Reservation"). A range
-/// that does not fit the template reserves nothing.
+/// it, before the import copies its first file (IMPORT-002, "Reservation"). The
+/// counter and the templates are as for [`preview_range`]; a range that does not fit
+/// every template reserves nothing.
 ///
 /// ```
 /// use domain::LocalDateTime;
@@ -235,7 +240,7 @@ pub fn preview_range(
 /// let template = NameTemplate::parse("{seq_stored:4}.{ext}")?;
 /// let today = CounterDate::of(LocalDateTime::new(2026, 10, 17, 9, 0, 0)?);
 ///
-/// let range = reserve_range(&counters, &template, today, 3)?;
+/// let range = reserve_range(&counters, &[&template], today, 3)?;
 /// assert_eq!(range, Some(SequenceRange { first: 1, last: 3 }));
 /// assert_eq!(counters.stored().stored_last, 3);
 /// # Ok::<(), Box<dyn std::error::Error>>(())
@@ -244,36 +249,41 @@ pub fn preview_range(
 /// # Errors
 ///
 /// Returns a [`SequenceError`] when the counters cannot be read or stored, or the
-/// range does not fit the template.
+/// range does not fit a template.
 pub fn reserve_range(
     counters: &dyn SequenceCounters,
-    template: &NameTemplate,
+    templates: &[&NameTemplate],
     today: CounterDate,
     count: u32,
 ) -> Result<Option<SequenceRange>, SequenceError> {
-    let Some(kind) = persisted_kind(template) else {
+    let Some(kind) = persisted_kind(templates) else {
         return Ok(None);
     };
     let mut outcome = Ok(None);
     counters.update(&mut |stored| {
         let range = SequenceRange::after(stored.last(kind, today), count);
-        outcome = check_fits(template, range).map(|()| range);
+        outcome = check_fits(templates, range).map(|()| range);
         let last = outcome.as_ref().ok().copied().flatten()?.last;
         Some(stored.with_last(kind, today, last))
     })?;
     Ok(outcome?)
 }
 
-fn persisted_kind(template: &NameTemplate) -> Option<SequenceKind> {
-    template.sequence_kind().filter(|kind| kind.is_persisted())
+fn persisted_kind(templates: &[&NameTemplate]) -> Option<SequenceKind> {
+    templates
+        .iter()
+        .find_map(|template| template.sequence_kind())
+        .filter(|kind| kind.is_persisted())
 }
 
 fn check_fits(
-    template: &NameTemplate,
+    templates: &[&NameTemplate],
     range: Option<SequenceRange>,
 ) -> Result<(), SequenceOverflow> {
     match range {
-        Some(range) => template.check_sequence_range(range.last),
+        Some(range) => templates
+            .iter()
+            .try_for_each(|template| template.check_sequence_range(range.last)),
         None => Ok(()),
     }
 }

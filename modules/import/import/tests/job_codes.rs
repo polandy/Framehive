@@ -87,7 +87,7 @@ fn a_template_with_job_needs_a_job_code() {
 
     let error = require_job_code(&template, None).unwrap_err();
 
-    assert_eq!(error, MissingJobCode);
+    assert_eq!(error, MissingJobCode::NameTemplate);
     assert!(error.to_string().contains("{job}"), "{error}");
     assert_eq!(require_job_code(&template, Some(&job_code)), Ok(()));
 }

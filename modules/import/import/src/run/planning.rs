@@ -5,7 +5,7 @@
 //! history, and naming the files not imported before (ADR 0020 §1, IMPORT-002).
 
 use domain::LocalDateTime;
-use naming::{CounterDate, NameTemplate};
+use naming::CounterDate;
 
 use super::recognition::Recognized;
 use super::rename::{import_plan, rename};
@@ -64,8 +64,7 @@ impl ImportRun<'_> {
         if plan.naming.reserved {
             return Ok(plan);
         }
-        let first =
-            self.first_sequence_number(settings.template, &plan.naming, Reservation::Reserve)?;
+        let first = self.first_sequence_number(settings, &plan.naming, Reservation::Reserve)?;
         if first != plan.naming.first_sequence_number {
             plan.naming.first_sequence_number = first;
             rename(&mut plan, settings);
@@ -77,7 +76,7 @@ impl ImportRun<'_> {
     /// The first sequence number of the import of `naming`, shown or reserved.
     pub(super) fn first_sequence_number(
         &self,
-        template: &NameTemplate,
+        settings: &ImportSettings<'_>,
         naming: &PlanInputs,
         reservation: Reservation,
     ) -> Result<u32, RunError> {
@@ -86,7 +85,7 @@ impl ImportRun<'_> {
         let range = sequence_range(
             self.counters,
             self.session,
-            template,
+            &settings.templates(),
             today,
             count,
             reservation,
@@ -123,7 +122,7 @@ impl ImportRun<'_> {
             reserved: false,
         };
         naming.first_sequence_number =
-            self.first_sequence_number(settings.template, &naming, Reservation::Preview)?;
+            self.first_sequence_number(settings, &naming, Reservation::Preview)?;
         let plan = import_plan(&naming, settings);
         // The plan has one entry for each file of `naming.assets`, in the same order.
         let mut planned = plan.files().iter();

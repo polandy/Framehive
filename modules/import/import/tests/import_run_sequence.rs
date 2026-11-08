@@ -87,6 +87,7 @@ fn settings(template: &NameTemplate, dry_run: bool) -> ImportSettings<'_> {
         video_destination: None,
         video_backup_destinations: &[],
         template,
+        video_template: None,
         job_code: None,
         mode: CompatibilityMode::On,
         policy: ConflictPolicy::AddSuffix,

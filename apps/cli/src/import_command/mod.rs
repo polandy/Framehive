@@ -24,6 +24,7 @@ use adapter_gphoto2::Gphoto2Cameras;
 use adapter_yaml::SaphyrParser;
 use import::{
     ConflictPolicy, DEFAULT_NAME_TEMPLATE, ImportProfile, ImportSummary, JobCode, require_job_code,
+    require_video_job_code,
 };
 use naming::NameTemplate;
 
@@ -101,6 +102,8 @@ fn import(arguments: &ImportArguments) -> Result<SourceResults, NotStarted> {
 struct ChosenSettings {
     destination: PathBuf,
     template: NameTemplate,
+    /// The video name template, if the command line or the profile names one (CLI-012).
+    video_template: Option<NameTemplate>,
     job_code: Option<JobCode>,
     policy: ConflictPolicy,
     /// As given on the command line, or the profile's paths with `~` replaced.
@@ -134,6 +137,7 @@ fn choose_settings(
         Some(profile) => profile.video_backup_destinations.clone(),
         None => Vec::new(),
     };
+    let video_template = video_template(arguments, profile.as_ref())?;
     let (profile_template, profile_policy, profile_job_code, profile_backups) = match profile {
         Some(profile) => (
             Some(profile.template),
@@ -151,7 +155,12 @@ fn choose_settings(
         (None, None) => NameTemplate::parse(DEFAULT_NAME_TEMPLATE)
             .map_err(|error| format!("invalid name template {DEFAULT_NAME_TEMPLATE}: {error}"))?,
     };
-    let job_code = job_code(arguments.job_code.as_deref(), profile_job_code, &template)?;
+    let job_code = job_code(
+        arguments.job_code.as_deref(),
+        profile_job_code,
+        &template,
+        video_template.as_ref(),
+    )?;
     let policy = arguments
         .on_conflict
         .map(conflict_policy)
@@ -165,12 +174,31 @@ fn choose_settings(
     Ok(ChosenSettings {
         destination,
         template,
+        video_template,
         job_code,
         policy,
         backups,
         video_destination,
         video_backups,
     })
+}
+
+/// The video name template from `--video-template`, else from `profile`, else none
+/// (CLI-012).
+///
+/// # Errors
+///
+/// Returns the message for an invalid `--video-template`.
+fn video_template(
+    arguments: &ImportArguments,
+    profile: Option<&ImportProfile>,
+) -> Result<Option<NameTemplate>, String> {
+    match &arguments.video_template {
+        Some(text) => NameTemplate::parse(text)
+            .map(Some)
+            .map_err(|error| format!("invalid video name template {text}: {error}")),
+        None => Ok(profile.and_then(|profile| profile.video_template.clone())),
+    }
 }
 
 /// Checks the name of `--profile`, finds the configuration folder and reads the
@@ -211,8 +239,8 @@ pub(crate) fn process_state_folder() -> Result<PathBuf, String> {
     Ok(folder)
 }
 
-/// Checks `--job-code` against IMPORT-006 and the template (CLI-001, "Job code"), and
-/// warns when the template does not use it. Without `--job-code`, the profile's first
+/// Checks `--job-code` against IMPORT-006 and the templates (CLI-001, "Job code"), and
+/// warns when no template uses it. Without `--job-code`, the profile's first
 /// job code, already checked against IMPORT-006, is used without a warning (CLI-010).
 ///
 /// # Errors
@@ -223,17 +251,24 @@ fn job_code(
     text: Option<&str>,
     profile_job_code: Option<JobCode>,
     template: &NameTemplate,
+    video_template: Option<&NameTemplate>,
 ) -> Result<Option<JobCode>, String> {
     let given = text
         .map(|text| {
             JobCode::parse(text).map_err(|error| format!("invalid job code {text:?}: {error}"))
         })
         .transpose()?;
-    if given.is_some() && !template.uses_job_code() {
+    let video_uses_job_code = video_template.is_some_and(NameTemplate::uses_job_code);
+    if given.is_some() && !template.uses_job_code() && !video_uses_job_code {
         report_warning("--job-code is not used, because the name template has no {job}");
     }
     let job_code = given.or(profile_job_code);
     require_job_code(template, job_code.as_ref())
+        .and_then(|()| {
+            video_template.map_or(Ok(()), |video_template| {
+                require_video_job_code(video_template, job_code.as_ref())
+            })
+        })
         .map_err(|error| format!("{error}; give one with --job-code <text>"))?;
     Ok(job_code)
 }

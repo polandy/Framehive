@@ -16,7 +16,6 @@ use naming::SequenceCounters;
 use crate::backup::BackupCounts;
 use crate::destinations::{check_destinations, create_destinations};
 use crate::free_space::{FreeSpaceUnknown, NotEnoughSpace};
-use crate::job_code::require_job_code;
 use crate::plan::PlannedFile;
 use crate::report::{FileError, ImportSummary, ProgressSink, RunError};
 use crate::scan::{FoundFile, LeftOut, SourceScan, scan_source};
@@ -205,7 +204,7 @@ impl<'a> ImportRun<'a> {
     ) -> Result<ImportSummary, RunError> {
         // The job code and the import time are checked before the scan, so a run that
         // cannot start does not scan the source.
-        require_job_code(settings.template, settings.job_code)?;
+        settings.check_templates()?;
         check_destinations(settings, self.checked_source(settings))?;
         let import_time = self.import_time()?;
         let scan = scan_source(
@@ -255,7 +254,7 @@ impl<'a> ImportRun<'a> {
         scan: &SourceScan,
         count: usize,
     ) -> Result<PlannedRun, RunError> {
-        require_job_code(settings.template, settings.job_code)?;
+        settings.check_templates()?;
         let import_time = self.import_time()?;
         let selected = scan.files[..count.min(scan.files.len())].to_vec();
         self.plan_at(settings, selected, scan.left_out.clone(), import_time)

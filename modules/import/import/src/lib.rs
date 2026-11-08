@@ -44,6 +44,7 @@ pub use job::{
 };
 pub use job_code::{
     JobCode, JobCodeError, MAX_JOB_CODE_CHARACTERS, MissingJobCode, require_job_code,
+    require_video_job_code,
 };
 pub use plan::{AssetFile, ImportPlan, PlannedFile};
 pub use profile::{
@@ -60,7 +61,7 @@ pub use run::{FilePlan, ImportRun, ImportSettings, PlannedRun, RunFile};
 pub use scan::{
     FoundFile, LeftOut, LeftOutReason, ScanError, SourceScan, scan_camera, scan_folder, scan_source,
 };
-pub use sequence::SessionSequence;
+pub use sequence::{MixedSequenceKinds, SessionSequence};
 pub use view_model::ExampleViewModel;
 
 /// Stable, unique id of this module (architecture §4.2).

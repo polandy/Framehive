@@ -36,7 +36,8 @@ Boundaries:
 - **Sequence counters.** The persisted counters (`{seq_today:N}`, `{seq_stored:N}`)
   sit behind the `SequenceCounters` port (ADR 0029); `adapter-sequence-counters`
   stores them. `preview_range` shows the range an import would get, `reserve_range`
-  reserves it in one locked update and stores nothing when it does not fit. The
+  reserves it in one locked update and stores nothing when it does not fit. Both take
+  every template of the import, which share one counter and must each fit (IMPORT-018). The
   imported-today counter starts again on a new machine-local day.
   `naming::testing` holds `MemorySequenceCounters` and the conformance suite
   `check_sequence_counters`.
@@ -48,7 +49,7 @@ Boundaries:
 | Item | Meaning |
 |---|---|
 | `NameTemplate` | Validated name template; `parse`, `as_str`, `uses_job_code`, `sequence_kind`, `check_sequence_range`, `render` |
-| `SequenceKind` | Which counter a sequence token numbers from, and whether it is persisted |
+| `SequenceKind` | Which counter a sequence token numbers from, whether it is persisted, and its token for messages |
 | `SequenceOverflow` | A range that does not fit the sequence token, with a suggested template |
 | `SequenceCounters`, `SequenceCountersError` | Port to the persisted counters, and why they cannot be read or stored |
 | `StoredCounters`, `CounterDate` | The stored values and the date the imported-today counter belongs to |

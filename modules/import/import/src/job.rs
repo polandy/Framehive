@@ -93,6 +93,8 @@ pub struct ImportJobSettings {
     pub video_backup_destinations: Vec<PathBuf>,
     /// See [`ImportSettings::template`].
     pub template: NameTemplate,
+    /// See [`ImportSettings::video_template`].
+    pub video_template: Option<NameTemplate>,
     /// See [`ImportSettings::job_code`].
     pub job_code: Option<JobCode>,
     /// See [`ImportSettings::mode`].
@@ -114,6 +116,7 @@ impl ImportJobSettings {
             video_destination: settings.video_destination.map(Path::to_path_buf),
             video_backup_destinations: settings.video_backup_destinations.to_vec(),
             template: settings.template.clone(),
+            video_template: settings.video_template.cloned(),
             job_code: settings.job_code.cloned(),
             mode: settings.mode,
             policy: settings.policy,
@@ -131,6 +134,7 @@ impl ImportJobSettings {
             video_destination: self.video_destination.as_deref(),
             video_backup_destinations: &self.video_backup_destinations,
             template: &self.template,
+            video_template: self.video_template.as_ref(),
             job_code: self.job_code.as_ref(),
             mode: self.mode,
             policy: self.policy,

@@ -46,6 +46,7 @@ fn numbered(template: &str, assets: &[Vec<AssetFile>], first: u32) -> Vec<Planne
     ImportPlan::new(
         assets,
         &template,
+        None,
         CompatibilityMode::On,
         import_time(),
         None,

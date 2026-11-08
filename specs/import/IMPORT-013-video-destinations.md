@@ -32,15 +32,13 @@ backup, while photos have one, are not offered. Everything IMPORT-003, IMPORT-00
 IMPORT-007 say about "the import destination" and "the backup destinations" of a file
 holds for the destinations of that file.
 
-**One plan.** The name template, the conflict policy, the job code and the sequence
-numbers are the same for photos and videos: the plan decides one target path per file
-(IMPORT-001, IMPORT-002) and then places it below that file's destinations. A name
-conflict is a conflict at the file's own destination. A photo and a video never get
-the same file, even when the video destination lies inside the import destination:
-every token value is free of `/` (IMPORT-001, IMPORT-006), so one template gives every
-target the same number of segments, and a video's path below the import destination
-has the segments of the video destination on top. A name template of its own for
-videos (see "Out of scope") would have to check that again.
+**One plan.** The conflict policy, the job code and the sequence numbers are the same
+for photos and videos; videos may have a name template of their own (IMPORT-018). The
+plan decides one target path per file (IMPORT-001, IMPORT-002) and then places it below
+that file's destinations. A name conflict is a conflict at the file's own destination.
+A photo and a video never get the same file, even when the video destination lies
+inside the import destination: their targets end with different extensions
+(IMPORT-018, "Photo and video targets never meet").
 
 **Imported before.** The import history (IMPORT-009) is searched at the file's own
 destination. A video imported to the import destination by an earlier run is therefore
@@ -137,7 +135,6 @@ before, so the import log (IMPORT-010) lists videos under their own folders.
 
 ## Out of scope
 
-- A name template of its own for videos: a later spec.
 - Video metadata tokens such as codec or length (R3): a later spec.
 - Video destinations in the guided import (CLI-002): it does not use import profiles
   yet, so it sends videos to its import destination as before.
@@ -154,3 +151,4 @@ before, so the import log (IMPORT-010) lists videos under their own folders.
 | 2026-11-06 | Initial draft; owner decisions: separate destinations only, a setting for videos that is not given takes the setting for photos, a video destination may lie inside the import destination, shared sequence counters; accepted by the owner |
 | 2026-11-07 | Missing destinations are created once the free-space check passes (IMPORT-012) |
 | 2026-11-07 | Why photos and videos never get the same file at nested destinations |
+| 2026-11-08 | Videos may have a name template of their own (IMPORT-018); why photo and video targets never meet now rests on their extensions |

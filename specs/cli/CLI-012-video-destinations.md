@@ -15,12 +15,14 @@ photos and videos in one run.
 
 ```
 framehive import <source> --destination <destination> [--video-destination <folder>]
-                 [--video-backup <folder>]... [other arguments]
+                 [--video-backup <folder>]... [--video-template <template>]
+                 [other arguments]
 ```
 
 `--video-destination <folder>` sets the video destination. `--video-backup <folder>`
 adds a video backup destination; it can be given more than once and keeps the order of
-the command line. Without either option, the command behaves as CLI-005 and CLI-010
+the command line. `--video-template <template>` sets the video name template
+(IMPORT-018). Without these options, the command behaves as CLI-005 and CLI-010
 describe, and videos go where photos go.
 
 **Settings.** The rule of CLI-010, "Settings", holds for two more rows: an option on the
@@ -30,6 +32,7 @@ command line replaces the profile's value, also for the list.
 |---|---|---|
 | Video destination | `--video-destination` | `video_destination` |
 | Video backup destinations | every `--video-backup` | `backup.video_destinations` |
+| Video name template | `--video-template` | `naming.video_template` |
 
 **Report.** When a video destination is set, the line of each video (CLI-001) ends with
 `  (video destination)`, after any other note of the line, so its target path is read
@@ -89,6 +92,13 @@ The guided import (CLI-002) has no video destinations (IMPORT-013, "Out of scope
 - **When** the user runs the command
 - **Then** standard error names the folder, nothing is written, and the exit code is 2
 
+### CLI-012.6 – A video name template
+- **Given** a source with `DSCF0001.RAF` and `clip.MOV`, and a profile `holiday` with
+  `naming.template: "{name}.{ext}"` and `naming.video_template: "Clips/{name}.{ext}"`
+- **When** the user runs `framehive import --profile holiday <source> --destination <destination>`
+- **Then** the destination has `DSCF0001.RAF` and `Clips/clip.MOV`; and with
+  `--video-template "Films/{name}.{ext}"` on the command line, `Films/clip.MOV` instead
+
 ## Out of scope
 
 - The rules of the destinations themselves: IMPORT-013.
@@ -106,3 +116,4 @@ The guided import (CLI-002) has no video destinations (IMPORT-013, "Out of scope
 | 2026-11-06 | Initial draft; owner decisions: options `--video-destination` and `--video-backup`, profile keys `video_destination` and `backup.video_destinations`; accepted by the owner |
 | 2026-11-06 | The mark ends the line after any other note; CLI-012.1 matches the start and end of the line |
 | 2026-11-07 | Examples name the destination with `--destination` (CLI-001, ADR 0036) |
+| 2026-11-08 | `--video-template` and `naming.video_template` (IMPORT-018, owner decision #72) |

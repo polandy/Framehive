@@ -15,8 +15,8 @@ use crate::profiles::{process_configuration_folder, profiles_folder};
 use crate::{FILES_FAILED, NOT_STARTED, report_error};
 
 /// The example profile: every key of IMPORT-011 with a comment that explains it and
-/// names its default. `video_destination` and `backup.video_destinations` have no
-/// value of their own by default and are left as comments, so the file reads as the
+/// names its default. `video_destination`, `naming.video_template` and
+/// `backup.video_destinations` have no value of their own by default and are left as comments, so the file reads as the
 /// defaults. The folder to import into is given on the command line, never here
 /// (IMPORT-011).
 const EXAMPLE_PROFILE: &str = r#"# yaml-language-server: $schema=https://polandy.github.io/framehive/schemas/import-profile-v1.json
@@ -38,6 +38,9 @@ naming:
   # Name template for the folders and name of each imported file.
   # Default: {date:%Y}/{date:%Y-%m-%d}/{name}.{ext}
   template: "{date:%Y}/{date:%Y-%m-%d}/{name}.{ext}"
+  # Name template for each imported video; --video-template replaces it.
+  # Default: the name template above.
+  # video_template: "{date:%Y}/Videos/{name}.{ext}"
   # What to do when a target name holds a different file: add_suffix, skip or fail.
   # Default: add_suffix
   on_conflict: add_suffix

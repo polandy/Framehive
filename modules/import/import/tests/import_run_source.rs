@@ -73,6 +73,7 @@ fn import(
         video_destination: None,
         video_backup_destinations: &[],
         template: &template,
+        video_template: None,
         job_code: None,
         mode: CompatibilityMode::On,
         policy: ConflictPolicy::AddSuffix,

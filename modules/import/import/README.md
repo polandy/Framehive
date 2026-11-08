@@ -20,11 +20,15 @@ capture time chosen by `naming::asset_date`, and the base name of the asset's fi
 file that is not a sidecar, so sidecars follow their file. A file that cannot be named
 is marked with the reason, and a file whose asset has no capture time is marked as
 dated by its modification time. An asset without files adds nothing to the plan; an
-asset of only sidecars takes its base name from its first file.
+asset of only sidecars takes its base name from its first file. With a video name
+template (IMPORT-018), a file whose role is `Video` is named by it instead; both
+templates share the job code and one numbering, and a run whose templates number by
+different sequence kinds does not start (`MixedSequenceKinds`).
 
 A job code (IMPORT-006) is validated by `JobCode::parse`: trimmed, 1–64 characters,
 no `/`, no control character and not dots only. The plan passes it to the `{job}` token, and
-`require_job_code` refuses an import whose template uses `{job}` without one.
+`require_job_code` and `require_video_job_code` refuse an import whose name template or
+video name template uses `{job}` without one.
 `RecentJobCodes` keeps the job codes used before, the most recently used first, each
 once and at most ten; the caller stores and restores it.
 
@@ -82,7 +86,8 @@ Boundaries:
 | `TargetResolver`, `TargetRequest`, `ConflictPolicy`, `ConflictOutcome`, `ConflictError` | Conflict resolution against the destination and the plan (IMPORT-003) |
 | `JobCode`, `JobCodeError`, `MAX_JOB_CODE_CHARACTERS` | A validated job code and why a text is not one (IMPORT-006) |
 | `RecentJobCodes`, `MAX_RECENT_JOB_CODES` | The job codes used before, most recent first (IMPORT-006) |
-| `require_job_code`, `MissingJobCode` | Refuses an import whose template uses `{job}` without a job code (IMPORT-006) |
+| `require_job_code`, `require_video_job_code`, `MissingJobCode` | Refuses an import whose name template or video name template uses `{job}` without a job code (IMPORT-006, IMPORT-018) |
+| `MixedSequenceKinds` | The name template and the video name template number by different sequence kinds (IMPORT-018) |
 | `ImportRun`, `ImportSettings` | Scans, plans, starts, resolves and copies, file by file (ADR 0020, IMPORT-004); `with_source` reads the source from its own `ReadOnlyFileSystem`, against which no destination is checked, and `with_source_name` names it in the import history, such as `camera:<model>` (ADR 0034) |
 | `ImportJob`, `ImportJobReports`, `ImportJobEnd`, `ImportPorts`, `ImportJobSettings`, `OwnSource` | An import run as a job of the `jobs` queue (IMPORT-015, ADR 0035): it owns its ports, settings and source; `with_plan` starts from a planned run, `asking_before_each_file` asks the enqueuer whether to go on, and a stop request answers "no"; `enqueue` reserves a planned job's sequence range and target names and enqueues it; the job names its source device and destination file systems as resources (ADR 0036); `ImportJobReports::follow` shows its reports to a `ProgressSink` and returns the end report with the summary and the source handed back |
 | `ReservedTargetNames` | The target names the import jobs of one application reserved; another job's name counts as taken (IMPORT-015, ADR 0036 §6) |

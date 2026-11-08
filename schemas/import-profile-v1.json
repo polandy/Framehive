@@ -22,6 +22,10 @@
           "type": "string",
           "default": "{date:%Y}/{date:%Y-%m-%d}/{name}.{ext}"
         },
+        "video_template": {
+          "description": "Name template for videos (IMPORT-018); left out, videos use the name template",
+          "type": "string"
+        },
         "on_conflict": {
           "description": "Conflict policy (IMPORT-003): add_suffix, skip or fail",
           "type": "string",

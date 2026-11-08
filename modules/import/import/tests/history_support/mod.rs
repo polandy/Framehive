@@ -94,6 +94,7 @@ impl Hasher for CountingHasher {
 /// How one import is set up.
 pub(crate) struct Import {
     template: NameTemplate,
+    video_template: Option<NameTemplate>,
     destination: &'static str,
     backups: Vec<PathBuf>,
     video_destination: Option<&'static str>,
@@ -106,6 +107,7 @@ impl Import {
     pub(crate) fn with(template: &str) -> Self {
         Import {
             template: NameTemplate::parse(template).unwrap(),
+            video_template: None,
             destination: DESTINATION,
             backups: Vec::new(),
             video_destination: None,
@@ -142,6 +144,12 @@ impl Import {
         self
     }
 
+    /// Names the videos by `video_template` (IMPORT-018).
+    pub(crate) fn with_video_template(mut self, video_template: &str) -> Self {
+        self.video_template = Some(NameTemplate::parse(video_template).unwrap());
+        self
+    }
+
     pub(crate) fn with_policy(mut self, policy: ConflictPolicy) -> Self {
         self.policy = policy;
         self
@@ -160,6 +168,7 @@ impl Import {
             video_destination: self.video_destination.map(Path::new),
             video_backup_destinations: &self.video_backups,
             template: &self.template,
+            video_template: self.video_template.as_ref(),
             job_code: None,
             mode: CompatibilityMode::On,
             policy: self.policy,
@@ -227,6 +236,10 @@ impl Machine {
 
     pub(crate) fn stored_last(&self) -> u32 {
         self.counters.stored().stored_last
+    }
+
+    pub(crate) fn counters(&self) -> &MemorySequenceCounters {
+        &self.counters
     }
 }
 

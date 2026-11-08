@@ -106,6 +106,7 @@ fn import_settings<'a>(
         video_destination: folders.video_destination_path(),
         video_backup_destinations: video_backup_paths,
         template: &chosen.template,
+        video_template: chosen.video_template.as_ref(),
         job_code: chosen.job_code.as_ref(),
         mode: CompatibilityMode::On,
         policy: chosen.policy,

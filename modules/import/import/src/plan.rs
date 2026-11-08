@@ -72,7 +72,7 @@ impl PlannedFile {
 /// let template = NameTemplate::parse("{date:%Y-%m-%d}/{name}.{ext}")?;
 /// let import_time = LocalDateTime::new(2026, 10, 31, 9, 0, 0)?;
 ///
-/// let plan = ImportPlan::new(&[vec![raw]], &template, CompatibilityMode::On, import_time, None, 1);
+/// let plan = ImportPlan::new(&[vec![raw]], &template, None, CompatibilityMode::On, import_time, None, 1);
 ///
 /// assert_eq!(plan.files()[0].target.as_deref(), Ok("2026-10-17/DSC_0042.RAF"));
 /// # Ok::<(), Box<dyn std::error::Error>>(())
@@ -86,7 +86,9 @@ impl ImportPlan {
     /// Makes the plan for already grouped assets (grouping, LIBRARY-001): each inner
     /// list holds the files of one asset.
     ///
-    /// `import_time` is the time the import was queued, in the machine's local time.
+    /// A file whose role is `Video` is named by `video_template` if there is one, every
+    /// other file by `template` (IMPORT-018). `import_time` is the time the import was
+    /// queued, in the machine's local time.
     /// `job_code` gives `{job}` (IMPORT-006); without one, a template with `{job}` marks
     /// every file as not nameable. The assets are numbered in shooting order from
     /// `first_sequence_number` on, for the sequence token (IMPORT-002, "Order"). An
@@ -95,6 +97,7 @@ impl ImportPlan {
     pub fn new(
         assets: &[Vec<AssetFile>],
         template: &NameTemplate,
+        video_template: Option<&NameTemplate>,
         mode: CompatibilityMode,
         import_time: LocalDateTime,
         job_code: Option<&JobCode>,
@@ -102,6 +105,7 @@ impl ImportPlan {
     ) -> Self {
         let shared = SharedValues {
             template,
+            video_template,
             mode,
             import_time,
             job_code,
@@ -137,9 +141,19 @@ impl ImportPlan {
 /// What every asset of one plan is rendered with.
 struct SharedValues<'a> {
     template: &'a NameTemplate,
+    video_template: Option<&'a NameTemplate>,
     mode: CompatibilityMode,
     import_time: LocalDateTime,
     job_code: Option<&'a JobCode>,
+}
+
+impl SharedValues<'_> {
+    fn template_for(&self, role: AssetFileRole) -> &NameTemplate {
+        match self.video_template {
+            Some(video_template) if role == AssetFileRole::Video => video_template,
+            _ => self.template,
+        }
+    }
 }
 
 /// The time and base name of an asset with files.
@@ -197,7 +211,7 @@ fn plan_asset(
         .map(|file| PlannedFile {
             file_name: file.file_name.clone(),
             target: shared
-                .template
+                .template_for(file.role)
                 .render(&values, &file.file_name, shared.mode),
             date: asset.date.time,
             date_source: asset.date.source,

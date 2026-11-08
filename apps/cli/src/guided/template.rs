@@ -129,6 +129,7 @@ impl Dialog<'_> {
             video_destination: None,
             video_backup_destinations: &[],
             template,
+            video_template: None,
             job_code: job_code.or(preview_job_code.as_ref()),
             mode: naming::CompatibilityMode::On,
             policy: import::ConflictPolicy::AddSuffix,

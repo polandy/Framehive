@@ -8,7 +8,9 @@ use std::path::{Path, PathBuf};
 use naming::{CompatibilityMode, NameTemplate};
 
 use crate::conflicts::ConflictPolicy;
-use crate::job_code::JobCode;
+use crate::job_code::{JobCode, require_job_code, require_video_job_code};
+use crate::report::RunError;
+use crate::sequence::MixedSequenceKinds;
 
 /// What to import, from where to where, and how.
 #[derive(Debug, Clone, Copy)]
@@ -29,7 +31,9 @@ pub struct ImportSettings<'a> {
     pub video_backup_destinations: &'a [PathBuf],
     /// The name template for the target paths (IMPORT-001).
     pub template: &'a NameTemplate,
-    /// The job code for `{job}` (IMPORT-006); required when the template uses it.
+    /// The video name template: names the videos instead of `template` (IMPORT-018).
+    pub video_template: Option<&'a NameTemplate>,
+    /// The job code for `{job}` (IMPORT-006); required when a template uses it.
     pub job_code: Option<&'a JobCode>,
     /// Whether target names are kept compatible with every file system (IMPORT-001).
     pub mode: CompatibilityMode,
@@ -37,4 +41,28 @@ pub struct ImportSettings<'a> {
     pub policy: ConflictPolicy,
     /// Plan and resolve conflicts, but write nothing (CLI-001, `--dry-run`).
     pub dry_run: bool,
+}
+
+impl ImportSettings<'_> {
+    /// The name template, then the video name template if there is one.
+    pub(crate) fn templates(&self) -> Vec<&NameTemplate> {
+        std::iter::once(self.template)
+            .chain(self.video_template)
+            .collect()
+    }
+
+    /// Checks before a run starts that a template with `{job}` has a job code
+    /// (IMPORT-006) and that both templates number by one kind (IMPORT-018).
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RunError::MissingJobCode`] or [`RunError::MixedSequenceKinds`].
+    pub(crate) fn check_templates(&self) -> Result<(), RunError> {
+        require_job_code(self.template, self.job_code)?;
+        if let Some(video_template) = self.video_template {
+            require_video_job_code(video_template, self.job_code)?;
+            MixedSequenceKinds::check(self.template, video_template)?;
+        }
+        Ok(())
+    }
 }
