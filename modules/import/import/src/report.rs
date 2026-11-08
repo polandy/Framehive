@@ -11,6 +11,7 @@ use domain::Checksum;
 use files::CopyError;
 use history::HistoryError;
 use metadata::NoCaptureTime;
+use metadata::xmp::SidecarError;
 use naming::{RenderError, SequenceError};
 
 use crate::backup::{BackupCounts, BackupDestinationError, BackupReport};
@@ -72,6 +73,10 @@ pub struct FileReport {
     /// (IMPORT-008): its import destination and each of its backup destinations,
     /// which are the video ones for a video (IMPORT-013).
     pub required_locations: usize,
+    /// Its XMP sidecar, relative to the destination with `/` between segments: the
+    /// one written, or in a dry run the one that would be written (IMPORT-019).
+    /// `None` when it gets none.
+    pub sidecar: Option<String>,
 }
 
 /// What happened to one file.
@@ -156,6 +161,10 @@ pub enum FileError {
     /// A step of the verified copy failed (IMPORT-004).
     #[error(transparent)]
     Copy(#[from] CopyError),
+    /// The XMP sidecar could not be written or verified at the import target; the
+    /// copied file stays (IMPORT-019.16).
+    #[error(transparent)]
+    Sidecar(SidecarError),
 }
 
 /// Why an import run did not start. Nothing was copied.
@@ -194,6 +203,10 @@ pub enum RunError {
     /// The import history cannot be used (IMPORT-009).
     #[error(transparent)]
     History(#[from] HistoryError),
+    /// The run would write XMP sidecars, but it was given no XML syntax to write them
+    /// with (IMPORT-019).
+    #[error("the import would write XMP sidecars but has no XML syntax to write them")]
+    SidecarsWithoutXmlSyntax,
 }
 
 /// The result of a finished import run, in scan order.

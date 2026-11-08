@@ -14,11 +14,13 @@ use domain::Clock;
 use files::{FileSystem, FreeSpace, Hasher, ReadOnlyFileSystem};
 use history::ImportHistory;
 use jobs::{Job, JobControl, JobEnd, ResourceKey};
+use metadata::xmp::XmlSyntax;
 use naming::{CompatibilityMode, NameTemplate, SequenceCounters};
 
 use crate::conflicts::ConflictPolicy;
 use crate::dry_run::DryRunMemory;
 use crate::job_code::JobCode;
+use crate::metadata_values::ImportMetadata;
 use crate::report::{FileReport, ImportSummary, ProgressSink, RunError};
 use crate::reserved_names::{ReservedNames, ReservedTargetNames};
 use crate::run::{ImportRun, ImportSettings, PlannedRun};
@@ -51,6 +53,8 @@ pub struct ImportPorts {
     pub free_space: Arc<dyn FreeSpace + Send + Sync>,
     /// The target names the import jobs of this application reserved (IMPORT-015).
     pub reserved_names: Arc<ReservedTargetNames>,
+    /// Reads and writes the XML of sidecars (IMPORT-019).
+    pub xml_syntax: Arc<dyn XmlSyntax + Send + Sync>,
 }
 
 impl ImportPorts {
@@ -67,6 +71,7 @@ impl ImportPorts {
             &*self.free_space,
         )
         .with_reserved_names(&self.reserved_names, None)
+        .with_xml_syntax(&*self.xml_syntax)
     }
 }
 
@@ -97,6 +102,8 @@ pub struct ImportJobSettings {
     pub video_template: Option<NameTemplate>,
     /// See [`ImportSettings::job_code`].
     pub job_code: Option<JobCode>,
+    /// See [`ImportSettings::metadata`].
+    pub metadata: ImportMetadata,
     /// See [`ImportSettings::mode`].
     pub mode: CompatibilityMode,
     /// See [`ImportSettings::policy`].
@@ -118,6 +125,7 @@ impl ImportJobSettings {
             template: settings.template.clone(),
             video_template: settings.video_template.cloned(),
             job_code: settings.job_code.cloned(),
+            metadata: settings.metadata.clone(),
             mode: settings.mode,
             policy: settings.policy,
             dry_run: settings.dry_run,
@@ -136,6 +144,7 @@ impl ImportJobSettings {
             template: &self.template,
             video_template: self.video_template.as_ref(),
             job_code: self.job_code.as_ref(),
+            metadata: &self.metadata,
             mode: self.mode,
             policy: self.policy,
             dry_run: self.dry_run,

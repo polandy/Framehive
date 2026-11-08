@@ -277,6 +277,7 @@ fn unreadable_file_to_compare_is_an_error() {
             source_path: Path::new("DSCF0001.RAF"),
             size: 4,
             target: "DSCF0001.RAF",
+            sidecar: None,
         })
         .unwrap_err();
 

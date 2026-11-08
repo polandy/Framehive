@@ -100,6 +100,7 @@ pub(super) fn copy(run: crate::RunId, destination: &Path, byte: u8, target: &str
         checksum: checksum(byte),
         target: target.to_owned(),
         recorded_at: now(),
+        sidecar: None,
     }
 }
 

@@ -54,6 +54,7 @@ fn a_camera_takes_backup_and_video_destinations_and_a_source_name() {
         template: &template,
         video_template: None,
         job_code: None,
+        metadata: import::ImportMetadata::none(),
         mode: CompatibilityMode::On,
         policy: ConflictPolicy::AddSuffix,
         dry_run: false,

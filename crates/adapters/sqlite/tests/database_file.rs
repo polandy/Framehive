@@ -13,7 +13,7 @@ use std::path::{Path, PathBuf};
 
 use adapter_sqlite::{HISTORY_FILE_NAME, SqliteImportHistory};
 use domain::{Checksum, LocalDateTime, Timestamp, UtcOffset};
-use history::{CopyKey, CopyRecord, ImportHistory, RecordedTime, RunStart};
+use history::{CopyKey, CopyRecord, ImportHistory, RecordedTime, RunId, RunStart};
 use rusqlite::Connection;
 use support::TempDir;
 
@@ -56,25 +56,29 @@ fn reading_a_missing_history_creates_nothing() {
     assert!(!state_folder.exists());
 }
 
+/// A copy of `DSCF0001.RAF` with every column set, without a sidecar.
+fn raf_copy(run: RunId) -> CopyRecord {
+    CopyRecord {
+        run,
+        destination: PathBuf::from("/library"),
+        source_path: PathBuf::from("DCIM/100_FUJI/DSCF0001.RAF"),
+        original_file_name: "DSCF0001.RAF".to_owned(),
+        size: 10,
+        capture_time: Some(LocalDateTime::new(2026, 10, 17, 14, 5, 9).unwrap()),
+        checksum: Checksum::new(Checksum::BLAKE3, vec![0xab; 2]).unwrap(),
+        target: "2026-10-17/DSCF0001.RAF".to_owned(),
+        recorded_at: now(),
+        sidecar: None,
+    }
+}
+
 /// spec: IMPORT-009.1
 #[test]
 fn the_history_is_a_file_in_the_state_folder_with_every_column() {
     let folder = TempDir::new();
     let history = SqliteImportHistory::new(folder.path());
     let run = history.start_run(&run_start()).unwrap();
-    history
-        .record_copy(&CopyRecord {
-            run,
-            destination: PathBuf::from("/library"),
-            source_path: PathBuf::from("DCIM/100_FUJI/DSCF0001.RAF"),
-            original_file_name: "DSCF0001.RAF".to_owned(),
-            size: 10,
-            capture_time: Some(LocalDateTime::new(2026, 10, 17, 14, 5, 9).unwrap()),
-            checksum: Checksum::new(Checksum::BLAKE3, vec![0xab; 2]).unwrap(),
-            target: "2026-10-17/DSCF0001.RAF".to_owned(),
-            recorded_at: now(),
-        })
-        .unwrap();
+    history.record_copy(&raf_copy(run)).unwrap();
     history.finish_run(run, now()).unwrap();
     drop(history);
 
@@ -166,7 +170,7 @@ fn a_database_of_another_version_is_an_error_and_unchanged() {
     let file = folder.path().join(HISTORY_FILE_NAME);
     let connection = Connection::open(&file).unwrap();
     connection
-        .execute_batch("CREATE TABLE copies (anything TEXT); PRAGMA user_version = 3;")
+        .execute_batch("CREATE TABLE copies (anything TEXT); PRAGMA user_version = 4;")
         .unwrap();
     drop(connection);
     let before = fs::read(&file).unwrap();
@@ -176,7 +180,7 @@ fn a_database_of_another_version_is_an_error_and_unchanged() {
     let started = history.start_run(&run_start());
 
     let error = found.unwrap_err().to_string();
-    assert!(error.contains("user_version is 3"), "{error}");
+    assert!(error.contains("user_version is 4"), "{error}");
     assert!(started.is_err());
     drop(history);
     assert_eq!(fs::read(&file).unwrap(), before);

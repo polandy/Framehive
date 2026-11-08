@@ -19,4 +19,4 @@ pub mod testing;
 
 pub use log::{LoggedRun, RunLog};
 pub use port::{HistoryError, ImportHistory};
-pub use records::{CopyKey, CopyRecord, FoundCopy, RecordedTime, RunId, RunStart};
+pub use records::{CopyKey, CopyRecord, FoundCopy, RecordedTime, RunId, RunStart, SidecarRecord};

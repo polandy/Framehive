@@ -35,6 +35,13 @@ enum Found {
 }
 
 impl FoundSidecar {
+    /// Nothing at the path, for a sidecar that is written new, such as at an import
+    /// target whose name conflict resolution found free (IMPORT-019).
+    #[must_use]
+    pub fn nothing() -> Self {
+        FoundSidecar(Found::Nothing)
+    }
+
     /// Whether nothing was at the path.
     #[must_use]
     pub fn is_nothing(&self) -> bool {

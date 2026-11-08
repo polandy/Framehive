@@ -168,6 +168,22 @@ All user-visible changes are listed here. The format follows
   sidecar through a `.part` file and a rename that never replaces a sidecar another
   program created or changed meanwhile, a read-only one, or one it cannot parse. The
   `files` port gains `replace_file`, which keeps the replaced file's permissions.
+- Hierarchical keywords in XMP (ADR 0040 §2): `XmpPacket::add_keywords` adds each
+  keyword's leaf to `dc:subject`, its levels joined by `|` to `lr:hierarchicalSubject`
+  and its path to the `mwg-kw:Keywords` tree, merging levels under the same parent.
+  `metadata::testing::RecordedXml` is an `XmlSyntax` test double.
+- The import history records a copy's sidecar (`history::SidecarRecord`; IMPORT-019,
+  ADR 0031) and moves to layout 3 the first time it is written.
+- Metadata at import (IMPORT-019, ADR 0040): an import with a job code or `metadata`
+  values writes an XMP sidecar next to each imported photo, with the job code as
+  `photoshop:TransmissionReference`, the creators, the copyright with `{year}` and the
+  keywords. It is written after the verified copy, read back and compared, written the
+  same to each backup, and recorded in the import history. Its name is kept free with
+  the file's, so a suffix goes to both and a leftover sidecar is never merged with. A
+  sidecar that cannot be written fails its file, which keeps the card from being
+  formatted; a dry run lists the sidecars it would write.
+  `metadata::xmp` gains `FoundSidecar::nothing` for a sidecar written new and
+  `SidecarErrorKind::Differs` for one that does not read back as written.
 
 ### Changed
 

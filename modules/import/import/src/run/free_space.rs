@@ -77,7 +77,8 @@ impl ImportRun<'_> {
         let mut bytes = vec![0_u64; destinations.len()];
         for file in &plan.files {
             let role = file.found.role;
-            let Some((target, to_import_destination)) = written_target(resolvers.of(role), file)
+            let Some((target, to_import_destination)) =
+                written_target(resolvers.of(role), file, settings)
             else {
                 continue;
             };
@@ -116,7 +117,11 @@ impl ImportRun<'_> {
 
 /// The target of a file that is backed up, and whether it is also copied to the
 /// import destination; `None` for a file that is written nowhere.
-fn written_target(resolver: &mut TargetResolver<'_>, file: &RunFile) -> Option<(String, bool)> {
+fn written_target(
+    resolver: &mut TargetResolver<'_>,
+    file: &RunFile,
+    settings: &ImportSettings<'_>,
+) -> Option<(String, bool)> {
     let planned = match file.planned.as_ref().ok()? {
         FilePlan::Named(planned) => planned,
         FilePlan::ImportedBefore { target } => return Some((target.clone(), false)),
@@ -125,6 +130,7 @@ fn written_target(resolver: &mut TargetResolver<'_>, file: &RunFile) -> Option<(
         source_path: &file.found.path,
         size: file.found.size,
         target: planned.target.as_ref().ok()?,
+        sidecar: settings.sidecar_naming_of(file.found.role),
     };
     match resolver.resolve(&request).ok()? {
         ConflictOutcome::CopyTo { target } => Some((target, true)),

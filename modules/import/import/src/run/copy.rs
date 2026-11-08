@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 
 use domain::Checksum;
 use files::{CopyError, checksum_file, copy_verified_to_all};
-use history::HistoryError;
+use history::{HistoryError, SidecarRecord};
 
 use super::recognition::Recognition;
 use super::resolvers::Resolvers;
@@ -21,12 +21,21 @@ use crate::plan::PlannedFile;
 use crate::report::{FileError, FileOutcome, FileReport};
 use crate::scan::FoundFile;
 
+mod sidecars;
+
+pub(super) use sidecars::Sidecars;
+
 /// What one file gets: its outcome at the import destination and at each backup
-/// destination, and the checksum of the source when the run read it.
+/// destination, the checksum of the source when the run read it, and its sidecar
+/// (IMPORT-019).
 struct Imported {
     outcome: FileOutcome,
     backups: Vec<BackupReport>,
     checksum: Option<Checksum>,
+    /// The sidecar written at the import target, or in a dry run the one that would be.
+    sidecar: Option<String>,
+    /// The sidecar written next to the copies that are verified, for the history.
+    sidecar_record: Option<SidecarRecord>,
 }
 
 impl Imported {
@@ -35,18 +44,22 @@ impl Imported {
             outcome,
             backups: Vec::new(),
             checksum: None,
+            sidecar: None,
+            sidecar_record: None,
         }
     }
 }
 
 impl ImportRun<'_> {
     /// Imports one file of a planned run, records its verified copies in the import
-    /// history when the run is recorded, and reports what happened to it. The error
-    /// says that the history could not record a copy.
+    /// history when the run is recorded, and reports what happened to it. A photo
+    /// gets its sidecar from `sidecars` (IMPORT-019). The error says that the history
+    /// could not record a copy.
     pub(super) fn execute_file(
         &self,
         settings: &ImportSettings<'_>,
         resolvers: &mut Resolvers<'_>,
+        sidecars: Option<&Sidecars<'_>>,
         file: RunFile,
         recorded: Option<RecordedRun>,
     ) -> (FileReport, Result<(), HistoryError>) {
@@ -55,7 +68,12 @@ impl ImportRun<'_> {
         let recognition = file.recognition.as_ref();
         let imported = match file.planned {
             Ok(FilePlan::Named(planned)) => {
-                self.import_planned(settings, resolver, &file.found, &planned, recognition)
+                let mut imported =
+                    self.import_planned(settings, resolver, &file.found, &planned, recognition);
+                if let Some(sidecars) = sidecars {
+                    sidecars.add_to(role, &planned, &mut imported);
+                }
+                imported
             }
             Ok(FilePlan::ImportedBefore { target }) => {
                 self.back_up_imported_before(settings, resolver, &file.found, target, recognition)
@@ -69,6 +87,7 @@ impl ImportRun<'_> {
             backups: imported.backups,
             in_video_destination: settings.destination_of(role) != settings.destination,
             required_locations: 1 + settings.backup_destinations_of(role).len(),
+            sidecar: imported.sidecar,
         };
         let recorded = match (recorded, recognition) {
             (Some(run), Some(recognition)) => self.record_copies(
@@ -77,6 +96,7 @@ impl ImportRun<'_> {
                 recognition,
                 &report,
                 imported.checksum.as_ref(),
+                imported.sidecar_record.as_ref(),
             ),
             _ => Ok(()),
         };
@@ -103,6 +123,8 @@ impl ImportRun<'_> {
             outcome: FileOutcome::ImportedBefore { target },
             backups: copied.backups,
             checksum: copied.source_checksum,
+            sidecar: None,
+            sidecar_record: None,
         }
     }
 
@@ -115,7 +137,7 @@ impl ImportRun<'_> {
         planned: &PlannedFile,
         recognition: Option<&Recognition>,
     ) -> Imported {
-        let outcome = match resolve_target(resolver, file, planned) {
+        let outcome = match resolve_target(settings, resolver, file, planned) {
             Ok(outcome) => outcome,
             Err(error) => return failed(error),
         };
@@ -137,6 +159,8 @@ impl ImportRun<'_> {
                     outcome,
                     backups: copied.backups,
                     checksum: copied.source_checksum,
+                    sidecar: None,
+                    sidecar_record: None,
                 }
             }
             // A file already imported is backed up, so that a re-run fills a new or a
@@ -153,6 +177,8 @@ impl ImportRun<'_> {
                     outcome: FileOutcome::AlreadyImported { target },
                     backups: copied.backups,
                     checksum,
+                    sidecar: None,
+                    sidecar_record: None,
                 }
             }
             ConflictOutcome::AlreadyImported { target } => {
@@ -345,6 +371,7 @@ fn targets_to_write<'c>(
 
 /// What conflict resolution decides for the planned target of `file`.
 fn resolve_target(
+    settings: &ImportSettings<'_>,
     resolver: &mut TargetResolver<'_>,
     file: &FoundFile,
     planned: &PlannedFile,
@@ -357,6 +384,7 @@ fn resolve_target(
         source_path: &file.path,
         size: file.size,
         target,
+        sidecar: settings.sidecar_naming_of(file.role),
     };
     Ok(resolver.resolve(&request)?)
 }

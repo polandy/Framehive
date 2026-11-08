@@ -87,7 +87,7 @@ fn a_history_of_another_version_is_an_error_and_unchanged() {
     let file = folder.path().join(HISTORY_FILE_NAME);
     let connection = Connection::open(&file).unwrap();
     connection
-        .execute_batch("CREATE TABLE runs (anything TEXT); PRAGMA user_version = 3;")
+        .execute_batch("CREATE TABLE runs (anything TEXT); PRAGMA user_version = 4;")
         .unwrap();
     drop(connection);
     let before = fs::read(&file).unwrap();
@@ -95,7 +95,7 @@ fn a_history_of_another_version_is_an_error_and_unchanged() {
 
     let error = history.read_run_log(RunId::new(1)).unwrap_err().to_string();
 
-    assert!(error.contains("user_version is 3"), "{error}");
+    assert!(error.contains("user_version is 4"), "{error}");
     drop(history);
     assert_eq!(fs::read(&file).unwrap(), before);
 }

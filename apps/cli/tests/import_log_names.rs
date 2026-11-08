@@ -47,6 +47,7 @@ fn record_run(folders: &Folders, source: PathBuf, source_path: PathBuf, target: 
             checksum: Checksum::new(Checksum::BLAKE3, vec![1]).unwrap(),
             target: target.to_owned(),
             recorded_at: recorded_time(),
+            sidecar: None,
         })
         .unwrap();
 }

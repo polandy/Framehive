@@ -5,13 +5,14 @@
 //! its report (CLI-003, CLI-006, CLI-014). Opening, reading, ejecting and releasing are
 //! in `device.rs`, the summary itself in `summary.rs`.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use devices::Device;
 use files::ReadOnlyFileSystem;
 use import::{
     BackupOutcome, CAMERA_FORMAT_READINESS_NOTE, ConflictPolicy, FileOutcome, FileReport,
-    FormatReadiness, ImportSettings, ImportSummary, JobCode, PlannedRun, RunError, SourceScan,
+    FormatReadiness, ImportMetadata, ImportSettings, ImportSummary, JobCode, PlannedRun, RunError,
+    SourceScan,
 };
 use naming::{CompatibilityMode, NameTemplate, SequenceError};
 
@@ -24,27 +25,35 @@ use crate::JOB_ENDED_UNEXPECTEDLY;
 use crate::format_readiness::format_readiness_lines;
 use crate::report::{ReportPrinter, backup_line, backup_summary_lines, file_line, summary_line};
 
-/// The settings of a guided import: compatibility mode on, `add_suffix` (CLI-003).
-fn settings<'s>(
-    source: &'s Source,
-    destination: &'s Path,
-    backups: &'s [PathBuf],
-    template: &'s NameTemplate,
-    job_code: Option<&'s JobCode>,
-    dry_run: bool,
-) -> ImportSettings<'s> {
-    ImportSettings {
-        source: source.root(),
-        destination,
-        backup_destinations: backups,
-        video_destination: None,
-        video_backup_destinations: &[],
-        template,
-        video_template: None,
-        job_code,
-        mode: CompatibilityMode::On,
-        policy: ConflictPolicy::AddSuffix,
-        dry_run,
+/// What the dialog has chosen for an import, owned so the dialog stays free to ask.
+struct Chosen {
+    destination: PathBuf,
+    backups: Vec<PathBuf>,
+    template: NameTemplate,
+    metadata: ImportMetadata,
+}
+
+impl Chosen {
+    /// The settings of a guided import: compatibility mode on, `add_suffix` (CLI-003).
+    fn settings<'s>(
+        &'s self,
+        source: &'s Source,
+        job_code: Option<&'s JobCode>,
+    ) -> ImportSettings<'s> {
+        ImportSettings {
+            source: source.root(),
+            destination: &self.destination,
+            backup_destinations: &self.backups,
+            video_destination: None,
+            video_backup_destinations: &[],
+            template: &self.template,
+            video_template: None,
+            job_code,
+            metadata: &self.metadata,
+            mode: CompatibilityMode::On,
+            policy: ConflictPolicy::AddSuffix,
+            dry_run: false,
+        }
     }
 }
 
@@ -94,13 +103,10 @@ impl Dialog<'_> {
         scan: &SourceScan,
         job_code: Option<&JobCode>,
     ) -> bool {
-        let Some((destination, backups)) = self.resolved_folders() else {
+        let Some(chosen) = self.chosen() else {
             return false;
         };
-        let Some(template) = self.state.template.clone() else {
-            return false;
-        };
-        let settings = settings(source, &destination, &backups, &template, job_code, false);
+        let settings = chosen.settings(source, job_code);
         let Some(plan) = self.plan(source, &settings, scan) else {
             return false;
         };
@@ -119,20 +125,10 @@ impl Dialog<'_> {
         let run = source.run(&ports);
         let card = source.device();
         loop {
-            let Some((destination, backups)) = self.resolved_folders() else {
+            let Some(chosen) = self.chosen() else {
                 return Ok(false);
             };
-            let Some(template) = self.state.template.clone() else {
-                return Ok(false);
-            };
-            let settings = settings(
-                source,
-                &destination,
-                &backups,
-                &template,
-                job_code.as_ref(),
-                false,
-            );
+            let settings = chosen.settings(source, job_code.as_ref());
             let plan = match run.plan(&settings, scan) {
                 Ok(plan) => plan,
                 Err(RunError::Sequence(SequenceError::Overflow(overflow))) => {
@@ -153,7 +149,7 @@ impl Dialog<'_> {
             for blocker in &blockers {
                 self.say(blocker);
             }
-            match self.summary_action(card, template.uses_job_code(), &blockers)? {
+            match self.summary_action(card, chosen.template.uses_job_code(), &blockers)? {
                 Action::Import => match self.import(source, &settings, plan, &warned) {
                     Imported::NotStarted => {}
                     imported => return Ok(imported == Imported::Reported),
@@ -170,7 +166,7 @@ impl Dialog<'_> {
                 }
                 Action::JobCode => job_code = Some(self.ask_job_code(card)?),
                 Action::Template => self.retemplate(source, scan, &mut job_code)?,
-                Action::Destination => self.ask_destination(&destination)?,
+                Action::Destination => self.ask_destination(&chosen.destination)?,
                 Action::Backup => self.ask_backups()?,
             }
         }
@@ -346,6 +342,18 @@ impl Dialog<'_> {
         for backup in failed_backups {
             self.say(&backup_line(backup, &[]));
         }
+    }
+
+    /// The folders, the template and the metadata of the next import; `None` after the
+    /// folders could not be resolved or without a template.
+    fn chosen(&mut self) -> Option<Chosen> {
+        let (destination, backups) = self.resolved_folders()?;
+        Some(Chosen {
+            destination,
+            backups,
+            template: self.state.template.clone()?,
+            metadata: self.environment.metadata.clone(),
+        })
     }
 
     /// The destination and the backup destinations as the canonical absolute paths that

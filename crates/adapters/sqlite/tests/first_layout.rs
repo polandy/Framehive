@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 //! A database of the first layout, from before runs had a video destination (ADR 0031,
-//! addendum of 2026-11-06): writing migrates it to the current layout, the import log
-//! reads it as it is.
+//! addendum of 2026-11-06): writing migrates it to the current layout, one step per
+//! layout, the import log reads it as it is.
 
 #![allow(clippy::unwrap_used, reason = "tests may panic on bad fixtures")]
 
@@ -115,6 +115,7 @@ fn user_version(file: &Path) -> i64 {
 
 /// spec: IMPORT-010.9
 /// spec: IMPORT-013.10
+/// spec: IMPORT-019.15
 #[test]
 fn writing_migrates_the_first_layout_and_keeps_its_runs() {
     let folder = TempDir::new();
@@ -137,7 +138,8 @@ fn writing_migrates_the_first_layout_and_keeps_its_runs() {
     assert_eq!(log.run, first_run());
     assert_eq!(log.copies.len(), 1);
     assert_eq!(log.copies[0].target, "2026-10-17/DSCF0001.RAF");
-    assert_eq!(user_version(&file), 2);
+    assert_eq!(log.copies[0].sidecar, None);
+    assert_eq!(user_version(&file), 3);
     let connection = Connection::open(&file).unwrap();
     let index: String = connection
         .query_row(

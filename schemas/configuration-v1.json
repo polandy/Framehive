@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://polandy.github.io/framehive/schemas/configuration-v1.json",
+  "title": "configuration",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "description": "Version of the format, 1",
+      "type": "integer",
+      "const": 1
+    },
+    "metadata": {
+      "description": "Metadata the import writes to each photo's XMP sidecar (IMPORT-019)",
+      "type": "object",
+      "properties": {
+        "creator": {
+          "description": "Creators of the photos, in this order (dc:creator)",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "copyright": {
+          "description": "Copyright notice (dc:rights); {year} is the year of the capture time",
+          "type": "string"
+        },
+        "keywords": {
+          "description": "Keywords; / separates the levels of a hierarchy, such as Holiday/Beach",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sidecar_naming": {
+          "description": "Sidecar name: original_with_extension (DSCF0042.RAF.xmp) or original_without_extension (DSCF0042.xmp)",
+          "type": "string",
+          "enum": ["original_with_extension", "original_without_extension"],
+          "default": "original_with_extension"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": ["schema_version"],
+  "additionalProperties": false
+}

@@ -41,6 +41,7 @@ const MEMORY_FILE: &str = "memory";
 ///     checksum: Checksum::new("blake3", vec![1])?,
 ///     target: "DSCF0001.RAF".to_owned(),
 ///     recorded_at: now,
+///     sidecar: None,
 /// })?;
 /// let key = CopyKey {
 ///     destination: Path::new("/library"),

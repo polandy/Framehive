@@ -8,6 +8,7 @@
 mod arguments;
 mod cameras;
 mod config_init;
+mod configuration_file;
 mod format_readiness;
 mod guided;
 mod import_command;

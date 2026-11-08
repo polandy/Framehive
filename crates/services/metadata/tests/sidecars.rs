@@ -6,19 +6,17 @@
 
 #![allow(clippy::unwrap_used, reason = "tests may panic on bad fixtures")]
 
-use std::cell::RefCell;
-use std::collections::BTreeMap;
 use std::io;
 use std::path::{Path, PathBuf};
 
 use domain::testing::ManualClock;
 use domain::{Timestamp, UtcOffset};
 use files::testing::{Fault, FnvHasher, MemoryFileSystem};
+use metadata::testing::RecordedXml;
 use metadata::xmp::namespaces::{DUBLIN_CORE, PHOTOSHOP, XMP_BASIC};
 use metadata::xmp::{
-    SidecarError, SidecarErrorKind, SidecarFiles, SidecarNaming, SidecarStep, XmlEvent, XmlSyntax,
-    XmlSyntaxError, XmlSyntaxErrorKind, XmpErrorReason, XmpName, XmpNode, XmpPacket, find_sidecars,
-    serialize_xmp,
+    SidecarError, SidecarErrorKind, SidecarFiles, SidecarNaming, SidecarStep, XmpErrorReason,
+    XmpName, XmpNode, XmpPacket, find_sidecars, serialize_xmp,
 };
 
 const SIDECAR: &str = "/photos/DSCF0042.RAF.xmp";
@@ -26,31 +24,6 @@ const PART: &str = "/photos/DSCF0042.RAF.xmp.part";
 
 /// `2026-11-08T14:03:12+01:00`, the time of every write.
 const WRITE_TIME: &str = "2026-11-08T14:03:12+01:00";
-
-/// An [`XmlSyntax`] that reads back only the text it wrote; any other text is
-/// malformed. It keeps these tests free of an XML adapter, which a service may not
-/// depend on (architecture §3); `adapter-xmp` tests the real XML.
-#[derive(Default)]
-struct RecordedXml(RefCell<BTreeMap<String, Vec<XmlEvent>>>);
-
-impl XmlSyntax for RecordedXml {
-    fn read(&self, text: &str) -> Result<Vec<XmlEvent>, XmlSyntaxError> {
-        self.0
-            .borrow()
-            .get(text.trim_end())
-            .cloned()
-            .ok_or_else(|| XmlSyntaxError {
-                offset: 0,
-                kind: XmlSyntaxErrorKind::Malformed("not written by this test".to_owned()),
-            })
-    }
-
-    fn write(&self, events: &[XmlEvent]) -> String {
-        let text = format!("<recorded {}/>", self.0.borrow().len());
-        self.0.borrow_mut().insert(text.clone(), events.to_vec());
-        text
-    }
-}
 
 /// The ports of [`SidecarFiles`], with the files in memory.
 struct Sidecars {

@@ -13,6 +13,7 @@ use std::rc::Rc;
 use std::sync::Arc;
 use std::time::Duration;
 
+use adapter_xmp::QuickXml;
 use devices::testing::MemoryDeviceSource;
 use domain::testing::ManualClock;
 use domain::{Timestamp, UtcOffset};
@@ -20,15 +21,13 @@ use files::testing::{FnvHasher, MemoryCameras, MemoryFileSystem, MemoryFreeSpace
 use files::{
     EntryKind, FileSystem, FolderEntry, FreeSpace, ReadOnlyFileSystem, ReadSeek, WriteFile,
 };
-use import::{ImportPorts, RecentJobCodes, ReservedTargetNames, SessionSequence};
-use naming::NameTemplate;
-use naming::testing::MemorySequenceCounters;
+use import::{ImportMetadata, ImportPorts, RecentJobCodes, ReservedTargetNames, SessionSequence};
+use naming::{NameTemplate, testing::MemorySequenceCounters};
 
 use crate::guided::dialog::Dialog;
 use crate::guided::events::{Event, EventSource};
 use crate::guided::state::{RememberedState, load_state, save_state, state_file};
-use history::ImportHistory;
-use history::testing::MemoryImportHistory;
+use history::{ImportHistory, testing::MemoryImportHistory};
 
 use super::shared::{HarnessCameras, Shared};
 use crate::guided::{Environment, Ports};
@@ -92,6 +91,7 @@ pub(super) struct Harness {
     /// The import history, kept across the runs of this harness as the history in the
     /// state folder is kept across program runs.
     pub(super) history: Arc<dyn ImportHistory + Send + Sync>,
+    pub(super) metadata: ImportMetadata,
     /// The free space of the destinations; unlimited unless a test sets it.
     pub(super) free_space: Arc<dyn FreeSpace + Send + Sync>,
     /// Resolves a folder to its canonical path; the paths of the memory file system are
@@ -155,6 +155,7 @@ impl Harness {
             counters: Arc::new(MemorySequenceCounters::new()),
             session: Arc::new(SessionSequence::new()),
             history: Arc::new(MemoryImportHistory::new()),
+            metadata: ImportMetadata::default(),
             free_space: Arc::new(MemoryFreeSpace::unlimited()),
             resolve_folder: |folder| Ok(folder.to_path_buf()),
         }
@@ -224,6 +225,7 @@ impl Harness {
             history: Arc::clone(&self.history),
             free_space: Arc::clone(&self.free_space),
             reserved_names: Arc::new(ReservedTargetNames::new()),
+            xml_syntax: Arc::new(QuickXml::new()),
         };
         let ports = Ports {
             import: &import,
@@ -236,6 +238,7 @@ impl Harness {
             current_folder: PathBuf::from("/tmp/work"),
             state_file: Self::state_file(),
             state_folder: PathBuf::from(HOME).join(".local/state/framehive"),
+            metadata: self.metadata.clone(),
         };
         let screen = Rc::new(RefCell::new(Vec::new()));
         let mut events = ScriptedEvents {

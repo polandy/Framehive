@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://polandy.github.io/framehive/schemas/import-profile-v2.json",
+  "title": "import-profile",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "description": "Version of the format, 2",
+      "type": "integer",
+      "const": 2
+    },
+    "video_destination": {
+      "description": "Folder to import videos into (IMPORT-013); left out, videos go to the destination given on the command line",
+      "type": "string"
+    },
+    "naming": {
+      "description": "How imported files are named",
+      "type": "object",
+      "properties": {
+        "template": {
+          "description": "Name template (IMPORT-001)",
+          "type": "string",
+          "default": "{date:%Y}/{date:%Y-%m-%d}/{name}.{ext}"
+        },
+        "video_template": {
+          "description": "Name template for videos (IMPORT-018); left out, videos use the name template",
+          "type": "string"
+        },
+        "on_conflict": {
+          "description": "Conflict policy (IMPORT-003): add_suffix, skip or fail",
+          "type": "string",
+          "enum": ["add_suffix", "skip", "fail"],
+          "default": "add_suffix"
+        }
+      },
+      "additionalProperties": false
+    },
+    "job_codes": {
+      "description": "Job codes of the profile (IMPORT-006), the one to use first",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "backup": {
+      "description": "Backup copies of the import",
+      "type": "object",
+      "properties": {
+        "destinations": {
+          "description": "Backup destinations (IMPORT-007), in this order",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "video_destinations": {
+          "description": "Backup destinations for videos (IMPORT-013), in this order; left out, videos go to the backup destinations",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "metadata": {
+      "description": "Metadata the import writes to each photo's XMP sidecar (IMPORT-019)",
+      "type": "object",
+      "properties": {
+        "creator": {
+          "description": "Creators of the photos, in this order (dc:creator)",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "copyright": {
+          "description": "Copyright notice (dc:rights); {year} is the year of the capture time",
+          "type": "string"
+        },
+        "keywords": {
+          "description": "Keywords; / separates the levels of a hierarchy, such as Holiday/Beach",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sidecar_naming": {
+          "description": "Sidecar name: original_with_extension (DSCF0042.RAF.xmp) or original_without_extension (DSCF0042.xmp)",
+          "type": "string",
+          "enum": ["original_with_extension", "original_without_extension"],
+          "default": "original_with_extension"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": ["schema_version"],
+  "additionalProperties": false
+}

@@ -15,11 +15,13 @@ use adapter_clock::SystemClock;
 use adapter_fs::StdFileSystem;
 use adapter_sequence_counters::FileSequenceCounters;
 use adapter_sqlite::SqliteImportHistory;
+use adapter_xmp::QuickXml;
 use files::{Cameras, FreeSpace};
 use import::{
-    CAMERA_FORMAT_READINESS_NOTE, DryRunMemory, FreeSpaceUnknown, ImportJob, ImportJobSettings,
-    ImportPorts, ImportProfile, ImportRun, ImportSettings, ImportSummary, PlannedRun, ProgressSink,
-    ReservedTargetNames, RunError, SessionSequence, SpaceShortage, scan_source,
+    CAMERA_FORMAT_READINESS_NOTE, Configuration, DryRunMemory, FreeSpaceUnknown, ImportJob,
+    ImportJobSettings, ImportPorts, ImportProfile, ImportRun, ImportSettings, ImportSummary,
+    PlannedRun, ProgressSink, ReservedTargetNames, RunError, SessionSequence, SpaceShortage,
+    scan_source,
 };
 use jobs::JobQueue;
 use naming::CompatibilityMode;
@@ -36,6 +38,8 @@ use crate::write_warning;
 
 /// What the import takes from the process: the tests give their own.
 pub(super) struct Surroundings<'a> {
+    /// `config.yaml`, whose `metadata` the profile overrides key by key (IMPORT-019).
+    pub(super) configuration: &'a Configuration,
     /// The state folder of CLI-004, with the sequence counters and the import history.
     pub(super) state_folder: &'a Path,
     /// The free space of the destinations (IMPORT-012).
@@ -108,6 +112,7 @@ fn import_settings<'a>(
         template: &chosen.template,
         video_template: chosen.video_template.as_ref(),
         job_code: chosen.job_code.as_ref(),
+        metadata: &chosen.metadata,
         mode: CompatibilityMode::On,
         policy: chosen.policy,
         dry_run,
@@ -140,7 +145,8 @@ pub(super) fn import_with(
     profile: Option<ImportProfile>,
     surroundings: Surroundings<'_>,
 ) -> Result<SourceResults, NotStarted> {
-    let chosen = choose_settings(arguments, locations, profile)?;
+    let base = &surroundings.configuration.metadata;
+    let chosen = choose_settings(arguments, locations, profile, base)?;
     let sources = &locations.sources;
     let checked = resolve_sources(sources, &chosen)?;
     let mut ports = import_ports(surroundings.state_folder, surroundings.free_space);
@@ -277,6 +283,7 @@ fn import_ports(state_folder: &Path, free_space: Arc<dyn FreeSpace + Send + Sync
         history: Arc::new(SqliteImportHistory::new(state_folder)),
         free_space,
         reserved_names: Arc::new(ReservedTargetNames::new()),
+        xml_syntax: Arc::new(QuickXml::new()),
     }
 }
 

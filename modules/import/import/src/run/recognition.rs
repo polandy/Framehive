@@ -8,7 +8,9 @@ use std::path::{Path, PathBuf};
 
 use domain::{Checksum, LocalDateTime};
 use files::checksum_file;
-use history::{CopyKey, CopyRecord, FoundCopy, HistoryError, RecordedTime, RunId, RunStart};
+use history::{
+    CopyKey, CopyRecord, FoundCopy, HistoryError, RecordedTime, RunId, RunStart, SidecarRecord,
+};
 
 use super::dating::DatedFile;
 use super::{ImportRun, ImportSettings};
@@ -166,7 +168,8 @@ impl ImportRun<'_> {
     /// Records each copy of `report` that was verified in this run: at `destination`,
     /// the file's import destination, when the file was copied or already imported,
     /// and at each backup destination where it was backed up or already backed up.
-    /// `checksum` is the source's, when the run read it.
+    /// `checksum` is the source's, when the run read it; `sidecar` is the one written
+    /// next to each of these copies (IMPORT-019.15).
     pub(super) fn record_copies(
         &self,
         destination: &Path,
@@ -174,6 +177,7 @@ impl ImportRun<'_> {
         recognition: &Recognition,
         report: &FileReport,
         checksum: Option<&Checksum>,
+        sidecar: Option<&SidecarRecord>,
     ) -> Result<(), HistoryError> {
         let (target, at_import_destination, checksum) = match &report.outcome {
             FileOutcome::Copied { target, checksum } => (target, true, Some(checksum)),
@@ -210,6 +214,7 @@ impl ImportRun<'_> {
                 // A clock that left the years 1 to 9999 during the run cannot be
                 // recorded; the start of the run is the closest time that can.
                 recorded_at: self.recorded_now().unwrap_or(run.started_at),
+                sidecar: sidecar.cloned(),
             })?;
         }
         Ok(())

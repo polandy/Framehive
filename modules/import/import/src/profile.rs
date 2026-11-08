@@ -11,76 +11,16 @@
 use std::path::{Path, PathBuf};
 
 use config::{
-    ConfigError, ConfigFile, DefaultValue, FileType, Key, Located, Position, Problem, Values,
-    YamlNode, YamlParser, YamlValue,
+    ConfigError, ConfigFile, Located, Position, Problem, Values, YamlNode, YamlParser, YamlValue,
 };
 use naming::NameTemplate;
 
 use crate::conflicts::ConflictPolicy;
 use crate::job_code::JobCode;
-
-/// The name template of a profile that does not name one (IMPORT-011).
-pub const DEFAULT_NAME_TEMPLATE: &str = "{date:%Y}/{date:%Y-%m-%d}/{name}.{ext}";
-
-/// The `$id` of the published JSON Schema, `schemas/import-profile-v1.json`.
-pub const IMPORT_PROFILE_SCHEMA_ID: &str =
-    "https://polandy.github.io/framehive/schemas/import-profile-v1.json";
-
-const ADD_SUFFIX: &str = "add_suffix";
-const SKIP: &str = "skip";
-const FAIL: &str = "fail";
-
-const NAMING_KEYS: &[Key] = &[
-    Key::text("template", "Name template (IMPORT-001)")
-        .with_default(DefaultValue::Text(DEFAULT_NAME_TEMPLATE)),
-    Key::text(
-        "video_template",
-        "Name template for videos (IMPORT-018); left out, videos use the name template",
-    ),
-    Key::choice(
-        "on_conflict",
-        "Conflict policy (IMPORT-003): add_suffix, skip or fail",
-        &[ADD_SUFFIX, SKIP, FAIL],
-    )
-    .with_default(DefaultValue::Text(ADD_SUFFIX)),
-];
-
-const BACKUP_KEYS: &[Key] = &[
-    Key::list_of_text(
-        "destinations",
-        "Backup destinations (IMPORT-007), in this order",
-    ),
-    Key::list_of_text(
-        "video_destinations",
-        "Backup destinations for videos (IMPORT-013), in this order; \
-         left out, videos go to the backup destinations",
-    ),
-];
-
-/// The file type `import-profile`, version 1 (IMPORT-011, "Behaviour").
-pub const IMPORT_PROFILE: FileType = FileType::new(
-    "import-profile",
-    1,
-    &[
-        Key::text(
-            "video_destination",
-            "Folder to import videos into (IMPORT-013); left out, videos go to the destination given on the command line",
-        ),
-        Key::mapping("naming", "How imported files are named", NAMING_KEYS),
-        Key::list_of_text(
-            "job_codes",
-            "Job codes of the profile (IMPORT-006), the one to use first",
-        ),
-        Key::mapping("backup", "Backup copies of the import", BACKUP_KEYS),
-    ],
-);
-
-/// The JSON Schema of [`IMPORT_PROFILE`], as published in
-/// `schemas/import-profile-v1.json`.
-#[must_use]
-pub fn import_profile_json_schema() -> String {
-    config::json_schema(&IMPORT_PROFILE, IMPORT_PROFILE_SCHEMA_ID)
-}
+use crate::metadata_values::{METADATA_KEY, MetadataKeys};
+use crate::profile_file_type::{
+    DEFAULT_NAME_TEMPLATE, FAIL, IMPORT_PROFILE, METADATA_VERSION, SKIP,
+};
 
 /// The settings of one import profile, with every default applied.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -101,6 +41,9 @@ pub struct ImportProfile {
     /// leaves them out, which means the backup destinations: an empty list in the
     /// file is an error, so empty never means "no video backup".
     pub video_backup_destinations: Vec<PathBuf>,
+    /// The `metadata` keys the profile sets (IMPORT-019); each replaces the same key
+    /// of `config.yaml`.
+    pub metadata: MetadataKeys,
 }
 
 impl ImportProfile {
@@ -167,6 +110,7 @@ impl ImportProfile {
             Some(backup) => video_backup_destinations(config, backup, home)?,
             None => Vec::new(),
         };
+        let metadata = profile_metadata(config)?;
         Ok(ImportProfile {
             template,
             video_template,
@@ -175,7 +119,20 @@ impl ImportProfile {
             backup_destinations,
             video_destination,
             video_backup_destinations,
+            metadata,
         })
+    }
+}
+
+/// The `metadata` keys, which a version 1 profile does not know.
+fn profile_metadata(config: &ConfigFile) -> Result<MetadataKeys, ConfigError> {
+    let values = config.values();
+    match values.position_of(METADATA_KEY.name()) {
+        Some(position) if config.schema_version() < METADATA_VERSION => Err(config.error_at(
+            position,
+            format!("metadata needs schema_version {METADATA_VERSION}"),
+        )),
+        _ => MetadataKeys::from_config(config),
     }
 }
 

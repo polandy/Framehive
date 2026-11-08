@@ -55,6 +55,7 @@ fn import(
         template: &template,
         video_template: None,
         job_code: job_code.as_ref(),
+        metadata: import::ImportMetadata::none(),
         mode: CompatibilityMode::On,
         policy: ConflictPolicy::AddSuffix,
         dry_run: false,
@@ -69,6 +70,8 @@ fn import(
         &MemoryImportHistory::new(),
         &files::testing::MemoryFreeSpace::unlimited(),
     )
+    // A job code is written into each photo's sidecar (IMPORT-019).
+    .with_xml_syntax(&metadata::testing::RecordedXml::new())
     .run(&settings, &mut NoProgress)
 }
 

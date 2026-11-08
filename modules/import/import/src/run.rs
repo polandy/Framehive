@@ -11,12 +11,12 @@ use domain::{Clock, LocalDateTime};
 use files::{FileSystem, FreeSpace, Hasher, ReadOnlyFileSystem};
 use history::ImportHistory;
 use metadata::NoCaptureTime;
+use metadata::xmp::XmlSyntax;
 use naming::SequenceCounters;
 
 use crate::backup::BackupCounts;
 use crate::destinations::{check_destinations, create_destinations};
 use crate::free_space::{FreeSpaceUnknown, NotEnoughSpace};
-use crate::plan::PlannedFile;
 use crate::report::{FileError, ImportSummary, ProgressSink, RunError};
 use crate::scan::{FoundFile, LeftOut, SourceScan, scan_source};
 use crate::sequence::SessionSequence;
@@ -32,6 +32,8 @@ mod settings;
 mod source;
 mod steps;
 
+use copy::Sidecars;
+pub use planning::FilePlan;
 use planning::PlanInputs;
 use recognition::{Recognition, RecordedRun};
 use resolvers::{ReservedBy, Resolvers};
@@ -65,6 +67,9 @@ pub struct ImportRun<'a> {
     free_space: &'a dyn FreeSpace,
     /// The target names other import jobs reserved (IMPORT-015).
     reserved_names: Option<ReservedBy<'a>>,
+    /// Reads and writes the XML of sidecars (IMPORT-019); `None` until
+    /// [`ImportRun::with_xml_syntax`] gives one.
+    xml_syntax: Option<&'a dyn XmlSyntax>,
 }
 
 /// An import run that is planned and not yet executed: the selected files of a source
@@ -115,32 +120,6 @@ pub struct RunFile {
     recognition: Option<Recognition>,
 }
 
-/// What the plan decided for one file of a [`PlannedRun`].
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum FilePlan {
-    /// Named by the import plan; copied, or found at its target, when the run executes.
-    Named(PlannedFile),
-    /// The import history holds a verified copy at the file's import destination, the
-    /// video destination for a video (IMPORT-013): the file is not named, gets no
-    /// sequence number and is not copied (IMPORT-009).
-    ImportedBefore {
-        /// The target of the most recent recorded copy, relative to the import
-        /// destination.
-        target: String,
-    },
-}
-
-impl FilePlan {
-    /// The file's entry in the import plan, unless it is imported before.
-    #[must_use]
-    pub fn named(&self) -> Option<&PlannedFile> {
-        match self {
-            FilePlan::Named(planned) => Some(planned),
-            FilePlan::ImportedBefore { .. } => None,
-        }
-    }
-}
-
 impl<'a> ImportRun<'a> {
     /// Creates a run that works through these ports. `counters` holds the persisted
     /// sequence counters, and `session` the session counter of this run of the
@@ -169,7 +148,15 @@ impl<'a> ImportRun<'a> {
             history,
             free_space,
             reserved_names: None,
+            xml_syntax: None,
         }
+    }
+
+    /// Writes the XML of sidecars through `xml_syntax` (IMPORT-019).
+    #[must_use]
+    pub fn with_xml_syntax(mut self, xml_syntax: &'a dyn XmlSyntax) -> Self {
+        self.xml_syntax = Some(xml_syntax);
+        self
     }
 
     /// Imports every file of `settings.source` that the scan finds, in scan order: the
@@ -295,6 +282,9 @@ impl<'a> ImportRun<'a> {
             }));
         }
         plan.free_space_unknown = check.unknown;
+        if settings.writes_sidecars() && self.xml_syntax.is_none() {
+            return Err(RunError::SidecarsWithoutXmlSyntax);
+        }
         if settings.dry_run {
             return Ok(plan);
         }
@@ -334,6 +324,7 @@ impl<'a> ImportRun<'a> {
         steps: &mut dyn RunSteps,
     ) -> ImportSummary {
         let mut resolvers = Resolvers::new(self, settings);
+        let sidecars = Sidecars::of_run(self, settings, plan.naming.import_time.year());
         let mut backups: Vec<BackupCounts> = settings
             .all_backup_destinations()
             .into_iter()
@@ -353,8 +344,13 @@ impl<'a> ImportRun<'a> {
                 break;
             }
             steps.file_started(&file.found.path);
-            let (report, recorded) =
-                self.execute_file(settings, &mut resolvers, file, plan.recorded);
+            let (report, recorded) = self.execute_file(
+                settings,
+                &mut resolvers,
+                sidecars.as_ref(),
+                file,
+                plan.recorded,
+            );
             for counts in &mut backups {
                 counts.count(report.backups.iter());
             }

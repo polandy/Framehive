@@ -7,14 +7,17 @@
 #![forbid(unsafe_code)]
 
 mod backup;
+mod configuration;
 mod conflicts;
 mod destinations;
 mod dry_run;
 mod free_space;
 mod job;
 mod job_code;
+mod metadata_values;
 mod plan;
 mod profile;
+mod profile_file_type;
 mod readiness;
 mod recent_job_codes;
 mod report;
@@ -31,6 +34,10 @@ pub use backup::{
     BackupCounts, BackupDestinationError, BackupDestinationProblem, BackupError, BackupOutcome,
     BackupReport, check_against_video_destination, check_backup_destinations,
 };
+pub use configuration::{
+    CONFIGURATION, CONFIGURATION_FILE_NAME, CONFIGURATION_SCHEMA_ID, Configuration,
+    configuration_json_schema,
+};
 pub use conflicts::{
     ConflictError, ConflictOutcome, ConflictPolicy, TargetRequest, TargetResolver,
 };
@@ -46,10 +53,12 @@ pub use job_code::{
     JobCode, JobCodeError, MAX_JOB_CODE_CHARACTERS, MissingJobCode, require_job_code,
     require_video_job_code,
 };
+pub use metadata_values::{ImportMetadata, Keyword, KeywordError, MetadataKeys};
 pub use plan::{AssetFile, ImportPlan, PlannedFile};
-pub use profile::{
-    DEFAULT_NAME_TEMPLATE, IMPORT_PROFILE, IMPORT_PROFILE_SCHEMA_ID, ImportProfile,
-    import_profile_json_schema,
+pub use profile::ImportProfile;
+pub use profile_file_type::{
+    DEFAULT_NAME_TEMPLATE, IMPORT_PROFILE, IMPORT_PROFILE_SCHEMA_ID, IMPORT_PROFILE_V1,
+    IMPORT_PROFILE_V1_SCHEMA_ID, import_profile_json_schema, import_profile_v1_json_schema,
 };
 pub use readiness::{CAMERA_FORMAT_READINESS_NOTE, FormatBlocker, FormatReadiness};
 pub use recent_job_codes::{MAX_RECENT_JOB_CODES, RecentJobCodes};

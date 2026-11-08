@@ -15,7 +15,8 @@ use std::path::{Path, PathBuf};
 
 use adapter_yaml::SaphyrParser;
 use import::{
-    ConflictPolicy, DEFAULT_NAME_TEMPLATE, IMPORT_PROFILE_SCHEMA_ID, ImportProfile, JobCode,
+    ConflictPolicy, DEFAULT_NAME_TEMPLATE, IMPORT_PROFILE_SCHEMA_ID, IMPORT_PROFILE_V1_SCHEMA_ID,
+    ImportProfile, JobCode,
 };
 use support::{Folders, stderr};
 
@@ -42,7 +43,7 @@ fn repository_root() -> PathBuf {
 }
 
 /// Every fenced YAML block in the Markdown files under `folder` that declares the
-/// schema of the import profile, as `(where, text)`.
+/// schema of the import profile in either version, as `(where, text)`.
 fn profiles_in_markdown(folder: &Path) -> Vec<(String, String)> {
     let mut found = Vec::new();
     let mut entries: Vec<PathBuf> = fs::read_dir(folder)
@@ -56,7 +57,9 @@ fn profiles_in_markdown(folder: &Path) -> Vec<(String, String)> {
         } else if path.extension().is_some_and(|extension| extension == "md") {
             let text = fs::read_to_string(&path).unwrap();
             for block in yaml_blocks(&text) {
-                if block.contains(IMPORT_PROFILE_SCHEMA_ID) {
+                if block.contains(IMPORT_PROFILE_SCHEMA_ID)
+                    || block.contains(IMPORT_PROFILE_V1_SCHEMA_ID)
+                {
                     found.push((path.display().to_string(), block));
                 }
             }

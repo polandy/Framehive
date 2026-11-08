@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 
 use super::ImportHistoryUnderTest;
 use super::conformance::{BACKUP, DESTINATION, copy, now, record, start};
-use crate::{CopyRecord, ImportHistory, LoggedRun, RunId, RunLog, RunStart};
+use crate::{CopyRecord, ImportHistory, LoggedRun, RunId, RunLog, RunStart, SidecarRecord};
 
 /// Runs the import log checks, each on a fresh environment from `fresh`.
 pub(super) fn check_import_log<T: ImportHistoryUnderTest>(
@@ -24,6 +24,7 @@ pub(super) fn check_import_log<T: ImportHistoryUnderTest>(
     check_missing_run(&fresh(), failures);
     check_log_paths_are_bytes(&fresh(), failures);
     check_video_destination(&fresh(), failures);
+    check_copy_with_sidecar(&fresh(), failures);
 }
 
 fn list(history: &dyn ImportHistory, check: &str, failures: &mut Vec<String>) -> Vec<LoggedRun> {
@@ -212,6 +213,33 @@ fn check_copy_without_capture_time(
         return;
     };
     if log.copies != [notes] {
+        failures.push(format!("{CHECK}: the log holds {:?}", log.copies));
+    }
+}
+
+/// A copy with its sidecar is read back with the sidecar's target and checksum
+/// (IMPORT-019).
+fn check_copy_with_sidecar(under_test: &dyn ImportHistoryUnderTest, failures: &mut Vec<String>) {
+    const CHECK: &str = "copy_with_sidecar";
+    let history = under_test.history();
+    let Some(run) = start(history, CHECK, failures) else {
+        return;
+    };
+    let raw = named(run, DESTINATION, "DSCF0001.RAF", 1);
+    let with_sidecar = CopyRecord {
+        sidecar: Some(SidecarRecord {
+            target: format!("{}.xmp", raw.target),
+            checksum: named(run, DESTINATION, "DSCF0001.RAF", 9).checksum,
+        }),
+        ..raw
+    };
+    let without_sidecar = named(run, BACKUP, "DSCF0002.RAF", 2);
+    record(history, &with_sidecar, CHECK, failures);
+    record(history, &without_sidecar, CHECK, failures);
+    let Some(log) = read_log(history, run, CHECK, failures) else {
+        return;
+    };
+    if log.copies != [with_sidecar, without_sidecar] {
         failures.push(format!("{CHECK}: the log holds {:?}", log.copies));
     }
 }

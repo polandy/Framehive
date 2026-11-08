@@ -10,9 +10,9 @@ use std::time::Duration;
 
 use rusqlite::{Connection, OpenFlags, TransactionBehavior};
 
-/// The `user_version` of the current layout: section 3 of ADR 0031 with its addendum
-/// of 2026-11-06.
-pub(crate) const SCHEMA_VERSION: i64 = 2;
+/// The `user_version` of the current layout: section 3 of ADR 0031 with its addenda
+/// of 2026-11-06 and 2026-11-08 (IMPORT-019).
+pub(crate) const SCHEMA_VERSION: i64 = 3;
 
 /// The `user_version` of the first layout, before runs had a video destination.
 pub(crate) const FIRST_SCHEMA_VERSION: i64 = 1;
@@ -39,20 +39,29 @@ CREATE TABLE copies (
     capture_time TEXT,
     checksum TEXT NOT NULL,
     target TEXT NOT NULL,
-    recorded_at TEXT NOT NULL
+    recorded_at TEXT NOT NULL,
+    sidecar_target TEXT,
+    sidecar_checksum TEXT
 );
 CREATE INDEX copies_by_file ON copies (destination, original_file_name, size);
 CREATE INDEX copies_by_run ON copies (run_id);
-PRAGMA user_version = 2;
+PRAGMA user_version = 3;
 ";
 
 /// The migrations, one step per layout: entry `n` migrates layout `n + 1` to layout
-/// `n + 2` (ADR 0031, addendum of 2026-11-06).
-const MIGRATIONS: [&str; 1] = ["
+/// `n + 2` (ADR 0031, addenda of 2026-11-06 and 2026-11-08).
+const MIGRATIONS: [&str; 2] = [
+    "
 ALTER TABLE runs ADD COLUMN video_destination BLOB;
 CREATE INDEX copies_by_run ON copies (run_id);
 PRAGMA user_version = 2;
-"];
+",
+    "
+ALTER TABLE copies ADD COLUMN sidecar_target TEXT;
+ALTER TABLE copies ADD COLUMN sidecar_checksum TEXT;
+PRAGMA user_version = 3;
+",
+];
 
 /// What a call needs the database for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -136,6 +145,12 @@ impl Database {
     /// first layout read as it is has none.
     pub(crate) fn has_video_destination(&self) -> bool {
         self.layout >= 2
+    }
+
+    /// Whether the copies have the columns of a sidecar; a database of an older
+    /// layout read as it is has none.
+    pub(crate) fn has_sidecars(&self) -> bool {
+        self.layout >= 3
     }
 
     /// Brings the database to the current layout for writing: creates the schema of a

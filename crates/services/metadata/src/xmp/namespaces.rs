@@ -15,6 +15,10 @@ pub const DUBLIN_CORE: &str = "http://purl.org/dc/elements/1.1/";
 pub const XMP_BASIC: &str = "http://ns.adobe.com/xap/1.0/";
 /// Photoshop, prefix `photoshop`.
 pub const PHOTOSHOP: &str = "http://ns.adobe.com/photoshop/1.0/";
+/// Lightroom, prefix `lr`.
+pub const LIGHTROOM: &str = "http://ns.adobe.com/lightroom/1.0/";
+/// MWG keywords, prefix `mwg-kw`.
+pub const MWG_KEYWORDS: &str = "http://www.metadataworkinggroup.com/schemas/keywords/";
 /// Framehive's own namespace, prefix `framehive` (`docs/xmp-namespace.md`).
 pub const FRAMEHIVE: &str = "https://polandy.github.io/framehive/ns/1.0/";
 
@@ -42,7 +46,7 @@ pub(crate) const PREFERRED_PREFIXES: [(&str, &str); 29] = [
     ("http://cipa.jp/exif/1.0/", "exifEX"),
     ("http://ns.adobe.com/exif/1.0/aux/", "aux"),
     ("http://ns.adobe.com/camera-raw-settings/1.0/", "crs"),
-    ("http://ns.adobe.com/lightroom/1.0/", "lr"),
+    (LIGHTROOM, "lr"),
     (
         "http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/",
         "Iptc4xmpCore",
@@ -53,10 +57,7 @@ pub(crate) const PREFERRED_PREFIXES: [(&str, &str); 29] = [
         "http://www.metadataworkinggroup.com/schemas/regions/",
         "mwg-rs",
     ),
-    (
-        "http://www.metadataworkinggroup.com/schemas/keywords/",
-        "mwg-kw",
-    ),
+    (MWG_KEYWORDS, "mwg-kw"),
     (
         "http://www.metadataworkinggroup.com/schemas/collections/",
         "mwg-coll",

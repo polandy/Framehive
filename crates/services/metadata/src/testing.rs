@@ -1,15 +1,18 @@
 // SPDX-FileCopyrightText: 2026 Framehive contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//! Builders for JPEG, TIFF and RAF test files with EXIF text tags, and the
-//! conformance suite of the [`XmlSyntax`](crate::xmp::XmlSyntax) port.
+//! Builders for JPEG, TIFF and RAF test files with EXIF text tags, the conformance
+//! suite of the [`XmlSyntax`](crate::xmp::XmlSyntax) port and its test double
+//! [`RecordedXml`].
 //!
 //! Tests assemble their files in code, so no binary file enters the repository
 //! (ADR 0021, decision 5). The files hold only what the capture time needs: a TIFF
 //! header, IFD0 with the EXIF IFD pointer, the EXIF IFD and the text values.
 
+mod recorded_xml;
 mod xml_syntax;
 
+pub use recorded_xml::RecordedXml;
 pub use xml_syntax::check_xml_syntax;
 
 /// EXIF tag `DateTime` (IFD0): when the file was last changed, not a capture time.

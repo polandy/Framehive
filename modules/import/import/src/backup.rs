@@ -8,6 +8,7 @@ use std::fmt;
 use std::path::{Path, PathBuf};
 
 use files::{CopyError, EntryKind, FileSystem};
+use metadata::xmp::SidecarError;
 
 use crate::conflicts::ConflictError;
 
@@ -189,6 +190,9 @@ pub enum BackupError {
     /// A step of the verified copy failed (IMPORT-004).
     #[error(transparent)]
     Copy(#[from] CopyError),
+    /// The XMP sidecar could not be written or verified there (IMPORT-019.14).
+    #[error(transparent)]
+    Sidecar(SidecarError),
 }
 
 /// How many files one backup destination got in an import run.

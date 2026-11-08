@@ -9,8 +9,8 @@ use naming::CounterDate;
 
 use super::recognition::Recognized;
 use super::rename::{import_plan, rename};
-use super::{FilePlan, ImportRun, ImportSettings, PlannedRun, RunFile};
-use crate::plan::AssetFile;
+use super::{ImportRun, ImportSettings, PlannedRun, RunFile};
+use crate::plan::{AssetFile, PlannedFile};
 use crate::report::{FileError, RunError};
 use crate::scan::{FoundFile, LeftOut};
 use crate::sequence::{Reservation, sequence_range};
@@ -158,5 +158,31 @@ impl ImportRun<'_> {
             naming,
             recorded: None,
         })
+    }
+}
+
+/// What the plan decided for one file of a [`PlannedRun`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FilePlan {
+    /// Named by the import plan; copied, or found at its target, when the run executes.
+    Named(PlannedFile),
+    /// The import history holds a verified copy at the file's import destination, the
+    /// video destination for a video (IMPORT-013): the file is not named, gets no
+    /// sequence number and is not copied (IMPORT-009).
+    ImportedBefore {
+        /// The target of the most recent recorded copy, relative to the import
+        /// destination.
+        target: String,
+    },
+}
+
+impl FilePlan {
+    /// The file's entry in the import plan, unless it is imported before.
+    #[must_use]
+    pub fn named(&self) -> Option<&PlannedFile> {
+        match self {
+            FilePlan::Named(planned) => Some(planned),
+            FilePlan::ImportedBefore { .. } => None,
+        }
     }
 }
