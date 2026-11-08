@@ -14,12 +14,13 @@ use crate::guided::create_folders;
 use crate::profiles::{process_configuration_folder, profiles_folder};
 use crate::{FILES_FAILED, NOT_STARTED, report_error};
 
-/// The example profile: every key of IMPORT-011 with a comment that explains it and
-/// names its default. `video_destination`, `naming.video_template` and
-/// `backup.video_destinations` have no value of their own by default and are left as comments, so the file reads as the
-/// defaults. The folder to import into is given on the command line, never here
-/// (IMPORT-011).
-const EXAMPLE_PROFILE: &str = r#"# yaml-language-server: $schema=https://polandy.github.io/framehive/schemas/import-profile-v1.json
+/// The example profile: every key of IMPORT-011 and IMPORT-019 with a comment that
+/// explains it and names its default. `video_destination`, `naming.video_template` and
+/// `backup.video_destinations` have no value of their own by default and are left as
+/// comments, so the file reads as the defaults; so is `metadata`, so the values of
+/// `config.yaml` hold. The folder to import into is given on the command line, never
+/// here (IMPORT-011).
+const EXAMPLE_PROFILE: &str = r#"# yaml-language-server: $schema=https://polandy.github.io/framehive/schemas/import-profile-v2.json
 #
 # An import profile of Framehive. `framehive import --profile <name> <source> <destination>`
 # uses it, where <name> is the file name without .yaml: 1 to 64 of a-z, 0-9, - and _.
@@ -28,7 +29,7 @@ const EXAMPLE_PROFILE: &str = r#"# yaml-language-server: $schema=https://polandy
 # the value here, also for lists.
 
 # Version of the format. Required.
-schema_version: 1
+schema_version: 2
 
 # Folder to import videos into: an absolute path, ~, or a path that starts with ~/.
 # Default: the destination given on the command line.
@@ -58,6 +59,23 @@ backup:
   # back up videos to the destinations above; an empty list is an error.
   # Default: the destinations above.
   # video_destinations: [/run/media/ada/Backup/Videos]
+
+# Values written to an XMP sidecar next to each imported photo. A key set here replaces
+# the same key of config.yaml in the configuration folder; a key left out comes from it.
+# metadata:
+  # Creators, in this order.
+  # Default: none.
+  # creator: [Ada Lovelace]
+  # Copyright notice; {year} is the year the photo was taken.
+  # Default: none.
+  # copyright: "© {year} Ada Lovelace"
+  # Keywords; / separates the levels of a hierarchy.
+  # Default: none.
+  # keywords: [Holiday/Beach, Family]
+  # Name of the sidecar: original_with_extension (DSCF0042.RAF.xmp) or
+  # original_without_extension (DSCF0042.xmp).
+  # Default: original_with_extension
+  # sidecar_naming: original_with_extension
 "#;
 
 /// The file name of the example profile.
@@ -147,7 +165,7 @@ fn write_part(file_system: &dyn FileSystem, part: &Path) -> io::Result<()> {
 mod tests {
     use domain::Timestamp;
     use files::testing::MemoryFileSystem;
-    use import::IMPORT_PROFILE_V1_SCHEMA_ID;
+    use import::IMPORT_PROFILE_SCHEMA_ID;
 
     use super::*;
 
@@ -178,7 +196,7 @@ mod tests {
     #[test]
     fn the_example_names_the_published_schema() {
         assert!(EXAMPLE_PROFILE.starts_with(&format!(
-            "# yaml-language-server: $schema={IMPORT_PROFILE_V1_SCHEMA_ID}\n"
+            "# yaml-language-server: $schema={IMPORT_PROFILE_SCHEMA_ID}\n"
         )));
     }
 }

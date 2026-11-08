@@ -11,7 +11,7 @@ use devices::DeviceSource;
 
 use import::ImportMetadata;
 
-use crate::testing::PanickingInTheJob;
+use crate::testing::{CAMERA_SIDECAR, PanickingInTheJob};
 
 use super::support::{Harness, OCTOBER_17, PICTURES, PRESET_1, Step};
 
@@ -195,4 +195,35 @@ fn the_metadata_of_config_yaml_is_written_to_the_sidecars() {
     sidecar.push(".xmp");
     let written = harness.memory.content(Path::new(&sidecar)).unwrap();
     assert!(String::from_utf8(written).unwrap().contains("Andy Pollari"));
+}
+
+/// spec: CLI-017.6
+#[test]
+fn the_report_shows_kept_values_and_the_sidecar_count() {
+    let mut harness = with_three_files();
+    harness.add_file(
+        "EOS_DIGITAL",
+        "DCIM/100_FUJI/DSCF0001.RAF.xmp",
+        CAMERA_SIDECAR.as_bytes(),
+        OCTOBER_17,
+    );
+    harness.metadata = ImportMetadata {
+        creator: vec!["Andy Pollari".to_owned()],
+        ..ImportMetadata::default()
+    };
+
+    let output = harness.run(vec![Step::Line(""), Step::Line("n")]).output;
+
+    let kept = output
+        .find("\n\x20 kept creator  Camera Owner (not Andy Pollari)\n")
+        .unwrap_or_else(|| panic!("{output}"));
+    let file_line = output[..kept].rsplit('\n').next().unwrap();
+    assert!(
+        file_line.starts_with("copied  DCIM/100_FUJI/DSCF0001.RAF -> "),
+        "{output}"
+    );
+    assert!(
+        output.contains("0 skipped, 0 failed, 0 left out\n3 sidecars written\n"),
+        "{output}"
+    );
 }

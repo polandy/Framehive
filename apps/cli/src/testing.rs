@@ -10,6 +10,9 @@ use std::thread::{self, ThreadId};
 use files::testing::MemoryFreeSpace;
 use files::{FreeSpace, SpaceOnFileSystem};
 
+/// A source sidecar with the job code `Porto` and the creator `Camera Owner`.
+pub(crate) const CAMERA_SIDECAR: &str = r#"<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description rdf:about="" xmlns:photoshop="http://ns.adobe.com/photoshop/1.0/" xmlns:dc="http://purl.org/dc/elements/1.1/" photoshop:TransmissionReference="Porto"><dc:creator><rdf:Seq><rdf:li>Camera Owner</rdf:li></rdf:Seq></dc:creator></rdf:Description></rdf:RDF></x:xmpmeta>"#;
+
 /// An unlimited free space that panics when asked from any thread but the one that made
 /// it. The command checks the free space on its own thread and the import job checks it
 /// again on the queue's, so the job panics: a fault in the import itself (IMPORT-015),

@@ -12,6 +12,7 @@ mod error_lines;
 mod events;
 mod format;
 mod progress;
+mod report;
 mod source;
 mod state;
 mod summary;

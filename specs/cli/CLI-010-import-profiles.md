@@ -71,14 +71,12 @@ shown as its path with `~` already replaced.
 
 **`framehive config init`.** Writes the example profile
 `<configuration folder>/profiles/example.yaml`, creating missing folders, prints
-`wrote <path>` and exits with 0. The example has every key of IMPORT-011, each with a
-comment that explains it and names its default, and the `yaml-language-server` line of
-IMPORT-011. When the file exists, nothing is written, standard error gets `error: <path>
+`wrote <path>` and exits with 0. The example has every key of IMPORT-011 and IMPORT-019,
+each with a comment that explains it and names its default, and the
+`yaml-language-server` line of IMPORT-011. When the file exists, nothing is written, standard error gets `error: <path>
 exists already; nothing was written`, and the exit code is 1. A folder or the file that
 cannot be written gives exit code 1 and `error: the folder <path> cannot be created:
 <reason>` or `error: <path> cannot be written: <reason>`.
-
-The guided import (CLI-002) does not use profiles.
 
 ## Acceptance criteria
 
@@ -175,8 +173,8 @@ The guided import (CLI-002) does not use profiles.
 - **Given** an empty configuration folder
 - **When** `framehive config init` runs
 - **Then** `<folder>/profiles/example.yaml` exists, standard output has `wrote <path>`,
-  the file is a valid import profile with the defaults of IMPORT-011, every key of
-  IMPORT-011 appears in it, and the exit code is 0
+  the file is a valid import profile with the defaults of IMPORT-011 and IMPORT-019,
+  every key of both appears in it, and the exit code is 0
 
 ### CLI-010.16 – `config init` keeps an existing example
 - **Given** a `profiles/example.yaml` with the text `# mine`
@@ -214,3 +212,4 @@ The guided import (CLI-002) does not use profiles.
 | 2026-11-05 | Implemented in `framehive-cli` |
 | 2026-11-05 | Added CLI-010.18 (unknown home folder) |
 | 2026-11-07 | Profiles have no destination (CLI-016, ADR 0036); CLI-010.1, .2, .6, .10 and .17 changed |
+| 2026-11-08 | IMPORT-019 keys in the example |

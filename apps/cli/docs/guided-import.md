@@ -22,6 +22,9 @@ thread that reads standard input. Backup destinations (CLI-006) are chosen with 
 the plan summary and passed to the run; one on the card, or one that
 `import::check_backup_destinations` rejects, blocks Enter like a destination on the
 card, and the report adds the files with a failed backup and the backup summary lines.
+The plan summary shows the `metadata` values of `config.yaml` (CLI-017), and the report
+adds each file whose sidecar from the card kept or lost a value, and the
+`<n> sidecars written` line.
 The import history is `adapter-sqlite` in the state folder; the destinations are resolved
 with `paths::canonical_folder` (through `Ports::resolve_folder`) before each plan, and a
 history that cannot be used is reported as `The import history <path> cannot be used:

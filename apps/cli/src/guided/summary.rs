@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 use devices::Device;
 use domain::LocalDateTime;
 use import::{
-    BackupDestinationProblem, ImportRun, ImportSettings, PlannedRun, SpaceShortage,
+    BackupDestinationProblem, ImportMetadata, ImportRun, ImportSettings, PlannedRun, SpaceShortage,
     check_backup_destinations,
 };
 
@@ -60,6 +60,9 @@ impl Dialog<'_> {
             && let Some(job_code) = settings.job_code
         {
             self.say(&format!("  job code  {}", job_code.as_str()));
+        }
+        for line in metadata_lines(settings.metadata) {
+            self.say(&line);
         }
     }
 
@@ -188,4 +191,20 @@ fn captured_text(plan: &PlannedRun) -> Option<String> {
 
 fn date_text(time: LocalDateTime) -> String {
     format!("{:04}-{:02}-{:02}", time.year(), time.month(), time.day())
+}
+
+/// The lines of the summary that show the values the import writes (CLI-017).
+fn metadata_lines(metadata: &ImportMetadata) -> Vec<String> {
+    let mut lines = Vec::new();
+    if !metadata.creator.is_empty() {
+        lines.push(format!("  creator   {}", metadata.creator.join("; ")));
+    }
+    if let Some(copyright) = &metadata.copyright {
+        lines.push(format!("  copyright {copyright}"));
+    }
+    if !metadata.keywords.is_empty() {
+        let keywords: Vec<String> = metadata.keywords.iter().map(ToString::to_string).collect();
+        lines.push(format!("  keywords  {}", keywords.join(", ")));
+    }
+    lines
 }

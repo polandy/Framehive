@@ -45,7 +45,8 @@ framehive --version
 - [Guided import](docs/guided-import.md): `framehive` without a subcommand (CLI-002,
   CLI-003, CLI-014)
 - [Import log](docs/import-log.md): `framehive import-log` (CLI-009)
-- [Report and exit codes](docs/report.md): the report lines and the exit codes
+- [Report and exit codes](docs/report.md): the report lines, the sidecar lines
+  (CLI-017) and the exit codes
 - [Tests](docs/tests.md): how the tests run the binary
 
 ## Modules

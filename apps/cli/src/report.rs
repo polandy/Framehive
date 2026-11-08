@@ -1,16 +1,16 @@
 // SPDX-FileCopyrightText: 2026 Framehive contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//! The report of `framehive import` (CLI-001, CLI-005): one line per file as soon as
-//! it is done, each followed by its backup lines, then the summary and the format
-//! readiness (CLI-007, in `format_readiness`).
+//! The report of `framehive import` (CLI-001, CLI-005, CLI-017): one line per file as
+//! soon as it is done, each followed by its sidecar, value and backup lines, then the
+//! summary and the format readiness (CLI-007, in `format_readiness`).
 
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
 use import::{
-    BackupError, BackupOutcome, BackupReport, FileError, FileOutcome, FileReport, FormatReadiness,
-    ImportSummary, LeftOut, ProgressSink, SourceScan,
+    BackupError, BackupOutcome, BackupReport, ExistingValue, ExistingValueResult, FileError,
+    FileOutcome, FileReport, FormatReadiness, ImportSummary, LeftOut, ProgressSink, SourceScan,
 };
 
 use crate::format_readiness::format_readiness_lines;
@@ -65,6 +65,9 @@ impl<W: Write> ReportPrinter<W> {
         if self.dry_run {
             return;
         }
+        if let Some(line) = sidecars_written_line(summary) {
+            self.write_line(&line);
+        }
         for line in backup_summary_lines(summary, &self.backup_names) {
             self.write_line(&line);
         }
@@ -102,11 +105,74 @@ impl<W: Write> ProgressSink for ReportPrinter<W> {
 
     fn file_finished(&mut self, report: &FileReport) {
         self.write_line(&file_line(report));
+        for line in sidecar_lines(report, self.dry_run) {
+            self.write_line(&line);
+        }
+        for value in &report.existing_values {
+            self.write_line(&existing_value_line(value));
+        }
         for backup in &report.backups {
             let line = backup_line(backup, &self.backup_names);
             self.write_line(&line);
         }
     }
+}
+
+/// The sidecars a file got, each as `<target>` or `<source> -> <target>` (CLI-017).
+fn written_sidecars(report: &FileReport) -> Vec<String> {
+    if matches!(report.outcome, FileOutcome::Failed(_)) {
+        return Vec::new();
+    }
+    let would_copy = matches!(report.outcome, FileOutcome::WouldCopy { .. });
+    let mut sidecars = Vec::new();
+    let mut values_carried = false;
+    for carried in &report.carried_sidecars {
+        let Some(target) = &carried.target else {
+            continue;
+        };
+        let holds_values = report.sidecar.as_ref() == Some(target);
+        values_carried |= holds_values;
+        if holds_values || carried.verified_at > 0 || would_copy {
+            sidecars.push(format!("{} -> {target}", carried.path.display()));
+        }
+    }
+    if !values_carried && let Some(target) = &report.sidecar {
+        sidecars.push(target.clone());
+    }
+    sidecars
+}
+
+/// The indented line of each sidecar a file got (CLI-017).
+pub(crate) fn sidecar_lines(report: &FileReport, dry_run: bool) -> Vec<String> {
+    let verb = if dry_run { "would write" } else { "wrote" };
+    written_sidecars(report)
+        .into_iter()
+        .map(|sidecar| format!("  {verb} sidecar  {sidecar}"))
+        .collect()
+}
+
+/// The indented line of a value the carried-along sidecar already had (CLI-017).
+pub(crate) fn existing_value_line(value: &ExistingValue) -> String {
+    match value.result {
+        ExistingValueResult::Replaced => format!(
+            "  replaced {}  {} -> {}",
+            value.field, value.existing, value.import
+        ),
+        ExistingValueResult::Kept => format!(
+            "  kept {}  {} (not {})",
+            value.field, value.existing, value.import
+        ),
+    }
+}
+
+/// The line after the summary line of a run that wrote sidecars (CLI-017).
+pub(crate) fn sidecars_written_line(summary: &ImportSummary) -> Option<String> {
+    let written: usize = summary
+        .files
+        .iter()
+        .map(|report| written_sidecars(report).len())
+        .sum();
+    (written > 0).then(|| format!("{written} sidecars written"))
 }
 
 /// The folder a backup destination is named by in the report: as given, if known.

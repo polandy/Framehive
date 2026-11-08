@@ -193,9 +193,16 @@ All user-visible changes are listed here. The format follows
   summary lists each replaced and kept value. A `.xmp` without its file is left out as
   "sidecar without its file", and a sidecar counts as saved only where it was written
   and verified, so either keeps the card from being formatted.
+- Sidecars in the report (CLI-017): `framehive import` prints `wrote sidecar` (in a dry
+  run `would write sidecar`) under each file that got one, a `replaced` or `kept` line
+  for each value a sidecar from the card already had, and `<n> sidecars written` after
+  the summary. The guided import shows the creator, copyright and keywords in its plan
+  summary and reports the replaced and kept values and the sidecar count.
 
 ### Changed
 
+- `framehive config init` writes the example profile with `schema_version: 2` and the
+  `metadata` keys of IMPORT-019 as comments (CLI-010).
 - `framehive import` names its sources and destination as `cp` does (CLI-016,
   ADR 0036): `framehive import <source>... <destination>` keeps working, and the new
   `framehive import --destination <folder> <source>...` makes every folder a source.

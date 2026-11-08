@@ -10,9 +10,12 @@ per file as soon as it is done (`copied`, `would copy`, `already imported`,
 `imported before`, `duplicate`, `skipped`, `failed`), each followed by one indented line
 per backup destination (`backed up`, `already backed up`, `backed up before`,
 `backup failed`) that names the folder
-as given, the files and folders the scan left out (`left out`), a summary line, and one
+as given, the sidecar lines of CLI-017 (`wrote sidecar`, `replaced`, `kept`) before the
+backup lines, the files and folders the scan left out (`left out`), a summary line, and one
 `backup <folder>: …` line per backup destination; in a dry run `copied` reads
-`would copy`, in the summary as well, and there are no backup lines. The format
+`would copy`, in the summary as well, `wrote sidecar` reads `would write sidecar`, and
+there are no backup lines. A run that wrote sidecars adds `<n> sidecars written` after
+the summary line (`sidecars_written_line`). The format
 readiness (CLI-007, `format_readiness_lines`) ends the report of a run that is not a
 dry run: `framehive import` says `source`, the guided import says `card` and prints it
 before the eject question. Errors that stop the command go to standard error as
