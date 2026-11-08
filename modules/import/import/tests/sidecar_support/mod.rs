@@ -133,6 +133,10 @@ pub(crate) struct Machine {
 
 impl Machine {
     pub(crate) fn new() -> Self {
+        Self::with_free_space(MemoryFreeSpace::unlimited())
+    }
+
+    pub(crate) fn with_free_space(free_space: MemoryFreeSpace) -> Self {
         Machine {
             history: MemoryImportHistory::new(),
             counters: MemorySequenceCounters::new(),
@@ -142,7 +146,7 @@ impl Machine {
                 UtcOffset::from_seconds(0).unwrap(),
             ),
             xml: RecordedXml::new(),
-            free_space: MemoryFreeSpace::unlimited(),
+            free_space,
         }
     }
 
@@ -151,6 +155,17 @@ impl Machine {
             .with_xml_syntax(&self.xml)
             .run(&import.settings(), &mut NoProgress)
             .unwrap()
+    }
+
+    /// The import, with the error that stops it before the first copy.
+    pub(crate) fn try_import(
+        &self,
+        file_system: &MemoryFileSystem,
+        import: &Import,
+    ) -> Result<ImportSummary, RunError> {
+        self.run(file_system)
+            .with_xml_syntax(&self.xml)
+            .run(&import.settings(), &mut NoProgress)
     }
 
     /// The import through a run that was given no XML syntax.

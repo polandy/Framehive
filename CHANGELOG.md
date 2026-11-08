@@ -201,6 +201,9 @@ All user-visible changes are listed here. The format follows
 
 ### Fixed
 
+- The free-space check before an import counts the XMP sidecars it writes, so an
+  import that would fill the destination with its sidecars no longer starts
+  (IMPORT-012).
 - `framehive import-log` no longer leaves the `-wal` and `-shm` files of SQLite next to
   the import history in the state folder (IMPORT-010).
 - After an import that found no file, the format readiness no longer counts the video

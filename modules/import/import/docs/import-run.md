@@ -71,7 +71,8 @@ before it reserves numbers or copies anything, that each file system can hold wh
 run writes to all destinations on it; a dry run checks too. `check_free_space` resolves
 each planned file as the run would and counts its size at the import destination if it
 is copied, and at each backup destination whose target is free and where it is not
-backed up before. Destinations are grouped by the `FileSystemId` the `FreeSpace` port
+backed up before, each with the serialized size of its XMP sidecar (IMPORT-019) when
+it gets one. Destinations are grouped by the `FileSystemId` the `FreeSpace` port
 reports. A short file system stops the run with `RunError::NotEnoughSpace`, listing
 every short one; a destination whose free space cannot be read is kept in
 `ImportSummary::free_space_unknown`, and the run goes on.

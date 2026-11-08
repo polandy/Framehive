@@ -117,6 +117,20 @@ impl<'s> Sidecars<'s> {
         });
     }
 
+    /// The bytes of the sidecar of a file of `role`, planned as `planned`; `None` when
+    /// the file gets none or the sidecar cannot be serialized (the run reports that
+    /// when it writes it).
+    pub(in crate::run) fn size_of(
+        &self,
+        role: AssetFileRole,
+        planned: &PlannedFile,
+    ) -> Option<u64> {
+        self.settings.sidecar_naming_of(role)?;
+        let packet = self.packet(self.year_of(planned)).ok()?;
+        let content = serialize_xmp(&packet, self.files.clock, self.files.xml).ok()?;
+        u64::try_from(content.len()).ok()
+    }
+
     /// Writes `prepared` as `name` to each backup that got the file; with
     /// `keep_existing` only where none is there, and the backup is noted as keeping its
     /// own.
