@@ -36,6 +36,26 @@ jobs:
           fetch-depth: 0
 
       - uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
+        with:
+          # Keep the build inputs of the shell, so garbage collection below spares them.
+          extra_nix_config: |
+            keep-env-derivations = true
+            keep-outputs = true
+
+      # LibRaw and libgphoto2 are overridden in flake.nix, so cache.nixos.org never has
+      # them. The store is restored per OS and architecture and saved when the key is new.
+      # An older cache is a good start: Nix builds only what changed (ADR 0018).
+      - uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7.0.2
+        with:
+          primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.nix', 'flake.lock', 'rust-toolchain.toml') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-${{ runner.arch }}-
+          # Bounds the saved store. The shell is a GC root (next step), so only older
+          # paths go. GitHub also evicts the least recently used cache above 10 GB.
+          gc-max-store-size: 4G
+
+      # Builds the shell once and roots it, so the cache holds it. Timed on its own.
+      - name: Build the Nix shell
+        run: nix develop --profile /nix/var/nix/profiles/ci-shell --command true
 
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
