@@ -15,7 +15,7 @@ owner already uses GitHub.
 1. **The repository is hosted on GitHub** as `polandy/Framehive`, public. The test data
    and review screenshot repositories of ADR 0017 live next to it.
 2. **CI is one GitHub Actions workflow**, `.github/workflows/ci.yml`. It runs
-   `nix develop --command cargo xtask ci` and nothing else, so a local run and a CI run
+   `nix develop --command cargo xtask ci` as its only check, so a local run and a CI run
    are identical. A new check goes into `xtask`, never into the workflow.
 3. **It runs on Linux and macOS** (`ubuntu-latest`, `macos-latest`) for every pull
    request and every push to `main`. Both must pass.
