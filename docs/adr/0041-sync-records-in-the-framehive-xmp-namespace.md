@@ -1,7 +1,8 @@
-# 0037 – Sync records in the Framehive XMP namespace
+# 0041 – Sync records in the Framehive XMP namespace
 
 - Status: accepted
 - Date: 2026-11-07
+- Renumbered: from 0037 on 2026-11-08, because two ADRs had that number
 
 ## Context
 

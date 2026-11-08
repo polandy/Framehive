@@ -165,12 +165,13 @@ The schema's descriptions are the "Meaning" column above.
 
 - Finding a profile by name, the configuration folder, `--profile` and `framehive config
   init`: CLI-010.
-- Binding a profile to a device (N8, Q9), metadata (N16), actions after the import, the
+- Binding a profile to a device (N8, Q9), actions after the import, the
   scanned folders (Q6) and the number of required locations (IMPORT-008): later versions
   of the format.
 - Offering a profile's job codes in the guided import, and choosing a profile there:
   a later CLI-002 change.
 - Saving a profile from Framehive (ADR 0011, rule 9).
+- The `metadata` keys (N16) and `schema_version` 2: IMPORT-019.
 
 ## Open questions
 
@@ -185,3 +186,4 @@ The schema's descriptions are the "Meaning" column above.
 | 2026-11-06 | `video_destination` and `backup.video_destinations` (IMPORT-013), optional in version 1; accepted by the owner |
 | 2026-11-07 | `destination` removed: the folder to import into is given on the command line (ADR 0036, decision 8); a profile with it gets IMPORT-011.13; accepted by the owner |
 | 2026-11-08 | `naming.video_template` (IMPORT-018), optional in version 1; owner decision #72 |
+| 2026-11-08 | The `metadata` keys point to IMPORT-019 (XMP milestone, owner decision D13) |

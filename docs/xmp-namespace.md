@@ -3,7 +3,7 @@
 Framehive writes metadata into standard XMP properties (architecture §8). Its own
 namespace holds only what no standard covers: today, the records with which a sync
 remembers which values it wrote, so it never overwrites a value the user changed
-(ADR 0013, IMMICH-001). The design and its alternatives are in ADR 0037.
+(ADR 0013, IMMICH-001). The design and its alternatives are in ADR 0041.
 
 | | |
 |---|---|
@@ -99,7 +99,9 @@ sidecar or XMP embedded in a DNG (ADR 0015).
 
 ## Example
 
-An asset with the Immich rating 3 and the tag `Holiday/Beach`, written by the sync:
+An asset with the Immich rating 3 and the tag `Holiday/Beach`, written by the sync. The
+fragment shows the values only; the bytes Framehive writes follow the canonical form of
+ADR 0039 (`x:xmpmeta` root, properties ordered by prefix):
 
 ```xml
 <rdf:Description rdf:about=""

@@ -6,7 +6,7 @@ Part of the [requirements](README.md).
 
 - Metadata (rating, pick/reject, color label, tags, title, description, copyright,
   face regions, GPS) is written to **XMP sidecars**. Naming is configurable:
-  `image.ARW.xmp` (darktable, digiKam) or `image.xmp` (Lightroom). Writing directly
+  `image.ARW.xmp` (darktable, digiKam; the default, ADR 0040) or `image.xmp` (Lightroom). Writing directly
   into JPEG/HEIF is optional, and into DNG optional per ADR 0015; never for other RAW
   formats.
 - The SQLite database is an **index** per machine: fast search, filters, thumbnails,

@@ -93,7 +93,7 @@ This keeps every library swappable, and a switch affects exactly one crate.
 | GUI | `slint` | ADR 0002 | only in `*-ui`, `ui-kit`, `apps/gui` |
 | Index database | `rusqlite` (with bundled SQLite) | SQLite is the most established embedded DB product | only `adapter-sqlite` |
 | Checksum | `blake3` | official implementation by the BLAKE3 authors | |
-| XMP | `xmp_toolkit` (Adobe XMP Toolkit SDK) | Adobe's reference implementation, maintained by Adobe / the Content Authenticity Initiative | native dependency → own ADR; alternative: our own reader/writer limited to the scope we need |
+| XMP | `xmp_toolkit` (Adobe XMP Toolkit SDK) | Adobe's reference implementation, maintained by Adobe / the Content Authenticity Initiative | native dependency → own ADR; alternative: our own reader/writer limited to the scope we need; ADR 0039 chose `quick-xml` with our own model instead |
 | Serialization, configuration | `serde` + a YAML library (chosen in ADR 0011) | de-facto standard | |
 | Errors | `thiserror` | de-facto standard, no runtime cost | |
 | Logging | `tracing`, `tracing-subscriber` | de-facto standard, Tokio project | |

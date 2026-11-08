@@ -112,7 +112,7 @@ their order, and job codes that are invalid or repeated are left out when it is 
 - Where the recent job codes are stored, and asking for a job code at the start of an
   import: the guided import (CLI-003, ADR 0025).
 - Writing the job code to XMP as IPTC Job Id (`photoshop:TransmissionReference`, N16):
-  the XMP milestone.
+  IMPORT-019.
 - Job codes stored in profiles (N8): IMPORT-011.
 - The `--job-code` argument: CLI-001.
 
@@ -130,3 +130,4 @@ their order, and job codes that are invalid or repeated are left out when it is 
 | 2026-11-01 | Job codes of dots only are rejected (owner decided after review) |
 | 2026-11-01 | Recent job codes (IMPORT-006.9–.11), for the guided import (CLI-002); status `accepted` until implemented |
 | 2026-11-01 | `RecentJobCodes` in the import module covers IMPORT-006.9–.11; `implemented` |
+| 2026-11-08 | Writing the job code to XMP points to IMPORT-019 (XMP milestone, owner decisions D1–D27) |
