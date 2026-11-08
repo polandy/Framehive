@@ -55,7 +55,7 @@ jobs:
 
       # Builds the shell once and roots it, so the cache holds it. Timed on its own.
       - name: Build the Nix shell
-        run: nix develop --profile /nix/var/nix/profiles/ci-shell --command true
+        run: nix develop --profile "$HOME/.nix-ci-shell" --command true
 
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
