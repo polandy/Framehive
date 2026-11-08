@@ -12,8 +12,7 @@ mod support;
 use std::fs;
 use std::process::Output;
 
-use metadata::testing::raf;
-use support::{DEFAULT_TARGET, Folders, lines, photo, set_mode, stderr, stdout};
+use support::{DEFAULT_TARGET, Folders, add_folder_nested_too_deep, lines, stderr, stdout};
 
 /// The last `count` lines of the standard output.
 fn last_lines(output: &Output, count: usize) -> Vec<String> {
@@ -111,18 +110,10 @@ fn a_skipped_file_is_listed_and_the_exit_code_stays_0() {
 fn an_unreadable_folder_is_listed() {
     let folders = Folders::new();
     folders.add_raf();
-    folders.add("locked/DSCF0002.RAF", &raf(&photo()));
-    let locked = folders.source().join("locked");
-    set_mode(&locked, 0o000);
-    // Root reads the folder regardless of its mode; then nothing is left out.
-    let can_be_read = fs::read_dir(&locked).is_ok();
+    add_folder_nested_too_deep(&folders.source().join("locked"));
 
     let output = folders.import(&[]);
-    set_mode(&locked, 0o755);
 
-    if can_be_read {
-        return;
-    }
     let ending = last_lines(&output, 2);
     assert_eq!(
         ending[0],
@@ -131,7 +122,7 @@ fn an_unreadable_folder_is_listed() {
         stdout(&output)
     );
     assert!(
-        ending[1].starts_with("  locked: left out: cannot be read: "),
+        ending[1].starts_with("  locked/") && ending[1].contains(": left out: cannot be read: "),
         "{}",
         stdout(&output)
     );

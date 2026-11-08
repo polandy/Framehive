@@ -77,12 +77,12 @@ still exits with 0.
   `  DSCF0001.RAF: verified in 0 of 1 location`, and the exit code is 0
 
 ### CLI-007.5 – An unreadable folder is listed
-- **Given** a source with `DSCF0001.RAF` and a folder `locked` that cannot be read, as
+- **Given** a source with `DSCF0001.RAF` and, in `locked`, a path too long to open, as
   in CLI-001.13
 - **When** the user runs the command
 - **Then** the output ends with
   `Do not format the source: not every file is verified in 1 location.` and
-  `  locked: left out: <reason>`
+  `  locked/<path>: left out: <reason>`
 
 ### CLI-007.6 – Camera system files are counted
 - **Given** a source with `DSCF0001.RAF` and `notes.txt`
@@ -145,3 +145,4 @@ still exits with 0.
 | 2026-11-04 | Initial draft; owner decisions: no change to exit codes or to the eject question; accepted by the owner |
 | 2026-11-06 | Per-file numbers and the verdict without a number when files require different numbers of locations (IMPORT-013) |
 | 2026-11-07 | Examples name the destination with `--destination` (CLI-001, ADR 0036) |
+| 2026-11-08 | CLI-007.5 uses the too long path of CLI-001.13, which no user can open, also root |

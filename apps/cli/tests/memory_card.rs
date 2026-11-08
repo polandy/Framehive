@@ -16,23 +16,23 @@ use std::process::Output;
 use std::time::SystemTime;
 
 use metadata::testing::raf;
-use support::{Folders, has_line, photo, set_mode, stderr, stdout, summary_line};
+use support::{Folders, has_line, photo, stderr, stdout, summary_line};
 
 const FOLDER: &str = "DCIM/100_FUJI";
 const DAY: &str = "2026/2026-10-17";
-const UNREADABLE: &str = "DCIM/100_FUJI/DSCF0003.MOV";
+/// A video whose target the destination already holds with other content.
+const TAKEN: &str = "DSCF0003.MOV";
 
 /// What a folder holds: each entry's path relative to the folder, with its modification
 /// time and, for a file, its content.
 type Snapshot = BTreeMap<PathBuf, (SystemTime, Option<Vec<u8>>)>;
 
-/// A memory card with a RAW+JPEG pair, a video, a hidden folder and a video that
-/// cannot be read (unless the test runs as root, which reads it regardless of its mode).
+/// A memory card with a RAW+JPEG pair, two videos and a hidden folder.
 fn memory_card(folders: &Folders) {
     folders.add("DCIM/100_FUJI/DSCF0001.RAF", &raf(&photo()));
     folders.add("DCIM/100_FUJI/DSCF0001.JPG", &photo());
     folders.add("DCIM/100_FUJI/DSCF0002.MOV", b"a video");
-    folders.add(UNREADABLE, b"another video");
+    folders.add(&format!("{FOLDER}/{TAKEN}"), b"another video");
     folders.add(".Trashes/DSCF0009.RAF", &raf(&photo()));
 }
 
@@ -78,40 +78,43 @@ fn a_memory_card_is_copied_once_and_left_unchanged() {
     let folders = Folders::new();
     memory_card(&folders);
     let source_before = snapshot(&folders.source());
-    let unreadable = folders.source().join(UNREADABLE);
-    set_mode(&unreadable, 0o000);
-    let can_be_read = fs::read(&unreadable).is_ok();
+    // A name conflict fails the file for every user; root reads a file regardless of
+    // its mode.
+    let taken = folders.destination().join(DAY).join(TAKEN);
+    fs::create_dir_all(taken.parent().unwrap()).unwrap();
+    fs::write(&taken, b"a video imported elsewhere").unwrap();
+    let fail = ["--on-conflict", "fail"];
 
-    let dry_run = folders.import(&["--dry-run"]);
-    let first = folders.import(&[]);
+    let dry_run = folders.import(&["--dry-run", fail[0], fail[1]]);
+    let first = folders.import(&fail);
     let destination_after_first = snapshot(&folders.destination());
-    let second = folders.import(&[]);
+    let second = folders.import(&fail);
     let destination_after_second = snapshot(&folders.destination());
-    set_mode(&unreadable, 0o644);
 
-    // A dry run plans every file, and writes nothing.
+    // A dry run plans every file, foresees the name conflict, and writes nothing.
     assert_has_line(
         &dry_run,
         &copied_line("DSCF0001.RAF", false).replacen("copied", "would copy", 1),
     );
     assert_has_line(&dry_run, "left out  .Trashes: hidden");
-    assert_eq!(dry_run.status.code(), Some(0), "{}", stderr(&dry_run));
+    assert_has_line(
+        &dry_run,
+        &format!("failed  {FOLDER}/{TAKEN}: name conflict"),
+    );
+    assert_eq!(dry_run.status.code(), Some(1), "{}", stderr(&dry_run));
 
     // The import copies the pair and the video, reports the hidden folder, and fails
-    // only the file it cannot read.
+    // only the video whose target is taken.
     assert_has_line(&first, &copied_line("DSCF0001.RAF", false));
     assert_has_line(&first, &copied_line("DSCF0001.JPG", false));
     assert_has_line(&first, &copied_line("DSCF0002.MOV", true));
     assert_has_line(&first, "left out  .Trashes: hidden");
-    let (copied, failed, exit_code) = if can_be_read { (4, 0, 0) } else { (3, 1, 1) };
+    assert_has_line(&first, &format!("failed  {FOLDER}/{TAKEN}: name conflict"));
     assert_eq!(
         summary_line(&first),
-        format!(
-            "{copied} copied, 0 already imported, 0 duplicates, 0 skipped, \
-             {failed} failed, 1 left out"
-        )
+        "3 copied, 0 already imported, 0 duplicates, 0 skipped, 1 failed, 1 left out"
     );
-    assert_eq!(first.status.code(), Some(exit_code), "{}", stderr(&first));
+    assert_eq!(first.status.code(), Some(1), "{}", stderr(&first));
     for name in ["DSCF0001.RAF", "DSCF0001.JPG", "DSCF0002.MOV"] {
         let source = &source_before[&PathBuf::from(FOLDER).join(name)];
         let target = &destination_after_first[&PathBuf::from(DAY).join(name)];
@@ -125,12 +128,9 @@ fn a_memory_card_is_copied_once_and_left_unchanged() {
     );
     assert_eq!(
         summary_line(&second),
-        format!(
-            "0 copied, {copied} already imported, 0 duplicates, 0 skipped, \
-             {failed} failed, 1 left out"
-        )
+        "0 copied, 3 already imported, 0 duplicates, 0 skipped, 1 failed, 1 left out"
     );
-    assert_eq!(second.status.code(), Some(exit_code), "{}", stderr(&second));
+    assert_eq!(second.status.code(), Some(1), "{}", stderr(&second));
     assert_eq!(destination_after_second, destination_after_first);
 
     // The source is never moved or changed.

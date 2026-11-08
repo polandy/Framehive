@@ -13,8 +13,8 @@ use std::fs;
 
 use metadata::testing::raf;
 use support::{
-    COPIED_LINE, DEFAULT_TARGET, Folders, has_line, has_line_starting_with, photo, set_mode,
-    stderr, stdout, summary_line,
+    COPIED_LINE, DEFAULT_TARGET, Folders, add_folder_nested_too_deep, has_line,
+    has_line_starting_with, photo, stderr, stdout, summary_line,
 };
 
 /// spec: CLI-001.1
@@ -179,31 +179,26 @@ fn a_file_that_fails_does_not_stop_the_import() {
     for name in ["a.jpg", "b.jpg", "c.jpg"] {
         folders.add(name, &photo());
     }
-    let unreadable = folders.source().join("b.jpg");
-    set_mode(&unreadable, 0o000);
-    // Root reads the file regardless of its mode; then it is imported like the others.
-    let can_be_read = fs::read(&unreadable).is_ok();
+    // A name conflict fails the file for every user; root reads a file regardless of
+    // its mode.
+    let taken = folders.destination().join("2026/2026-10-17/b.jpg");
+    fs::create_dir_all(taken.parent().unwrap()).unwrap();
+    fs::write(&taken, b"another file").unwrap();
 
-    let output = folders.import(&[]);
-    set_mode(&unreadable, 0o644);
+    let output = folders.import(&["--on-conflict", "fail"]);
 
     let day = folders.destination().join("2026/2026-10-17");
     assert!(day.join("a.jpg").is_file());
     assert!(day.join("c.jpg").is_file());
-    if can_be_read {
-        assert!(day.join("b.jpg").is_file());
-        assert_eq!(output.status.code(), Some(0));
-    } else {
-        assert!(
-            has_line_starting_with(&output, "failed  b.jpg: "),
-            "{}",
-            stdout(&output)
-        );
-        let summary = summary_line(&output);
-        assert!(summary.starts_with("2 copied,"), "{summary}");
-        assert!(summary.contains(" 1 failed,"), "{summary}");
-        assert_eq!(output.status.code(), Some(1));
-    }
+    assert!(
+        has_line(&output, "failed  b.jpg: name conflict"),
+        "{}",
+        stdout(&output)
+    );
+    let summary = summary_line(&output);
+    assert!(summary.starts_with("2 copied,"), "{summary}");
+    assert!(summary.contains(" 1 failed,"), "{summary}");
+    assert_eq!(output.status.code(), Some(1));
 }
 
 /// spec: CLI-001.7
@@ -251,24 +246,15 @@ fn creates_a_missing_destination_with_its_parents() {
 fn reports_a_folder_that_cannot_be_read() {
     let folders = Folders::new();
     folders.add_raf();
-    folders.add("locked/DSCF0002.RAF", &raf(&photo()));
-    let locked = folders.source().join("locked");
-    set_mode(&locked, 0o000);
-    // Root reads the folder regardless of its mode; then it is imported as well.
-    let can_be_read = fs::read_dir(&locked).is_ok();
+    add_folder_nested_too_deep(&folders.source().join("locked"));
 
     let output = folders.import(&[]);
-    set_mode(&locked, 0o755);
 
     assert!(has_line(&output, COPIED_LINE), "{}", stdout(&output));
-    if can_be_read {
-        assert_eq!(output.status.code(), Some(0));
-    } else {
-        assert!(
-            has_line_starting_with(&output, "left out  locked: "),
-            "{}",
-            stdout(&output)
-        );
-        assert_eq!(output.status.code(), Some(1));
-    }
+    assert!(
+        has_line_starting_with(&output, "left out  locked/"),
+        "{}",
+        stdout(&output)
+    );
+    assert_eq!(output.status.code(), Some(1));
 }
