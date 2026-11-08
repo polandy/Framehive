@@ -103,6 +103,9 @@ pub enum SidecarErrorKind {
     /// Another program changed the sidecar during the write; the change is kept.
     #[error("was changed by another program meanwhile and is kept")]
     Changed,
+    /// Read again after the write, the sidecar does not hold what was written.
+    #[error("does not hold what was written")]
+    Differs,
     /// A change does not fit the property's form.
     #[error("cannot be changed: {0}")]
     Edit(XmpEditError),

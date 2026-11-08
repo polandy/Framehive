@@ -55,6 +55,7 @@ fn file(path: &str, outcome: FileOutcome, backups: Vec<BackupReport>) -> FileRep
         in_video_destination: false,
         // Set by `summary`, which knows the backup destinations of the run.
         required_locations: 0,
+        sidecar: None,
     }
 }
 

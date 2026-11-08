@@ -101,6 +101,7 @@ pub enum metadata::xmp::SidecarErrorKind
 pub metadata::xmp::SidecarErrorKind::Appeared
 pub metadata::xmp::SidecarErrorKind::Changed
 pub metadata::xmp::SidecarErrorKind::Clock(metadata::xmp::ClockOutOfRange)
+pub metadata::xmp::SidecarErrorKind::Differs
 pub metadata::xmp::SidecarErrorKind::Edit(metadata::xmp::XmpEditError)
 pub metadata::xmp::SidecarErrorKind::Io
 pub metadata::xmp::SidecarErrorKind::Io::source: core::io::error::Error
@@ -299,6 +300,7 @@ impl core::panic::unwind_safe::UnwindSafe for metadata::xmp::ClockOutOfRange
 pub struct metadata::xmp::FoundSidecar(_)
 impl metadata::xmp::FoundSidecar
 pub fn metadata::xmp::FoundSidecar::is_nothing(&self) -> bool
+pub fn metadata::xmp::FoundSidecar::nothing() -> Self
 impl core::clone::Clone for metadata::xmp::FoundSidecar
 pub fn metadata::xmp::FoundSidecar::clone(&self) -> metadata::xmp::FoundSidecar
 impl core::cmp::Eq for metadata::xmp::FoundSidecar

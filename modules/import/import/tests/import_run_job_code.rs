@@ -70,6 +70,8 @@ fn import(
         &MemoryImportHistory::new(),
         &files::testing::MemoryFreeSpace::unlimited(),
     )
+    // A job code is written into each photo's sidecar (IMPORT-019).
+    .with_xml_syntax(&metadata::testing::RecordedXml::new())
     .run(&settings, &mut NoProgress)
 }
 

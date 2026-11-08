@@ -5,6 +5,8 @@
 
 use std::path::{Path, PathBuf};
 
+use domain::AssetFileRole;
+use metadata::xmp::SidecarNaming;
 use naming::{CompatibilityMode, NameTemplate};
 
 use crate::conflicts::ConflictPolicy;
@@ -53,6 +55,19 @@ impl ImportSettings<'_> {
         std::iter::once(self.template)
             .chain(self.video_template)
             .collect()
+    }
+
+    /// Whether the photos get sidecars: a job code or a `metadata` value is set
+    /// (IMPORT-019.2).
+    pub(crate) fn writes_sidecars(&self) -> bool {
+        self.job_code.is_some() || self.metadata.has_values()
+    }
+
+    /// How the sidecar of a file with `role` is named, or `None` when it gets none:
+    /// only photos do (IMPORT-019, "Which files get a sidecar").
+    pub(crate) fn sidecar_naming_of(&self, role: AssetFileRole) -> Option<SidecarNaming> {
+        let photo = matches!(role, AssetFileRole::Raw | AssetFileRole::Rendered);
+        (photo && self.writes_sidecars()).then_some(self.metadata.sidecar_naming)
     }
 
     /// Checks before a run starts that a template with `{job}` has a job code

@@ -274,6 +274,7 @@ mod tests {
             backups: Vec::new(),
             in_video_destination: false,
             required_locations: 1,
+            sidecar: None,
         }
     }
 

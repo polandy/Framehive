@@ -10,6 +10,7 @@ use domain::AssetFileRole;
 use jobs::{JobId, JobQueue, ResourceKey};
 
 use super::ImportJob;
+use crate::conflicts::sidecar_target;
 use crate::report::RunError;
 use crate::run::{FilePlan, ImportSettings, PlannedRun};
 
@@ -76,8 +77,9 @@ impl ImportJob {
     }
 }
 
-/// The absolute targets of the files `plan` names: at the video destination for a
-/// video when it is a folder of its own, else at the import destination.
+/// The absolute targets of the files `plan` names, and of the sidecars they get
+/// (IMPORT-019): at the video destination for a video when it is a folder of its
+/// own, else at the import destination.
 fn planned_targets(plan: &PlannedRun, settings: &ImportSettings<'_>) -> Vec<PathBuf> {
     plan.files()
         .iter()
@@ -88,9 +90,14 @@ fn planned_targets(plan: &PlannedRun, settings: &ImportSettings<'_>) -> Vec<Path
                     (AssetFileRole::Video, Some(video_destination)) => video_destination,
                     _ => settings.destination,
                 };
-                Some(destination.join(target))
+                let sidecar = settings
+                    .sidecar_naming_of(file.found.role)
+                    .map(|naming| destination.join(sidecar_target(naming, target)));
+                Some([Some(destination.join(target)), sidecar])
             }
             _ => None,
         })
+        .flatten()
+        .flatten()
         .collect()
 }

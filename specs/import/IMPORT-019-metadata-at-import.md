@@ -1,6 +1,6 @@
 # IMPORT-019 – Metadata at import
 
-- Status: accepted
+- Status: implemented
 - Module: import
 - Origin: N16, G6, R9, N8, V7
 - Depends on: CORE-005, CORE-006, CORE-009, IMPORT-001, IMPORT-003, IMPORT-004,
@@ -58,7 +58,9 @@ and the file's target name (CORE-009).
 **Conflicts.** A sidecar shares its file's conflict outcome (IMPORT-003): a target is
 free only when the file's name and the names of its sidecars are free, a suffix goes to
 both, and a skipped or failed file takes its sidecars with it. A file already imported
-writes no sidecar.
+writes no sidecar. With `original_without_extension`, a RAW and its JPEG of the same
+base name would share a sidecar name, so the second of them in scan order takes a
+suffix: `DSCF0042.JPG` with `DSCF0042.xmp`, then `DSCF0042-1.RAF` with `DSCF0042-1.xmp`.
 
 **Order, verification and backups.** A sidecar is written after its file's verified
 copy (IMPORT-004), through `<name>.part` and a rename (CORE-009), then read again and
@@ -130,14 +132,14 @@ when it was written and verified there.
 - **Given** `20261017-0042.RAF` with other content at the target, the policy
   `add_suffix` and the job code `Lisbon`
 - **When** `DSCF0042.RAF` is imported
-- **Then** the file is `20261017-0042_1.RAF` and its sidecar `20261017-0042_1.RAF.xmp`
+- **Then** the file is `20261017-0042-1.RAF` and its sidecar `20261017-0042-1.RAF.xmp`
 
 ### IMPORT-019.11 – A leftover sidecar at the target is not merged
 - **Given** `20261017-0042.RAF.xmp` at the target without its file, the policy
   `add_suffix` and the job code `Lisbon`
 - **When** `DSCF0042.RAF` is imported
 - **Then** the leftover sidecar is unchanged, and the file and its sidecar take the
-  suffix `_1`
+  suffix `-1`
 
 ### IMPORT-019.12 – A skipped file writes no sidecar
 - **Given** other content at the target, the policy `skip` and the job code `Lisbon`
@@ -194,3 +196,4 @@ when it was written and verified there.
 | Date | Change |
 |---|---|
 | 2026-11-08 | Created and accepted with the owner's XMP decisions D4, D11–D17, D19–D22, D27 (ADR 0040) |
+| 2026-11-08 | Implemented: the import writes, verifies, backs up and records the sidecars. The suffix examples of .10 and .11 corrected to `-1`; a RAW and its JPEG that would share a sidecar name under `original_without_extension` follow the suffix rule |

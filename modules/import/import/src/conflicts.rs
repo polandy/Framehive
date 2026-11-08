@@ -10,12 +10,15 @@ use std::path::{Path, PathBuf};
 
 use domain::Checksum;
 use files::{EntryKind, FileSystem, Hasher, ReadOnlyFileSystem, checksum_file};
+use metadata::xmp::SidecarNaming;
 
 mod folders;
 mod reserved;
+mod sidecars;
 mod target_names;
 
 use folders::Folders;
+pub(crate) use sidecars::sidecar_target;
 pub(crate) use target_names::caseless_key;
 use target_names::{candidates, split_target};
 
@@ -116,6 +119,9 @@ pub struct TargetRequest<'a> {
     pub size: u64,
     /// The planned target, relative to the destination, with `/` between segments.
     pub target: &'a str,
+    /// How its XMP sidecar is named, when it gets one: the sidecar's name must be
+    /// free with the target's (IMPORT-019, "Conflicts").
+    pub sidecar: Option<SidecarNaming>,
 }
 
 /// Resolves the targets of an import plan, file by file in scan order, against the
@@ -136,6 +142,8 @@ pub struct TargetResolver<'a> {
     policy: ConflictPolicy,
     /// Targets given to earlier files, by the canonical caseless key of the target.
     claimed: HashMap<String, Claim>,
+    /// Sidecar names given to earlier files, by canonical caseless key (IMPORT-019).
+    claimed_sidecars: HashSet<String>,
     /// Folders another destination of the run needs, by canonical caseless key, so
     /// that no file takes their names (IMPORT-017).
     needed_folders: HashSet<String>,
@@ -192,6 +200,7 @@ impl<'a> TargetResolver<'a> {
             destination,
             policy,
             claimed: HashMap::new(),
+            claimed_sidecars: HashSet::new(),
             needed_folders: HashSet::new(),
             folders: HashMap::new(),
             source_checksums: HashMap::new(),
@@ -217,12 +226,12 @@ impl<'a> TargetResolver<'a> {
         }
         for candidate in candidates(file.target) {
             match self.holder(file, &candidate)? {
-                Holder::Free => {
+                Holder::Free if self.sidecar_is_free(file, &candidate)? => {
                     self.claim(file, &candidate);
                     return Ok(ConflictOutcome::CopyTo { target: candidate });
                 }
                 Holder::Same(outcome) => return Ok(outcome),
-                Holder::Different => {}
+                Holder::Free | Holder::Different => {}
             }
             let target = file.target.to_owned();
             match self.policy {
@@ -255,6 +264,7 @@ impl<'a> TargetResolver<'a> {
             size: file.size,
         };
         self.claimed.insert(caseless_key(candidate), claim);
+        self.claim_sidecar(file, candidate);
     }
 
     fn holder(
@@ -273,6 +283,7 @@ impl<'a> TargetResolver<'a> {
             });
         }
         if self.needed_folders.contains(&caseless_key(candidate))
+            || self.claimed_for_a_sidecar(candidate)
             || self.reserved_by_another_job(candidate)
         {
             return Ok(Holder::Different);

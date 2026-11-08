@@ -17,7 +17,6 @@ use naming::SequenceCounters;
 use crate::backup::BackupCounts;
 use crate::destinations::{check_destinations, create_destinations};
 use crate::free_space::{FreeSpaceUnknown, NotEnoughSpace};
-use crate::plan::PlannedFile;
 use crate::report::{FileError, ImportSummary, ProgressSink, RunError};
 use crate::scan::{FoundFile, LeftOut, SourceScan, scan_source};
 use crate::sequence::SessionSequence;
@@ -33,6 +32,8 @@ mod settings;
 mod source;
 mod steps;
 
+use copy::Sidecars;
+pub use planning::FilePlan;
 use planning::PlanInputs;
 use recognition::{Recognition, RecordedRun};
 use resolvers::{ReservedBy, Resolvers};
@@ -117,32 +118,6 @@ pub struct RunFile {
     /// What the import history records the file by; `None` when it could not be
     /// dated.
     recognition: Option<Recognition>,
-}
-
-/// What the plan decided for one file of a [`PlannedRun`].
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum FilePlan {
-    /// Named by the import plan; copied, or found at its target, when the run executes.
-    Named(PlannedFile),
-    /// The import history holds a verified copy at the file's import destination, the
-    /// video destination for a video (IMPORT-013): the file is not named, gets no
-    /// sequence number and is not copied (IMPORT-009).
-    ImportedBefore {
-        /// The target of the most recent recorded copy, relative to the import
-        /// destination.
-        target: String,
-    },
-}
-
-impl FilePlan {
-    /// The file's entry in the import plan, unless it is imported before.
-    #[must_use]
-    pub fn named(&self) -> Option<&PlannedFile> {
-        match self {
-            FilePlan::Named(planned) => Some(planned),
-            FilePlan::ImportedBefore { .. } => None,
-        }
-    }
 }
 
 impl<'a> ImportRun<'a> {
@@ -307,6 +282,9 @@ impl<'a> ImportRun<'a> {
             }));
         }
         plan.free_space_unknown = check.unknown;
+        if settings.writes_sidecars() && self.xml_syntax.is_none() {
+            return Err(RunError::SidecarsWithoutXmlSyntax);
+        }
         if settings.dry_run {
             return Ok(plan);
         }
@@ -346,6 +324,7 @@ impl<'a> ImportRun<'a> {
         steps: &mut dyn RunSteps,
     ) -> ImportSummary {
         let mut resolvers = Resolvers::new(self, settings);
+        let sidecars = Sidecars::of_run(self, settings, plan.naming.import_time.year());
         let mut backups: Vec<BackupCounts> = settings
             .all_backup_destinations()
             .into_iter()
@@ -365,8 +344,13 @@ impl<'a> ImportRun<'a> {
                 break;
             }
             steps.file_started(&file.found.path);
-            let (report, recorded) =
-                self.execute_file(settings, &mut resolvers, file, plan.recorded);
+            let (report, recorded) = self.execute_file(
+                settings,
+                &mut resolvers,
+                sidecars.as_ref(),
+                file,
+                plan.recorded,
+            );
             for counts in &mut backups {
                 counts.count(report.backups.iter());
             }

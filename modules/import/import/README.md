@@ -32,24 +32,15 @@ video name template uses `{job}` without one.
 `RecentJobCodes` keeps the job codes used before, the most recently used first, each
 once and at most ten; the caller stores and restores it.
 
-The source scan (IMPORT-005) walks the source folder and lists each supported file
-with its role, size and modification time, and each file or folder it leaves out with
-the reason: unsupported type, hidden, symbolic link, sidecar until grouping, or cannot
-be read. `scan_camera` scans a camera or phone (IMPORT-014): only the folder `DCIM` at
-the top of each storage, with the same rules, giving paths that start with the storage
-folder. A camera without any storage folder, such as a locked phone, is
-`ScanError::NoStorage`, not an empty source; `CAMERA_FORMAT_READINESS_NOTE` is the note its format readiness carries. `TargetResolver` resolves name conflicts and files already imported
-(IMPORT-003) against the destination and the earlier files of the plan, comparing
-names by their canonical caseless key, without regard to case and Unicode
-normalization form (ADR 0026); a destination may hold several names with one key,
-and each is compared. Content is compared by size and checksum, under the conflict
-policy `add_suffix`, `skip` or `fail`. A file at the destination where a folder of the
-target path should be fails the file under every policy, and the folders of a video
-destination inside the import destination count as taken for photos (IMPORT-017).
+The source scan (IMPORT-005, IMPORT-014) and conflict resolution (IMPORT-003,
+IMPORT-019) are described in [`docs/scan-and-conflicts.md`](docs/scan-and-conflicts.md).
 
 `ImportRun` ties them together (ADR 0020 §1): it scans, plans, starts and copies,
 with backup destinations, format readiness, sequence numbers, the import history and
-the free-space check. [`docs/import-run.md`](docs/import-run.md) describes it.
+the free-space check, and writes each photo's XMP sidecar (IMPORT-019); a run that
+would write sidecars without `with_xml_syntax` does not start
+(`RunError::SidecarsWithoutXmlSyntax`). [`docs/import-run.md`](docs/import-run.md)
+describes it.
 
 Boundaries:
 

@@ -85,3 +85,27 @@ also one whose job waited in the job queue while another job filled the disk, le
 no folder behind. A folder that cannot be created stops the run with
 `RunError::DestinationNotCreated` before anything is reserved or recorded; it names
 the destination, the folder that failed and the reason.
+
+## Sidecars
+
+A photo (`Raw` or `Rendered`) gets an XMP sidecar when the run has a job code or a
+`metadata` value (IMPORT-019); a video gets none, and without values nothing changes.
+The sidecar holds the job code as `photoshop:TransmissionReference`, the creators as
+the `dc:creator` Seq, the copyright as `dc:rights` `x-default`, with `{year}` the
+capture year or, for a file dated by its modification time, the year of the import
+date, and the keywords. It is named by `sidecar_naming` after the file's target name,
+and conflict resolution keeps its name free with the file's
+([scan and conflicts](scan-and-conflicts.md)).
+
+After the verified copy, the run serializes the packet once and writes it through a
+`.part` file and a rename, reads it back and requires the same bytes and the same
+parsed packet. Each backup that got the file, backed up or already backed up, gets
+the same bytes, verified the same way. The import history records the sidecar's
+checksum with each copy. A sidecar that fails at the import target fails its file
+(`FileError::Sidecar`, naming the sidecar path) and the copy stays; one that fails at
+a backup fails that backup (`BackupError::Sidecar`). A dry run writes nothing and
+reports the sidecar it would write in `FileReport::sidecar`.
+
+The run writes XML through the `XmlSyntax` that `ImportRun::with_xml_syntax` gives
+it. A run that would write sidecars without one does not start:
+`RunError::SidecarsWithoutXmlSyntax`, before anything is reserved or written.
