@@ -10,7 +10,7 @@ use domain::Checksum;
 use files::{CopyError, checksum_file, copy_verified_to_all};
 use history::{HistoryError, SidecarRecord};
 
-use super::recognition::Recognition;
+use super::recognition::{Recognition, WrittenSidecars};
 use super::resolvers::Resolvers;
 use super::{FilePlan, ImportRun, ImportSettings, RecordedRun, RunFile};
 use crate::backup::{
@@ -36,16 +36,27 @@ struct Imported {
     sidecar: Option<String>,
     /// The sidecar written next to the copies that are verified, for the history.
     sidecar_record: Option<SidecarRecord>,
+    /// The backup destinations where a sidecar was there already and was kept.
+    sidecar_kept_at: Vec<PathBuf>,
 }
 
 impl Imported {
     fn without_backups(outcome: FileOutcome) -> Self {
+        Imported::with_backups(outcome, Vec::new(), None)
+    }
+
+    fn with_backups(
+        outcome: FileOutcome,
+        backups: Vec<BackupReport>,
+        checksum: Option<Checksum>,
+    ) -> Self {
         Imported {
             outcome,
-            backups: Vec::new(),
-            checksum: None,
+            backups,
+            checksum,
             sidecar: None,
             sidecar_record: None,
+            sidecar_kept_at: Vec::new(),
         }
     }
 }
@@ -96,7 +107,10 @@ impl ImportRun<'_> {
                 recognition,
                 &report,
                 imported.checksum.as_ref(),
-                imported.sidecar_record.as_ref(),
+                &WrittenSidecars {
+                    record: imported.sidecar_record.as_ref(),
+                    kept_at: &imported.sidecar_kept_at,
+                },
             ),
             _ => Ok(()),
         };
@@ -119,13 +133,11 @@ impl ImportRun<'_> {
         }
         let copy = FileCopy::new(settings, file, &target, recognition);
         let copied = self.copy_file(&copy, resolver, false);
-        Imported {
-            outcome: FileOutcome::ImportedBefore { target },
-            backups: copied.backups,
-            checksum: copied.source_checksum,
-            sidecar: None,
-            sidecar_record: None,
-        }
+        Imported::with_backups(
+            FileOutcome::ImportedBefore { target },
+            copied.backups,
+            copied.source_checksum,
+        )
     }
 
     /// Resolves the conflicts of one planned file, copies it and backs it up.
@@ -155,13 +167,7 @@ impl ImportRun<'_> {
                         &copy.import_target,
                     ))),
                 };
-                Imported {
-                    outcome,
-                    backups: copied.backups,
-                    checksum: copied.source_checksum,
-                    sidecar: None,
-                    sidecar_record: None,
-                }
+                Imported::with_backups(outcome, copied.backups, copied.source_checksum)
             }
             // A file already imported is backed up, so that a re-run fills a new or a
             // failed backup destination (IMPORT-007).
@@ -173,13 +179,11 @@ impl ImportRun<'_> {
                 let checksum = copied
                     .source_checksum
                     .or_else(|| resolver.source_checksum(&file.path).ok());
-                Imported {
-                    outcome: FileOutcome::AlreadyImported { target },
-                    backups: copied.backups,
+                Imported::with_backups(
+                    FileOutcome::AlreadyImported { target },
+                    copied.backups,
                     checksum,
-                    sidecar: None,
-                    sidecar_record: None,
-                }
+                )
             }
             ConflictOutcome::AlreadyImported { target } => {
                 Imported::without_backups(FileOutcome::AlreadyImported { target })

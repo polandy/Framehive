@@ -110,6 +110,23 @@ impl<'s> Sidecars<'s> {
             Ok(()) => imported.sidecar = Some(name.clone()),
             Err(error) => imported.outcome = FileOutcome::Failed(FileError::Sidecar(error)),
         }
+        self.add_to_backups(&name, &prepared, keep_existing, imported);
+        imported.sidecar_record = Some(SidecarRecord {
+            target: name,
+            checksum: prepared.checksum,
+        });
+    }
+
+    /// Writes `prepared` as `name` to each backup that got the file; with
+    /// `keep_existing` only where none is there, and the backup is noted as keeping its
+    /// own.
+    fn add_to_backups(
+        &self,
+        name: &str,
+        prepared: &Prepared,
+        keep_existing: bool,
+        imported: &mut Imported,
+    ) {
         for backup in &mut imported.backups {
             if !matches!(
                 backup.outcome,
@@ -117,24 +134,24 @@ impl<'s> Sidecars<'s> {
             ) {
                 continue;
             }
-            let at_backup = backup.destination.join(&name);
+            let at_backup = backup.destination.join(name);
             let written = self
                 .needs_writing(&at_backup, keep_existing)
                 .and_then(|needed| {
                     if needed {
-                        self.write_verified(&at_backup, &prepared)
+                        self.write_verified(&at_backup, prepared).map(|()| true)
                     } else {
-                        Ok(())
+                        Ok(false)
                     }
                 });
-            if let Err(error) = written {
-                backup.outcome = BackupOutcome::Failed(BackupError::Sidecar(error));
+            match written {
+                Ok(true) => {}
+                Ok(false) => imported.sidecar_kept_at.push(backup.destination.clone()),
+                Err(error) => {
+                    backup.outcome = BackupOutcome::Failed(BackupError::Sidecar(error));
+                }
             }
         }
-        imported.sidecar_record = Some(SidecarRecord {
-            target: name,
-            checksum: prepared.checksum,
-        });
     }
 
     /// The year `{year}` stands for: the capture year, or the year of the import date
