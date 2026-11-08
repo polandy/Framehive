@@ -8,6 +8,7 @@ pub files::testing::Fault::OtherProgramCreates::path: std::path::PathBuf
 pub files::testing::Fault::ReadFails
 pub files::testing::Fault::ReadFails::after_bytes: usize
 pub files::testing::Fault::ReadReturnsDifferentBytes
+pub files::testing::Fault::RenameFails
 pub files::testing::Fault::WriteFails
 pub files::testing::Fault::WriteFails::after_bytes: usize
 impl core::clone::Clone for files::testing::Fault
@@ -126,6 +127,7 @@ pub fn files::testing::MemoryFileSystem::modified(&self, &std::path::Path) -> co
 pub fn files::testing::MemoryFileSystem::new() -> Self
 pub fn files::testing::MemoryFileSystem::operations(&self) -> usize
 pub fn files::testing::MemoryFileSystem::paths(&self) -> alloc::vec::Vec<std::path::PathBuf>
+pub fn files::testing::MemoryFileSystem::set_read_only(&self, &std::path::Path)
 pub fn files::testing::MemoryFileSystem::stop_after_operations(&self, usize)
 impl core::clone::Clone for files::testing::MemoryFileSystem
 pub fn files::testing::MemoryFileSystem::clone(&self) -> files::testing::MemoryFileSystem
@@ -138,6 +140,7 @@ pub fn files::testing::MemoryFileSystem::create_file(&self, &std::path::Path) ->
 pub fn files::testing::MemoryFileSystem::create_folder(&self, &std::path::Path) -> core::io::error::Result<()>
 pub fn files::testing::MemoryFileSystem::remove_file(&self, &std::path::Path) -> core::io::error::Result<()>
 pub fn files::testing::MemoryFileSystem::rename_no_replace(&self, &std::path::Path, &std::path::Path) -> core::io::error::Result<()>
+pub fn files::testing::MemoryFileSystem::replace_file(&self, &std::path::Path, &std::path::Path) -> core::io::error::Result<()>
 pub fn files::testing::MemoryFileSystem::sync_folder(&self, &std::path::Path) -> core::io::error::Result<()>
 impl files::ReadOnlyFileSystem for files::testing::MemoryFileSystem
 pub fn files::testing::MemoryFileSystem::entry(&self, &std::path::Path) -> core::io::error::Result<core::option::Option<files::EntryKind>>
@@ -454,12 +457,14 @@ pub fn files::FileSystem::create_file(&self, &std::path::Path) -> core::io::erro
 pub fn files::FileSystem::create_folder(&self, &std::path::Path) -> core::io::error::Result<()>
 pub fn files::FileSystem::remove_file(&self, &std::path::Path) -> core::io::error::Result<()>
 pub fn files::FileSystem::rename_no_replace(&self, &std::path::Path, &std::path::Path) -> core::io::error::Result<()>
+pub fn files::FileSystem::replace_file(&self, &std::path::Path, &std::path::Path) -> core::io::error::Result<()>
 pub fn files::FileSystem::sync_folder(&self, &std::path::Path) -> core::io::error::Result<()>
 impl files::FileSystem for files::testing::MemoryFileSystem
 pub fn files::testing::MemoryFileSystem::create_file(&self, &std::path::Path) -> core::io::error::Result<alloc::boxed::Box<dyn files::WriteFile>>
 pub fn files::testing::MemoryFileSystem::create_folder(&self, &std::path::Path) -> core::io::error::Result<()>
 pub fn files::testing::MemoryFileSystem::remove_file(&self, &std::path::Path) -> core::io::error::Result<()>
 pub fn files::testing::MemoryFileSystem::rename_no_replace(&self, &std::path::Path, &std::path::Path) -> core::io::error::Result<()>
+pub fn files::testing::MemoryFileSystem::replace_file(&self, &std::path::Path, &std::path::Path) -> core::io::error::Result<()>
 pub fn files::testing::MemoryFileSystem::sync_folder(&self, &std::path::Path) -> core::io::error::Result<()>
 pub trait files::FreeSpace
 pub fn files::FreeSpace::free_space(&self, &std::path::Path) -> core::io::error::Result<files::SpaceOnFileSystem>

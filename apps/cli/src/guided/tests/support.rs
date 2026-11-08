@@ -367,6 +367,10 @@ impl FileSystem for HookedFileSystem {
         self.harness.memory.create_file(path)
     }
 
+    fn replace_file(&self, from: &Path, to: &Path) -> io::Result<()> {
+        self.harness.memory.replace_file(from, to)
+    }
+
     fn rename_no_replace(&self, from: &Path, to: &Path) -> io::Result<()> {
         self.harness.memory.rename_no_replace(from, to)?;
         if to.starts_with(PICTURES) || to.starts_with("/home/ada/Archive") {

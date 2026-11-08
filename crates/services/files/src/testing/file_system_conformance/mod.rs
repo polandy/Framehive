@@ -44,7 +44,7 @@ type CaseFn = fn(&Case<'_>) -> CaseResult;
 /// Each case works in its own folder below `root`.
 #[must_use]
 pub fn check_file_system(under_test: &FileSystemUnderTest<'_>) -> Vec<String> {
-    let cases: [(&str, CaseFn); 10] = [
+    let cases: [(&str, CaseFn); 12] = [
         ("create_folder_needs_a_parent_and_no_entry", create_folder),
         ("written_content_reads_back", written_content_reads_back),
         ("create_file_empties_an_existing_file", create_file_empties),
@@ -57,6 +57,11 @@ pub fn check_file_system(under_test: &FileSystemUnderTest<'_>) -> Vec<String> {
         (
             "rename_never_replaces_an_existing_file",
             rename_never_replaces,
+        ),
+        ("replace_file_replaces_the_file", replace_file),
+        (
+            "replace_file_needs_both_files",
+            replace_file_needs_both_files,
         ),
         ("remove_file_removes_only_that_file", remove_file),
         (
@@ -253,6 +258,41 @@ fn rename_never_replaces(case: &Case<'_>) -> CaseResult {
         "rename_no_replace",
     )?;
     case.expect_content(&from, b"ours")?;
+    case.expect_content(&to, b"theirs")
+}
+
+fn replace_file(case: &Case<'_>) -> CaseResult {
+    let from = case.path("photo.raf.xmp.part");
+    let to = case.path("photo.raf.xmp");
+    case.write(&from, b"ours")?;
+    case.write(&to, b"theirs")?;
+    case.fs()
+        .replace_file(&from, &to)
+        .map_err(failed("replace_file"))?;
+    case.expect_entry(&from, None)?;
+    case.expect_content(&to, b"ours")
+}
+
+fn replace_file_needs_both_files(case: &Case<'_>) -> CaseResult {
+    let from = case.path("photo.raf.xmp.part");
+    let to = case.path("photo.raf.xmp");
+    case.write(&from, b"ours")?;
+    expect_error_kind(
+        case.fs().replace_file(&from, &to),
+        io::ErrorKind::NotFound,
+        "replacing a missing file",
+    )?;
+    case.expect_content(&from, b"ours")?;
+    case.expect_entry(&to, None)?;
+    case.fs()
+        .remove_file(&from)
+        .map_err(failed("remove_file"))?;
+    case.write(&to, b"theirs")?;
+    expect_error_kind(
+        case.fs().replace_file(&from, &to),
+        io::ErrorKind::NotFound,
+        "replacing with a missing file",
+    )?;
     case.expect_content(&to, b"theirs")
 }
 

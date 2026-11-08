@@ -60,3 +60,38 @@ fn list_folder_fails_like_read_dir_for_a_folder_without_permission() {
         assert_eq!(kind, std::io::ErrorKind::PermissionDenied);
     }
 }
+
+/// A replaced file keeps its permissions, and a read-only file is refused for the
+/// superuser too (CORE-009.19).
+#[cfg(unix)]
+#[test]
+fn replace_file_keeps_permissions_and_refuses_a_read_only_file() {
+    use std::fs::{self, Permissions};
+    use std::os::unix::fs::PermissionsExt;
+
+    use files::FileSystem;
+
+    let folder = TempDir::new().unwrap();
+    let part = folder.path().join("photo.raf.xmp.part");
+    let target = folder.path().join("photo.raf.xmp");
+    let mode = |path: &std::path::Path| fs::metadata(path).unwrap().permissions().mode() & 0o777;
+    fs::write(&part, b"ours").unwrap();
+    fs::write(&target, b"theirs").unwrap();
+    fs::set_permissions(&part, Permissions::from_mode(0o644)).unwrap();
+    fs::set_permissions(&target, Permissions::from_mode(0o600)).unwrap();
+
+    StdFileSystem::new().replace_file(&part, &target).unwrap();
+    assert_eq!(fs::read(&target).unwrap(), b"ours");
+    assert_eq!(mode(&target), 0o600);
+
+    fs::write(&part, b"newer").unwrap();
+    fs::set_permissions(&target, Permissions::from_mode(0o444)).unwrap();
+    let refused = StdFileSystem::new().replace_file(&part, &target);
+    assert_eq!(
+        refused.map_err(|error| error.kind()),
+        Err(std::io::ErrorKind::PermissionDenied)
+    );
+    assert_eq!(fs::read(&target).unwrap(), b"ours");
+    assert_eq!(mode(&target), 0o444);
+    fs::set_permissions(&target, Permissions::from_mode(0o644)).unwrap();
+}
