@@ -9,10 +9,15 @@ mod common;
 
 use std::collections::BTreeMap;
 
+use adapter_xmp::QuickXml;
 use common::{
     ACME, WRITE_TIME, dc, fixture, parse, parse_bytes, photoshop, serialize, write_and_read, xmp,
 };
-use metadata::xmp::{ArrayKind, XmpName, XmpNode, XmpPacket, XmpValue};
+use domain::testing::ManualClock;
+use domain::{Timestamp, UtcOffset};
+use metadata::xmp::{
+    ArrayKind, ClockOutOfRange, XmpEditError, XmpName, XmpNode, XmpPacket, XmpValue, serialize_xmp,
+};
 
 const XMP_MEDIA_MANAGEMENT: &str = "http://ns.adobe.com/xap/1.0/mm/";
 
@@ -153,6 +158,21 @@ fn one_language_is_set() {
     );
 }
 
+/// spec: CORE-009.9
+#[test]
+fn a_language_is_found_without_regard_to_case() {
+    let mut packet = parse("rights.xmp");
+    packet.set_language(&dc("rights"), "DE", "© A. P.").unwrap();
+    let Some(XmpValue::Array(ArrayKind::Alt, items)) =
+        packet.property(&dc("rights")).map(|node| &node.value)
+    else {
+        panic!("dc:rights is no language alternative");
+    };
+    assert_eq!(items.len(), 2);
+    assert_eq!(items[1].language(), Some("de"));
+    assert_eq!(items[1].value, XmpValue::Text("© A. P.".to_owned()));
+}
+
 /// spec: CORE-009.10
 #[test]
 fn only_the_metadata_date_is_kept_up_to_date() {
@@ -185,4 +205,30 @@ fn an_array_is_replaced_but_never_flattened() {
             vec![XmpNode::text("only")]
         )))
     );
+}
+
+#[test]
+fn every_change_refuses_a_property_of_another_form() {
+    let mut packet = parse("merge.xmp");
+    packet.add_to_bag(&dc("subject"), &["Sea"]).unwrap();
+    packet.set_language(&dc("rights"), "de", "© A.").unwrap();
+    let refusals = [
+        packet.add_to_bag(&dc("rights"), &["Sea"]),
+        packet.replace_seq(&dc("subject"), &["Sea"]),
+        packet.set_language(&dc("subject"), "de", "Meer"),
+        packet.set_text(&dc("subject"), "Sea"),
+    ];
+    for refusal in refusals {
+        assert!(matches!(refusal, Err(XmpEditError::WrongForm { .. })));
+    }
+}
+
+#[test]
+fn a_clock_before_the_year_one_is_refused() {
+    let clock = ManualClock::new(
+        Timestamp::from_unix_seconds(-62_200_000_000),
+        UtcOffset::from_seconds(0).unwrap(),
+    );
+    let written = serialize_xmp(&parse("subject.xmp"), &clock, &QuickXml::new());
+    assert_eq!(written, Err(ClockOutOfRange));
 }
