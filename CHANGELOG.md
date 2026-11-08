@@ -186,6 +186,13 @@ All user-visible changes are listed here. The format follows
   `files::testing::MemoryFileSystem` gains `remove_fault`.
   `metadata::xmp` gains `FoundSidecar::nothing` for a sidecar written new and
   `SidecarErrorKind::Differs` for one that does not read back as written.
+- Source sidecars (IMPORT-020, ADR 0040 §4, §5): a `.xmp` sidecar on the card comes
+  with the file it names and keeps its naming form. Without import values it is copied
+  byte for byte; with values, the job code replaces the old one, creators and a
+  copyright already there are kept, keywords are added, and unknown fields stay. The
+  summary lists each replaced and kept value. A `.xmp` without its file is left out as
+  "sidecar without its file", and a sidecar counts as saved only where it was written
+  and verified, so either keeps the card from being formatted.
 
 ### Changed
 

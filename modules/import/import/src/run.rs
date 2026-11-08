@@ -282,7 +282,11 @@ impl<'a> ImportRun<'a> {
             }));
         }
         plan.free_space_unknown = check.unknown;
-        if settings.writes_sidecars() && self.xml_syntax.is_none() {
+        let carries_sidecars = plan
+            .files
+            .iter()
+            .any(|file| !file.found.sidecars.is_empty());
+        if (settings.writes_sidecars() || carries_sidecars) && self.xml_syntax.is_none() {
             return Err(RunError::SidecarsWithoutXmlSyntax);
         }
         if settings.dry_run {

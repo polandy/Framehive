@@ -10,8 +10,11 @@ How the `import` crate scans a source and resolves name conflicts. The crate's
 
 The source scan (IMPORT-005) walks the source folder and lists each supported file
 with its role, size and modification time, and each file or folder it leaves out with
-the reason: unsupported type, hidden, symbolic link, sidecar until grouping, or cannot
-be read. `scan_camera` scans a camera or phone (IMPORT-014): only the folder `DCIM` at
+the reason: unsupported type, hidden, symbolic link, sidecar until grouping, sidecar
+without its file, or cannot be read. A `.xmp` sidecar is attached to the file it names
+(`FoundFile::sidecars`, IMPORT-020): `X.RAF.xmp` to `X.RAF`, `X.xmp` to the file with
+base name `X`, the RAW when several share it; a second one of the same naming form
+needs grouping, and one that names no file is left out as without its file. `scan_camera` scans a camera or phone (IMPORT-014): only the folder `DCIM` at
 the top of each storage, with the same rules, giving paths that start with the storage
 folder. A camera without any storage folder, such as a locked phone, is
 `ScanError::NoStorage`, not an empty source; `CAMERA_FORMAT_READINESS_NOTE` is the note
@@ -26,9 +29,9 @@ policy `add_suffix`, `skip` or `fail`. A file at the destination where a folder 
 target path should be fails the file under every policy, and the folders of a video
 destination inside the import destination count as taken for photos (IMPORT-017).
 
-A file that gets an XMP sidecar (IMPORT-019) passes its `SidecarNaming` in the
-`TargetRequest`. A candidate name is then free only when the sidecar's name is free as
+A file that gets an XMP sidecar (IMPORT-019) or carries source sidecars (IMPORT-020)
+passes each `SidecarNaming` in the `TargetRequest`, and each must be free. A candidate name is then free only when the sidecar's name is free as
 well: not claimed by an earlier file or sidecar of the plan, not reserved by another
 job, and nothing at the destination, so a leftover sidecar is never merged with. The
-file claims both names, and a suffix goes to both. A file with the same content still
+file claims all names, and a suffix goes to all of them. A file with the same content still
 counts as already imported, whatever is next to it.

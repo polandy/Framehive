@@ -63,12 +63,14 @@ pub use profile_file_type::{
 pub use readiness::{CAMERA_FORMAT_READINESS_NOTE, FormatBlocker, FormatReadiness};
 pub use recent_job_codes::{MAX_RECENT_JOB_CODES, RecentJobCodes};
 pub use report::{
-    FileError, FileOutcome, FileReport, ImportSummary, NoProgress, ProgressSink, RunError,
+    CarriedSidecar, ExistingValue, ExistingValueResult, FileError, FileOutcome, FileReport,
+    ImportSummary, NoProgress, ProgressSink, RunError, SidecarField,
 };
 pub use reserved_names::ReservedTargetNames;
 pub use run::{FilePlan, ImportRun, ImportSettings, PlannedRun, RunFile};
 pub use scan::{
-    FoundFile, LeftOut, LeftOutReason, ScanError, SourceScan, scan_camera, scan_folder, scan_source,
+    FoundFile, LeftOut, LeftOutReason, ScanError, SourceScan, SourceSidecar, scan_camera,
+    scan_folder, scan_source,
 };
 pub use sequence::{MixedSequenceKinds, SessionSequence};
 pub use view_model::ExampleViewModel;

@@ -13,6 +13,11 @@ use files::{EntryKind, FolderEntry, ReadOnlyFileSystem};
 
 use crate::roles::role_for_extension;
 
+mod sidecars;
+
+pub use sidecars::SourceSidecar;
+use sidecars::{Candidate, attach, is_xmp};
+
 /// A file the scan found, to be imported.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FoundFile {
@@ -24,6 +29,9 @@ pub struct FoundFile {
     pub size: u64,
     /// The file modification time.
     pub modification_time: Timestamp,
+    /// The source `.xmp` sidecars that come with the file, in byte order of their
+    /// paths (IMPORT-020).
+    pub sidecars: Vec<SourceSidecar>,
 }
 
 /// Why the scan left a file or folder out (IMPORT-005).
@@ -35,9 +43,12 @@ pub enum LeftOutReason {
     Hidden,
     /// A symbolic link, which is never followed.
     SymbolicLink,
-    /// A sidecar, which would land apart from its photo until grouping (LIBRARY-001)
-    /// is implemented.
+    /// A sidecar that is not a `.xmp` file, or a second `.xmp` of the same naming form,
+    /// which would land apart from its photo until grouping (LIBRARY-001) is
+    /// implemented.
     SidecarNeedsGrouping,
+    /// A `.xmp` sidecar whose file is not in its folder (IMPORT-020.3).
+    SidecarWithoutItsFile,
     /// The file or folder cannot be read; the text is the error of the file system.
     CannotBeRead(String),
 }
@@ -49,6 +60,7 @@ impl fmt::Display for LeftOutReason {
             LeftOutReason::Hidden => formatter.write_str("hidden"),
             LeftOutReason::SymbolicLink => formatter.write_str("symbolic link"),
             LeftOutReason::SidecarNeedsGrouping => formatter.write_str("sidecar, needs grouping"),
+            LeftOutReason::SidecarWithoutItsFile => formatter.write_str("sidecar without its file"),
             LeftOutReason::CannotBeRead(error) => write!(formatter, "cannot be read: {error}"),
         }
     }
@@ -163,6 +175,7 @@ pub fn scan_folder(
         file_system,
         source,
         scan: SourceScan::default(),
+        sidecars: Vec::new(),
     };
     scanner.visit_entries(Path::new(""), entries);
     Ok(scanner.into_sorted_scan())
@@ -204,6 +217,7 @@ pub fn scan_camera(
         file_system,
         source: root,
         scan: SourceScan::default(),
+        sidecars: Vec::new(),
     };
     for storage in storages {
         scanner.visit_photo_folder(Path::new(&storage.name).join(CAMERA_PHOTO_FOLDER));
@@ -248,13 +262,18 @@ struct Scanner<'a> {
     file_system: &'a dyn ReadOnlyFileSystem,
     source: &'a Path,
     scan: SourceScan,
+    sidecars: Vec<Candidate>,
 }
 
 impl Scanner<'_> {
     /// The scan, each list in byte order of its paths.
     fn into_sorted_scan(self) -> SourceScan {
         let mut scan = self.scan;
+        let mut sidecars = self.sidecars;
         scan.files.sort_by(|a, b| byte_order(&a.path, &b.path));
+        sidecars.sort_by(|a, b| byte_order(&a.path, &b.path));
+        let without_file = attach(&mut scan.files, sidecars);
+        scan.left_out.extend(without_file);
         scan.left_out.sort_by(|a, b| byte_order(&a.path, &b.path));
         scan
     }
@@ -301,6 +320,7 @@ impl Scanner<'_> {
             .and_then(role_for_extension);
         match role {
             None => self.leave_out(path, LeftOutReason::UnsupportedType),
+            Some(AssetFileRole::Sidecar) if is_xmp(&path) => self.find_sidecar(path),
             Some(AssetFileRole::Sidecar) => {
                 self.leave_out(path, LeftOutReason::SidecarNeedsGrouping);
             }
@@ -318,8 +338,16 @@ impl Scanner<'_> {
                 role,
                 size,
                 modification_time,
+                sidecars: Vec::new(),
             }),
             (Err(error), _) | (_, Err(error)) => self.leave_out(path, cannot_be_read(&error)),
+        }
+    }
+
+    fn find_sidecar(&mut self, path: PathBuf) {
+        match self.file_system.file_size(&self.source.join(&path)) {
+            Ok(size) => self.sidecars.push(Candidate { path, size }),
+            Err(error) => self.leave_out(path, cannot_be_read(&error)),
         }
     }
 

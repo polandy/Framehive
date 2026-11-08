@@ -114,8 +114,10 @@ fn photo_locations(summary: &ImportSummary) -> usize {
         .count()
 }
 
-/// The files not verified at every location they require, with the number they are
-/// verified at; a duplicate counts as its earlier file.
+/// The files and their carried-along sidecars not verified at every location they
+/// require, with the number they are verified at; a duplicate counts as its earlier
+/// file. A carried-along sidecar counts only where it was written and verified
+/// (IMPORT-020.8).
 fn unsaved_files(files: &[FileReport]) -> Vec<FormatBlocker> {
     let own_counts: HashMap<&Path, usize> = files
         .iter()
@@ -123,18 +125,25 @@ fn unsaved_files(files: &[FileReport]) -> Vec<FormatBlocker> {
         .collect();
     files
         .iter()
-        .filter_map(|file| {
+        .flat_map(|file| {
             let verified_at = match &file.outcome {
                 FileOutcome::DuplicateOf { earlier } => {
                     own_counts.get(earlier.as_path()).copied().unwrap_or(0)
                 }
                 _ => verified_locations(file),
             };
-            (verified_at < file.required_locations).then(|| FormatBlocker::NotSaved {
-                path: file.path.clone(),
-                verified_at,
-                required_at: file.required_locations,
-            })
+            let sidecars = file
+                .carried_sidecars
+                .iter()
+                .map(|sidecar| (&sidecar.path, sidecar.verified_at));
+            std::iter::once((&file.path, verified_at))
+                .chain(sidecars)
+                .filter(|(_, verified_at)| *verified_at < file.required_locations)
+                .map(|(path, verified_at)| FormatBlocker::NotSaved {
+                    path: path.clone(),
+                    verified_at,
+                    required_at: file.required_locations,
+                })
         })
         .collect()
 }
@@ -171,7 +180,9 @@ fn blocking_left_out(left_out: &LeftOut) -> Option<FormatBlocker> {
 /// symbolic links do not: cameras write their own system files.
 fn keeps_the_card(reason: &LeftOutReason) -> bool {
     match reason {
-        LeftOutReason::CannotBeRead(_) | LeftOutReason::SidecarNeedsGrouping => true,
+        LeftOutReason::CannotBeRead(_)
+        | LeftOutReason::SidecarNeedsGrouping
+        | LeftOutReason::SidecarWithoutItsFile => true,
         LeftOutReason::UnsupportedType | LeftOutReason::Hidden | LeftOutReason::SymbolicLink => {
             false
         }

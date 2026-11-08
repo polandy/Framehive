@@ -44,6 +44,7 @@ is verified wherever that earlier file is verified.
 |---|---|
 | cannot be read | keeps the card from being formatted |
 | sidecar, needs grouping | keeps the card from being formatted |
+| sidecar without its file | keeps the card from being formatted |
 | unsupported type, hidden, symbolic link | counted as left out and not saved; does not keep the card from being formatted |
 
 Cameras write their own system files, which the scan leaves out as unsupported or
@@ -112,8 +113,8 @@ formatted: a stopped run has not looked at every file, and a dry run verifies no
   reason
 
 ### IMPORT-008.9 – A sidecar left out keeps the card
-- **Given** a run in which every file is copied, and a sidecar left out because it needs
-  grouping
+- **Given** a run in which every file is copied, and a `.THM` sidecar left out because
+  it needs grouping, or a `.xmp` sidecar left out because its file is missing
 - **When** the format readiness is evaluated
 - **Then** the card cannot be formatted, and the sidecar is listed with its left-out
   reason
@@ -173,3 +174,4 @@ formatted: a stopped run has not looked at every file, and a dry run verifies no
 | 2026-11-04 | Initial draft; owner decisions: every destination of the run is required, files left out as unsupported, hidden or symbolic links do not keep the card, no change to exit codes; accepted by the owner |
 | 2026-11-06 | Each file has its own required locations when videos have their own destinations (IMPORT-013) |
 | 2026-11-07 | A run without files requires the photo locations only, not the video backup destinations |
+| 2026-11-08 | IMPORT-008.9: a `.xmp` sidecar comes with its file and counts only where it was written and verified (IMPORT-020.8); one without its file keeps the card |

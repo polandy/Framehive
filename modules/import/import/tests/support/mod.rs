@@ -72,7 +72,7 @@ pub(crate) fn resolve_all(
                     source_path: Path::new(file.source_path),
                     size: file.size,
                     target: file.target,
-                    sidecar: None,
+                    sidecars: &[],
                 })
                 .unwrap()
         })

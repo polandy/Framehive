@@ -119,9 +119,9 @@ pub struct TargetRequest<'a> {
     pub size: u64,
     /// The planned target, relative to the destination, with `/` between segments.
     pub target: &'a str,
-    /// How its XMP sidecar is named, when it gets one: the sidecar's name must be
-    /// free with the target's (IMPORT-019, "Conflicts").
-    pub sidecar: Option<SidecarNaming>,
+    /// How each of its XMP sidecars is named: their names must be free with the
+    /// target's (IMPORT-019, "Conflicts", IMPORT-020).
+    pub sidecars: &'a [SidecarNaming],
 }
 
 /// Resolves the targets of an import plan, file by file in scan order, against the

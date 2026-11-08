@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 
 use domain::Checksum;
 use files::{CopyError, checksum_file, copy_verified_to_all};
-use history::{HistoryError, SidecarRecord};
+use history::HistoryError;
 
 use super::recognition::{Recognition, WrittenSidecars};
 use super::resolvers::Resolvers;
@@ -21,45 +21,11 @@ use crate::plan::PlannedFile;
 use crate::report::{FileError, FileOutcome, FileReport};
 use crate::scan::FoundFile;
 
+mod imported;
 mod sidecars;
 
+use imported::Imported;
 pub(super) use sidecars::Sidecars;
-
-/// What one file gets: its outcome at the import destination and at each backup
-/// destination, the checksum of the source when the run read it, and its sidecar
-/// (IMPORT-019).
-struct Imported {
-    outcome: FileOutcome,
-    backups: Vec<BackupReport>,
-    checksum: Option<Checksum>,
-    /// The sidecar written at the import target, or in a dry run the one that would be.
-    sidecar: Option<String>,
-    /// The sidecar written next to the copies that are verified, for the history.
-    sidecar_record: Option<SidecarRecord>,
-    /// The backup destinations where a sidecar was there already and was kept.
-    sidecar_kept_at: Vec<PathBuf>,
-}
-
-impl Imported {
-    fn without_backups(outcome: FileOutcome) -> Self {
-        Imported::with_backups(outcome, Vec::new(), None)
-    }
-
-    fn with_backups(
-        outcome: FileOutcome,
-        backups: Vec<BackupReport>,
-        checksum: Option<Checksum>,
-    ) -> Self {
-        Imported {
-            outcome,
-            backups,
-            checksum,
-            sidecar: None,
-            sidecar_record: None,
-            sidecar_kept_at: Vec::new(),
-        }
-    }
-}
 
 impl ImportRun<'_> {
     /// Imports one file of a planned run, records its verified copies in the import
@@ -77,12 +43,12 @@ impl ImportRun<'_> {
         let role = file.found.role;
         let resolver = resolvers.of(role);
         let recognition = file.recognition.as_ref();
-        let imported = match file.planned {
+        let mut imported = match file.planned {
             Ok(FilePlan::Named(planned)) => {
                 let mut imported =
                     self.import_planned(settings, resolver, &file.found, &planned, recognition);
                 if let Some(sidecars) = sidecars {
-                    sidecars.add_to(role, &planned, &mut imported);
+                    sidecars.add_to(&file.found, &planned, &mut imported);
                 }
                 imported
             }
@@ -91,6 +57,7 @@ impl ImportRun<'_> {
             }
             Err(error) => Imported::without_backups(FileOutcome::Failed(error)),
         };
+        let carried_sidecars = imported.carried_sidecars(&file.found);
         let report = FileReport {
             path: file.found.path,
             dated_by_modification_time: file.no_capture_time,
@@ -99,6 +66,8 @@ impl ImportRun<'_> {
             in_video_destination: settings.destination_of(role) != settings.destination,
             required_locations: 1 + settings.backup_destinations_of(role).len(),
             sidecar: imported.sidecar,
+            carried_sidecars,
+            existing_values: imported.existing_values,
         };
         let recorded = match (recorded, recognition) {
             (Some(run), Some(recognition)) => self.record_copies(
@@ -384,11 +353,12 @@ fn resolve_target(
         .target
         .as_ref()
         .map_err(|error| FileError::CannotBeNamed(error.clone()))?;
+    let sidecars = settings.sidecar_namings_of(file);
     let request = TargetRequest {
         source_path: &file.path,
         size: file.size,
         target,
-        sidecar: settings.sidecar_naming_of(file.role),
+        sidecars: &sidecars,
     };
     Ok(resolver.resolve(&request)?)
 }

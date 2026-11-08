@@ -22,6 +22,10 @@ use crate::job_code::MissingJobCode;
 use crate::scan::{LeftOut, LeftOutReason, ScanError, SourceScan};
 use crate::sequence::MixedSequenceKinds;
 
+mod sidecars;
+
+pub use sidecars::{CarriedSidecar, ExistingValue, ExistingValueResult, SidecarField};
+
 /// Receives the progress of an [`ImportRun`](crate::ImportRun) on the caller's thread,
 /// as each step happens.
 pub trait ProgressSink {
@@ -75,8 +79,15 @@ pub struct FileReport {
     pub required_locations: usize,
     /// Its XMP sidecar, relative to the destination with `/` between segments: the
     /// one written, or in a dry run the one that would be written (IMPORT-019).
-    /// `None` when it gets none.
+    /// `None` when it gets none. It is a carried-along sidecar when the values went
+    /// into one (IMPORT-020).
     pub sidecar: Option<String>,
+    /// The source sidecars that came with it, in byte order of their paths
+    /// (IMPORT-020).
+    pub carried_sidecars: Vec<CarriedSidecar>,
+    /// The values the carried-along sidecar already had that differ from the
+    /// import's, and which of them it now holds (IMPORT-020.7).
+    pub existing_values: Vec<ExistingValue>,
 }
 
 /// What happened to one file.

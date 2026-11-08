@@ -1,6 +1,6 @@
 # IMPORT-020 – Source sidecars
 
-- Status: accepted
+- Status: implemented
 - Module: import
 - Origin: N16, V7, M2
 - Depends on: CORE-009, IMPORT-001, IMPORT-005, IMPORT-008, IMPORT-019
@@ -110,3 +110,4 @@ written and verified there.
 | Date | Change |
 |---|---|
 | 2026-11-08 | Created and accepted with the owner's XMP decisions D2 and D18 (ADR 0040 §4, §5); replaces IMPORT-005.12 and IMPORT-008.9 for `.xmp` files when implemented |
+| 2026-11-08 | Implemented: the scan attaches each `.xmp` to its file, the run merges the values into it or copies it byte for byte, the summary lists each replaced and kept value, and the format readiness counts it where it was written and verified; IMPORT-005.12 and IMPORT-008.9 updated |

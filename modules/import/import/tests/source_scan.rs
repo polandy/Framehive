@@ -270,22 +270,24 @@ fn destination_next_to_the_source_is_allowed() {
 
 /// spec: IMPORT-005.12
 #[test]
-fn sidecars_are_left_out_until_grouping() {
-    let file_system = source_with(&["DSCF0001.RAF", "DSCF0001.xmp", "clip.Thm"]);
+fn xmp_sidecars_come_with_their_file_and_thm_files_are_left_out() {
+    let file_system = source_with(&["DSCF0001.RAF", "DSCF0001.xmp", "clip.Thm", "notes.xmp"]);
 
     let scan = scan(&file_system);
 
     assert_eq!(found(&scan), ["DSCF0001.RAF"]);
+    let attached: Vec<&Path> = scan.files[0]
+        .sidecars
+        .iter()
+        .map(|sidecar| sidecar.path.as_path())
+        .collect();
+    assert_eq!(attached, [Path::new("DSCF0001.xmp")]);
     assert_eq!(
         scan.left_out,
         [
-            left_out("DSCF0001.xmp", LeftOutReason::SidecarNeedsGrouping),
             left_out("clip.Thm", LeftOutReason::SidecarNeedsGrouping),
+            left_out("notes.xmp", LeftOutReason::SidecarWithoutItsFile),
         ]
-    );
-    assert_eq!(
-        scan.left_out[0].reason.to_string(),
-        "sidecar, needs grouping"
     );
 }
 
