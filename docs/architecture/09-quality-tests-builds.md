@@ -33,8 +33,9 @@ Nightly runs the suite 20 times in random order to catch flakes early.
   checked in; all commands use `--locked`.
 - System dependencies (libgphoto2, ffmpeg, ONNX Runtime) and tools come from a
   **Nix flake** with a lockfile, identical locally and in CI, on Linux and macOS.
-- `SOURCE_DATE_EPOCH`, `--remap-path-prefix`, no embedded build times or hostnames.
-  CI builds Linux releases twice and compares the checksums.
+- `SOURCE_DATE_EPOCH`, `--remap-path-prefix`, no embedded build times or hostnames:
+  `cargo xtask build-release`. CI builds the Linux release twice from different
+  directories and compares the binaries byte for byte (`cargo xtask check-reproducible`).
 - One entry point for everything: `cargo xtask ci` runs exactly what CI runs.
 
 ## 9.4 Development process

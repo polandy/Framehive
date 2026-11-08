@@ -24,6 +24,7 @@ mod json;
 mod new_adapter;
 mod new_module;
 mod public_api;
+mod reproducible;
 mod schemas;
 mod specs;
 mod testdata;
@@ -47,6 +48,8 @@ commands:
   public-api           write the public API snapshots of kernel and services
   check-schemas        the committed JSON Schemas are the generated ones (ADR 0032)
   schemas              write the JSON Schemas of the configuration files to schemas/
+  check-reproducible   two release builds from different directories are bit-for-bit equal (ADR 0007)
+  build-release        reproducible release build of the framehive command (ADR 0007)
   testdata check       testdata.lock is valid (ADR 0027)
   testdata fetch       download and verify the pinned test data (ADR 0017)
   ci-failures [<pr>]   only the failures of a red CI run (needs gh)
@@ -74,6 +77,10 @@ fn main() -> ExitCode {
         Some("public-api") => public_api::write(&root),
         Some("check-schemas") => finish("schemas", &schemas::check(&root)),
         Some("schemas") => schemas::write(&root),
+        Some("check-reproducible") => {
+            reproducible::check(&root).and_then(|problems| finish("reproducible", &problems))
+        }
+        Some("build-release") => reproducible::build_release(&root),
         Some("testdata") => testdata::run(&root, arguments.get(1).map(String::as_str)),
         Some("new-module") => new_module::run(&root, arguments.get(1).map(String::as_str)),
         Some("new-adapter") => new_adapter::run(

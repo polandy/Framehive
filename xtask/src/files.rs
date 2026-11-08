@@ -36,7 +36,8 @@ pub(crate) fn check_repository(root: &Path) -> Result<Vec<String>, String> {
     Ok(problems)
 }
 
-fn repository_files(root: &Path) -> Result<Vec<String>, String> {
+/// Every file Git tracks or would track, relative to `root`.
+pub(crate) fn repository_files(root: &Path) -> Result<Vec<String>, String> {
     let output = Command::new("git")
         .args([
             "ls-files",

@@ -109,6 +109,8 @@
     {
       devShells = forEachSystem (pkgs: {
         default = pkgs.mkShell {
+          # Otherwise binaries get the runpath $PWD/outputs/out/lib, which breaks reproducibility.
+          NIX_NO_SELF_RPATH = true;
           buildInputs = [
             (libraw pkgs)
             (libgphoto2 pkgs)
