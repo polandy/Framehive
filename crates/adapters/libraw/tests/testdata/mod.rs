@@ -10,8 +10,6 @@ use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-/// The X-T5 lossy compressed RAF, an X-Trans file (ADR 0028).
-pub(crate) const XTRANS_RAF: &str = "raw.pixls.us/Fujifilm/X-T5/DSCF0022.RAF";
 /// The `GoPro` HERO11 GPR, a format the pinned LibRaw does not support (ADR 0028).
 pub(crate) const GPR: &str = "raw.pixls.us/GoPro/HERO11-Black/GOPR0123.GPR";
 

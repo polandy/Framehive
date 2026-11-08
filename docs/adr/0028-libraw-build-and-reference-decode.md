@@ -79,6 +79,9 @@ Two findings follow from it:
 - The flake carries a small override of `libraw`; a nixpkgs update can change the
   LibRaw version, which the version test then shows.
 - The version test takes about 20 s per X-Trans file. It runs with the test data that
-  `cargo xtask testdata fetch` provides.
+  `cargo xtask testdata fetch` provides. The conformance suite needs two reference
+  decodes of an X-Trans RAF, so the LibRaw conformance test shares one of them with
+  the version test of that RAF and runs it beside the other, instead of decoding the
+  RAF three times one after another.
 - `testdata.lock` pins the 7D, DNG and GPR samples used here, until `framehive-testdata`
   provides the reference sets (ADR 0017).
