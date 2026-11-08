@@ -66,8 +66,10 @@ impl<'s> Sidecars<'s> {
 
     /// Adds the sidecar of a file of `role`, planned as `planned`, to what `imported`
     /// did: in a dry run only its name; otherwise writes it next to a copied file and
-    /// to each backup that got the file. A failure at the import target fails the
-    /// file (IMPORT-019.16), one at a backup fails that backup (IMPORT-019.14).
+    /// to each backup that got the file. A file found already imported gets it only
+    /// where none is there, so that a re-run completes a failed one (IMPORT-019.18).
+    /// A failure at the import target fails the file (IMPORT-019.16), one at a backup
+    /// fails that backup (IMPORT-019.14).
     pub(super) fn add_to(
         &self,
         role: AssetFileRole,
@@ -77,17 +79,26 @@ impl<'s> Sidecars<'s> {
         let Some(naming) = self.settings.sidecar_naming_of(role) else {
             return;
         };
-        let (target, dry_run) = match &imported.outcome {
-            FileOutcome::Copied { target, .. } => (target, false),
-            FileOutcome::WouldCopy { target } => (target, true),
+        let (target, dry_run, keep_existing) = match &imported.outcome {
+            FileOutcome::Copied { target, .. } => (target, false, false),
+            FileOutcome::WouldCopy { target } => (target, true, false),
+            FileOutcome::AlreadyImported { target } => (target, self.settings.dry_run, true),
             _ => return,
         };
         let name = sidecar_target(naming, target);
+        let at_import = self.settings.destination_of(role).join(&name);
+        match self.needs_writing(&at_import, keep_existing) {
+            Ok(true) => {}
+            Ok(false) => return,
+            Err(error) => {
+                imported.outcome = FileOutcome::Failed(FileError::Sidecar(error));
+                return;
+            }
+        }
         if dry_run {
             imported.sidecar = Some(name);
             return;
         }
-        let at_import = self.settings.destination_of(role).join(&name);
         let prepared = match self.prepare(&at_import, self.year_of(planned)) {
             Ok(prepared) => prepared,
             Err(error) => {
@@ -100,11 +111,23 @@ impl<'s> Sidecars<'s> {
             Err(error) => imported.outcome = FileOutcome::Failed(FileError::Sidecar(error)),
         }
         for backup in &mut imported.backups {
-            if matches!(
+            if !matches!(
                 backup.outcome,
                 BackupOutcome::BackedUp | BackupOutcome::AlreadyBackedUp
-            ) && let Err(error) = self.write_verified(&backup.destination.join(&name), &prepared)
-            {
+            ) {
+                continue;
+            }
+            let at_backup = backup.destination.join(&name);
+            let written = self
+                .needs_writing(&at_backup, keep_existing)
+                .and_then(|needed| {
+                    if needed {
+                        self.write_verified(&at_backup, &prepared)
+                    } else {
+                        Ok(())
+                    }
+                });
+            if let Err(error) = written {
                 backup.outcome = BackupOutcome::Failed(BackupError::Sidecar(error));
             }
         }
@@ -165,6 +188,19 @@ impl<'s> Sidecars<'s> {
             packet.add_keywords(&keywords)?;
         }
         Ok(packet)
+    }
+
+    /// Whether the sidecar at `path` is to be written: always, unless `keep_existing`
+    /// and something is there already.
+    fn needs_writing(&self, path: &Path, keep_existing: bool) -> Result<bool, SidecarError> {
+        if !keep_existing {
+            return Ok(true);
+        }
+        let entry = self.files.files.entry(path).map_err(|source| {
+            let step = SidecarStep::Read;
+            sidecar_error(path, SidecarErrorKind::Io { step, source })
+        })?;
+        Ok(entry.is_none())
     }
 
     /// Writes `prepared` new at `path`, through a `.part` file and a rename, and

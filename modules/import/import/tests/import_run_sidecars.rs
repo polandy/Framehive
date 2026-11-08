@@ -223,6 +223,51 @@ fn a_failed_sidecar_fails_its_file() {
     assert!(machine.history.copies().is_empty());
 }
 
+/// spec: IMPORT-019.18
+#[test]
+fn a_re_run_completes_a_failed_sidecar() {
+    let machine = Machine::new();
+    let card = raw_card();
+    card.inject_fault(Path::new(SIDECAR), Fault::RenameFails);
+    machine.import(&card, &Import::lisbon(FLAT));
+    card.remove_fault(Path::new(SIDECAR));
+    let summary = machine.import(&card, &Import::lisbon(FLAT));
+    let file = report(&summary, RAW);
+    assert!(
+        matches!(&file.outcome, FileOutcome::AlreadyImported { target } if target == RAW),
+        "{:?}",
+        file.outcome
+    );
+    assert_eq!(file.sidecar.as_deref(), Some("DSCF0042.RAF.xmp"));
+    let packet = machine.sidecar(&card, SIDECAR);
+    assert_eq!(
+        text(&packet, &photoshop("TransmissionReference")).as_deref(),
+        Some("Lisbon")
+    );
+    let copies = machine.history.copies();
+    assert_eq!(copies.len(), 1);
+    let expected = checksum(&card.content(Path::new(SIDECAR)).unwrap());
+    assert_eq!(copies[0].sidecar.as_ref().unwrap().checksum, expected);
+    assert!(FormatReadiness::of(&summary).can_be_formatted());
+}
+
+#[test]
+fn a_dry_run_lists_the_sidecar_a_re_run_would_complete() {
+    let machine = Machine::new();
+    let card = raw_card();
+    card.inject_fault(Path::new(SIDECAR), Fault::RenameFails);
+    machine.import(&card, &Import::lisbon(FLAT));
+    card.remove_fault(Path::new(SIDECAR));
+    let mut import = Import::lisbon(FLAT);
+    import.dry_run = true;
+    let summary = machine.import(&card, &import);
+    assert_eq!(
+        report(&summary, RAW).sidecar.as_deref(),
+        Some("DSCF0042.RAF.xmp")
+    );
+    assert!(sidecars_below(&card, "/").is_empty());
+}
+
 #[test]
 fn a_sidecar_that_fails_at_a_backup_fails_that_backup() {
     let machine = Machine::new();

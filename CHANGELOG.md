@@ -181,7 +181,9 @@ All user-visible changes are listed here. The format follows
   same to each backup, and recorded in the import history. Its name is kept free with
   the file's, so a suffix goes to both and a leftover sidecar is never merged with. A
   sidecar that cannot be written fails its file, which keeps the card from being
-  formatted; a dry run lists the sidecars it would write.
+  formatted; a re-run that finds the file already imported writes its missing sidecar
+  and keeps one that is there. A dry run lists the sidecars it would write.
+  `files::testing::MemoryFileSystem` gains `remove_fault`.
   `metadata::xmp` gains `FoundSidecar::nothing` for a sidecar written new and
   `SidecarErrorKind::Differs` for one that does not read back as written.
 

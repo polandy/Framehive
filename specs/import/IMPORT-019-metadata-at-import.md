@@ -57,8 +57,10 @@ and the file's target name (CORE-009).
 
 **Conflicts.** A sidecar shares its file's conflict outcome (IMPORT-003): a target is
 free only when the file's name and the names of its sidecars are free, a suffix goes to
-both, and a skipped or failed file takes its sidecars with it. A file already imported
-writes no sidecar. With `original_without_extension`, a RAW and its JPEG of the same
+both, and a skipped or failed file takes its sidecars with it. A file found already at
+its target (IMPORT-003) gets its sidecar only where none is there, at the target and
+at each backup that holds the file, so a re-run completes a failed one; a sidecar that
+is there is never changed. A file the import history knows writes none. With `original_without_extension`, a RAW and its JPEG of the same
 base name would share a sidecar name, so the second of them in scan order takes a
 suffix: `DSCF0042.JPG` with `DSCF0042.xmp`, then `DSCF0042-1.RAF` with `DSCF0042-1.xmp`.
 
@@ -146,8 +148,9 @@ when it was written and verified there.
 - **When** the file is imported
 - **Then** it is skipped, and no sidecar is written for it
 
-### IMPORT-019.13 – A file already imported writes no sidecar
-- **Given** the same import run again with the job code `Lisbon`
+### IMPORT-019.13 – A file already imported keeps its sidecar
+- **Given** the same import run again with the job code `Lisbon`, and the sidecar edited
+  since
 - **When** it runs
 - **Then** every file is already imported, and no sidecar is written or changed
 
@@ -174,6 +177,13 @@ when it was written and verified there.
 - **When** it runs
 - **Then** no sidecar is written, and the plan lists each sidecar it would write
 
+### IMPORT-019.18 – A re-run completes a failed sidecar
+- **Given** `DSCF0042.RAF` imported with the job code `Lisbon` and its sidecar failed
+  (IMPORT-019.16)
+- **When** the same import runs again and the sidecar can be written
+- **Then** the file is already imported, its sidecar is written, verified and recorded,
+  and the card can be formatted
+
 ## Out of scope
 
 - Reading, merging and writing XMP: CORE-009.
@@ -197,3 +207,4 @@ when it was written and verified there.
 |---|---|
 | 2026-11-08 | Created and accepted with the owner's XMP decisions D4, D11–D17, D19–D22, D27 (ADR 0040) |
 | 2026-11-08 | Implemented: the import writes, verifies, backs up and records the sidecars. The suffix examples of .10 and .11 corrected to `-1`; a RAW and its JPEG that would share a sidecar name under `original_without_extension` follow the suffix rule |
+| 2026-11-08 | A re-run completes a failed sidecar (.13 reworded, .18 added) |

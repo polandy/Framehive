@@ -179,6 +179,11 @@ impl MemoryFileSystem {
         self.lock().faults.insert(path.to_path_buf(), fault);
     }
 
+    /// Removes the fault injected for the file `path`, if any.
+    pub fn remove_fault(&self, path: &Path) {
+        self.lock().faults.remove(path);
+    }
+
     /// Lets the next `operations` operations succeed and fails every later one, as if
     /// the program had stopped there.
     ///
