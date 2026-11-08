@@ -18,6 +18,7 @@ still check it.
 | Target | Input goes to |
 |---|---|
 | `capture_time` | `metadata::capture_time_from_bytes`, the EXIF reader (CORE-005, ADR 0021) |
+| `xmp` | `metadata::xmp::parse_xmp` with `adapter-xmp`; an accepted packet must read back the same after `serialize_xmp` (CORE-009, ADR 0039) |
 
 ## Running
 
@@ -36,14 +37,15 @@ every night for ten minutes per target and keeps the corpus in the Actions cache
 
 libFuzzer keeps a crashing input in `fuzz/artifacts/<target>/`; the nightly workflow
 uploads it with the log. Replay it with `cargo fuzz run <target> <file>`. Each finding
-is fixed by a deterministic regression test in `metadata` that builds the bytes in
-code, never as a file, and carries the `spec:` marker of the criterion it broke
-(CORE-005.9 or .12). The mutation test in
-`crates/services/metadata/tests/mutated_files.rs` stays the deterministic gate in every
+is fixed by a deterministic regression test that builds the bytes in code, never as
+a file, and carries the `spec:` marker of the criterion it broke (CORE-005.9 or .12 in
+`metadata`, CORE-009 in `adapter-xmp`). The mutation tests in
+`crates/services/metadata/tests/mutated_files.rs` and
+`crates/adapters/xmp/tests/mutated_packets.rs` stay the deterministic gate in every
 pull request.
 
 ## Dependencies
 
-- `metadata`
+- `metadata`, `adapter-xmp` and `domain` (its `ManualClock`)
 - `libfuzzer-sys` (ADR 0037), which builds libFuzzer's C++ sources and pulls in
   `arbitrary`; the targets take raw bytes and do not use it

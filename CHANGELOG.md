@@ -154,6 +154,11 @@ All user-visible changes are listed here. The format follows
   they must use the same kind, else the import does not start. The naming service's
   `preview_range` and `reserve_range` take every template of an import, and
   `SequenceKind::token` names a kind in messages.
+- XMP packets (CORE-009.1–.14, ADR 0039): `metadata::xmp` reads every RDF form of
+  ISO 16684-1 into one model, edits it without losing unknown fields, and writes
+  Framehive's canonical form with `xmp:MetadataDate`; `adapter-xmp` provides the XML
+  tokens with `quick-xml`. Document type declarations, other encodings than UTF-8 and
+  conflicting values are refused. A mutation test and the fuzz target `xmp` check it.
 
 ### Changed
 

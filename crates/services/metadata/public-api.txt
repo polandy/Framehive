@@ -46,8 +46,348 @@ pub const metadata::testing::DATE_TIME: u16
 pub const metadata::testing::DATE_TIME_ORIGINAL: u16
 pub const metadata::testing::OFFSET_TIME_ORIGINAL: u16
 pub const metadata::testing::SUB_SEC_TIME_ORIGINAL: u16
+pub fn metadata::testing::check_xml_syntax(&dyn metadata::xmp::XmlSyntax) -> alloc::vec::Vec<alloc::string::String>
 pub fn metadata::testing::jpeg(&[u8]) -> alloc::vec::Vec<u8>
 pub fn metadata::testing::raf(&[u8]) -> alloc::vec::Vec<u8>
+pub mod metadata::xmp
+pub mod metadata::xmp::namespaces
+pub const metadata::xmp::namespaces::ADOBE_META: &str
+pub const metadata::xmp::namespaces::DUBLIN_CORE: &str
+pub const metadata::xmp::namespaces::FRAMEHIVE: &str
+pub const metadata::xmp::namespaces::PHOTOSHOP: &str
+pub const metadata::xmp::namespaces::RDF: &str
+pub const metadata::xmp::namespaces::XML: &str
+pub const metadata::xmp::namespaces::XMP_BASIC: &str
+pub enum metadata::xmp::ArrayKind
+pub metadata::xmp::ArrayKind::Alt
+pub metadata::xmp::ArrayKind::Bag
+pub metadata::xmp::ArrayKind::Seq
+impl core::clone::Clone for metadata::xmp::ArrayKind
+pub fn metadata::xmp::ArrayKind::clone(&self) -> metadata::xmp::ArrayKind
+impl core::cmp::Eq for metadata::xmp::ArrayKind
+impl core::cmp::PartialEq for metadata::xmp::ArrayKind
+pub fn metadata::xmp::ArrayKind::eq(&self, &metadata::xmp::ArrayKind) -> bool
+impl core::fmt::Debug for metadata::xmp::ArrayKind
+pub fn metadata::xmp::ArrayKind::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for metadata::xmp::ArrayKind
+impl core::marker::StructuralPartialEq for metadata::xmp::ArrayKind
+impl core::marker::Freeze for metadata::xmp::ArrayKind
+impl core::marker::Send for metadata::xmp::ArrayKind
+impl core::marker::Sync for metadata::xmp::ArrayKind
+impl core::marker::Unpin for metadata::xmp::ArrayKind
+impl core::marker::UnsafeUnpin for metadata::xmp::ArrayKind
+impl core::panic::unwind_safe::RefUnwindSafe for metadata::xmp::ArrayKind
+impl core::panic::unwind_safe::UnwindSafe for metadata::xmp::ArrayKind
+pub enum metadata::xmp::XmlEvent
+pub metadata::xmp::XmlEvent::End
+pub metadata::xmp::XmlEvent::Start(metadata::xmp::XmlStart)
+pub metadata::xmp::XmlEvent::Text(alloc::string::String)
+impl core::clone::Clone for metadata::xmp::XmlEvent
+pub fn metadata::xmp::XmlEvent::clone(&self) -> metadata::xmp::XmlEvent
+impl core::cmp::Eq for metadata::xmp::XmlEvent
+impl core::cmp::PartialEq for metadata::xmp::XmlEvent
+pub fn metadata::xmp::XmlEvent::eq(&self, &metadata::xmp::XmlEvent) -> bool
+impl core::fmt::Debug for metadata::xmp::XmlEvent
+pub fn metadata::xmp::XmlEvent::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for metadata::xmp::XmlEvent
+impl core::marker::Freeze for metadata::xmp::XmlEvent
+impl core::marker::Send for metadata::xmp::XmlEvent
+impl core::marker::Sync for metadata::xmp::XmlEvent
+impl core::marker::Unpin for metadata::xmp::XmlEvent
+impl core::marker::UnsafeUnpin for metadata::xmp::XmlEvent
+impl core::panic::unwind_safe::RefUnwindSafe for metadata::xmp::XmlEvent
+impl core::panic::unwind_safe::UnwindSafe for metadata::xmp::XmlEvent
+pub enum metadata::xmp::XmlSyntaxErrorKind
+pub metadata::xmp::XmlSyntaxErrorKind::DocumentType
+pub metadata::xmp::XmlSyntaxErrorKind::Malformed(alloc::string::String)
+impl core::clone::Clone for metadata::xmp::XmlSyntaxErrorKind
+pub fn metadata::xmp::XmlSyntaxErrorKind::clone(&self) -> metadata::xmp::XmlSyntaxErrorKind
+impl core::cmp::Eq for metadata::xmp::XmlSyntaxErrorKind
+impl core::cmp::PartialEq for metadata::xmp::XmlSyntaxErrorKind
+pub fn metadata::xmp::XmlSyntaxErrorKind::eq(&self, &metadata::xmp::XmlSyntaxErrorKind) -> bool
+impl core::fmt::Debug for metadata::xmp::XmlSyntaxErrorKind
+pub fn metadata::xmp::XmlSyntaxErrorKind::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for metadata::xmp::XmlSyntaxErrorKind
+impl core::marker::Freeze for metadata::xmp::XmlSyntaxErrorKind
+impl core::marker::Send for metadata::xmp::XmlSyntaxErrorKind
+impl core::marker::Sync for metadata::xmp::XmlSyntaxErrorKind
+impl core::marker::Unpin for metadata::xmp::XmlSyntaxErrorKind
+impl core::marker::UnsafeUnpin for metadata::xmp::XmlSyntaxErrorKind
+impl core::panic::unwind_safe::RefUnwindSafe for metadata::xmp::XmlSyntaxErrorKind
+impl core::panic::unwind_safe::UnwindSafe for metadata::xmp::XmlSyntaxErrorKind
+pub enum metadata::xmp::XmpEditError
+pub metadata::xmp::XmpEditError::WrongForm
+pub metadata::xmp::XmpEditError::WrongForm::expected: &'static str
+pub metadata::xmp::XmpEditError::WrongForm::property: alloc::string::String
+impl core::clone::Clone for metadata::xmp::XmpEditError
+pub fn metadata::xmp::XmpEditError::clone(&self) -> metadata::xmp::XmpEditError
+impl core::cmp::Eq for metadata::xmp::XmpEditError
+impl core::cmp::PartialEq for metadata::xmp::XmpEditError
+pub fn metadata::xmp::XmpEditError::eq(&self, &metadata::xmp::XmpEditError) -> bool
+impl core::error::Error for metadata::xmp::XmpEditError
+impl core::fmt::Debug for metadata::xmp::XmpEditError
+pub fn metadata::xmp::XmpEditError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for metadata::xmp::XmpEditError
+pub fn metadata::xmp::XmpEditError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for metadata::xmp::XmpEditError
+impl core::marker::Freeze for metadata::xmp::XmpEditError
+impl core::marker::Send for metadata::xmp::XmpEditError
+impl core::marker::Sync for metadata::xmp::XmpEditError
+impl core::marker::Unpin for metadata::xmp::XmpEditError
+impl core::marker::UnsafeUnpin for metadata::xmp::XmpEditError
+impl core::panic::unwind_safe::RefUnwindSafe for metadata::xmp::XmpEditError
+impl core::panic::unwind_safe::UnwindSafe for metadata::xmp::XmpEditError
+pub enum metadata::xmp::XmpErrorReason
+pub metadata::xmp::XmpErrorReason::Conflict
+pub metadata::xmp::XmpErrorReason::Conflict::property: alloc::string::String
+pub metadata::xmp::XmpErrorReason::DocumentType
+pub metadata::xmp::XmpErrorReason::Malformed
+pub metadata::xmp::XmpErrorReason::Malformed::column: usize
+pub metadata::xmp::XmpErrorReason::Malformed::line: usize
+pub metadata::xmp::XmpErrorReason::Malformed::message: alloc::string::String
+pub metadata::xmp::XmpErrorReason::NotUtf8
+pub metadata::xmp::XmpErrorReason::NotXmp(alloc::string::String)
+impl core::clone::Clone for metadata::xmp::XmpErrorReason
+pub fn metadata::xmp::XmpErrorReason::clone(&self) -> metadata::xmp::XmpErrorReason
+impl core::cmp::Eq for metadata::xmp::XmpErrorReason
+impl core::cmp::PartialEq for metadata::xmp::XmpErrorReason
+pub fn metadata::xmp::XmpErrorReason::eq(&self, &metadata::xmp::XmpErrorReason) -> bool
+impl core::error::Error for metadata::xmp::XmpErrorReason
+impl core::fmt::Debug for metadata::xmp::XmpErrorReason
+pub fn metadata::xmp::XmpErrorReason::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for metadata::xmp::XmpErrorReason
+pub fn metadata::xmp::XmpErrorReason::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for metadata::xmp::XmpErrorReason
+impl core::marker::Freeze for metadata::xmp::XmpErrorReason
+impl core::marker::Send for metadata::xmp::XmpErrorReason
+impl core::marker::Sync for metadata::xmp::XmpErrorReason
+impl core::marker::Unpin for metadata::xmp::XmpErrorReason
+impl core::marker::UnsafeUnpin for metadata::xmp::XmpErrorReason
+impl core::panic::unwind_safe::RefUnwindSafe for metadata::xmp::XmpErrorReason
+impl core::panic::unwind_safe::UnwindSafe for metadata::xmp::XmpErrorReason
+pub enum metadata::xmp::XmpValue
+pub metadata::xmp::XmpValue::Array(metadata::xmp::ArrayKind, alloc::vec::Vec<metadata::xmp::XmpNode>)
+pub metadata::xmp::XmpValue::Struct(alloc::collections::btree::map::BTreeMap<metadata::xmp::XmpName, metadata::xmp::XmpNode>)
+pub metadata::xmp::XmpValue::Text(alloc::string::String)
+pub metadata::xmp::XmpValue::Uri(alloc::string::String)
+impl core::clone::Clone for metadata::xmp::XmpValue
+pub fn metadata::xmp::XmpValue::clone(&self) -> metadata::xmp::XmpValue
+impl core::cmp::Eq for metadata::xmp::XmpValue
+impl core::cmp::PartialEq for metadata::xmp::XmpValue
+pub fn metadata::xmp::XmpValue::eq(&self, &metadata::xmp::XmpValue) -> bool
+impl core::fmt::Debug for metadata::xmp::XmpValue
+pub fn metadata::xmp::XmpValue::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for metadata::xmp::XmpValue
+impl core::marker::Freeze for metadata::xmp::XmpValue
+impl core::marker::Send for metadata::xmp::XmpValue
+impl core::marker::Sync for metadata::xmp::XmpValue
+impl core::marker::Unpin for metadata::xmp::XmpValue
+impl core::marker::UnsafeUnpin for metadata::xmp::XmpValue
+impl core::panic::unwind_safe::RefUnwindSafe for metadata::xmp::XmpValue
+impl core::panic::unwind_safe::UnwindSafe for metadata::xmp::XmpValue
+pub struct metadata::xmp::ClockOutOfRange
+impl core::clone::Clone for metadata::xmp::ClockOutOfRange
+pub fn metadata::xmp::ClockOutOfRange::clone(&self) -> metadata::xmp::ClockOutOfRange
+impl core::cmp::Eq for metadata::xmp::ClockOutOfRange
+impl core::cmp::PartialEq for metadata::xmp::ClockOutOfRange
+pub fn metadata::xmp::ClockOutOfRange::eq(&self, &metadata::xmp::ClockOutOfRange) -> bool
+impl core::error::Error for metadata::xmp::ClockOutOfRange
+impl core::fmt::Debug for metadata::xmp::ClockOutOfRange
+pub fn metadata::xmp::ClockOutOfRange::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for metadata::xmp::ClockOutOfRange
+pub fn metadata::xmp::ClockOutOfRange::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for metadata::xmp::ClockOutOfRange
+impl core::marker::StructuralPartialEq for metadata::xmp::ClockOutOfRange
+impl core::marker::Freeze for metadata::xmp::ClockOutOfRange
+impl core::marker::Send for metadata::xmp::ClockOutOfRange
+impl core::marker::Sync for metadata::xmp::ClockOutOfRange
+impl core::marker::Unpin for metadata::xmp::ClockOutOfRange
+impl core::marker::UnsafeUnpin for metadata::xmp::ClockOutOfRange
+impl core::panic::unwind_safe::RefUnwindSafe for metadata::xmp::ClockOutOfRange
+impl core::panic::unwind_safe::UnwindSafe for metadata::xmp::ClockOutOfRange
+pub struct metadata::xmp::XmlAttribute
+pub metadata::xmp::XmlAttribute::name: metadata::xmp::XmlName
+pub metadata::xmp::XmlAttribute::value: alloc::string::String
+impl core::clone::Clone for metadata::xmp::XmlAttribute
+pub fn metadata::xmp::XmlAttribute::clone(&self) -> metadata::xmp::XmlAttribute
+impl core::cmp::Eq for metadata::xmp::XmlAttribute
+impl core::cmp::PartialEq for metadata::xmp::XmlAttribute
+pub fn metadata::xmp::XmlAttribute::eq(&self, &metadata::xmp::XmlAttribute) -> bool
+impl core::fmt::Debug for metadata::xmp::XmlAttribute
+pub fn metadata::xmp::XmlAttribute::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for metadata::xmp::XmlAttribute
+impl core::marker::Freeze for metadata::xmp::XmlAttribute
+impl core::marker::Send for metadata::xmp::XmlAttribute
+impl core::marker::Sync for metadata::xmp::XmlAttribute
+impl core::marker::Unpin for metadata::xmp::XmlAttribute
+impl core::marker::UnsafeUnpin for metadata::xmp::XmlAttribute
+impl core::panic::unwind_safe::RefUnwindSafe for metadata::xmp::XmlAttribute
+impl core::panic::unwind_safe::UnwindSafe for metadata::xmp::XmlAttribute
+pub struct metadata::xmp::XmlName
+pub metadata::xmp::XmlName::local: alloc::string::String
+pub metadata::xmp::XmlName::namespace: alloc::string::String
+pub metadata::xmp::XmlName::prefix: alloc::string::String
+impl metadata::xmp::XmlName
+pub fn metadata::xmp::XmlName::new(&str, &str, &str) -> Self
+pub fn metadata::xmp::XmlName::qualified(&self) -> alloc::string::String
+impl core::clone::Clone for metadata::xmp::XmlName
+pub fn metadata::xmp::XmlName::clone(&self) -> metadata::xmp::XmlName
+impl core::cmp::Eq for metadata::xmp::XmlName
+impl core::cmp::PartialEq for metadata::xmp::XmlName
+pub fn metadata::xmp::XmlName::eq(&self, &metadata::xmp::XmlName) -> bool
+impl core::default::Default for metadata::xmp::XmlName
+pub fn metadata::xmp::XmlName::default() -> metadata::xmp::XmlName
+impl core::fmt::Debug for metadata::xmp::XmlName
+pub fn metadata::xmp::XmlName::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for metadata::xmp::XmlName
+impl core::marker::Freeze for metadata::xmp::XmlName
+impl core::marker::Send for metadata::xmp::XmlName
+impl core::marker::Sync for metadata::xmp::XmlName
+impl core::marker::Unpin for metadata::xmp::XmlName
+impl core::marker::UnsafeUnpin for metadata::xmp::XmlName
+impl core::panic::unwind_safe::RefUnwindSafe for metadata::xmp::XmlName
+impl core::panic::unwind_safe::UnwindSafe for metadata::xmp::XmlName
+pub struct metadata::xmp::XmlStart
+pub metadata::xmp::XmlStart::attributes: alloc::vec::Vec<metadata::xmp::XmlAttribute>
+pub metadata::xmp::XmlStart::name: metadata::xmp::XmlName
+pub metadata::xmp::XmlStart::namespaces: alloc::vec::Vec<(alloc::string::String, alloc::string::String)>
+impl core::clone::Clone for metadata::xmp::XmlStart
+pub fn metadata::xmp::XmlStart::clone(&self) -> metadata::xmp::XmlStart
+impl core::cmp::Eq for metadata::xmp::XmlStart
+impl core::cmp::PartialEq for metadata::xmp::XmlStart
+pub fn metadata::xmp::XmlStart::eq(&self, &metadata::xmp::XmlStart) -> bool
+impl core::default::Default for metadata::xmp::XmlStart
+pub fn metadata::xmp::XmlStart::default() -> metadata::xmp::XmlStart
+impl core::fmt::Debug for metadata::xmp::XmlStart
+pub fn metadata::xmp::XmlStart::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for metadata::xmp::XmlStart
+impl core::marker::Freeze for metadata::xmp::XmlStart
+impl core::marker::Send for metadata::xmp::XmlStart
+impl core::marker::Sync for metadata::xmp::XmlStart
+impl core::marker::Unpin for metadata::xmp::XmlStart
+impl core::marker::UnsafeUnpin for metadata::xmp::XmlStart
+impl core::panic::unwind_safe::RefUnwindSafe for metadata::xmp::XmlStart
+impl core::panic::unwind_safe::UnwindSafe for metadata::xmp::XmlStart
+pub struct metadata::xmp::XmlSyntaxError
+pub metadata::xmp::XmlSyntaxError::kind: metadata::xmp::XmlSyntaxErrorKind
+pub metadata::xmp::XmlSyntaxError::offset: usize
+impl core::clone::Clone for metadata::xmp::XmlSyntaxError
+pub fn metadata::xmp::XmlSyntaxError::clone(&self) -> metadata::xmp::XmlSyntaxError
+impl core::cmp::Eq for metadata::xmp::XmlSyntaxError
+impl core::cmp::PartialEq for metadata::xmp::XmlSyntaxError
+pub fn metadata::xmp::XmlSyntaxError::eq(&self, &metadata::xmp::XmlSyntaxError) -> bool
+impl core::fmt::Debug for metadata::xmp::XmlSyntaxError
+pub fn metadata::xmp::XmlSyntaxError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for metadata::xmp::XmlSyntaxError
+impl core::marker::Freeze for metadata::xmp::XmlSyntaxError
+impl core::marker::Send for metadata::xmp::XmlSyntaxError
+impl core::marker::Sync for metadata::xmp::XmlSyntaxError
+impl core::marker::Unpin for metadata::xmp::XmlSyntaxError
+impl core::marker::UnsafeUnpin for metadata::xmp::XmlSyntaxError
+impl core::panic::unwind_safe::RefUnwindSafe for metadata::xmp::XmlSyntaxError
+impl core::panic::unwind_safe::UnwindSafe for metadata::xmp::XmlSyntaxError
+pub struct metadata::xmp::XmpError
+pub metadata::xmp::XmpError::path: std::path::PathBuf
+pub metadata::xmp::XmpError::reason: metadata::xmp::XmpErrorReason
+impl core::clone::Clone for metadata::xmp::XmpError
+pub fn metadata::xmp::XmpError::clone(&self) -> metadata::xmp::XmpError
+impl core::cmp::Eq for metadata::xmp::XmpError
+impl core::cmp::PartialEq for metadata::xmp::XmpError
+pub fn metadata::xmp::XmpError::eq(&self, &metadata::xmp::XmpError) -> bool
+impl core::error::Error for metadata::xmp::XmpError
+impl core::fmt::Debug for metadata::xmp::XmpError
+pub fn metadata::xmp::XmpError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for metadata::xmp::XmpError
+pub fn metadata::xmp::XmpError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for metadata::xmp::XmpError
+impl core::marker::Freeze for metadata::xmp::XmpError
+impl core::marker::Send for metadata::xmp::XmpError
+impl core::marker::Sync for metadata::xmp::XmpError
+impl core::marker::Unpin for metadata::xmp::XmpError
+impl core::marker::UnsafeUnpin for metadata::xmp::XmpError
+impl core::panic::unwind_safe::RefUnwindSafe for metadata::xmp::XmpError
+impl core::panic::unwind_safe::UnwindSafe for metadata::xmp::XmpError
+pub struct metadata::xmp::XmpName
+pub metadata::xmp::XmpName::local: alloc::string::String
+pub metadata::xmp::XmpName::namespace: alloc::string::String
+impl metadata::xmp::XmpName
+pub fn metadata::xmp::XmpName::new(&str, &str) -> Self
+impl core::clone::Clone for metadata::xmp::XmpName
+pub fn metadata::xmp::XmpName::clone(&self) -> metadata::xmp::XmpName
+impl core::cmp::Eq for metadata::xmp::XmpName
+impl core::cmp::Ord for metadata::xmp::XmpName
+pub fn metadata::xmp::XmpName::cmp(&self, &metadata::xmp::XmpName) -> core::cmp::Ordering
+impl core::cmp::PartialEq for metadata::xmp::XmpName
+pub fn metadata::xmp::XmpName::eq(&self, &metadata::xmp::XmpName) -> bool
+impl core::cmp::PartialOrd for metadata::xmp::XmpName
+pub fn metadata::xmp::XmpName::partial_cmp(&self, &metadata::xmp::XmpName) -> core::option::Option<core::cmp::Ordering>
+impl core::fmt::Debug for metadata::xmp::XmpName
+pub fn metadata::xmp::XmpName::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for metadata::xmp::XmpName
+pub fn metadata::xmp::XmpName::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for metadata::xmp::XmpName
+pub fn metadata::xmp::XmpName::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::StructuralPartialEq for metadata::xmp::XmpName
+impl core::marker::Freeze for metadata::xmp::XmpName
+impl core::marker::Send for metadata::xmp::XmpName
+impl core::marker::Sync for metadata::xmp::XmpName
+impl core::marker::Unpin for metadata::xmp::XmpName
+impl core::marker::UnsafeUnpin for metadata::xmp::XmpName
+impl core::panic::unwind_safe::RefUnwindSafe for metadata::xmp::XmpName
+impl core::panic::unwind_safe::UnwindSafe for metadata::xmp::XmpName
+pub struct metadata::xmp::XmpNode
+pub metadata::xmp::XmpNode::qualifiers: alloc::collections::btree::map::BTreeMap<metadata::xmp::XmpName, metadata::xmp::XmpNode>
+pub metadata::xmp::XmpNode::value: metadata::xmp::XmpValue
+impl metadata::xmp::XmpNode
+pub fn metadata::xmp::XmpNode::language(&self) -> core::option::Option<&str>
+pub fn metadata::xmp::XmpNode::new(metadata::xmp::XmpValue) -> Self
+pub fn metadata::xmp::XmpNode::text(&str) -> Self
+impl core::clone::Clone for metadata::xmp::XmpNode
+pub fn metadata::xmp::XmpNode::clone(&self) -> metadata::xmp::XmpNode
+impl core::cmp::Eq for metadata::xmp::XmpNode
+impl core::cmp::PartialEq for metadata::xmp::XmpNode
+pub fn metadata::xmp::XmpNode::eq(&self, &metadata::xmp::XmpNode) -> bool
+impl core::fmt::Debug for metadata::xmp::XmpNode
+pub fn metadata::xmp::XmpNode::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for metadata::xmp::XmpNode
+impl core::marker::Freeze for metadata::xmp::XmpNode
+impl core::marker::Send for metadata::xmp::XmpNode
+impl core::marker::Sync for metadata::xmp::XmpNode
+impl core::marker::Unpin for metadata::xmp::XmpNode
+impl core::marker::UnsafeUnpin for metadata::xmp::XmpNode
+impl core::panic::unwind_safe::RefUnwindSafe for metadata::xmp::XmpNode
+impl core::panic::unwind_safe::UnwindSafe for metadata::xmp::XmpNode
+pub struct metadata::xmp::XmpPacket
+impl metadata::xmp::XmpPacket
+pub fn metadata::xmp::XmpPacket::add_to_bag(&mut self, &metadata::xmp::XmpName, &[&str]) -> core::result::Result<(), metadata::xmp::XmpEditError>
+pub fn metadata::xmp::XmpPacket::replace_seq(&mut self, &metadata::xmp::XmpName, &[&str]) -> core::result::Result<(), metadata::xmp::XmpEditError>
+pub fn metadata::xmp::XmpPacket::set_language(&mut self, &metadata::xmp::XmpName, &str, &str) -> core::result::Result<(), metadata::xmp::XmpEditError>
+pub fn metadata::xmp::XmpPacket::set_text(&mut self, &metadata::xmp::XmpName, &str) -> core::result::Result<(), metadata::xmp::XmpEditError>
+impl metadata::xmp::XmpPacket
+pub fn metadata::xmp::XmpPacket::new() -> Self
+pub fn metadata::xmp::XmpPacket::properties(&self) -> &alloc::collections::btree::map::BTreeMap<metadata::xmp::XmpName, metadata::xmp::XmpNode>
+pub fn metadata::xmp::XmpPacket::property(&self, &metadata::xmp::XmpName) -> core::option::Option<&metadata::xmp::XmpNode>
+impl core::clone::Clone for metadata::xmp::XmpPacket
+pub fn metadata::xmp::XmpPacket::clone(&self) -> metadata::xmp::XmpPacket
+impl core::cmp::Eq for metadata::xmp::XmpPacket
+impl core::cmp::PartialEq for metadata::xmp::XmpPacket
+pub fn metadata::xmp::XmpPacket::eq(&self, &Self) -> bool
+impl core::default::Default for metadata::xmp::XmpPacket
+pub fn metadata::xmp::XmpPacket::default() -> metadata::xmp::XmpPacket
+impl core::fmt::Debug for metadata::xmp::XmpPacket
+pub fn metadata::xmp::XmpPacket::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for metadata::xmp::XmpPacket
+impl core::marker::Send for metadata::xmp::XmpPacket
+impl core::marker::Sync for metadata::xmp::XmpPacket
+impl core::marker::Unpin for metadata::xmp::XmpPacket
+impl core::marker::UnsafeUnpin for metadata::xmp::XmpPacket
+impl core::panic::unwind_safe::RefUnwindSafe for metadata::xmp::XmpPacket
+impl core::panic::unwind_safe::UnwindSafe for metadata::xmp::XmpPacket
+pub trait metadata::xmp::XmlSyntax
+pub fn metadata::xmp::XmlSyntax::read(&self, &str) -> core::result::Result<alloc::vec::Vec<metadata::xmp::XmlEvent>, metadata::xmp::XmlSyntaxError>
+pub fn metadata::xmp::XmlSyntax::write(&self, &[metadata::xmp::XmlEvent]) -> alloc::string::String
+pub fn metadata::xmp::parse_xmp(&std::path::Path, &[u8], &dyn metadata::xmp::XmlSyntax) -> core::result::Result<metadata::xmp::XmpPacket, metadata::xmp::XmpError>
+pub fn metadata::xmp::serialize_xmp(&metadata::xmp::XmpPacket, &dyn domain::clock::Clock, &dyn metadata::xmp::XmlSyntax) -> core::result::Result<alloc::string::String, metadata::xmp::ClockOutOfRange>
 pub enum metadata::CaptureTimeError
 pub metadata::CaptureTimeError::Io
 pub metadata::CaptureTimeError::Io::error: core::io::error::Error

@@ -5,8 +5,9 @@
 //! cargo-fuzz, inside `nix develop .#fuzz` (ADR 0037).
 //!
 //! The corpus is not committed (ADR 0017): before each run the seeds are built by the
-//! same `metadata::testing` builders the tests use and written into the ignored
-//! `fuzz/corpus/<target>/`, next to what earlier runs found.
+//! same `metadata::testing` builders the tests use, or copied from the test fixtures,
+//! and written into the ignored `fuzz/corpus/<target>/`, next to what earlier runs
+//! found.
 
 use std::fs;
 use std::path::Path;
@@ -27,16 +28,25 @@ const DEFAULT_SECONDS: u64 = 600;
 /// An input that takes longer is a finding: the parser reads only a few kilobytes.
 const INPUT_TIMEOUT_SECONDS: u64 = 10;
 
+/// The XMP sidecars of the `adapter-xmp` tests, the seeds of the `xmp` target.
+const XMP_FIXTURES: &str = "crates/adapters/xmp/tests/fixtures";
+
 /// A fuzz target of `fuzz/fuzz_targets/` and the seeds of its corpus.
 struct Target {
     name: &'static str,
-    seeds: fn() -> Vec<Seed>,
+    seeds: fn(&Path) -> Result<Vec<Seed>, String>,
 }
 
-const TARGETS: [Target; 1] = [Target {
-    name: "capture_time",
-    seeds: capture_time_seeds,
-}];
+const TARGETS: [Target; 2] = [
+    Target {
+        name: "capture_time",
+        seeds: |_| Ok(capture_time_seeds()),
+    },
+    Target {
+        name: "xmp",
+        seeds: xmp_seeds,
+    },
+];
 
 /// A valid input the fuzzer starts from.
 #[derive(Debug)]
@@ -52,7 +62,7 @@ pub(crate) fn run(root: &Path, arguments: &[String]) -> Result<(), String> {
     check_lock(root)?;
     for target in &TARGETS {
         let corpus = root.join(DIRECTORY).join("corpus").join(target.name);
-        write_seeds(&corpus, &(target.seeds)())?;
+        write_seeds(&corpus, &(target.seeds)(root)?)?;
         run_target(root, target.name, &corpus, seconds)?;
     }
     Ok(())
@@ -154,6 +164,27 @@ fn capture_time_seeds() -> Vec<Seed> {
     seeds
 }
 
+/// Every RDF and wrapper form, merges, prefixes and the refused cases (CORE-009).
+fn xmp_seeds(root: &Path) -> Result<Vec<Seed>, String> {
+    let directory = root.join(XMP_FIXTURES);
+    let entries = fs::read_dir(&directory)
+        .map_err(|error| format!("cannot list {}: {error}", directory.display()))?;
+    let mut seeds = Vec::new();
+    for entry in entries {
+        let path = entry
+            .map_err(|error| format!("cannot list {}: {error}", directory.display()))?
+            .path();
+        let content =
+            fs::read(&path).map_err(|error| format!("cannot read {}: {error}", path.display()))?;
+        let name = path
+            .file_stem()
+            .map_or_else(String::new, |stem| stem.to_string_lossy().into_owned());
+        seeds.push(seed("xmp", &name, content));
+    }
+    seeds.sort_by(|left, right| left.name.cmp(&right.name));
+    Ok(seeds)
+}
+
 fn tiff(order: ByteOrder, detailed: bool) -> Vec<u8> {
     let tiff = Tiff::new(order).with_exif_text(DATE_TIME_ORIGINAL, "2026:10:17 14:05:09");
     if !detailed {
@@ -214,5 +245,12 @@ mod tests {
             let time = metadata::capture_time_from_bytes(&seed.content);
             assert!(time.is_ok(), "{}: {time:?}", seed.name);
         }
+    }
+
+    #[test]
+    fn the_xmp_seeds_are_the_fixtures() {
+        let seeds = xmp_seeds(&crate::repository_root()).unwrap();
+        assert!(seeds.iter().any(|seed| seed.name == "seed-xmp-canonical"));
+        assert!(seeds.iter().all(|seed| !seed.content.is_empty()));
     }
 }

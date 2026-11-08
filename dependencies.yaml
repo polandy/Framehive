@@ -79,10 +79,19 @@ dependencies:
     features: []
 
   - name: libfuzzer-sys
-    purpose: Links LLVM's libFuzzer into the fuzz targets of the EXIF parser, in metadata-fuzz (ADR 0037)
+    purpose: Links LLVM's libFuzzer into the fuzz targets of the EXIF and XMP parsers, in metadata-fuzz (ADR 0037)
     rationale: Coverage-guided fuzzing needs a fuzzing engine with compiler instrumentation, a deep problem ADR 0009 assigns to a tool; ADR 0009 accepts our own parser only when it is fuzzed
     review: By the Rust fuzzing organization (rust-fuzz), the engine behind cargo-fuzz, version 0.4, (MIT OR Apache-2.0) AND NCSA; its build script compiles the libFuzzer C++ sources, accepted in ADR 0037; used only in the fuzz crate outside the main workspace, never linked into the product
     adr: "0037"
     allowed_layers: [tooling]
     allowed_crates: [metadata-fuzz]
     features: [link_libfuzzer]
+
+  - name: quick-xml
+    purpose: The XML tokenizer behind the XmlSyntax port of the XMP parser and serializer, in adapter-xmp (CORE-009)
+    rationale: Well-formed XML with namespaces, references and safe refusal of document type declarations is a deep, security-relevant problem ADR 0009 assigns to a library; std has none, and our own code keeps the XMP model, the RDF parser and the canonical serializer (ADR 0039)
+    review: The most used pure-Rust XML reader, maintained by the tafia/quick-xml project, MIT, version 0.42; it expands no entities by itself and has no network or file access; default features off, its one dependency memchr is already in Cargo.lock (ADR 0039)
+    adr: "0039"
+    allowed_layers: [adapter]
+    allowed_crates: [adapter-xmp]
+    features: []

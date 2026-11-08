@@ -1,0 +1,10 @@
+<x:xmpmeta xmlns:x="adobe:ns:meta/">
+ <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+  <rdf:Description rdf:about=""
+    xmlns:d="http://purl.org/dc/elements/1.1/"
+    xmlns:acme="http://example.com/ns/acme/1.0/">
+   <d:format>image/x-fuji-raf</d:format>
+   <acme:Batch>7</acme:Batch>
+  </rdf:Description>
+ </rdf:RDF>
+</x:xmpmeta>

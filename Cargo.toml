@@ -14,6 +14,7 @@ members = [
     "crates/adapters/mounts",
     "crates/adapters/sequence-counters",
     "crates/adapters/sqlite",
+    "crates/adapters/xmp",
     "crates/adapters/yaml",
     "crates/domain",
     "crates/kernel",
@@ -48,6 +49,7 @@ adapter-libraw = { path = "crates/adapters/libraw" }
 adapter-mounts = { path = "crates/adapters/mounts" }
 adapter-sequence-counters = { path = "crates/adapters/sequence-counters" }
 adapter-sqlite = { path = "crates/adapters/sqlite" }
+adapter-xmp = { path = "crates/adapters/xmp" }
 adapter-yaml = { path = "crates/adapters/yaml" }
 config = { path = "crates/services/config" }
 devices = { path = "crates/services/devices" }
@@ -64,6 +66,7 @@ previews = { path = "crates/services/previews" }
 blake3 = { version = "1", default-features = false, features = ["std"] }
 clap = { version = "4", default-features = false, features = ["std", "help", "usage", "error-context"] }
 saphyr-parser = { version = "0.3", default-features = false }
+quick-xml = { version = "0.42", default-features = false }
 rusqlite = { version = "0.41", default-features = false, features = ["bundled"] }
 libc = { version = "0.2", default-features = false }
 jiff = { version = "0.2", default-features = false, features = ["std", "tz-system", "tzdb-zoneinfo"] }
