@@ -39,7 +39,9 @@ folder. A camera without any storage folder, such as a locked phone, is
 names by their canonical caseless key, without regard to case and Unicode
 normalization form (ADR 0026); a destination may hold several names with one key,
 and each is compared. Content is compared by size and checksum, under the conflict
-policy `add_suffix`, `skip` or `fail`.
+policy `add_suffix`, `skip` or `fail`. A file at the destination where a folder of the
+target path should be fails the file under every policy, and the folders of a video
+destination inside the import destination count as taken for photos (IMPORT-017).
 
 `ImportRun` ties them together (ADR 0020 §1): it scans, plans, starts and copies,
 with backup destinations, format readiness, sequence numbers, the import history and

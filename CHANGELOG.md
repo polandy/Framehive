@@ -189,3 +189,8 @@ All user-visible changes are listed here. The format follows
 - Files already imported are recognized when their target folder exists at the
   destination in another case or Unicode normalization form, such as `CAFÉ/` for
   `Café/`, at a destination that tells such names apart (IMPORT-003).
+- A file where a folder of a target path should be is found when the import is
+  planned: the dry run no longer says it would copy, and both the dry run and the run
+  fail the photo with "the target folder <path> is a file" instead of "<folder> does
+  not exist". A photo no longer takes the name of a video destination inside the
+  import destination that a dry run has not created (IMPORT-017).

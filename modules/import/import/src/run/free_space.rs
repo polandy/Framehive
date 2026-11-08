@@ -131,7 +131,8 @@ fn written_target(resolver: &mut TargetResolver<'_>, file: &RunFile) -> Option<(
         ConflictOutcome::AlreadyImported { target } => Some((target, false)),
         ConflictOutcome::DuplicateOf { .. }
         | ConflictOutcome::SkippedNameConflict { .. }
-        | ConflictOutcome::FailedNameConflict { .. } => None,
+        | ConflictOutcome::FailedNameConflict { .. }
+        | ConflictOutcome::TargetFolderIsAFile { .. } => None,
     }
 }
 
