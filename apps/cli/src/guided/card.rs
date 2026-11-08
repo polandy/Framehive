@@ -10,20 +10,17 @@ use std::path::PathBuf;
 use devices::Device;
 use files::ReadOnlyFileSystem;
 use import::{
-    BackupOutcome, CAMERA_FORMAT_READINESS_NOTE, ConflictPolicy, FileOutcome, FileReport,
-    FormatReadiness, ImportMetadata, ImportSettings, ImportSummary, JobCode, PlannedRun, RunError,
-    SourceScan,
+    ConflictPolicy, ImportMetadata, ImportSettings, JobCode, PlannedRun, RunError, SourceScan,
 };
 use naming::{CompatibilityMode, NameTemplate, SequenceError};
 
 use super::dialog::{Dialog, Interrupted, Stop};
-use super::error_lines::{history_line, plan_error_line, start_error_line};
+use super::error_lines::{plan_error_line, start_error_line};
 use super::progress::{ImportContext, LazyProgress};
 use super::source::Source;
 use super::summary::Action;
 use crate::JOB_ENDED_UNEXPECTEDLY;
-use crate::format_readiness::format_readiness_lines;
-use crate::report::{ReportPrinter, backup_line, backup_summary_lines, file_line, summary_line};
+use crate::report::ReportPrinter;
 
 /// What the dialog has chosen for an import, owned so the dialog stays free to ask.
 struct Chosen {
@@ -297,51 +294,6 @@ impl Dialog<'_> {
             camera: source.is_camera(),
             job_code: job_code.cloned(),
         });
-    }
-
-    /// Reports a finished import: the files that need attention, the summaries, a
-    /// history that could not record, and the format readiness.
-    fn report(&mut self, summary: &ImportSummary, source: &Source) {
-        for report in &summary.files {
-            self.report_file(report);
-        }
-        self.say(&summary_line(summary, false));
-        for line in backup_summary_lines(summary, &[]) {
-            self.say(&line);
-        }
-        if let Some(error) = &summary.history_error {
-            self.say(&history_line(error));
-        }
-        // A card pulled meanwhile was imported again as a whole (CLI-003.8), so this
-        // summary covers every file of the card (CLI-007.10).
-        let lines = format_readiness_lines(&FormatReadiness::of(summary), source.noun());
-        for line in &lines {
-            self.say(line);
-        }
-        if source.is_camera() && !lines.is_empty() {
-            self.say(CAMERA_FORMAT_READINESS_NOTE);
-        }
-    }
-
-    /// Reports a file that failed or was skipped, or that failed at a backup
-    /// destination, with its failed backups (CLI-003, CLI-006).
-    fn report_file(&mut self, report: &FileReport) {
-        let failed_backups: Vec<_> = report
-            .backups
-            .iter()
-            .filter(|backup| matches!(backup.outcome, BackupOutcome::Failed(_)))
-            .collect();
-        let failed = matches!(
-            report.outcome,
-            FileOutcome::Failed(_) | FileOutcome::SkippedNameConflict { .. }
-        );
-        if !failed && failed_backups.is_empty() {
-            return;
-        }
-        self.say(&file_line(report));
-        for backup in failed_backups {
-            self.say(&backup_line(backup, &[]));
-        }
     }
 
     /// The folders, the template and the metadata of the next import; `None` after the

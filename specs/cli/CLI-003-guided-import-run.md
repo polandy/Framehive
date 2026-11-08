@@ -27,7 +27,8 @@ EOS_DIGITAL: 1024 files, 12.8 GB, captured 2026-10-17 to 2026-10-19
 
 - The capture dates are the first and the last local date of the planned files; one day
   is written `captured 2026-10-17`. The `job code` line and `[j]` appear only when the
-  template has `{job}`. The `backup` lines and `[b]` are those of CLI-006.
+  template has `{job}`. The `backup` lines and `[b]` are those of CLI-006, the
+  `creator`, `copyright` and `keywords` lines those of CLI-017.
 - Sizes are decimal: `12.8 GB` from one gigabyte (10⁹ bytes) on, otherwise `<n.n> MB`.
 - Enter starts the import.
 - `l` prints the lines of `framehive import --dry-run` (CLI-001) for the planned files,
@@ -61,7 +62,8 @@ written `m:ss`, or `h:mm:ss` from one hour on. Until the rate is known, the line
 ### Report and eject
 
 After the import, the line `failed  …` or `skipped  …` of CLI-001 is printed for each
-file that failed or was skipped, then the summary line of CLI-001. The dialog asks
+file that failed or was skipped, then the summary line of CLI-001; CLI-017 adds the
+sidecar values and count. The dialog asks
 `Eject <name>? [Y/n]: `. On `y`, the card is ejected and the dialog prints
 `<name> can be removed now.`; when the eject fails, it prints
 `Could not eject <name>: <reason>`. Then it waits for the next card.
@@ -209,3 +211,4 @@ the dialog goes on.
 | 2026-11-04 | Backup destinations (CLI-006): the summary example shows the `backup` line and `[b]` |
 | 2026-11-04 | The import history recognizes files imported before (CLI-008): the sentence about a persisted counter is removed from the summary and from CLI-003.13 |
 | 2026-11-06 | Cameras in the guided import (CLI-014): cross-reference; the waiting texts name cameras |
+| 2026-11-08 | XMP sidecars in the summary and report (CLI-017): cross-reference |

@@ -6,6 +6,7 @@
 use std::path::Path;
 
 use domain::Timestamp;
+use import::{ImportMetadata, Keyword};
 
 use super::support::{Harness, OCTOBER_17, OCTOBER_19, PICTURES, PRESET_1, PRESET_2, Step, mount};
 
@@ -130,5 +131,33 @@ fn a_destination_on_the_card_does_not_start() {
             .paths()
             .iter()
             .any(|path| path.starts_with(&destination))
+    );
+}
+
+/// spec: CLI-017.5
+#[test]
+fn the_summary_shows_the_metadata_values() {
+    let mut harness = with_card(PICTURES, PRESET_1, &[]);
+    harness.metadata = ImportMetadata {
+        creator: vec!["Andy Pollari".to_owned(), "Ada".to_owned()],
+        copyright: Some("© {year} Andy Pollari".to_owned()),
+        keywords: vec![
+            Keyword::parse("Holiday/Beach").unwrap(),
+            Keyword::parse("Family").unwrap(),
+        ],
+        ..ImportMetadata::default()
+    };
+
+    let transcript = harness.run(vec![Step::Line("q")]);
+
+    assert!(
+        transcript.output.contains(&format!(
+            "\x20 named     {PRESET_1}\n\
+             \x20 creator   Andy Pollari; Ada\n\
+             \x20 copyright © {{year}} Andy Pollari\n\
+             \x20 keywords  Holiday/Beach, Family\n"
+        )),
+        "{}",
+        transcript.output
     );
 }
