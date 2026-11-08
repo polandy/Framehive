@@ -17,8 +17,8 @@ use adapter_sequence_counters::FileSequenceCounters;
 use adapter_sqlite::SqliteImportHistory;
 use files::{Cameras, FreeSpace};
 use import::{
-    CAMERA_FORMAT_READINESS_NOTE, DryRunMemory, ImportJob, ImportJobSettings, ImportPorts,
-    ImportProfile, ImportRun, ImportSettings, ImportSummary, PlannedRun, ProgressSink,
+    CAMERA_FORMAT_READINESS_NOTE, DryRunMemory, FreeSpaceUnknown, ImportJob, ImportJobSettings,
+    ImportPorts, ImportProfile, ImportRun, ImportSettings, ImportSummary, PlannedRun, ProgressSink,
     ReservedTargetNames, RunError, SessionSequence, SpaceShortage, scan_source,
 };
 use jobs::JobQueue;
@@ -239,14 +239,17 @@ fn enqueue_source<'f>(
         .plan(&settings, &scan)
         .map_err(|error| error.to_string())?;
     let space = check_free_space(&run, &settings, folders, &plan, &mut **streams.errors());
-    if let Err(shortages) = space {
-        if arguments.dry_run {
-            // A dry run still lists what it would do (CLI-011.3).
-            run.execute(&settings, plan, &mut printer);
-            streams.print(&printer.take_written());
+    let warned = match space {
+        Ok(warned) => warned,
+        Err(shortages) => {
+            if arguments.dry_run {
+                // A dry run still lists what it would do (CLI-011.3).
+                run.execute(&settings, plan, &mut printer);
+                streams.print(&printer.take_written());
+            }
+            return Err(shortages);
         }
-        return Err(shortages);
-    }
+    };
     let (job, reports) = ImportJob::new(ports.clone(), ImportJobSettings::of(&settings));
     let mut job = job.with_plan(plan);
     if let Some(memory) = dry_run_memory {
@@ -261,6 +264,7 @@ fn enqueue_source<'f>(
         reports,
         printer,
         folders,
+        warned,
     };
     Ok((enqueued, camera))
 }
@@ -280,7 +284,8 @@ fn import_ports(state_folder: &Path, free_space: Arc<dyn FreeSpace + Send + Sync
 }
 
 /// Checks that each file system can hold what the run writes to it, before any folder
-/// is created, and warns about each destination whose free space is unknown (CLI-011).
+/// is created, and warns about each destination whose free space is unknown (CLI-011);
+/// returns those destinations.
 ///
 /// # Errors
 ///
@@ -291,18 +296,17 @@ fn check_free_space(
     folders: &Folders,
     plan: &PlannedRun,
     errors: &mut dyn Write,
-) -> Result<(), NotStarted> {
+) -> Result<Vec<PathBuf>, NotStarted> {
     let check = run.check_free_space(settings, plan);
     for unknown in &check.unknown {
-        let message = format!(
-            "cannot tell the free space at {}: {}",
-            folders.shown(&unknown.destination).display(),
-            unknown.error
-        );
-        write_warning(errors, &message);
+        write_warning(errors, &unknown_free_space_message(unknown, folders));
     }
     if check.shortages.is_empty() {
-        return Ok(());
+        return Ok(check
+            .unknown
+            .into_iter()
+            .map(|unknown| unknown.destination)
+            .collect());
     }
     Err(NotStarted {
         messages: check
@@ -312,6 +316,15 @@ fn check_free_space(
             .collect(),
         hint: None,
     })
+}
+
+/// `cannot tell the free space at <folder as given>: <reason>` (CLI-011).
+pub(super) fn unknown_free_space_message(unknown: &FreeSpaceUnknown, folders: &Folders) -> String {
+    format!(
+        "cannot tell the free space at {}: {}",
+        folders.shown(&unknown.destination).display(),
+        unknown.error
+    )
 }
 
 /// `not enough space at <folders as given>: needs 12.8 GB, 3.1 GB free` (CLI-011).

@@ -103,7 +103,7 @@ impl Dialog<'_> {
         let Some(plan) = self.plan(source, &settings, scan) else {
             return false;
         };
-        self.import(source, &settings, plan) == Imported::Reported
+        self.import(source, &settings, plan, &[]) == Imported::Reported
     }
 
     /// Shows the plan summary until the person imports or quits; returns whether an
@@ -148,12 +148,12 @@ impl Dialog<'_> {
                 }
             };
             self.show_summary(card, &plan, &settings);
-            let blockers = self.blockers(&run, &settings, &plan, source.is_camera());
+            let (blockers, warned) = self.blockers(&run, &settings, &plan, source.is_camera());
             for blocker in &blockers {
                 self.say(blocker);
             }
             match self.summary_action(card, template.uses_job_code(), &blockers)? {
-                Action::Import => match self.import(source, &settings, plan) {
+                Action::Import => match self.import(source, &settings, plan, &warned) {
                     Imported::NotStarted => {}
                     imported => return Ok(imported == Imported::Reported),
                 },
@@ -209,12 +209,14 @@ impl Dialog<'_> {
 
     /// Imports `plan` with the progress line, then reports with the format readiness
     /// (CLI-007). The job creates the destination and the backup destinations once its
-    /// free-space check passes (IMPORT-012).
+    /// free-space check passes (IMPORT-012); a destination whose free space it cannot
+    /// read and that is not in `warned` gets a warning (CLI-011.10).
     fn import(
         &mut self,
         source: &Source,
         settings: &ImportSettings<'_>,
         plan: PlannedRun,
+        warned: &[PathBuf],
     ) -> Imported {
         let ports = self.ports;
         let card = source.device();
@@ -259,6 +261,11 @@ impl Dialog<'_> {
         };
         let changes = progress.finish();
         self.show_changes(&changes);
+        for unknown in &summary.free_space_unknown {
+            if !warned.contains(&unknown.destination) {
+                self.warn(&unknown.to_string());
+            }
+        }
         if summary.stopped {
             self.interrupted_by_removal(source, settings.job_code);
             return Imported::Stopped;

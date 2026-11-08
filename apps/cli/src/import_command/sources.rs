@@ -6,15 +6,15 @@
 //! one piece, so the lines of parallel jobs interleave only line by line.
 
 use std::io::Write;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::{Mutex, MutexGuard, PoisonError};
 
 use import::{FileReport, ImportJobReports, ImportSummary, ProgressSink, SourceScan};
 
 use super::folders::Folders;
-use super::run::{NotStarted, start_error};
+use super::run::{NotStarted, start_error, unknown_free_space_message};
 use crate::report::ReportPrinter;
-use crate::{JOB_ENDED_UNEXPECTEDLY, write_error};
+use crate::{JOB_ENDED_UNEXPECTEDLY, write_error, write_warning};
 
 /// Standard output and standard error, shared by the threads that follow the jobs.
 pub(super) struct Streams<'a> {
@@ -73,17 +73,21 @@ impl<'a> Streams<'a> {
     }
 }
 
-/// A source whose job is enqueued, the printer of its report, and its folders, which
-/// the errors of a job that does not start name as given.
+/// A source whose job is enqueued, the printer of its report, its folders, which
+/// the errors of a job that does not start name as given, and the destinations whose
+/// unknown free space the command already warned about (CLI-011).
 pub(super) struct Enqueued<'f> {
     pub(super) reports: ImportJobReports,
     pub(super) printer: ReportPrinter<Vec<u8>>,
     pub(super) folders: &'f Folders,
+    pub(super) warned: Vec<PathBuf>,
 }
 
 impl Enqueued<'_> {
     /// Prints the job's reports as they come and, when it ends, its summary after the
-    /// line `<named_source>:`, given only when there are several sources (CLI-015).
+    /// line `<named_source>:`, given only when there are several sources (CLI-015),
+    /// then a warning for each destination whose free space only the job could not
+    /// read (CLI-011.9).
     ///
     /// # Errors
     ///
@@ -111,6 +115,14 @@ impl Enqueued<'_> {
         relay.printer.print_summary(&summary);
         block.extend(relay.printer.take_written());
         streams.print(&block);
+        let unwarned = summary
+            .free_space_unknown
+            .iter()
+            .filter(|unknown| !self.warned.contains(&unknown.destination));
+        for unknown in unwarned {
+            let message = unknown_free_space_message(unknown, self.folders);
+            write_warning(&mut **streams.errors(), &message);
+        }
         if let Some(error) = &summary.history_error {
             write_error(&mut **streams.errors(), &error.to_string());
         }

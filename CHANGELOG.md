@@ -177,6 +177,10 @@ All user-visible changes are listed here. The format follows
 - Two `framehive config init` commands at the same time no longer damage the example:
   each one writes its own `.part` file, so the second cannot empty the file the
   first one just put in place (CLI-010).
+- `framehive import` and the guided import now warn when the import's own check, as
+  its job starts, cannot read the free space of a destination that the first check
+  could read: `cannot tell the free space at <folder>: <reason>` follows the import's
+  summary. A destination is named once (CLI-011).
 - A configuration file with `schema_version:` but no value now says that the key needs
   a positive whole number; before, it suggested leaving the required key out (CORE-006).
 - `framehive import-log` keeps its text on one line per run and per copy when a path or

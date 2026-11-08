@@ -38,3 +38,33 @@ impl FreeSpace for PanickingInTheJob {
         self.answers.free_space(folder)
     }
 }
+
+/// An unlimited free space that cannot be read from any thread but the one that made
+/// it: the command's own check reads it, the import job's check on the queue's thread
+/// does not (CLI-011.9, CLI-011.10).
+pub(crate) struct UnreadableInTheJob {
+    answers: MemoryFreeSpace,
+    thread: ThreadId,
+}
+
+impl UnreadableInTheJob {
+    /// The reason the job's check gets.
+    pub(crate) const REASON: &str = "the file system does not say";
+
+    pub(crate) fn new() -> Self {
+        UnreadableInTheJob {
+            answers: MemoryFreeSpace::unlimited(),
+            thread: thread::current().id(),
+        }
+    }
+}
+
+impl FreeSpace for UnreadableInTheJob {
+    fn free_space(&self, folder: &Path) -> io::Result<SpaceOnFileSystem> {
+        if thread::current().id() == self.thread {
+            self.answers.free_space(folder)
+        } else {
+            Err(io::Error::other(Self::REASON))
+        }
+    }
+}
