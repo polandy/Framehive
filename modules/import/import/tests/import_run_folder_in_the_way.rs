@@ -12,7 +12,7 @@
 
 mod history_support;
 
-use files::testing::MemoryFileSystem;
+use files::testing::{MemoryFileSystem, MemoryFreeSpace};
 use import::{ConflictPolicy, FileOutcome, ImportSummary};
 
 use history_support::{
@@ -47,6 +47,25 @@ fn the_dry_run_and_the_run_report_a_file_in_the_way_alike() {
     assert_eq!(failure(&dry_run, PHOTO), reason);
     assert_eq!(failure(&run, PHOTO), reason);
     assert_eq!(paths_below(&file_system, DESTINATION), paths_before);
+}
+
+/// spec: IMPORT-017.6
+#[test]
+fn a_file_in_the_way_needs_no_free_space() {
+    let file_system = source_with(&[(PHOTO, &photo(1))]);
+    add(&file_system, DESTINATION, "2026-10-17", b"a file");
+    let mut machine = Machine::new();
+    machine.free_space = MemoryFreeSpace::new().with_file_system("/", 1);
+
+    let summary = machine
+        .try_import(
+            &file_system,
+            &Import::with(BY_DATE),
+            &mut import::NoProgress,
+        )
+        .unwrap();
+
+    assert!(failure(&summary, PHOTO).ends_with("is a file"));
 }
 
 /// The source of IMPORT-017.5: a photo whose target is the video destination, and a

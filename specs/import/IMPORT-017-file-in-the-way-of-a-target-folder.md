@@ -3,7 +3,7 @@
 - Status: implemented
 - Module: import
 - Origin: I5, R7
-- Depends on: IMPORT-003, IMPORT-013
+- Depends on: IMPORT-003, IMPORT-012, IMPORT-013
 
 ## Purpose
 
@@ -20,7 +20,8 @@ destination by its canonical caseless key, as IMPORT-003 matches the target fold
 only as a file, with no folder of the same key, the file is not copied and is marked
 as failed: "the target folder <path> is a file", where `<path>` is the file in the way,
 spelled as found there. This holds for every conflict policy: a suffix changes only
-the name, so no policy frees the folder. A dry run reports the same.
+the name, so no policy frees the folder. A dry run reports the same. Such a file
+writes nothing, so it does not count toward the free space (IMPORT-012).
 
 **The folders of a video destination.** A video destination that lies inside the
 import destination is a folder the run needs (IMPORT-013). Its path below the import
@@ -63,6 +64,12 @@ before it starts.
 - **When** the source is imported once as a dry run and once for real
 - **Then** both give the photo the target `DSCF0001-1.JPG`, and with the policy
   `skip` the photo is marked "skipped: name conflict"
+
+### IMPORT-017.6 – A file in the way needs no free space
+- **Given** the destination holds a file where the only photo's target folder should
+  be, and 1 byte free at the import destination
+- **When** the import run starts
+- **Then** it is not stopped for lack of space, and the photo fails as in IMPORT-017.1
 
 ## Out of scope
 
