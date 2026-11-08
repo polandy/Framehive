@@ -80,6 +80,8 @@ pub(crate) struct ImportArguments {
     pub(crate) video_backups: Vec<PathBuf>,
     /// The name template text, if given, not yet parsed.
     pub(crate) template: Option<String>,
+    /// The video name template text, if given, not yet parsed (CLI-012).
+    pub(crate) video_template: Option<String>,
     /// The job code text, if given, not yet checked (IMPORT-006).
     pub(crate) job_code: Option<String>,
     /// The conflict policy, if given.
@@ -228,6 +230,12 @@ fn import_command() -> Command {
                 )),
         )
         .arg(
+            Arg::new("video-template")
+                .long("video-template")
+                .value_name("template")
+                .help("Name template for each imported video [default: the name template]"),
+        )
+        .arg(
             Arg::new("job-code")
                 .long("job-code")
                 .value_name("text")
@@ -289,6 +297,7 @@ fn import_arguments(matches: &ArgMatches) -> ImportArguments {
             .map(|backups| backups.cloned().collect())
             .unwrap_or_default(),
         template: matches.get_one::<String>("template").cloned(),
+        video_template: matches.get_one::<String>("video-template").cloned(),
         job_code: matches.get_one::<String>("job-code").cloned(),
         on_conflict: matches
             .get_one::<String>("on-conflict")

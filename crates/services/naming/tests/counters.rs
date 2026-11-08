@@ -47,7 +47,7 @@ fn imported_today_counter_continues_within_a_day() {
     });
     let template = template("{date:%Y%m%d}_{seq_today:3}.{ext}");
 
-    let reserved = reserve_range(&counters, &template, today, 3).unwrap();
+    let reserved = reserve_range(&counters, &[&template], today, 3).unwrap();
 
     assert_eq!(reserved, Some(range(13, 15)));
     assert_eq!(counters.stored().imported_today_last, 15);
@@ -63,7 +63,7 @@ fn imported_today_counter_resets_on_a_new_day() {
     });
     let template = template("{seq_today:3}.{ext}");
 
-    let reserved = reserve_range(&counters, &template, date("2026-10-18"), 2).unwrap();
+    let reserved = reserve_range(&counters, &[&template], date("2026-10-18"), 2).unwrap();
 
     assert_eq!(reserved, Some(range(1, 2)));
     assert_eq!(
@@ -84,9 +84,9 @@ fn a_second_import_continues_after_the_first_range() {
     let template = template("{seq_stored:4}.{ext}");
     let today = date("2026-10-17");
 
-    let first = reserve_range(&counters, &template, today, 10).unwrap();
+    let first = reserve_range(&counters, &[&template], today, 10).unwrap();
     // The first import is cancelled before copying; its numbers stay used.
-    let second = reserve_range(&counters, &template, today, 4).unwrap();
+    let second = reserve_range(&counters, &[&template], today, 4).unwrap();
 
     assert_eq!(first, Some(range(101, 110)));
     assert_eq!(second, Some(range(111, 114)));
@@ -98,7 +98,7 @@ fn overflow_reserves_nothing() {
     let counters = counters(stored_at(98));
     let template = template("{seq_stored:2}.{ext}");
 
-    let error = reserve_range(&counters, &template, date("2026-10-17"), 5).unwrap_err();
+    let error = reserve_range(&counters, &[&template], date("2026-10-17"), 5).unwrap_err();
 
     let SequenceError::Overflow(overflow) = error else {
         panic!("not an overflow: {error:?}");
@@ -114,8 +114,8 @@ fn a_preview_reserves_nothing() {
     let template = template("{seq_stored:4}.{ext}");
     let today = date("2026-10-17");
 
-    let previewed = preview_range(&counters, &template, today, 3).unwrap();
-    let reserved = reserve_range(&counters, &template, today, 3).unwrap();
+    let previewed = preview_range(&counters, &[&template], today, 3).unwrap();
+    let reserved = reserve_range(&counters, &[&template], today, 3).unwrap();
 
     assert_eq!(previewed, Some(range(251, 253)));
     assert_eq!(reserved, Some(range(251, 253)));
@@ -129,7 +129,7 @@ fn broken_counters_stop_the_reservation() {
     counters.break_at("/state/framehive/sequence-counters.txt", 3);
     let template = template("{seq_stored:4}.{ext}");
 
-    let error = reserve_range(&counters, &template, date("2026-10-17"), 1).unwrap_err();
+    let error = reserve_range(&counters, &[&template], date("2026-10-17"), 1).unwrap_err();
 
     assert!(matches!(
         error,
@@ -151,8 +151,8 @@ fn a_template_without_a_persisted_counter_does_not_read_the_counters() {
         "{name}.{ext}",
     ] {
         let template = template(text);
-        assert_eq!(reserve_range(&counters, &template, today, 2), Ok(None));
-        assert_eq!(preview_range(&counters, &template, today, 2), Ok(None));
+        assert_eq!(reserve_range(&counters, &[&template], today, 2), Ok(None));
+        assert_eq!(preview_range(&counters, &[&template], today, 2), Ok(None));
     }
 }
 
@@ -161,7 +161,7 @@ fn no_assets_reserve_no_range() {
     let counters = counters(stored_at(7));
     let template = template("{seq_stored:4}.{ext}");
 
-    let reserved = reserve_range(&counters, &template, date("2026-10-17"), 0).unwrap();
+    let reserved = reserve_range(&counters, &[&template], date("2026-10-17"), 0).unwrap();
 
     assert_eq!(reserved, None);
     assert_eq!(counters.stored().stored_last, 7);

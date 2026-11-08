@@ -11,6 +11,5 @@ feature live in its spec, decisions in `docs/adr/`. Add items with `/todo`.
 - [ ] Write the job code to XMP as IPTC Job Id (`photoshop:TransmissionReference`, N16) with the XMP milestone (R9, IMPORT-006) — owner decided (2026-11-01)
 - [ ] Make release builds reproducible: `SOURCE_DATE_EPOCH`, `--remap-path-prefix` and a bit-for-bit check in CI, with the first release build (ADR 0007) (2026-11-03)
 - [ ] Store reference pixel hashes for aarch64-darwin in the LibRaw version test — on macOS it compares only sizes until the hashes are measured on a Mac (PREVIEWS-001, ADR 0028) (2026-11-03)
-- [ ] Give videos a name template of their own — today they use the import's name template (IMPORT-013, R7, owner decision D2) (2026-11-06)
 - [ ] Decide whether `JobQueue::stop` should fail for a job that has just finished but whose end is not yet recorded — it returns `Ok` today, as CORE-007.11 allows (CORE-007, PR #46 review) (2026-11-07)
 - [ ] Test the fallback in `apps/cli/src/import_command/run.rs` for a thread that follows an import job and panics — CLI-015.11 covers a panicking job, but nothing can make the follower panic today (IMPORT-015, PR #75 review) (2026-11-07)

@@ -53,7 +53,7 @@ fn plan_with(
     assets: &[Vec<AssetFile>],
 ) -> Vec<PlannedFile> {
     let template = NameTemplate::parse(template).unwrap();
-    ImportPlan::new(assets, &template, mode, import_time(), None, 1)
+    ImportPlan::new(assets, &template, None, mode, import_time(), None, 1)
         .files()
         .to_vec()
 }
@@ -203,6 +203,7 @@ fn job_code_is_part_of_the_path() {
     let plan = ImportPlan::new(
         &[vec![raw]],
         &template,
+        None,
         CompatibilityMode::On,
         import_time(),
         Some(&job_code),
@@ -321,4 +322,49 @@ fn import_time_is_the_one_the_plan_is_made_with() {
     let files = plan("{imported:%Y-%m-%d}/{name}.{ext}", &[vec![file]]);
 
     assert_eq!(targets(&files), [Ok("2026-10-31/DSC_0042.RAF")]);
+}
+
+fn photo_and_video() -> Vec<Vec<AssetFile>> {
+    vec![
+        vec![captured(
+            "DSCF0001.RAF",
+            AssetFileRole::Raw,
+            "2026-10-17 14:05:09",
+        )],
+        vec![captured(
+            "clip.MOV",
+            AssetFileRole::Video,
+            "2026-10-17 14:06:00",
+        )],
+    ]
+}
+
+/// spec: IMPORT-018.1
+#[test]
+fn videos_are_named_by_the_video_name_template() {
+    let template = NameTemplate::parse("{name}.{ext}").unwrap();
+    let video_template = NameTemplate::parse("Clips/{name}.{ext}").unwrap();
+
+    let plan = ImportPlan::new(
+        &photo_and_video(),
+        &template,
+        Some(&video_template),
+        CompatibilityMode::On,
+        import_time(),
+        None,
+        1,
+    );
+
+    assert_eq!(
+        targets(plan.files()),
+        [Ok("DSCF0001.RAF"), Ok("Clips/clip.MOV")]
+    );
+}
+
+/// spec: IMPORT-018.2
+#[test]
+fn without_a_video_name_template_videos_use_the_name_template() {
+    let plan = plan("{name}.{ext}", &photo_and_video());
+
+    assert_eq!(targets(&plan), [Ok("DSCF0001.RAF"), Ok("clip.MOV")]);
 }

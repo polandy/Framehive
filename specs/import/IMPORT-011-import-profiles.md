@@ -22,6 +22,7 @@ An import profile is a configuration file (CORE-006) of the file type
 | `schema_version` | whole number, required | – | Version of the format, `1` |
 | `video_destination` | path | the destination given on the command line | Folder to import videos into (IMPORT-013); left out, videos go to the destination given on the command line |
 | `naming.template` | text | `{date:%Y}/{date:%Y-%m-%d}/{name}.{ext}` | Name template (IMPORT-001) |
+| `naming.video_template` | text | `naming.template` | Name template for videos (IMPORT-018) |
 | `naming.on_conflict` | text | `add_suffix` | Conflict policy (IMPORT-003): `add_suffix`, `skip` or `fail` |
 | `job_codes` | list of text | empty | Job codes of the profile (IMPORT-006), the one to use first |
 | `backup.destinations` | list of paths | empty | Backup destinations (IMPORT-007), in this order |
@@ -47,7 +48,8 @@ that when it runs.
 
 **Checks of the values.** Each is an error at the value, in the form of CORE-006:
 
-- `naming.template`: a template that IMPORT-001 rejects; the message is IMPORT-001's.
+- `naming.template`, `naming.video_template`: a template that IMPORT-001 rejects; the
+  message is IMPORT-001's.
 - `naming.on_conflict`: any other text: `expected add_suffix, skip or fail, found
   <value>`.
 - `job_codes`: an entry that IMPORT-006 rejects, with IMPORT-006's message; and an entry
@@ -182,3 +184,4 @@ The schema's descriptions are the "Meaning" column above.
 | 2026-11-05 | Implemented (reading and schema); the conflict policy is a choice of CORE-006 (CORE-006.20); value errors are at the start of the value |
 | 2026-11-06 | `video_destination` and `backup.video_destinations` (IMPORT-013), optional in version 1; accepted by the owner |
 | 2026-11-07 | `destination` removed: the folder to import into is given on the command line (ADR 0036, decision 8); a profile with it gets IMPORT-011.13; accepted by the owner |
+| 2026-11-08 | `naming.video_template` (IMPORT-018), optional in version 1; owner decision #72 |

@@ -33,6 +33,10 @@ const FAIL: &str = "fail";
 const NAMING_KEYS: &[Key] = &[
     Key::text("template", "Name template (IMPORT-001)")
         .with_default(DefaultValue::Text(DEFAULT_NAME_TEMPLATE)),
+    Key::text(
+        "video_template",
+        "Name template for videos (IMPORT-018); left out, videos use the name template",
+    ),
     Key::choice(
         "on_conflict",
         "Conflict policy (IMPORT-003): add_suffix, skip or fail",
@@ -83,6 +87,8 @@ pub fn import_profile_json_schema() -> String {
 pub struct ImportProfile {
     /// The name template.
     pub template: NameTemplate,
+    /// The name template for videos, if the profile names one (IMPORT-018).
+    pub video_template: Option<NameTemplate>,
     /// The conflict policy.
     pub on_conflict: ConflictPolicy,
     /// The job codes, trimmed, in file order; the first is the one to use.
@@ -136,6 +142,13 @@ impl ImportProfile {
             None => NameTemplate::parse(DEFAULT_NAME_TEMPLATE)
                 .map_err(|error| config.error_at(values.position(), error.to_string()))?,
         };
+        let video_template = naming
+            .and_then(|naming| naming.text("video_template"))
+            .map(|template| {
+                NameTemplate::parse(&template.value)
+                    .map_err(|error| config.error_at(template.position, error.kind.to_string()))
+            })
+            .transpose()?;
         let on_conflict = naming
             .and_then(|naming| naming.text("on_conflict"))
             .map_or(ConflictPolicy::AddSuffix, |policy| {
@@ -156,6 +169,7 @@ impl ImportProfile {
         };
         Ok(ImportProfile {
             template,
+            video_template,
             on_conflict,
             job_codes,
             backup_destinations,

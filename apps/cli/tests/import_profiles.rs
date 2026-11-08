@@ -179,6 +179,26 @@ fn an_invalid_template_is_an_error_at_the_value() {
     );
 }
 
+/// spec: IMPORT-018.8
+#[test]
+fn a_video_name_template_is_read_and_checked() {
+    let profile =
+        read("schema_version: 1\nnaming:\n  video_template: \"{date:%Y}/{job}/{name}.{ext}\"\n");
+    assert_eq!(
+        profile
+            .video_template
+            .map(|template| template.as_str().to_owned()),
+        Some("{date:%Y}/{job}/{name}.{ext}".to_owned())
+    );
+    assert_eq!(read("schema_version: 1\n").video_template, None);
+    assert_eq!(
+        located_message(
+            "schema_version: 1\nnaming:\n  video_template: \"{date:%Y}/{unknown}.{ext}\"\n"
+        ),
+        "3:19: unknown token {unknown}"
+    );
+}
+
 /// spec: IMPORT-011.6
 #[test]
 fn an_unknown_conflict_policy_is_an_error_at_the_value() {

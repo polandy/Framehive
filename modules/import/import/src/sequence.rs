@@ -6,9 +6,10 @@
 use std::sync::atomic::{AtomicU32, Ordering};
 
 use naming::{
-    CounterDate, NameTemplate, SequenceCounters, SequenceError, SequenceRange, preview_range,
-    reserve_range,
+    CounterDate, NameTemplate, SequenceCounters, SequenceError, SequenceKind, SequenceRange,
+    preview_range, reserve_range,
 };
+use thiserror::Error;
 
 /// The session counter: the numbers of `{seq_session:N}` and `{seq_letters}` in one
 /// run of the application (IMPORT-002). It starts at 1 and is never stored.
@@ -44,29 +45,63 @@ pub(crate) enum Reservation {
     Reserve,
 }
 
-/// The range of `count` assets for `template` on `today`, from the persisted
-/// counters or the session counter. `None` when the template has no sequence token
-/// or there are no assets.
+/// The name template and the video name template have sequence tokens of different
+/// kinds, so their assets cannot share one numbering (IMPORT-018).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Error)]
+#[error(
+    "the video template uses {} but the name template uses {}; use one sequence kind in both",
+    .video.token(),
+    .name.token()
+)]
+pub struct MixedSequenceKinds {
+    /// The kind of the video name template's sequence token.
+    pub video: SequenceKind,
+    /// The kind of the name template's sequence token.
+    pub name: SequenceKind,
+}
+
+impl MixedSequenceKinds {
+    /// Checks that `template` and `video_template` do not number by different kinds.
+    pub(crate) fn check(
+        template: &NameTemplate,
+        video_template: &NameTemplate,
+    ) -> Result<(), MixedSequenceKinds> {
+        match (template.sequence_kind(), video_template.sequence_kind()) {
+            (Some(name), Some(video)) if name != video => Err(MixedSequenceKinds { video, name }),
+            _ => Ok(()),
+        }
+    }
+}
+
+/// The range of `count` assets for `templates` on `today`, from the persisted
+/// counters or the session counter. The templates share the kind of their sequence
+/// tokens, and the range must fit each of them. `None` when no template has a
+/// sequence token or there are no assets.
 pub(crate) fn sequence_range(
     counters: &dyn SequenceCounters,
     session: &SessionSequence,
-    template: &NameTemplate,
+    templates: &[&NameTemplate],
     today: CounterDate,
     count: u32,
     reservation: Reservation,
 ) -> Result<Option<SequenceRange>, SequenceError> {
-    let Some(kind) = template.sequence_kind() else {
+    let Some(kind) = templates
+        .iter()
+        .find_map(|template| template.sequence_kind())
+    else {
         return Ok(None);
     };
     if kind.is_persisted() {
         return match reservation {
-            Reservation::Preview => preview_range(counters, template, today, count),
-            Reservation::Reserve => reserve_range(counters, template, today, count),
+            Reservation::Preview => preview_range(counters, templates, today, count),
+            Reservation::Reserve => reserve_range(counters, templates, today, count),
         };
     }
     let range = SequenceRange::after(session.last(), count);
     if let Some(range) = range {
-        template.check_sequence_range(range.last)?;
+        for template in templates {
+            template.check_sequence_range(range.last)?;
+        }
         if reservation == Reservation::Reserve {
             session.last.store(range.last, Ordering::SeqCst);
         }

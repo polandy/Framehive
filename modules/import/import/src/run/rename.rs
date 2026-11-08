@@ -18,6 +18,7 @@ pub(super) fn import_plan(naming: &PlanInputs, settings: &ImportSettings<'_>) ->
     ImportPlan::new(
         &assets,
         settings.template,
+        settings.video_template,
         settings.mode,
         naming.import_time,
         settings.job_code,

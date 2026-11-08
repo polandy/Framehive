@@ -91,10 +91,16 @@ impl fmt::Display for JobCode {
     }
 }
 
-/// The name template contains `{job}`, but the import has no job code (IMPORT-006).
+/// A template contains `{job}`, but the import has no job code (IMPORT-006).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Error)]
-#[error("the name template uses {{job}}, but no job code was given")]
-pub struct MissingJobCode;
+pub enum MissingJobCode {
+    /// The name template uses `{job}`.
+    #[error("the name template uses {{job}}, but no job code was given")]
+    NameTemplate,
+    /// The video name template uses `{job}` (IMPORT-018).
+    #[error("the video name template uses {{job}}, but no job code was given")]
+    VideoTemplate,
+}
 
 /// Checks that an import whose template contains `{job}` has a job code.
 ///
@@ -106,7 +112,24 @@ pub fn require_job_code(
     job_code: Option<&JobCode>,
 ) -> Result<(), MissingJobCode> {
     if template.uses_job_code() && job_code.is_none() {
-        return Err(MissingJobCode);
+        return Err(MissingJobCode::NameTemplate);
+    }
+    Ok(())
+}
+
+/// Checks that an import whose video name template contains `{job}` has a job code
+/// (IMPORT-018).
+///
+/// # Errors
+///
+/// Returns [`MissingJobCode::VideoTemplate`] when the video name template uses `{job}`
+/// and `job_code` is `None`.
+pub fn require_video_job_code(
+    video_template: &NameTemplate,
+    job_code: Option<&JobCode>,
+) -> Result<(), MissingJobCode> {
+    if video_template.uses_job_code() && job_code.is_none() {
+        return Err(MissingJobCode::VideoTemplate);
     }
     Ok(())
 }

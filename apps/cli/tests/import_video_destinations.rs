@@ -225,6 +225,47 @@ fn the_profile_supplies_the_video_settings_and_an_option_replaces_them() {
     assert_eq!(files_below(&other), [VIDEO_TARGET]);
 }
 
+/// spec: CLI-012.6
+#[test]
+fn the_profile_supplies_the_video_name_template_and_an_option_replaces_it() {
+    let folders = photo_and_video();
+    folders.write_profile(
+        "holiday",
+        b"schema_version: 1\nnaming:\n  template: \"{name}.{ext}\"\n  video_template: \"Clips/{name}.{ext}\"\n",
+    );
+    let source = text(&folders.source());
+    let destination = text(&folders.destination());
+    let other = text(&folders.root.path().join("other-library"));
+    let import = |destination: &str, options: &[&str]| {
+        let mut arguments = vec![
+            "import",
+            "--profile",
+            "holiday",
+            &source,
+            "--destination",
+            destination,
+        ];
+        arguments.extend_from_slice(options);
+        folders.framehive(&arguments)
+    };
+
+    let output = import(&destination, &[]);
+
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    assert_eq!(
+        files_below(&folders.destination()),
+        ["Clips/clip.MOV", "DSCF0001.RAF"]
+    );
+
+    let output = import(&other, &["--video-template", "Films/{name}.{ext}"]);
+
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    assert_eq!(
+        files_below(Path::new(&other)),
+        ["DSCF0001.RAF", "Films/clip.MOV"]
+    );
+}
+
 /// spec: CLI-012.5
 #[test]
 fn an_invalid_video_destination_stops_the_command() {

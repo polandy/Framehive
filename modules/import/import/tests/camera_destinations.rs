@@ -52,6 +52,7 @@ fn a_camera_takes_backup_and_video_destinations_and_a_source_name() {
         video_destination: Some(Path::new("/videos")),
         video_backup_destinations: &[],
         template: &template,
+        video_template: None,
         job_code: None,
         mode: CompatibilityMode::On,
         policy: ConflictPolicy::AddSuffix,

@@ -159,6 +159,7 @@ pub naming::SequenceKind::Session
 pub naming::SequenceKind::Stored
 impl naming::SequenceKind
 pub fn naming::SequenceKind::is_persisted(self) -> bool
+pub fn naming::SequenceKind::token(self) -> &'static str
 impl core::clone::Clone for naming::SequenceKind
 pub fn naming::SequenceKind::clone(&self) -> naming::SequenceKind
 impl core::cmp::Eq for naming::SequenceKind
@@ -421,5 +422,5 @@ impl naming::SequenceCounters for naming::testing::MemorySequenceCounters
 pub fn naming::testing::MemorySequenceCounters::read(&self) -> core::result::Result<naming::StoredCounters, naming::SequenceCountersError>
 pub fn naming::testing::MemorySequenceCounters::update(&self, &mut dyn core::ops::function::FnMut(naming::StoredCounters) -> core::option::Option<naming::StoredCounters>) -> core::result::Result<naming::StoredCounters, naming::SequenceCountersError>
 pub fn naming::asset_date(&[naming::FileTimes]) -> core::option::Option<naming::AssetDate>
-pub fn naming::preview_range(&dyn naming::SequenceCounters, &naming::NameTemplate, naming::CounterDate, u32) -> core::result::Result<core::option::Option<naming::SequenceRange>, naming::SequenceError>
-pub fn naming::reserve_range(&dyn naming::SequenceCounters, &naming::NameTemplate, naming::CounterDate, u32) -> core::result::Result<core::option::Option<naming::SequenceRange>, naming::SequenceError>
+pub fn naming::preview_range(&dyn naming::SequenceCounters, &[&naming::NameTemplate], naming::CounterDate, u32) -> core::result::Result<core::option::Option<naming::SequenceRange>, naming::SequenceError>
+pub fn naming::reserve_range(&dyn naming::SequenceCounters, &[&naming::NameTemplate], naming::CounterDate, u32) -> core::result::Result<core::option::Option<naming::SequenceRange>, naming::SequenceError>

@@ -22,7 +22,8 @@ with `clap` (builder API, ADR 0020 §6) and is one of the two places, with
 framehive
 framehive import <source>... <destination> [--backup <folder>]...
                  [--video-destination <folder>] [--video-backup <folder>]...
-                 [--template <template>] [--job-code <text>]
+                 [--template <template>] [--video-template <template>]
+                 [--job-code <text>]
                  [--on-conflict add_suffix|skip|fail] [--dry-run]
 framehive import --destination <folder> <source>... [other options]
 framehive import <source>... <destination> --profile <name> [other options]

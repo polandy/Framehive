@@ -40,6 +40,7 @@ fn settings<'s>(
         video_destination: None,
         video_backup_destinations: &[],
         template,
+        video_template: None,
         job_code,
         mode: CompatibilityMode::On,
         policy: ConflictPolicy::AddSuffix,

@@ -53,6 +53,7 @@ fn import(
         video_destination: None,
         video_backup_destinations: &[],
         template: &template,
+        video_template: None,
         job_code: job_code.as_ref(),
         mode: CompatibilityMode::On,
         policy: ConflictPolicy::AddSuffix,
@@ -95,7 +96,10 @@ fn a_template_with_job_and_no_job_code_stops_the_run() {
 
     let error = import(&file_system, "{job}/{name}.{ext}", None).unwrap_err();
 
-    assert!(matches!(error, RunError::MissingJobCode(MissingJobCode)));
+    assert!(matches!(
+        error,
+        RunError::MissingJobCode(MissingJobCode::NameTemplate)
+    ));
     assert!(error.to_string().contains("{job}"), "{error}");
     assert_eq!(file_system.paths(), paths_before);
 }

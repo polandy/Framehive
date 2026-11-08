@@ -147,6 +147,13 @@ All user-visible changes are listed here. The format follows
   the exit code is the worst of the sources. A dry run of several sources counts the
   numbers and target names across them in memory (IMPORT-016), so it shows what the
   real run would do, and stores nothing.
+- Video name template (IMPORT-018, CLI-012): `framehive import --video-template
+  <template>` and the profile key `naming.video_template` name videos by a template of
+  their own; unset, videos use the name template. Photos and videos share the conflict
+  policy, the job code and one numbering; when both templates have a sequence token,
+  they must use the same kind, else the import does not start. The naming service's
+  `preview_range` and `reserve_range` take every template of an import, and
+  `SequenceKind::token` names a kind in messages.
 
 ### Changed
 

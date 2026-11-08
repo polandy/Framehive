@@ -19,6 +19,7 @@ use crate::destinations::{DestinationNotCreated, VideoDestinationError};
 use crate::free_space::{FreeSpaceUnknown, NotEnoughSpace};
 use crate::job_code::MissingJobCode;
 use crate::scan::{LeftOut, LeftOutReason, ScanError, SourceScan};
+use crate::sequence::MixedSequenceKinds;
 
 /// Receives the progress of an [`ImportRun`](crate::ImportRun) on the caller's thread,
 /// as each step happens.
@@ -160,9 +161,12 @@ pub enum FileError {
 /// Why an import run did not start. Nothing was copied.
 #[derive(Debug, thiserror::Error)]
 pub enum RunError {
-    /// The template uses `{job}`, but the import has no job code (IMPORT-006).
+    /// A template uses `{job}`, but the import has no job code (IMPORT-006).
     #[error(transparent)]
     MissingJobCode(#[from] MissingJobCode),
+    /// The two templates number by different sequence kinds (IMPORT-018).
+    #[error(transparent)]
+    MixedSequenceKinds(#[from] MixedSequenceKinds),
     /// The source cannot be scanned (IMPORT-005).
     #[error(transparent)]
     Scan(#[from] ScanError),
