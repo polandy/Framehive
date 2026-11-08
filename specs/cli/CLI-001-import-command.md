@@ -35,12 +35,11 @@ The last folder is the destination unless `--destination` names it (CLI-016). Co
 describe the arguments; `framehive --version` prints `framehive <version>`.
 
 **Job code.** `--job-code` is checked by the rules of IMPORT-006 whenever it is given;
-an invalid job code stops the command. When the template contains `{job}`,
-`--job-code` is required. When the template has no `{job}`, a valid job code is
-accepted and not used: the import runs as usual, standard error gets the line
+an invalid job code stops the command. A template with `{job}` requires `--job-code`.
+Without `{job}`, a valid job code is accepted and not used, so scripts that always pass
+one work with every template: standard error gets the line
 `warning: --job-code is not used, because the name template has no {job}`, and the
-exit code is not affected. Accepting it keeps scripts that always pass a job code
-working with every template.
+exit code is not affected.
 
 **Sequence numbers.** A template with a sequence token numbers the assets of the
 import as CLI-004 describes.
@@ -116,10 +115,11 @@ Errors that stop the command, and log messages, go to standard error.
   the destination still does not exist, and the exit code is 0
 
 ### CLI-001.6 – A failed file
-- **Given** a source with `a.jpg`, `b.jpg` and `c.jpg`, and `b.jpg` cannot be read
-- **When** the import runs
-- **Then** `a.jpg` and `c.jpg` are copied, the output has `failed  b.jpg: <reason>` and a
-  summary with `2 copied` and `1 failed`, and the exit code is 1
+- **Given** a source with `a.jpg`, `b.jpg` and `c.jpg`, and another file at the target
+  of `b.jpg`
+- **When** the import runs with `--on-conflict fail`
+- **Then** `a.jpg` and `c.jpg` are copied, the output has `failed  b.jpg: name conflict`
+  and a summary with `2 copied` and `1 failed`, and the exit code is 1
 
 ### CLI-001.7 – Files left out and dated by modification time
 - **Given** a source with `notes.txt` and `clip.MOV` modified at 2026-10-17 14:05:09
@@ -157,10 +157,10 @@ Errors that stop the command, and log messages, go to standard error.
 - **Then** the folders are created, the file is copied, and the exit code is 0
 
 ### CLI-001.13 – Unreadable folder in the source
-- **Given** a source with `DSCF0001.RAF` and a folder `locked` that cannot be read
+- **Given** a source with `DSCF0001.RAF` and, in `locked`, a path too long to open
 - **When** the import runs
-- **Then** `DSCF0001.RAF` is copied, the output has `left out  locked: <reason>`, and the
-  exit code is 1
+- **Then** `DSCF0001.RAF` is copied, the output has `left out  locked/<path>: <reason>`,
+  and the exit code is 1
 
 ### CLI-001.14 – Job code in the names
 - **Given** the source of CLI-001.1
@@ -194,7 +194,6 @@ Errors that stop the command, and log messages, go to standard error.
 - Devices: detecting and naming cards and cameras as sources (Q1, Q2): the device spec.
 - Backup destinations (I2): CLI-005. The import log (N6) and resuming (N4): later specs.
 - Progress with throughput and remaining time (N12): the TUI concept and the GUI.
-- Several sources in one command: CLI-015.
 - Translated output (X2): text is English until a spec for languages exists.
 
 ## Open questions
@@ -214,3 +213,4 @@ Errors that stop the command, and log messages, go to standard error.
 | 2026-11-04 | The import history recognizes a re-run (CLI-008): CLI-001.2 now runs without the history, so it still tests IMPORT-003 |
 | 2026-11-07 | `<source>...`: several sources, specified in CLI-015 (Q5, J3) |
 | 2026-11-07 | The last folder is the destination unless `--destination` names it (CLI-016, ADR 0036); a missing destination is no longer a clap error (CLI-001.11) |
+| 2026-11-08 | CLI-001.6 and CLI-001.13 fail for every user, also root |

@@ -7,7 +7,6 @@
 #![allow(dead_code, reason = "each test binary uses only some of the helpers")]
 
 use std::fs;
-use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 use std::time::{Duration, SystemTime};
@@ -254,6 +253,29 @@ pub(crate) fn has_line_starting_with(output: &Output, start: &str) -> bool {
         .any(|printed| printed.starts_with(start))
 }
 
-pub(crate) fn set_mode(path: &Path, mode: u32) {
-    fs::set_permissions(path, fs::Permissions::from_mode(mode)).unwrap();
+/// Creates `folder` with folders nested in it so deep that the path of the deepest is
+/// longer than the system opens (4096 bytes on Linux, 1024 on macOS). Listing it fails
+/// for every user; root would list a folder regardless of its mode.
+pub(crate) fn add_folder_nested_too_deep(folder: &Path) {
+    // 17 levels of the longest file name, 255 bytes, exceed 4096 bytes.
+    let levels = 17;
+    let mut short = folder.to_path_buf();
+    let mut short_levels = Vec::new();
+    for _ in 0..levels {
+        short.push("d");
+        short_levels.push(short.clone());
+    }
+    fs::create_dir_all(&short).unwrap();
+    // Each rename names a folder whose parents still have short names, so no call gets
+    // a path that is too long; the deepest folder is renamed first.
+    let long_name = "d".repeat(255);
+    for level in short_levels.iter().rev() {
+        fs::rename(level, level.with_file_name(&long_name)).unwrap();
+    }
+    let deepest = (0..levels).fold(folder.to_path_buf(), |path, _| path.join(&long_name));
+    assert!(
+        fs::read_dir(&deepest).is_err(),
+        "{} can be listed",
+        deepest.display()
+    );
 }
