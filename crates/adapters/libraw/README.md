@@ -25,7 +25,11 @@ it. Embedded previews, the preview cache and orientation are left to other crate
 `tests/conformance.rs` runs `previews::testing::check_preview_decoder` with an X-T5
 lossy RAF, a GoPro GPR and a truncated RAF from `testdata.lock`.
 `tests/reference_decode.rs` is the version test: it checks the pinned LibRaw version
-and the size and pixel hash of every supported RAW in `testdata.lock`. Both need
+and the size and pixel hash of every supported RAW in `testdata.lock`, except the
+X-T5 lossy RAF. A reference decode of an X-Trans RAF takes about 20 s, so the
+conformance test decodes that RAF a second time in reference mode on a background
+thread, beside the suite's first decode, hands it to the suite as its second, and then
+checks it against the stored reference. Every run still decodes every file. Both need
 `cargo xtask testdata fetch` and fail without the files.
 
 ## Dependencies
