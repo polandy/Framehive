@@ -28,6 +28,7 @@ use crate::run::{ImportRun, ImportSettings};
 use crate::scan::FoundFile;
 
 mod content;
+mod kept;
 
 use content::merge_values;
 
@@ -86,10 +87,17 @@ impl<'s> Sidecars<'s> {
     /// Adds the sidecars of `file`, planned as `planned`, to what `imported` did: in a
     /// dry run only their names; otherwise writes them next to a copied file and to
     /// each backup that got the file. A file found already imported gets them only
-    /// where none is there, so that a re-run completes a failed one (IMPORT-019.18).
-    /// A failure at the import target fails the file (IMPORT-019.16), one at a backup
-    /// fails that backup (IMPORT-019.14).
-    pub(super) fn add_to(&self, file: &FoundFile, planned: &PlannedFile, imported: &mut Imported) {
+    /// where none is there, so that a re-run completes a failed one (IMPORT-019.18);
+    /// a source sidecar there counts where it holds what `history` recorded for it
+    /// (IMPORT-020.9). A failure at the import target fails the file (IMPORT-019.16),
+    /// one at a backup fails that backup (IMPORT-019.14).
+    pub(super) fn add_to(
+        &self,
+        file: &FoundFile,
+        planned: &PlannedFile,
+        history: &[SidecarRecord],
+        imported: &mut Imported,
+    ) {
         let sidecars = self.settings.sidecars_of(file);
         let (target, dry_run, keep_existing) = match &imported.outcome {
             FileOutcome::Copied { target, .. } => (target.clone(), false, false),
@@ -113,7 +121,8 @@ impl<'s> Sidecars<'s> {
             .unwrap_or(0);
         imported.carried.clear();
         for (position, sidecar) in sidecars.iter().enumerate() {
-            let carried = self.add_one(sidecar, &placement, position == recorded, imported);
+            let carried =
+                self.add_one(sidecar, &placement, position == recorded, history, imported);
             imported.carried.extend(carried);
         }
     }
@@ -125,6 +134,7 @@ impl<'s> Sidecars<'s> {
         sidecar: &PlannedSidecar<'_>,
         placement: &Placement<'_>,
         recorded: bool,
+        history: &[SidecarRecord],
         imported: &mut Imported,
     ) -> Option<CarriedSidecar> {
         let name = sidecar_target(sidecar.naming, placement.target);
@@ -134,8 +144,9 @@ impl<'s> Sidecars<'s> {
             verified_at: 0,
         });
         let at_import = placement.destination.join(&name);
+        let expected = self.expected_where_kept(sidecar, placement, &name, history);
         let prepared = match self.needs_writing(&at_import, placement.keep_existing) {
-            Ok(false) => return carried,
+            Ok(false) => return self.kept(carried, &expected, placement, &imported.backups),
             Ok(true) if placement.dry_run => {
                 if sidecar.holds_values {
                     imported.sidecar = Some(name);
@@ -162,8 +173,8 @@ impl<'s> Sidecars<'s> {
             }
             Err(error) => imported.outcome = FileOutcome::Failed(FileError::Sidecar(error)),
         }
-        let (at_backups, kept_at) =
-            self.add_to_backups(&name, &prepared, placement.keep_existing, imported);
+        let kept = placement.keep_existing.then_some(expected.as_slice());
+        let (at_backups, kept_at) = self.add_to_backups(&name, &prepared, kept, imported);
         if let Some(carried) = &mut carried {
             carried.verified_at = verified_at + at_backups;
         }
@@ -207,14 +218,15 @@ impl<'s> Sidecars<'s> {
         u64::try_from(content.len()).ok()
     }
 
-    /// Writes `prepared` as `name` to each backup that got the file; with
-    /// `keep_existing` only where none is there. Returns the number of backups it was
-    /// written and verified at, and the backups that keep their own.
+    /// Writes `prepared` as `name` to each backup that got the file; with `kept`, the
+    /// checksums a kept one counts with, only where none is there. Returns the number
+    /// of backups it was written and verified at or kept with one of them, and the
+    /// backups that keep their own.
     fn add_to_backups(
         &self,
         name: &str,
         prepared: &Prepared,
-        keep_existing: bool,
+        kept: Option<&[Checksum]>,
         imported: &mut Imported,
     ) -> (usize, Vec<PathBuf>) {
         let mut verified_at = 0;
@@ -228,7 +240,7 @@ impl<'s> Sidecars<'s> {
             }
             let at_backup = backup.destination.join(name);
             let written = self
-                .needs_writing(&at_backup, keep_existing)
+                .needs_writing(&at_backup, kept.is_some())
                 .and_then(|needed| {
                     if needed {
                         self.write_verified(&at_backup, prepared).map(|()| true)
@@ -238,7 +250,10 @@ impl<'s> Sidecars<'s> {
                 });
             match written {
                 Ok(true) => verified_at += 1,
-                Ok(false) => kept_at.push(backup.destination.clone()),
+                Ok(false) => {
+                    verified_at += usize::from(self.holds(&at_backup, kept.unwrap_or_default()));
+                    kept_at.push(backup.destination.clone());
+                }
                 Err(error) => {
                     backup.outcome = BackupOutcome::Failed(BackupError::Sidecar(error));
                 }

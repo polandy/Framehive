@@ -31,6 +31,8 @@ pub(super) struct Recognition {
     checksum: Option<Checksum>,
     /// The backup destinations the file is backed up before at.
     backed_up_before: Vec<PathBuf>,
+    /// The sidecars recorded next to the copies with the source's content.
+    recorded_sidecars: Vec<SidecarRecord>,
 }
 
 impl Recognition {
@@ -44,6 +46,12 @@ impl Recognition {
     /// The checksum of the source, if the lookup read it.
     pub(super) fn checksum(&self) -> Option<&Checksum> {
         self.checksum.as_ref()
+    }
+
+    /// The sidecars the history recorded next to the copies with the source's content
+    /// (IMPORT-020.9).
+    pub(super) fn recorded_sidecars(&self) -> &[SidecarRecord] {
+        &self.recorded_sidecars
     }
 }
 
@@ -136,6 +144,7 @@ impl ImportRun<'_> {
                 capture_time: dated.recorded_capture_time,
                 checksum: None,
                 backed_up_before: Vec::new(),
+                recorded_sidecars: Vec::new(),
             },
             dated,
             imported_before: None,
@@ -150,6 +159,12 @@ impl ImportRun<'_> {
             Ok(checksum) => checksum,
             Err(error) => return Ok(Err(FileError::CannotBeRead { error })),
         };
+        recognized.recognition.recorded_sidecars = at_import_destination
+            .iter()
+            .chain(at_backups.iter().flat_map(|(_, copies)| copies))
+            .filter(|copy| copy.checksum == checksum)
+            .filter_map(|copy| copy.sidecar.clone())
+            .collect();
         // The copies come oldest first, so the last equal one is the most recent.
         recognized.imported_before = at_import_destination
             .into_iter()

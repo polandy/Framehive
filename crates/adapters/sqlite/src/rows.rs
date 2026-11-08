@@ -90,11 +90,12 @@ pub(crate) fn find_copies(
     database: &Database,
     key: &CopyKey<'_>,
 ) -> rusqlite::Result<Vec<FoundCopy>> {
-    let mut statement = database.connection.prepare(
-        "SELECT target, checksum FROM copies \
+    let mut statement = database.connection.prepare(&format!(
+        "SELECT target, checksum, {} FROM copies \
          WHERE destination = ?1 AND original_file_name = ?2 AND size = ?3 \
          AND (?4 IS NULL OR capture_time = ?4) ORDER BY rowid",
-    )?;
+        sidecar_columns(database)
+    ))?;
     let rows = statement.query_map(
         params![
             path_bytes(key.destination),
@@ -106,6 +107,7 @@ pub(crate) fn find_copies(
             Ok(FoundCopy {
                 target: row.get(0)?,
                 checksum: checksum(row, 1)?,
+                sidecar: sidecar(row, 2)?,
             })
         },
     )?;
@@ -144,15 +146,11 @@ pub(crate) fn read_run_log(database: &Database, run: RunId) -> rusqlite::Result<
 
 /// The copies of `run`, in the order they were recorded.
 fn run_copies(database: &Database, run: RunId) -> rusqlite::Result<Vec<CopyRecord>> {
-    let sidecar_columns = if database.has_sidecars() {
-        "sidecar_target, sidecar_checksum"
-    } else {
-        "NULL, NULL"
-    };
     let mut statement = database.connection.prepare(&format!(
         "SELECT destination, source_path, original_file_name, size, capture_time, \
-         checksum, target, recorded_at, {sidecar_columns} FROM copies WHERE run_id = ?1 \
-         ORDER BY rowid"
+         checksum, target, recorded_at, {} FROM copies WHERE run_id = ?1 \
+         ORDER BY rowid",
+        sidecar_columns(database)
     ))?;
     let copies = statement.query_map(params![run.number()], |row| {
         let capture_time: Option<String> = row.get(4)?;
@@ -210,6 +208,15 @@ fn optional_path(row: &Row<'_>, column: usize) -> rusqlite::Result<Option<PathBu
 fn size(row: &Row<'_>, column: usize) -> rusqlite::Result<u64> {
     let value: i64 = row.get(column)?;
     u64::try_from(value).map_err(|error| conversion_error(column, error))
+}
+
+/// The sidecar columns to select; `NULL` in a database of an older version without them.
+fn sidecar_columns(database: &Database) -> &'static str {
+    if database.has_sidecars() {
+        "sidecar_target, sidecar_checksum"
+    } else {
+        "NULL, NULL"
+    }
 }
 
 /// The sidecar in `column` and the next one; both are `NULL` for a copy without one.

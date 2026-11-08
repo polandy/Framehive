@@ -186,6 +186,7 @@ impl ImportHistory for MemoryImportHistory {
             .map(|copy| FoundCopy {
                 target: copy.target.clone(),
                 checksum: copy.checksum.clone(),
+                sidecar: copy.sidecar.clone(),
             })
             .collect())
     }

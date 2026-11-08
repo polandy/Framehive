@@ -160,4 +160,6 @@ pub struct FoundCopy {
     pub target: String,
     /// The checksum of the recorded content.
     pub checksum: Checksum,
+    /// The XMP sidecar recorded next to the copy, if any (IMPORT-020).
+    pub sidecar: Option<SidecarRecord>,
 }

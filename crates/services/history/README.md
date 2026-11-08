@@ -40,7 +40,7 @@ Boundaries:
 | `RunStart`, `RunId` | The start of a run, and the id the history gives it |
 | `CopyRecord` | One verified copy at one destination |
 | `SidecarRecord` | The XMP sidecar written next to a copy, its target and checksum |
-| `CopyKey`, `FoundCopy` | What a file is looked up by, and the target and checksum of a match |
+| `CopyKey`, `FoundCopy` | What a file is looked up by, and the target, checksum and sidecar of a match |
 | `LoggedRun`, `RunLog` | A run as the import log lists it, and the log of one run (IMPORT-010) |
 | `RecordedTime` | A machine-local time with its offset, written as RFC 3339 |
 | `testing::MemoryImportHistory`, `testing::RecordedRun` | Test double that can be broken or fail to record |

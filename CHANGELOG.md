@@ -215,6 +215,11 @@ All user-visible changes are listed here. The format follows
 
 ### Fixed
 
+- A re-run over a card already imported no longer keeps the card for its source `.xmp`
+  sidecars: the run reads each one at the file's target and at each backup, and it
+  counts as saved where it has the checksum the import history recorded, or, copied
+  byte for byte, its source's. Nothing is copied again (IMPORT-020.9, IMPORT-020.10).
+  `history::FoundCopy` gains `sidecar`, the sidecar recorded next to the copy.
 - The free-space check before an import counts the XMP sidecars it writes, so an
   import that would fill the destination with its sidecars no longer starts
   (IMPORT-012).

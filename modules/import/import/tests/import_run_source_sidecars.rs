@@ -10,21 +10,20 @@ mod sidecar_support;
 
 use std::path::{Path, PathBuf};
 
-use files::testing::{Fault, MemoryFileSystem};
+use files::testing::Fault;
 use import::{
     CarriedSidecar, ExistingValue, ExistingValueResult, FormatBlocker, FormatReadiness,
     ImportMetadata, Keyword, RunError, SidecarField,
 };
 use metadata::xmp::namespaces::{DUBLIN_CORE, PHOTOSHOP};
-use metadata::xmp::{XmpName, XmpPacket, XmpValue, serialize_xmp};
+use metadata::xmp::{XmpName, XmpPacket, XmpValue};
 use sidecar_support::{
-    DATED, DESTINATION, FLAT, Import, Machine, card_with, copied, put, raw_taken_at, report,
-    sidecars_below, text,
+    DATED, DESTINATION, FLAT, Import, Machine, UNKNOWN, bytes_of, camera_packet, card_with, copied,
+    put, raw_card_with, report, sidecars_below, text,
 };
 
 const RAW: &str = "DSCF0042.RAF";
 const SOURCE_SIDECAR: &str = "DSCF0042.RAF.xmp";
-const UNKNOWN: &str = "http://example.com/camera/1.0/";
 
 fn dc(local: &str) -> XmpName {
     XmpName::new(DUBLIN_CORE, local)
@@ -46,30 +45,6 @@ fn items(packet: &XmpPacket, name: &XmpName) -> Vec<String> {
             .collect(),
         _ => Vec::new(),
     }
-}
-
-/// A source sidecar with a property of a namespace no standard defines.
-fn camera_packet() -> XmpPacket {
-    let mut packet = XmpPacket::new();
-    packet
-        .set_text(&XmpName::new(UNKNOWN, "FilmMode"), "Classic Chrome")
-        .unwrap();
-    packet
-}
-
-/// The bytes of `packet` as the machine's XML syntax writes them.
-fn bytes_of(machine: &Machine, packet: &XmpPacket) -> Vec<u8> {
-    serialize_xmp(packet, &machine.clock, &machine.xml)
-        .unwrap()
-        .into_bytes()
-}
-
-/// A card with `DSCF0042.RAF` captured on 2026-10-17 and `extra` files.
-fn raw_card_with(extra: &[(&str, &[u8])]) -> MemoryFileSystem {
-    let raw = raw_taken_at("2026:10:17 14:05:09");
-    let mut files: Vec<(&str, &[u8])> = vec![(RAW, &raw)];
-    files.extend_from_slice(extra);
-    card_with(&files)
 }
 
 fn values(creator: &str, copyright: &str) -> ImportMetadata {
