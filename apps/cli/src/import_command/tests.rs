@@ -25,6 +25,7 @@ use crate::testing::{PanickingInTheJob, UnreadableInTheJob};
 pub(super) struct Folders {
     _temp: TempDir,
     root: PathBuf,
+    pub(super) configuration: Configuration,
 }
 
 impl Folders {
@@ -40,7 +41,11 @@ impl Folders {
         )
         .unwrap();
         fs::create_dir(root.join("state")).unwrap();
-        Folders { _temp: temp, root }
+        Folders {
+            _temp: temp,
+            root,
+            configuration: Configuration::default(),
+        }
     }
 
     pub(super) fn path(&self, name: &str) -> PathBuf {
@@ -57,28 +62,9 @@ impl Folders {
         )
     }
 
-    /// Runs `framehive import <source> --destination <library> <options>` with `cameras`
-    /// connected.
-    pub(super) fn import_camera(
-        &self,
-        source: &str,
-        options: &[&str],
-        cameras: &MemoryCameras,
-    ) -> Run {
-        let library = self.path("library");
-        let mut arguments = vec![library.as_path()];
-        arguments.extend(options.iter().map(Path::new));
-        self.import_from(
-            source.as_ref(),
-            &arguments,
-            Arc::new(MemoryFreeSpace::unlimited()),
-            cameras,
-        )
-    }
-
     /// Runs `framehive import <source> --destination <arguments>` against `free_space`
     /// and `cameras`.
-    fn import_from(
+    pub(super) fn import_from(
         &self,
         source: &OsStr,
         arguments: &[&Path],
@@ -106,7 +92,7 @@ impl Folders {
             &locations,
             None,
             Surroundings {
-                configuration: &Configuration::default(),
+                configuration: &self.configuration,
                 state_folder: &self.path("state"),
                 free_space,
                 cameras,

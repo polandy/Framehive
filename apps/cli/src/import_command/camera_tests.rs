@@ -7,14 +7,36 @@
 #![allow(clippy::unwrap_used, reason = "test helpers may panic on bad fixtures")]
 
 use std::path::Path;
+use std::sync::Arc;
 
 use domain::Timestamp;
-use files::testing::{MemoryCameras, MemoryFileSystem};
+use files::testing::{MemoryCameras, MemoryFileSystem, MemoryFreeSpace};
 use import::CAMERA_FORMAT_READINESS_NOTE;
 
 use super::tests::{Folders, Run};
 use crate::arguments::{ImportLogArguments, LogFormat, RunSelection};
 use crate::import_log::import_log_in;
+
+impl Folders {
+    /// Runs `framehive import <source> --destination <library> <options>` with `cameras`
+    /// connected.
+    pub(super) fn import_camera(
+        &self,
+        source: &str,
+        options: &[&str],
+        cameras: &MemoryCameras,
+    ) -> Run {
+        let library = self.path("library");
+        let mut arguments = vec![library.as_path()];
+        arguments.extend(options.iter().map(Path::new));
+        self.import_from(
+            source.as_ref(),
+            &arguments,
+            Arc::new(MemoryFreeSpace::unlimited()),
+            cameras,
+        )
+    }
+}
 
 const X_T2: (&str, &str) = ("Fujifilm X-T2", "usb:001,004");
 const X_T5: (&str, &str) = ("Fujifilm X-T5", "usb:002,007");

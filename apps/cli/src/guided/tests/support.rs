@@ -22,14 +22,12 @@ use files::{
     EntryKind, FileSystem, FolderEntry, FreeSpace, ReadOnlyFileSystem, ReadSeek, WriteFile,
 };
 use import::{ImportMetadata, ImportPorts, RecentJobCodes, ReservedTargetNames, SessionSequence};
-use naming::NameTemplate;
-use naming::testing::MemorySequenceCounters;
+use naming::{NameTemplate, testing::MemorySequenceCounters};
 
 use crate::guided::dialog::Dialog;
 use crate::guided::events::{Event, EventSource};
 use crate::guided::state::{RememberedState, load_state, save_state, state_file};
-use history::ImportHistory;
-use history::testing::MemoryImportHistory;
+use history::{ImportHistory, testing::MemoryImportHistory};
 
 use super::shared::{HarnessCameras, Shared};
 use crate::guided::{Environment, Ports};
@@ -93,6 +91,7 @@ pub(super) struct Harness {
     /// The import history, kept across the runs of this harness as the history in the
     /// state folder is kept across program runs.
     pub(super) history: Arc<dyn ImportHistory + Send + Sync>,
+    pub(super) metadata: ImportMetadata,
     /// The free space of the destinations; unlimited unless a test sets it.
     pub(super) free_space: Arc<dyn FreeSpace + Send + Sync>,
     /// Resolves a folder to its canonical path; the paths of the memory file system are
@@ -156,6 +155,7 @@ impl Harness {
             counters: Arc::new(MemorySequenceCounters::new()),
             session: Arc::new(SessionSequence::new()),
             history: Arc::new(MemoryImportHistory::new()),
+            metadata: ImportMetadata::default(),
             free_space: Arc::new(MemoryFreeSpace::unlimited()),
             resolve_folder: |folder| Ok(folder.to_path_buf()),
         }
@@ -238,7 +238,7 @@ impl Harness {
             current_folder: PathBuf::from("/tmp/work"),
             state_file: Self::state_file(),
             state_folder: PathBuf::from(HOME).join(".local/state/framehive"),
-            metadata: ImportMetadata::default(),
+            metadata: self.metadata.clone(),
         };
         let screen = Rc::new(RefCell::new(Vec::new()));
         let mut events = ScriptedEvents {

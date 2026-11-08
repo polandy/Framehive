@@ -9,6 +9,8 @@ use std::time::Duration;
 
 use devices::DeviceSource;
 
+use import::ImportMetadata;
+
 use crate::testing::PanickingInTheJob;
 
 use super::support::{Harness, OCTOBER_17, PICTURES, PRESET_1, Step};
@@ -176,4 +178,21 @@ fn an_import_that_stops_unexpectedly_shows_the_summary_again() {
         "{output}"
     );
     assert!(!harness.memory.paths().contains(&imported(1)), "{output}");
+}
+
+/// spec: IMPORT-019.1
+#[test]
+fn the_metadata_of_config_yaml_is_written_to_the_sidecars() {
+    let mut harness = with_three_files();
+    harness.metadata = ImportMetadata {
+        creator: vec!["Andy Pollari".to_owned()],
+        ..ImportMetadata::default()
+    };
+
+    harness.run(vec![Step::Line(""), Step::Line("n")]);
+
+    let mut sidecar = imported(1).into_os_string();
+    sidecar.push(".xmp");
+    let written = harness.memory.content(Path::new(&sidecar)).unwrap();
+    assert!(String::from_utf8(written).unwrap().contains("Andy Pollari"));
 }

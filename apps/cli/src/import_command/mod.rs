@@ -8,6 +8,8 @@
 mod camera_tests;
 mod folders;
 mod locations;
+#[cfg(test)]
+mod metadata_tests;
 mod run;
 mod sources;
 #[cfg(test)]
