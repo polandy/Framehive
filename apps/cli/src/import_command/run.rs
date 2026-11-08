@@ -32,7 +32,7 @@ use crate::arguments::ImportArguments;
 use crate::cameras::{OpenedCamera, camera_choice, open_camera};
 use crate::guided::space_text;
 use crate::report::ReportPrinter;
-use crate::{JOB_ENDED_UNEXPECTEDLY, write_warning};
+use crate::write_warning;
 
 /// What the import takes from the process: the tests give their own.
 pub(super) struct Surroundings<'a> {
@@ -183,12 +183,8 @@ pub(super) fn import_with(
             .into_iter()
             .zip(sources)
             .map(|(following, source)| {
-                following.and_then(|thread| {
-                    thread.join().unwrap_or_else(|_| {
-                        let ended = Err(NotStarted::from(JOB_ENDED_UNEXPECTEDLY.to_owned()));
-                        streams.reported(ended, several.then_some(source.as_path()))
-                    })
-                })
+                following
+                    .and_then(|thread| streams.joined(thread, several.then_some(source.as_path())))
             })
             .collect()
     });

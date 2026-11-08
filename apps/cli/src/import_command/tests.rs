@@ -16,6 +16,7 @@ use files::testing::{MemoryCameras, MemoryFreeSpace, TempDir};
 use files::{FileSystemId, FreeSpace, SpaceOnFileSystem};
 use import::ImportSummary;
 
+use super::sources::Streams;
 use super::{NotStarted, Surroundings, exit_code, import_with, locations};
 use crate::arguments::{Invocation, parse};
 use crate::testing::{PanickingInTheJob, UnreadableInTheJob};
@@ -328,6 +329,26 @@ fn an_import_that_stops_unexpectedly_did_not_start() {
     assert_eq!(run.errors, format!("error: {line}\n"));
     assert!(!run.output.contains("copied"), "{}", run.output);
     assert_eq!(exit_code(&run.result), 2);
+}
+
+/// spec: CLI-015.11
+#[test]
+fn a_follower_that_panics_is_an_import_that_stopped_unexpectedly() {
+    let (mut output, mut errors) = (Vec::new(), Vec::new());
+    let streams = Streams::new(&mut output, &mut errors);
+
+    let result: Result<(), NotStarted> = std::thread::scope(|scope| {
+        let follower = scope.spawn(|| -> Result<(), NotStarted> { panic!("the follower panics") });
+        streams.joined(follower, Some(Path::new("cardA")))
+    });
+
+    let not_started = result.unwrap_err();
+    assert_eq!(not_started.messages, ["the import stopped unexpectedly"]);
+    assert_eq!(
+        String::from_utf8(errors).unwrap(),
+        "error: cardA: the import stopped unexpectedly\n"
+    );
+    assert!(output.is_empty());
 }
 
 /// The folders of `framehive import /card --destination /library --backup backup`,
