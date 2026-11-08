@@ -8,6 +8,7 @@
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, MutexGuard, PoisonError};
+use std::thread::ScopedJoinHandle;
 
 use import::{FileReport, ImportJobReports, ImportSummary, ProgressSink, SourceScan};
 
@@ -65,6 +66,23 @@ impl<'a> Streams<'a> {
             }
         }
         result
+    }
+
+    /// Waits for the thread that follows a job and returns its result; a thread that
+    /// panicked is reported as an import that stopped unexpectedly (CLI-015.11).
+    ///
+    /// # Errors
+    ///
+    /// Returns the thread's own error, or the unexpected stop of a panicked thread.
+    pub(super) fn joined<T>(
+        &self,
+        thread: ScopedJoinHandle<'_, Result<T, NotStarted>>,
+        named_source: Option<&Path>,
+    ) -> Result<T, NotStarted> {
+        thread.join().unwrap_or_else(|_| {
+            let ended = Err(NotStarted::from(JOB_ENDED_UNEXPECTEDLY.to_owned()));
+            self.reported(ended, named_source)
+        })
     }
 
     /// Standard error, for as long as the caller holds it.
