@@ -46,7 +46,9 @@ Every job ends in exactly one of `Finished`, `Stopped`, `Failed` and `Removed`, 
 state is reported for it after that.
 
 **Stopping and removing.** A running job is asked to stop; it decides where it can stop
-safely and ends as `Stopped` there, or as `Finished` when it was already at its end. A
+safely and ends as `Stopped` there, or as `Finished` when it was already at its end. Asking
+succeeds for as long as the end of the job has not been reported, so it does not fail
+for a job that has just finished and still ends as `Finished`. A
 job that waits for something, such as an answer, can ask to be told when it is asked
 to stop, so that it does not wait on. A queued job is removed and never runs. Asking to stop or remove a job that has already
 ended, or a job id the queue does not know, changes nothing and says so.
@@ -124,7 +126,7 @@ reports itself to whoever enqueued it (IMPORT-015).
 - **Given** a running job that has done its last step and does not ask again whether
   to go on
 - **When** it is asked to stop
-- **Then** it ends as `Finished`
+- **Then** asking succeeds and it ends as `Finished`
 
 ### CORE-007.12 – Jobs without a common resource run in parallel
 - **Given** a running job 1 that names resource `a` and waits until the test lets it
@@ -172,3 +174,4 @@ reports itself to whoever enqueued it (IMPORT-015).
 | 2026-11-07 | Created (J1, ADR 0035) |
 | 2026-11-07 | Jobs that name no common resource run in parallel, each on a worker thread of its own; a job can be told when it is asked to stop (J3, ADR 0036); criteria 12–16 |
 | 2026-11-07 | Implemented (J3) |
+| 2026-11-08 | Asking a job to stop succeeds until its end is reported, even when it still ends as `Finished` (owner decision, issue #76); criterion 11 |
