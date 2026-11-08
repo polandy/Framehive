@@ -103,8 +103,11 @@ parsed packet. Each backup that got the file, backed up or already backed up, ge
 the same bytes, verified the same way. The import history records the sidecar's
 checksum with each copy. A sidecar that fails at the import target fails its file
 (`FileError::Sidecar`, naming the sidecar path) and the copy stays; one that fails at
-a backup fails that backup (`BackupError::Sidecar`). A dry run writes nothing and
-reports the sidecar it would write in `FileReport::sidecar`.
+a backup fails that backup (`BackupError::Sidecar`). A file found already imported at
+its target gets its sidecar only where nothing is at the sidecar's name, so a re-run
+completes a sidecar that failed and never changes one that is there; a file the history
+knows gets none. A dry run writes nothing and reports the sidecar it would write in
+`FileReport::sidecar`.
 
 The run writes XML through the `XmlSyntax` that `ImportRun::with_xml_syntax` gives
 it. A run that would write sidecars without one does not start:

@@ -47,6 +47,22 @@ impl Recognition {
     }
 }
 
+/// The sidecar one file got, for the history.
+pub(super) struct WrittenSidecars<'a> {
+    /// The sidecar written next to the file's verified copies.
+    pub(super) record: Option<&'a SidecarRecord>,
+    /// The backup destinations where a sidecar was there already and was kept.
+    pub(super) kept_at: &'a [PathBuf],
+}
+
+impl WrittenSidecars<'_> {
+    /// The sidecar written next to the copy at `destination`.
+    fn at(&self, destination: &Path) -> Option<SidecarRecord> {
+        let kept = self.kept_at.iter().any(|kept| kept == destination);
+        self.record.filter(|_| !kept).cloned()
+    }
+}
+
 /// A run that the import history recorded the start of.
 #[derive(Debug, Clone, Copy)]
 pub(super) struct RecordedRun {
@@ -168,8 +184,8 @@ impl ImportRun<'_> {
     /// Records each copy of `report` that was verified in this run: at `destination`,
     /// the file's import destination, when the file was copied or already imported,
     /// and at each backup destination where it was backed up or already backed up.
-    /// `checksum` is the source's, when the run read it; `sidecar` is the one written
-    /// next to each of these copies (IMPORT-019.15).
+    /// `checksum` is the source's, when the run read it; `sidecars` says which sidecar
+    /// is recorded with each copy (IMPORT-019.15).
     pub(super) fn record_copies(
         &self,
         destination: &Path,
@@ -177,7 +193,7 @@ impl ImportRun<'_> {
         recognition: &Recognition,
         report: &FileReport,
         checksum: Option<&Checksum>,
-        sidecar: Option<&SidecarRecord>,
+        sidecars: &WrittenSidecars<'_>,
     ) -> Result<(), HistoryError> {
         let (target, at_import_destination, checksum) = match &report.outcome {
             FileOutcome::Copied { target, checksum } => (target, true, Some(checksum)),
@@ -214,7 +230,7 @@ impl ImportRun<'_> {
                 // A clock that left the years 1 to 9999 during the run cannot be
                 // recorded; the start of the run is the closest time that can.
                 recorded_at: self.recorded_now().unwrap_or(run.started_at),
-                sidecar: sidecar.cloned(),
+                sidecar: sidecars.at(destination),
             })?;
         }
         Ok(())

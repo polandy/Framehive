@@ -9,6 +9,7 @@
 mod sidecar_support;
 
 use std::path::Path;
+use std::time::Duration;
 
 use files::Hasher;
 use files::testing::{Fault, FnvHasher};
@@ -221,6 +222,82 @@ fn a_failed_sidecar_fails_its_file() {
     assert!(card.content(Path::new("/library/DSCF0042.RAF")).is_some());
     assert!(!FormatReadiness::of(&summary).can_be_formatted());
     assert!(machine.history.copies().is_empty());
+}
+
+/// spec: IMPORT-019.18
+#[test]
+fn a_re_run_completes_a_failed_sidecar() {
+    let machine = Machine::new();
+    let card = raw_card();
+    card.inject_fault(Path::new(SIDECAR), Fault::RenameFails);
+    machine.import(&card, &Import::lisbon(FLAT));
+    card.remove_fault(Path::new(SIDECAR));
+    let summary = machine.import(&card, &Import::lisbon(FLAT));
+    let file = report(&summary, RAW);
+    assert!(
+        matches!(&file.outcome, FileOutcome::AlreadyImported { target } if target == RAW),
+        "{:?}",
+        file.outcome
+    );
+    assert_eq!(file.sidecar.as_deref(), Some("DSCF0042.RAF.xmp"));
+    let packet = machine.sidecar(&card, SIDECAR);
+    assert_eq!(
+        text(&packet, &photoshop("TransmissionReference")).as_deref(),
+        Some("Lisbon")
+    );
+    let copies = machine.history.copies();
+    assert_eq!(copies.len(), 1);
+    let expected = checksum(&card.content(Path::new(SIDECAR)).unwrap());
+    assert_eq!(copies[0].sidecar.as_ref().unwrap().checksum, expected);
+    assert!(FormatReadiness::of(&summary).can_be_formatted());
+}
+
+/// spec: IMPORT-019.18
+#[test]
+fn a_re_run_completes_a_failed_sidecar_at_a_backup_and_keeps_the_others() {
+    let machine = Machine::new();
+    let card = raw_card();
+    let at_backups = ["/backup-1/DSCF0042.RAF.xmp", "/backup-2/DSCF0042.RAF.xmp"].map(Path::new);
+    card.inject_fault(Path::new(SIDECAR), Fault::RenameFails);
+    card.inject_fault(at_backups[0], Fault::RenameFails);
+    machine.import(&card, &Import::lisbon(FLAT).backed_up());
+    let kept = card.content(at_backups[1]).unwrap();
+    card.remove_fault(Path::new(SIDECAR));
+    card.remove_fault(at_backups[0]);
+    // A later run writes a later xmp:MetadataDate, so the kept sidecar differs.
+    machine.clock.advance(Duration::from_secs(3600));
+    let summary = machine.import(&card, &Import::lisbon(FLAT).backed_up());
+    let file = report(&summary, RAW);
+    assert!(matches!(file.outcome, FileOutcome::AlreadyImported { .. }));
+    let written = card.content(Path::new(SIDECAR)).unwrap();
+    assert_ne!(written, kept);
+    assert_eq!(card.content(at_backups[0]), Some(written.clone()));
+    assert_eq!(card.content(at_backups[1]), Some(kept));
+    assert!(FormatReadiness::of(&summary).can_be_formatted());
+    let copies = machine.history.copies();
+    assert_eq!(copies.len(), 3);
+    for copy in copies {
+        let recorded = copy.sidecar.map(|sidecar| sidecar.checksum);
+        let expected = (copy.destination != Path::new("/backup-2")).then(|| checksum(&written));
+        assert_eq!(recorded, expected, "{}", copy.destination.display());
+    }
+}
+
+#[test]
+fn a_dry_run_lists_the_sidecar_a_re_run_would_complete() {
+    let machine = Machine::new();
+    let card = raw_card();
+    card.inject_fault(Path::new(SIDECAR), Fault::RenameFails);
+    machine.import(&card, &Import::lisbon(FLAT));
+    card.remove_fault(Path::new(SIDECAR));
+    let mut import = Import::lisbon(FLAT);
+    import.dry_run = true;
+    let summary = machine.import(&card, &import);
+    assert_eq!(
+        report(&summary, RAW).sidecar.as_deref(),
+        Some("DSCF0042.RAF.xmp")
+    );
+    assert!(sidecars_below(&card, "/").is_empty());
 }
 
 #[test]

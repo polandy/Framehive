@@ -127,6 +127,7 @@ pub fn files::testing::MemoryFileSystem::modified(&self, &std::path::Path) -> co
 pub fn files::testing::MemoryFileSystem::new() -> Self
 pub fn files::testing::MemoryFileSystem::operations(&self) -> usize
 pub fn files::testing::MemoryFileSystem::paths(&self) -> alloc::vec::Vec<std::path::PathBuf>
+pub fn files::testing::MemoryFileSystem::remove_fault(&self, &std::path::Path)
 pub fn files::testing::MemoryFileSystem::set_read_only(&self, &std::path::Path)
 pub fn files::testing::MemoryFileSystem::stop_after_operations(&self, usize)
 impl core::clone::Clone for files::testing::MemoryFileSystem
