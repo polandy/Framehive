@@ -170,6 +170,7 @@ impl Import {
             template: &self.template,
             video_template: self.video_template.as_ref(),
             job_code: None,
+            metadata: import::ImportMetadata::none(),
             mode: CompatibilityMode::On,
             policy: self.policy,
             dry_run: self.dry_run,

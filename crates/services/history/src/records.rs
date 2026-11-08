@@ -110,6 +110,19 @@ pub struct CopyRecord {
     pub target: String,
     /// When the copy was recorded.
     pub recorded_at: RecordedTime,
+    /// The XMP sidecar the import wrote next to the copy (IMPORT-019), if any.
+    pub sidecar: Option<SidecarRecord>,
+}
+
+/// A verified XMP sidecar written next to a copy (ADR 0031, addendum of 2026-11-08,
+/// IMPORT-019).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SidecarRecord {
+    /// The sidecar's path relative to the copy's destination, with `/` between
+    /// segments.
+    pub target: String,
+    /// The checksum of the sidecar's content.
+    pub checksum: Checksum,
 }
 
 impl CopyRecord {

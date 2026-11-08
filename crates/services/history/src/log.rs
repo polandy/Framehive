@@ -101,6 +101,7 @@ mod tests {
             checksum: Checksum::new(Checksum::BLAKE3, vec![1]).unwrap(),
             target: name.to_owned(),
             recorded_at: now(),
+            sidecar: None,
         }
     }
 

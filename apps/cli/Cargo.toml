@@ -26,6 +26,7 @@ adapter-gphoto2.workspace = true
 adapter-mounts.workspace = true
 adapter-sequence-counters.workspace = true
 adapter-sqlite.workspace = true
+adapter-xmp.workspace = true
 adapter-yaml.workspace = true
 clap.workspace = true
 config.workspace = true

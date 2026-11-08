@@ -7,6 +7,7 @@
 
 mod edit;
 mod error;
+mod keywords;
 mod model;
 pub mod namespaces;
 mod parse;

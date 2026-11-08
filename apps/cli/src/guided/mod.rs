@@ -34,10 +34,12 @@ use adapter_gphoto2::Gphoto2Cameras;
 use adapter_mounts::MountsDeviceSource;
 use adapter_sequence_counters::FileSequenceCounters;
 use adapter_sqlite::SqliteImportHistory;
+use adapter_xmp::QuickXml;
 use devices::DeviceSource;
 use files::{Cameras, FileSystem};
-use import::{ImportPorts, ImportRun, ReservedTargetNames, SessionSequence};
+use import::{ImportMetadata, ImportPorts, ImportRun, ReservedTargetNames, SessionSequence};
 
+use crate::configuration_file::process_configuration;
 use crate::paths::{PathError, canonical_folder};
 use crate::{NOT_STARTED, report_error};
 use dialog::Dialog;
@@ -90,6 +92,8 @@ pub(crate) struct Environment {
     /// The folder of the state files, which holds the sequence counters (ADR 0029) and
     /// the import history (ADR 0031).
     pub(crate) state_folder: PathBuf,
+    /// The `metadata` of `config.yaml` (IMPORT-019).
+    pub(crate) metadata: ImportMetadata,
 }
 
 /// Runs the guided import on the terminal and returns its exit code (CLI-002, CLI-003).
@@ -118,6 +122,7 @@ pub(crate) fn run_guided() -> ExitCode {
         history: Arc::new(SqliteImportHistory::new(&environment.state_folder)),
         free_space: Arc::new(StatvfsFreeSpace::new()),
         reserved_names: Arc::new(ReservedTargetNames::new()),
+        xml_syntax: Arc::new(QuickXml::new()),
     };
     let ports = Ports {
         import: &import,
@@ -132,17 +137,21 @@ pub(crate) fn run_guided() -> ExitCode {
     ExitCode::SUCCESS
 }
 
-/// Finds the home folder, the current folder and the state file of this process.
+/// Finds the home folder, the current folder, the state file and `config.yaml` of this
+/// process.
 ///
 /// # Errors
 ///
-/// Returns the message when the home folder or the current folder is unknown.
+/// Returns the message when the home folder or the current folder is unknown, or
+/// `config.yaml` cannot be read.
 fn environment() -> Result<Environment, String> {
-    environment_from(
+    let mut environment = environment_from(
         std::env::home_dir(),
         std::env::current_dir(),
         std::env::var_os("XDG_STATE_HOME").as_deref(),
-    )
+    )?;
+    environment.metadata = process_configuration()?.metadata.values();
+    Ok(environment)
 }
 
 /// Builds the environment from what the process reported, so the errors are testable
@@ -169,5 +178,6 @@ pub(crate) fn environment_from(
         current_folder,
         state_file,
         state_folder,
+        metadata: ImportMetadata::default(),
     })
 }

@@ -89,6 +89,7 @@ fn settings(template: &NameTemplate, dry_run: bool) -> ImportSettings<'_> {
         template,
         video_template: None,
         job_code: None,
+        metadata: import::ImportMetadata::none(),
         mode: CompatibilityMode::On,
         policy: ConflictPolicy::AddSuffix,
         dry_run,

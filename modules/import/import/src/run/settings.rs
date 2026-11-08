@@ -9,6 +9,7 @@ use naming::{CompatibilityMode, NameTemplate};
 
 use crate::conflicts::ConflictPolicy;
 use crate::job_code::{JobCode, require_job_code, require_video_job_code};
+use crate::metadata_values::ImportMetadata;
 use crate::report::RunError;
 use crate::sequence::MixedSequenceKinds;
 
@@ -35,6 +36,9 @@ pub struct ImportSettings<'a> {
     pub video_template: Option<&'a NameTemplate>,
     /// The job code for `{job}` (IMPORT-006); required when a template uses it.
     pub job_code: Option<&'a JobCode>,
+    /// The values written to each photo's sidecar besides the job code (IMPORT-019);
+    /// [`ImportMetadata::none`] writes none.
+    pub metadata: &'a ImportMetadata,
     /// Whether target names are kept compatible with every file system (IMPORT-001).
     pub mode: CompatibilityMode,
     /// What happens when a target name holds a different file (IMPORT-003).

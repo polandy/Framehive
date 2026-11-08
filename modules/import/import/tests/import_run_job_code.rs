@@ -55,6 +55,7 @@ fn import(
         template: &template,
         video_template: None,
         job_code: job_code.as_ref(),
+        metadata: import::ImportMetadata::none(),
         mode: CompatibilityMode::On,
         policy: ConflictPolicy::AddSuffix,
         dry_run: false,

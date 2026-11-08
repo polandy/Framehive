@@ -79,6 +79,7 @@ pub history::CopyRecord::destination: std::path::PathBuf
 pub history::CopyRecord::original_file_name: alloc::string::String
 pub history::CopyRecord::recorded_at: history::RecordedTime
 pub history::CopyRecord::run: history::RunId
+pub history::CopyRecord::sidecar: core::option::Option<history::SidecarRecord>
 pub history::CopyRecord::size: u64
 pub history::CopyRecord::source_path: std::path::PathBuf
 pub history::CopyRecord::target: alloc::string::String
@@ -243,6 +244,24 @@ impl core::marker::Unpin for history::RunStart
 impl core::marker::UnsafeUnpin for history::RunStart
 impl core::panic::unwind_safe::RefUnwindSafe for history::RunStart
 impl core::panic::unwind_safe::UnwindSafe for history::RunStart
+pub struct history::SidecarRecord
+pub history::SidecarRecord::checksum: domain::checksum::Checksum
+pub history::SidecarRecord::target: alloc::string::String
+impl core::clone::Clone for history::SidecarRecord
+pub fn history::SidecarRecord::clone(&self) -> history::SidecarRecord
+impl core::cmp::Eq for history::SidecarRecord
+impl core::cmp::PartialEq for history::SidecarRecord
+pub fn history::SidecarRecord::eq(&self, &history::SidecarRecord) -> bool
+impl core::fmt::Debug for history::SidecarRecord
+pub fn history::SidecarRecord::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::StructuralPartialEq for history::SidecarRecord
+impl core::marker::Freeze for history::SidecarRecord
+impl core::marker::Send for history::SidecarRecord
+impl core::marker::Sync for history::SidecarRecord
+impl core::marker::Unpin for history::SidecarRecord
+impl core::marker::UnsafeUnpin for history::SidecarRecord
+impl core::panic::unwind_safe::RefUnwindSafe for history::SidecarRecord
+impl core::panic::unwind_safe::UnwindSafe for history::SidecarRecord
 pub trait history::ImportHistory
 pub fn history::ImportHistory::find_copies(&self, &history::CopyKey<'_>) -> core::result::Result<alloc::vec::Vec<history::FoundCopy>, history::HistoryError>
 pub fn history::ImportHistory::finish_run(&self, history::RunId, history::RecordedTime) -> core::result::Result<(), history::HistoryError>

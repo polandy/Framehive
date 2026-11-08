@@ -168,6 +168,12 @@ All user-visible changes are listed here. The format follows
   sidecar through a `.part` file and a rename that never replaces a sidecar another
   program created or changed meanwhile, a read-only one, or one it cannot parse. The
   `files` port gains `replace_file`, which keeps the replaced file's permissions.
+- Hierarchical keywords in XMP (ADR 0040 §2): `XmpPacket::add_keywords` adds each
+  keyword's leaf to `dc:subject`, its levels joined by `|` to `lr:hierarchicalSubject`
+  and its path to the `mwg-kw:Keywords` tree, merging levels under the same parent.
+  `metadata::testing::RecordedXml` is an `XmlSyntax` test double.
+- The import history records a copy's sidecar (`history::SidecarRecord`; IMPORT-019,
+  ADR 0031) and moves to layout 3 the first time it is written.
 
 ### Changed
 

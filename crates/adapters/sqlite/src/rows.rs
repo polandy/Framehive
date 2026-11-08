@@ -8,7 +8,9 @@ use std::os::unix::ffi::OsStrExt;
 use std::path::{Path, PathBuf};
 
 use domain::Checksum;
-use history::{CopyKey, CopyRecord, FoundCopy, LoggedRun, RecordedTime, RunId, RunLog, RunStart};
+use history::{
+    CopyKey, CopyRecord, FoundCopy, LoggedRun, RecordedTime, RunId, RunLog, RunStart, SidecarRecord,
+};
 use rusqlite::{OptionalExtension, Row, params, types::Type};
 
 use crate::database::Database;
@@ -61,8 +63,8 @@ pub(crate) fn finish_run(
 pub(crate) fn insert_copy(database: &Database, copy: &CopyRecord) -> rusqlite::Result<()> {
     database.connection.execute(
         "INSERT INTO copies (run_id, destination, source_path, original_file_name, size, \
-         capture_time, checksum, target, recorded_at) \
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+         capture_time, checksum, target, recorded_at, sidecar_target, sidecar_checksum) \
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
         params![
             copy.run.number(),
             path_bytes(&copy.destination),
@@ -73,6 +75,10 @@ pub(crate) fn insert_copy(database: &Database, copy: &CopyRecord) -> rusqlite::R
             copy.checksum.to_string(),
             copy.target,
             copy.recorded_at.to_string(),
+            copy.sidecar.as_ref().map(|sidecar| sidecar.target.as_str()),
+            copy.sidecar
+                .as_ref()
+                .map(|sidecar| sidecar.checksum.to_string()),
         ],
     )?;
     Ok(())
@@ -138,10 +144,16 @@ pub(crate) fn read_run_log(database: &Database, run: RunId) -> rusqlite::Result<
 
 /// The copies of `run`, in the order they were recorded.
 fn run_copies(database: &Database, run: RunId) -> rusqlite::Result<Vec<CopyRecord>> {
-    let mut statement = database.connection.prepare(
+    let sidecar_columns = if database.has_sidecars() {
+        "sidecar_target, sidecar_checksum"
+    } else {
+        "NULL, NULL"
+    };
+    let mut statement = database.connection.prepare(&format!(
         "SELECT destination, source_path, original_file_name, size, capture_time, \
-         checksum, target, recorded_at FROM copies WHERE run_id = ?1 ORDER BY rowid",
-    )?;
+         checksum, target, recorded_at, {sidecar_columns} FROM copies WHERE run_id = ?1 \
+         ORDER BY rowid"
+    ))?;
     let copies = statement.query_map(params![run.number()], |row| {
         let capture_time: Option<String> = row.get(4)?;
         Ok(CopyRecord {
@@ -157,6 +169,7 @@ fn run_copies(database: &Database, run: RunId) -> rusqlite::Result<Vec<CopyRecor
             checksum: checksum(row, 5)?,
             target: row.get(6)?,
             recorded_at: recorded_time(row, 7)?,
+            sidecar: sidecar(row, 8)?,
         })
     })?;
     copies.collect()
@@ -197,6 +210,18 @@ fn optional_path(row: &Row<'_>, column: usize) -> rusqlite::Result<Option<PathBu
 fn size(row: &Row<'_>, column: usize) -> rusqlite::Result<u64> {
     let value: i64 = row.get(column)?;
     u64::try_from(value).map_err(|error| conversion_error(column, error))
+}
+
+/// The sidecar in `column` and the next one; both are `NULL` for a copy without one.
+fn sidecar(row: &Row<'_>, column: usize) -> rusqlite::Result<Option<SidecarRecord>> {
+    let target: Option<String> = row.get(column)?;
+    let Some(target) = target else {
+        return Ok(None);
+    };
+    Ok(Some(SidecarRecord {
+        target,
+        checksum: checksum(row, column + 1)?,
+    }))
 }
 
 fn checksum(row: &Row<'_>, column: usize) -> rusqlite::Result<Checksum> {

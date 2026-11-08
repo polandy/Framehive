@@ -13,6 +13,7 @@ use std::rc::Rc;
 use std::sync::Arc;
 use std::time::Duration;
 
+use adapter_xmp::QuickXml;
 use devices::testing::MemoryDeviceSource;
 use domain::testing::ManualClock;
 use domain::{Timestamp, UtcOffset};
@@ -20,7 +21,7 @@ use files::testing::{FnvHasher, MemoryCameras, MemoryFileSystem, MemoryFreeSpace
 use files::{
     EntryKind, FileSystem, FolderEntry, FreeSpace, ReadOnlyFileSystem, ReadSeek, WriteFile,
 };
-use import::{ImportPorts, RecentJobCodes, ReservedTargetNames, SessionSequence};
+use import::{ImportMetadata, ImportPorts, RecentJobCodes, ReservedTargetNames, SessionSequence};
 use naming::NameTemplate;
 use naming::testing::MemorySequenceCounters;
 
@@ -224,6 +225,7 @@ impl Harness {
             history: Arc::clone(&self.history),
             free_space: Arc::clone(&self.free_space),
             reserved_names: Arc::new(ReservedTargetNames::new()),
+            xml_syntax: Arc::new(QuickXml::new()),
         };
         let ports = Ports {
             import: &import,
@@ -236,6 +238,7 @@ impl Harness {
             current_folder: PathBuf::from("/tmp/work"),
             state_file: Self::state_file(),
             state_folder: PathBuf::from(HOME).join(".local/state/framehive"),
+            metadata: ImportMetadata::default(),
         };
         let screen = Rc::new(RefCell::new(Vec::new()));
         let mut events = ScriptedEvents {

@@ -14,7 +14,7 @@ use std::{fs, io};
 
 use files::testing::{MemoryCameras, MemoryFreeSpace, TempDir};
 use files::{FileSystemId, FreeSpace, SpaceOnFileSystem};
-use import::ImportSummary;
+use import::{Configuration, ImportSummary};
 
 use super::sources::Streams;
 use super::{NotStarted, Surroundings, exit_code, import_with, locations};
@@ -106,6 +106,7 @@ impl Folders {
             &locations,
             None,
             Surroundings {
+                configuration: &Configuration::default(),
                 state_folder: &self.path("state"),
                 free_space,
                 cameras,

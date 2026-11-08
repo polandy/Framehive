@@ -2,8 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 //! Cameras and phones as a source (IMPORT-014): only `DCIM` of each storage is
-//! scanned, and the camera is imported like a card, read only through an opened
-//! `MemoryCameras` camera.
+//! scanned, and the camera is imported like a card, read only through `MemoryCameras`.
 
 #![allow(clippy::unwrap_used, reason = "test helpers may panic on bad fixtures")]
 
@@ -95,6 +94,7 @@ fn import(
         template: &template,
         video_template: None,
         job_code: None,
+        metadata: import::ImportMetadata::none(),
         mode: CompatibilityMode::On,
         policy: ConflictPolicy::AddSuffix,
         dry_run: false,

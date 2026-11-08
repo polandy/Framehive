@@ -23,12 +23,13 @@ use adapter_fs::StdFileSystem;
 use adapter_gphoto2::Gphoto2Cameras;
 use adapter_yaml::SaphyrParser;
 use import::{
-    ConflictPolicy, DEFAULT_NAME_TEMPLATE, ImportProfile, ImportSummary, JobCode, require_job_code,
-    require_video_job_code,
+    ConflictPolicy, DEFAULT_NAME_TEMPLATE, ImportMetadata, ImportProfile, ImportSummary, JobCode,
+    MetadataKeys, require_job_code, require_video_job_code,
 };
 use naming::NameTemplate;
 
 use crate::arguments::{ImportArguments, OnConflict};
+use crate::configuration_file::process_configuration;
 use crate::guided::state_folder;
 use crate::profiles::{
     check_profile_name, process_configuration_folder, process_home_folder, profiles_folder,
@@ -82,12 +83,14 @@ fn report_not_started(not_started: &NotStarted) {
 fn import(arguments: &ImportArguments) -> Result<SourceResults, NotStarted> {
     let locations = locations(arguments)?;
     let profile = arguments.profile.as_deref().map(load_profile).transpose()?;
+    let configuration = process_configuration()?;
     let state_folder = process_state_folder()?;
     import_with(
         arguments,
         &locations,
         profile,
         Surroundings {
+            configuration: &configuration,
             state_folder: &state_folder,
             free_space: Arc::new(StatvfsFreeSpace::new()),
             cameras: &Gphoto2Cameras::new(),
@@ -112,6 +115,8 @@ struct ChosenSettings {
     video_destination: Option<PathBuf>,
     /// The video backup destinations; empty means the backup destinations (CLI-012).
     video_backups: Vec<PathBuf>,
+    /// The profile's `metadata` over that of `config.yaml` (IMPORT-019).
+    metadata: ImportMetadata,
 }
 
 /// Takes each setting from the command line, else from `profile`, else the default. An
@@ -126,7 +131,12 @@ fn choose_settings(
     arguments: &ImportArguments,
     locations: &Locations,
     profile: Option<ImportProfile>,
+    base_metadata: &MetadataKeys,
 ) -> Result<ChosenSettings, NotStarted> {
+    let metadata = match &profile {
+        Some(profile) => profile.metadata.over(base_metadata).values(),
+        None => base_metadata.values(),
+    };
     let video_destination = arguments.video_destination.clone().or_else(|| {
         profile
             .as_ref()
@@ -180,6 +190,7 @@ fn choose_settings(
         backups,
         video_destination,
         video_backups,
+        metadata,
     })
 }
 

@@ -21,6 +21,7 @@ use import::{
     SourceScan,
 };
 use jobs::{JobId, JobQueue, JobState, JobUpdate};
+use metadata::testing::RecordedXml;
 use naming::testing::MemorySequenceCounters;
 use naming::{CompatibilityMode, NameTemplate};
 
@@ -43,6 +44,7 @@ pub(crate) fn ports(
         history: Arc::clone(history) as _,
         free_space: Arc::new(MemoryFreeSpace::unlimited()),
         reserved_names: Arc::new(ReservedTargetNames::new()),
+        xml_syntax: Arc::new(RecordedXml::new()),
     }
 }
 
@@ -57,6 +59,7 @@ pub(crate) fn settings(template: &str) -> ImportJobSettings {
         template: &template,
         video_template: None,
         job_code: None,
+        metadata: import::ImportMetadata::none(),
         mode: CompatibilityMode::On,
         policy: ConflictPolicy::AddSuffix,
         dry_run: false,

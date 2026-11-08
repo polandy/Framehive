@@ -11,6 +11,7 @@ use domain::{Clock, LocalDateTime};
 use files::{FileSystem, FreeSpace, Hasher, ReadOnlyFileSystem};
 use history::ImportHistory;
 use metadata::NoCaptureTime;
+use metadata::xmp::XmlSyntax;
 use naming::SequenceCounters;
 
 use crate::backup::BackupCounts;
@@ -65,6 +66,9 @@ pub struct ImportRun<'a> {
     free_space: &'a dyn FreeSpace,
     /// The target names other import jobs reserved (IMPORT-015).
     reserved_names: Option<ReservedBy<'a>>,
+    /// Reads and writes the XML of sidecars (IMPORT-019); `None` until
+    /// [`ImportRun::with_xml_syntax`] gives one.
+    xml_syntax: Option<&'a dyn XmlSyntax>,
 }
 
 /// An import run that is planned and not yet executed: the selected files of a source
@@ -169,7 +173,15 @@ impl<'a> ImportRun<'a> {
             history,
             free_space,
             reserved_names: None,
+            xml_syntax: None,
         }
+    }
+
+    /// Writes the XML of sidecars through `xml_syntax` (IMPORT-019).
+    #[must_use]
+    pub fn with_xml_syntax(mut self, xml_syntax: &'a dyn XmlSyntax) -> Self {
+        self.xml_syntax = Some(xml_syntax);
+        self
     }
 
     /// Imports every file of `settings.source` that the scan finds, in scan order: the

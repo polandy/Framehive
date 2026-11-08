@@ -100,6 +100,7 @@ impl Setup {
             template: &template,
             video_template: None,
             job_code: None,
+            metadata: import::ImportMetadata::none(),
             mode: CompatibilityMode::On,
             policy: self.policy,
             dry_run: self.dry_run,

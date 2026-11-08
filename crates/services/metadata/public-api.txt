@@ -19,6 +19,23 @@ impl core::marker::Unpin for metadata::testing::ByteOrder
 impl core::marker::UnsafeUnpin for metadata::testing::ByteOrder
 impl core::panic::unwind_safe::RefUnwindSafe for metadata::testing::ByteOrder
 impl core::panic::unwind_safe::UnwindSafe for metadata::testing::ByteOrder
+pub struct metadata::testing::RecordedXml(_)
+impl metadata::testing::RecordedXml
+pub fn metadata::testing::RecordedXml::new() -> Self
+impl core::default::Default for metadata::testing::RecordedXml
+pub fn metadata::testing::RecordedXml::default() -> metadata::testing::RecordedXml
+impl core::fmt::Debug for metadata::testing::RecordedXml
+pub fn metadata::testing::RecordedXml::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl metadata::xmp::XmlSyntax for metadata::testing::RecordedXml
+pub fn metadata::testing::RecordedXml::read(&self, &str) -> core::result::Result<alloc::vec::Vec<metadata::xmp::XmlEvent>, metadata::xmp::XmlSyntaxError>
+pub fn metadata::testing::RecordedXml::write(&self, &[metadata::xmp::XmlEvent]) -> alloc::string::String
+impl !core::marker::Freeze for metadata::testing::RecordedXml
+impl core::marker::Send for metadata::testing::RecordedXml
+impl core::marker::Sync for metadata::testing::RecordedXml
+impl core::marker::Unpin for metadata::testing::RecordedXml
+impl core::marker::UnsafeUnpin for metadata::testing::RecordedXml
+impl core::panic::unwind_safe::RefUnwindSafe for metadata::testing::RecordedXml
+impl core::panic::unwind_safe::UnwindSafe for metadata::testing::RecordedXml
 pub struct metadata::testing::Tiff
 impl metadata::testing::Tiff
 pub fn metadata::testing::Tiff::new(metadata::testing::ByteOrder) -> Self
@@ -54,6 +71,8 @@ pub mod metadata::xmp::namespaces
 pub const metadata::xmp::namespaces::ADOBE_META: &str
 pub const metadata::xmp::namespaces::DUBLIN_CORE: &str
 pub const metadata::xmp::namespaces::FRAMEHIVE: &str
+pub const metadata::xmp::namespaces::LIGHTROOM: &str
+pub const metadata::xmp::namespaces::MWG_KEYWORDS: &str
 pub const metadata::xmp::namespaces::PHOTOSHOP: &str
 pub const metadata::xmp::namespaces::RDF: &str
 pub const metadata::xmp::namespaces::XML: &str
@@ -498,6 +517,8 @@ impl core::panic::unwind_safe::RefUnwindSafe for metadata::xmp::XmpNode
 impl core::panic::unwind_safe::UnwindSafe for metadata::xmp::XmpNode
 pub struct metadata::xmp::XmpPacket
 impl metadata::xmp::XmpPacket
+pub fn metadata::xmp::XmpPacket::add_keywords(&mut self, &[&[alloc::string::String]]) -> core::result::Result<(), metadata::xmp::XmpEditError>
+impl metadata::xmp::XmpPacket
 pub fn metadata::xmp::XmpPacket::add_to_bag(&mut self, &metadata::xmp::XmpName, &[&str]) -> core::result::Result<(), metadata::xmp::XmpEditError>
 pub fn metadata::xmp::XmpPacket::replace_seq(&mut self, &metadata::xmp::XmpName, &[&str]) -> core::result::Result<(), metadata::xmp::XmpEditError>
 pub fn metadata::xmp::XmpPacket::set_language(&mut self, &metadata::xmp::XmpName, &str, &str) -> core::result::Result<(), metadata::xmp::XmpEditError>
@@ -525,6 +546,9 @@ impl core::panic::unwind_safe::UnwindSafe for metadata::xmp::XmpPacket
 pub trait metadata::xmp::XmlSyntax
 pub fn metadata::xmp::XmlSyntax::read(&self, &str) -> core::result::Result<alloc::vec::Vec<metadata::xmp::XmlEvent>, metadata::xmp::XmlSyntaxError>
 pub fn metadata::xmp::XmlSyntax::write(&self, &[metadata::xmp::XmlEvent]) -> alloc::string::String
+impl metadata::xmp::XmlSyntax for metadata::testing::RecordedXml
+pub fn metadata::testing::RecordedXml::read(&self, &str) -> core::result::Result<alloc::vec::Vec<metadata::xmp::XmlEvent>, metadata::xmp::XmlSyntaxError>
+pub fn metadata::testing::RecordedXml::write(&self, &[metadata::xmp::XmlEvent]) -> alloc::string::String
 pub fn metadata::xmp::find_sidecars(&dyn files::ports::ReadOnlyFileSystem, &std::path::Path) -> core::io::error::Result<alloc::vec::Vec<std::path::PathBuf>>
 pub fn metadata::xmp::parse_xmp(&std::path::Path, &[u8], &dyn metadata::xmp::XmlSyntax) -> core::result::Result<metadata::xmp::XmpPacket, metadata::xmp::XmpError>
 pub fn metadata::xmp::serialize_xmp(&metadata::xmp::XmpPacket, &dyn domain::clock::Clock, &dyn metadata::xmp::XmlSyntax) -> core::result::Result<alloc::string::String, metadata::xmp::ClockOutOfRange>

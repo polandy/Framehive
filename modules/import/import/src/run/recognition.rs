@@ -210,6 +210,7 @@ impl ImportRun<'_> {
                 // A clock that left the years 1 to 9999 during the run cannot be
                 // recorded; the start of the run is the closest time that can.
                 recorded_at: self.recorded_now().unwrap_or(run.started_at),
+                sidecar: None,
             })?;
         }
         Ok(())

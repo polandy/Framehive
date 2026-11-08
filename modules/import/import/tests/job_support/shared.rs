@@ -18,6 +18,7 @@ use import::{
     ReservedTargetNames, SessionSequence,
 };
 use jobs::{Job, JobControl, JobEnd, ResourceKey};
+use metadata::testing::RecordedXml;
 use naming::testing::MemorySequenceCounters;
 use naming::{CompatibilityMode, NameTemplate, StoredCounters};
 
@@ -83,6 +84,7 @@ impl Shared {
             history: Arc::clone(&self.history) as _,
             free_space: Arc::new(self.free_space.clone()),
             reserved_names: Arc::clone(&self.reserved_names),
+            xml_syntax: Arc::new(RecordedXml::new()),
         }
     }
 
@@ -120,6 +122,7 @@ pub(crate) fn job_settings(source: &str, destination: &str, template: &str) -> I
         template: &template,
         video_template: None,
         job_code: None,
+        metadata: import::ImportMetadata::none(),
         mode: CompatibilityMode::On,
         policy: ConflictPolicy::AddSuffix,
         dry_run: false,

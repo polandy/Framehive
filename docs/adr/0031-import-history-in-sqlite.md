@@ -158,3 +158,9 @@ what the next import would do too. A history file the user cannot write is opene
 read-only by SQLite and may still leave the side files. The rest of the addendum of
 2026-11-04 stands: a missing database is not created, and a broken one or one with another layout
 is the error of section 6.
+
+Addendum (2026-11-08, IMPORT-019): a copy can have an XMP sidecar the import wrote next
+to it. Layout 3 adds `copies.sidecar_target` (relative to the destination, like
+`target`) and `copies.sidecar_checksum` (`blake3:<hex>`), both NULL without a sidecar.
+Layouts 1 and 2 migrate to 3 as the addendum of 2026-11-06 says; read-only, layouts 1
+to 3 are read as they are.

@@ -45,6 +45,7 @@ pub(super) fn copy(destination: &str) -> CopyRecord {
         checksum: Checksum::new(Checksum::BLAKE3, vec![1, 1]).unwrap(),
         target: "2026/a,\"b\".jpg".to_owned(),
         recorded_at: now(),
+        sidecar: None,
     }
 }
 
