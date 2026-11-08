@@ -10,8 +10,8 @@ Layer: `service` (architecture §2, §3)
 ## Purpose
 
 The config service holds what every hand-edited configuration file shares (CORE-006,
-ADR 0011, ADR 0032): the YAML tree, the parser port, the strict reading of a tree
-into the values of a file type, and the JSON Schema of a file type. The typed structs
+CORE-008, ADR 0011, ADR 0032): the YAML tree, the parser port, the strict reading of a
+tree into the values of a file type, and the JSON Schema of a file type. The typed structs
 of a file type live with its owner, such as the import profile in `import`.
 
 Boundaries:
@@ -54,7 +54,7 @@ Boundaries:
 
 Unit tests read hand-built trees, so they need no parser: values and positions,
 wrong kinds, empty list entries, the `schema_version` rules, the core schema, the edit
-distance and the JSON Schema (CORE-006.18). The criteria of CORE-006 are tested end
+distance and the JSON Schema (CORE-008). The criteria of CORE-006 are tested end
 to end with the real parser in `adapter-yaml`, because a service must not depend on
 an adapter (architecture §3).
 

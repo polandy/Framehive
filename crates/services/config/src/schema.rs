@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 //! The JSON Schema (draft 2020-12) of a file type, generated from its description
-//! (CORE-006, "JSON Schema"; ADR 0032, decision 6).
+//! (CORE-008; ADR 0032, decision 6).
 //!
 //! The text is built in a fixed order with a fixed layout, so it is the same on every
 //! run and can be compared with the committed schema.
@@ -181,7 +181,7 @@ mod tests {
 
     const ID: &str = "https://example.org/schemas/test-v1.json";
 
-    /// spec: CORE-006.18
+    /// spec: CORE-008.1
     #[test]
     fn follows_the_description_and_is_the_same_on_every_run() {
         const FILE_TYPE: FileType = FileType::new(
@@ -248,7 +248,7 @@ mod tests {
         );
     }
 
-    /// spec: CORE-006.20
+    /// spec: CORE-008.2
     #[test]
     fn lists_the_texts_of_a_choice() {
         const FILE_TYPE: FileType = FileType::new(

@@ -132,6 +132,7 @@ fn push_spec(text: &mut String, spec: &Spec, tests: &BTreeMap<String, Vec<&str>>
 fn criterion_ids(spec: &Spec) -> Vec<String> {
     spec.criteria
         .iter()
+        .filter(|number| !spec.removed.contains(number))
         .map(|number| format!("{}.{number}", spec.id))
         .collect()
 }

@@ -73,11 +73,8 @@ then each mapping's missing keys. Its message is `<file>:<line>:<column>: <messa
 line and column from 1, the column in characters. A syntax error has the
 YAML parser's position and description.
 
-**JSON Schema.** For each file type, the service generates a JSON Schema (draft
-2020-12) from the description: an object per mapping, with every key as a property with
-its type and description, `additionalProperties: false`, the required keys in
-`required`, a choice's texts in `enum`, and `schema_version` as a constant of the
-highest version. The generated text is the same on every run.
+**JSON Schema.** The service also generates a JSON Schema from the description:
+CORE-008.
 
 ## Acceptance criteria
 
@@ -180,13 +177,8 @@ highest version. The generated text is the same on every run.
 - **When** it is read
 - **Then** the error is at line 2, column 9: `missing key destinations`
 
-### CORE-006.18 – The JSON Schema follows the description
-- **Given** a file type with the optional text key `destination` and the description
-  `Folder to import into`
-- **When** its JSON Schema is generated twice
-- **Then** both texts are identical, the schema has `additionalProperties: false`,
-  `schema_version` is required with the constant 1, and `destination` is a property of
-  type `string` with that description
+### CORE-006.18 – The JSON Schema follows the description (removed)
+- Now CORE-008.1.
 
 ### CORE-006.19 – Columns count characters
 - **Given** the file type of CORE-006.10 and the text
@@ -197,13 +189,20 @@ highest version. The generated text is the same on every run.
 ### CORE-006.20 – A choice accepts only its texts
 - **Given** a choice `on_conflict` of `add_suffix`, `skip` and `fail`, and the text
   `schema_version: 1\non_conflict: overwrite\n`
-- **When** it is read, and the JSON Schema is generated
+- **When** it is read
 - **Then** the error is at line 2, column 14: `expected add_suffix, skip or fail, found
-  overwrite`; the schema has `"enum": ["add_suffix", "skip", "fail"]`
+  overwrite`; with `on_conflict: skip` the value is the text `skip`
+
+### CORE-006.21 – A list entry without a value
+- **Given** the file type of CORE-006.10 and the text `schema_version: 1\njob_codes:
+  [Smith, ~]\n`
+- **When** it is read
+- **Then** the error is at line 2, column 20: `job_codes has an entry with no value`
 
 ## Out of scope
 
 - Finding and reading the file, and the configuration folder: CLI-010.
+- The JSON Schema of a file type: CORE-008.
 - Migrating older versions, writing a file the user may have edited, and units such as
   `20 GiB` (ADR 0011, rules 7, 9 and 3): with the first file type, file and key that
   needs one.
@@ -220,3 +219,4 @@ highest version. The generated text is the same on every run.
 | 2026-11-05 | Implemented; error order and null list entries made explicit |
 | 2026-11-05 | Choices (CORE-006.20) |
 | 2026-11-07 | `schema_version:` without a value (CORE-006.13) |
+| 2026-11-08 | JSON Schema moved to CORE-008 (CORE-006.18 removed); a list entry without a value (CORE-006.21) |

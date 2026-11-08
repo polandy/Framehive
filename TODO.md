@@ -11,7 +11,6 @@ feature live in its spec, decisions in `docs/adr/`. Add items with `/todo`.
 - [ ] Write the job code to XMP as IPTC Job Id (`photoshop:TransmissionReference`, N16) with the XMP milestone (R9, IMPORT-006) — owner decided (2026-11-01)
 - [ ] Make release builds reproducible: `SOURCE_DATE_EPOCH`, `--remap-path-prefix` and a bit-for-bit check in CI, with the first release build (ADR 0007) (2026-11-03)
 - [ ] Store reference pixel hashes for aarch64-darwin in the LibRaw version test — on macOS it compares only sizes until the hashes are measured on a Mac (PREVIEWS-001, ADR 0028) (2026-11-03)
-- [ ] Add a CORE-006 acceptance criterion for a list entry with no value (`<key> has an entry with no value`) once the spec is split below 10 KB — only an unmarked test covers it (CORE-006, PR #41 review) (2026-11-05)
 - [ ] Show `ImportSummary::free_space_unknown` in the CLI or drop the field — the CLI prints the warnings of its own first check, and only tests read the field (IMPORT-012, I1 review) (2026-11-05)
 - [ ] Give videos a name template of their own — today they use the import's name template (IMPORT-013, R7, owner decision D2) (2026-11-06)
 - [ ] Decide whether `JobQueue::stop` should fail for a job that has just finished but whose end is not yet recorded — it returns `Ok` today, as CORE-007.11 allows (CORE-007, PR #46 review) (2026-11-07)
