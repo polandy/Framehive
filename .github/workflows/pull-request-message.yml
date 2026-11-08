@@ -41,8 +41,8 @@ jobs:
             ~/.cargo/registry/cache
             ~/.cargo/git/db
             target
-          key: cargo-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock', 'rust-toolchain.toml', 'Cargo.lock') }}
-          restore-keys: cargo-${{ runner.os }}-${{ runner.arch }}-
+          key: cargo-v2-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock', 'rust-toolchain.toml', 'Cargo.lock') }}
+          restore-keys: cargo-v2-${{ runner.os }}-${{ runner.arch }}-
 
       - name: cargo xtask check-spec-trailers
         # Passed as variables, never interpolated into the script, so the text cannot

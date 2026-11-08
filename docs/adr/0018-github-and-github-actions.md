@@ -25,7 +25,9 @@ owner already uses GitHub.
 5. **The workflow has read-only permissions** and does not keep the checkout token.
    The Cargo registry, `target/` and the Nix store are cached, keyed on `flake.lock`,
    `rust-toolchain.toml` and `Cargo.lock` (`flake.nix` for the store). A cache never
-   changes a result, only the time.
+   changes a result, only the time. CI builds without incremental data and with line
+   tables only (`CARGO_INCREMENTAL=0`, `CARGO_PROFILE_DEV_DEBUG=line-tables-only`),
+   because both made `target/` several times larger and slowed the restore on macOS.
 6. **The Nix store is cached with `nix-community/cache-nix-action`**, per OS and
    architecture, with garbage collection down to 4 GB before a save. LibRaw and
    libgphoto2 are overridden in `flake.nix`, so the public cache never has them and
