@@ -12,7 +12,7 @@ use std::fs;
 use std::path::Path;
 
 use adapter_yaml::SaphyrParser;
-use import::{IMPORT_PROFILE_SCHEMA_ID, ImportProfile};
+use import::{IMPORT_PROFILE_V1_SCHEMA_ID, ImportProfile};
 use support::{Folders, stderr, stdout};
 
 /// Every key of IMPORT-011, as it is written in a file.
@@ -56,7 +56,7 @@ fn config_init_writes_the_example() {
     // A profile no longer names the folder to import into (IMPORT-011).
     assert!(!text.contains("# destination:"), "{text}");
     assert!(text.contains(&format!(
-        "# yaml-language-server: $schema={IMPORT_PROFILE_SCHEMA_ID}"
+        "# yaml-language-server: $schema={IMPORT_PROFILE_V1_SCHEMA_ID}"
     )));
 }
 

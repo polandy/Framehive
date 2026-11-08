@@ -14,10 +14,20 @@ struct Schema {
     generate: fn() -> String,
 }
 
-const SCHEMAS: [Schema; 1] = [Schema {
-    path: "schemas/import-profile-v1.json",
-    generate: import::import_profile_json_schema,
-}];
+const SCHEMAS: [Schema; 3] = [
+    Schema {
+        path: "schemas/configuration-v1.json",
+        generate: import::configuration_json_schema,
+    },
+    Schema {
+        path: "schemas/import-profile-v1.json",
+        generate: import::import_profile_v1_json_schema,
+    },
+    Schema {
+        path: "schemas/import-profile-v2.json",
+        generate: import::import_profile_json_schema,
+    },
+];
 
 /// Writes every schema below `root`.
 pub(crate) fn write(root: &Path) -> Result<(), String> {

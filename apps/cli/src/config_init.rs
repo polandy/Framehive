@@ -147,7 +147,7 @@ fn write_part(file_system: &dyn FileSystem, part: &Path) -> io::Result<()> {
 mod tests {
     use domain::Timestamp;
     use files::testing::MemoryFileSystem;
-    use import::IMPORT_PROFILE_SCHEMA_ID;
+    use import::IMPORT_PROFILE_V1_SCHEMA_ID;
 
     use super::*;
 
@@ -178,7 +178,7 @@ mod tests {
     #[test]
     fn the_example_names_the_published_schema() {
         assert!(EXAMPLE_PROFILE.starts_with(&format!(
-            "# yaml-language-server: $schema={IMPORT_PROFILE_SCHEMA_ID}\n"
+            "# yaml-language-server: $schema={IMPORT_PROFILE_V1_SCHEMA_ID}\n"
         )));
     }
 }
