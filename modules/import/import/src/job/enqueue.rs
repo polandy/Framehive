@@ -90,14 +90,14 @@ fn planned_targets(plan: &PlannedRun, settings: &ImportSettings<'_>) -> Vec<Path
                     (AssetFileRole::Video, Some(video_destination)) => video_destination,
                     _ => settings.destination,
                 };
-                let sidecar = settings
-                    .sidecar_naming_of(file.found.role)
+                let sidecars = settings
+                    .sidecar_namings_of(&file.found)
+                    .into_iter()
                     .map(|naming| destination.join(sidecar_target(naming, target)));
-                Some([Some(destination.join(target)), sidecar])
+                Some(std::iter::once(destination.join(target)).chain(sidecars))
             }
             _ => None,
         })
-        .flatten()
         .flatten()
         .collect()
 }

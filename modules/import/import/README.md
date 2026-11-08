@@ -37,8 +37,9 @@ IMPORT-019) are described in [`docs/scan-and-conflicts.md`](docs/scan-and-confli
 
 `ImportRun` ties them together (ADR 0020 §1): it scans, plans, starts and copies,
 with backup destinations, format readiness, sequence numbers, the import history and
-the free-space check, and writes each photo's XMP sidecar (IMPORT-019); a run that
-would write sidecars without `with_xml_syntax` does not start
+the free-space check, writes each photo's XMP sidecar (IMPORT-019) and carries the
+source `.xmp` sidecars with their file (IMPORT-020); a run that would write or carry
+sidecars without `with_xml_syntax` does not start
 (`RunError::SidecarsWithoutXmlSyntax`). [`docs/import-run.md`](docs/import-run.md)
 describes it.
 
@@ -60,8 +61,8 @@ Boundaries:
   its own, such as an opened camera.
 - **Grouping** of files into assets is defined by LIBRARY-001; the module uses it and
   does not redefine it. `ImportPlan::new` takes assets that are already grouped.
-- **Not covered yet:** metadata tokens, camera time correction, sidecars (until
-  grouping), the import log, and the live preview and block editor (a UI spec).
+- **Not covered yet:** metadata tokens, camera time correction, sidecars other than
+  `.xmp` (until grouping), the import log, and the live preview and block editor (a UI spec).
 
 ## Public API
 
@@ -74,6 +75,8 @@ Boundaries:
 | `scan_camera` | The scan of an opened camera: `DCIM` of each storage only (IMPORT-014) |
 | `FormatReadiness`, `FormatBlocker`, `CAMERA_FORMAT_READINESS_NOTE` | Whether the source can be formatted and what keeps it (IMPORT-008); the note of a camera run (IMPORT-014.10) |
 | `scan_source`, `scan_folder`, `SourceScan`, `FoundFile`, `LeftOut`, `LeftOutReason`, `ScanError` | The source scan and its result (IMPORT-005); `scan_folder` scans without the destination check |
+| `SourceSidecar` | A source `.xmp` sidecar attached to the file it names (IMPORT-020) |
+| `CarriedSidecar`, `ExistingValue`, `ExistingValueResult`, `SidecarField` | What a `FileReport` says about the source sidecars that came with its file: where each went and where it is verified, and each value that was replaced or kept (IMPORT-020) |
 | `TargetResolver`, `TargetRequest`, `ConflictPolicy`, `ConflictOutcome`, `ConflictError` | Conflict resolution against the destination and the plan (IMPORT-003) |
 | `JobCode`, `JobCodeError`, `MAX_JOB_CODE_CHARACTERS` | A validated job code and why a text is not one (IMPORT-006) |
 | `RecentJobCodes`, `MAX_RECENT_JOB_CODES` | The job codes used before, most recent first (IMPORT-006) |

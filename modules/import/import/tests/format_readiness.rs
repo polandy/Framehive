@@ -56,6 +56,8 @@ fn file(path: &str, outcome: FileOutcome, backups: Vec<BackupReport>) -> FileRep
         // Set by `summary`, which knows the backup destinations of the run.
         required_locations: 0,
         sidecar: None,
+        carried_sidecars: Vec::new(),
+        existing_values: Vec::new(),
     }
 }
 
@@ -240,7 +242,8 @@ fn an_unreadable_folder_keeps_the_card() {
 /// spec: IMPORT-008.9
 #[test]
 fn a_sidecar_left_out_keeps_the_card() {
-    blocked_by_left_out(LeftOutReason::SidecarNeedsGrouping, "DSCF0001.xmp");
+    blocked_by_left_out(LeftOutReason::SidecarNeedsGrouping, "clip.THM");
+    blocked_by_left_out(LeftOutReason::SidecarWithoutItsFile, "DSCF0002.xmp");
 }
 
 /// spec: IMPORT-008.10

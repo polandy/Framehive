@@ -275,6 +275,8 @@ mod tests {
             in_video_destination: false,
             required_locations: 1,
             sidecar: None,
+            carried_sidecars: Vec::new(),
+            existing_values: Vec::new(),
         }
     }
 

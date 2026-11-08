@@ -30,7 +30,9 @@ import, and a failed import destination keeps the verified backups.
 Format readiness (IMPORT-008): `FormatReadiness::of` reads an `ImportSummary` and tells
 whether the source can be formatted: every file the scan found is verified at the
 import destination and at every backup destination (a duplicate counts as its earlier
-file), nothing was left out as unreadable or as a sidecar that needs grouping, and the
+file), nothing was left out as unreadable, as a sidecar that needs grouping or as a sidecar
+without its file, every source sidecar that came with a file is verified wherever its
+file must be (IMPORT-020.8), and the
 run was neither stopped nor a dry run (`ImportSummary::dry_run`). Otherwise
 `FormatReadiness::blockers` lists each file that is not saved, with the number of
 locations it is verified at, and each blocking left-out entry, in scan order.
@@ -110,6 +112,15 @@ completes a sidecar that failed and never changes one that is there; a file the 
 knows gets none. A dry run writes nothing and reports the sidecar it would write in
 `FileReport::sidecar`.
 
+A source `.xmp` sidecar the scan attached comes with its file (IMPORT-020) and keeps
+its naming form after the file's target name. Without import values it is copied byte
+for byte. With values, they go into the carried sidecar of the configured naming, else
+the first: the job code replaces the old one, creators and a copyright already there
+are kept, keywords are added, and unknown namespaces stay. Each replaced or kept value
+is listed in `FileReport::existing_values`; each carried sidecar in
+`FileReport::carried_sidecars` with the number of locations it was written and verified
+at. It shares its file's conflict outcome, so a file that is not copied carries none.
+
 The run writes XML through the `XmlSyntax` that `ImportRun::with_xml_syntax` gives
-it. A run that would write sidecars without one does not start:
+it. A run that would write or carry sidecars without one does not start:
 `RunError::SidecarsWithoutXmlSyntax`, before anything is reserved or written.

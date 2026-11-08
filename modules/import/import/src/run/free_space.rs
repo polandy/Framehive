@@ -131,11 +131,12 @@ fn written_target(
         FilePlan::Named(planned) => planned,
         FilePlan::ImportedBefore { target } => return Some((target.clone(), false)),
     };
+    let sidecars = settings.sidecar_namings_of(&file.found);
     let request = TargetRequest {
         source_path: &file.found.path,
         size: file.found.size,
         target: planned.target.as_ref().ok()?,
-        sidecar: settings.sidecar_naming_of(file.found.role),
+        sidecars: &sidecars,
     };
     match resolver.resolve(&request).ok()? {
         ConflictOutcome::CopyTo { target } => Some((target, true)),
@@ -152,9 +153,7 @@ fn sidecar_size(sidecars: Option<&Sidecars<'_>>, file: &RunFile) -> u64 {
     let Ok(FilePlan::Named(planned)) = &file.planned else {
         return 0;
     };
-    sidecars
-        .and_then(|sidecars| sidecars.size_of(file.found.role, planned))
-        .unwrap_or(0)
+    sidecars.map_or(0, |sidecars| sidecars.size_of(&file.found, planned))
 }
 
 /// Adds `size` to the bytes written to `destination`, one of `destinations`.

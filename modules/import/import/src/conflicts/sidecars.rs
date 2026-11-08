@@ -11,7 +11,7 @@ use metadata::xmp::SidecarNaming;
 use super::{ConflictError, TargetRequest, TargetResolver, caseless_key};
 
 impl TargetResolver<'_> {
-    /// Whether the sidecar `file` would get at `candidate` is free: no earlier file
+    /// Whether each sidecar `file` would get at `candidate` is free: no earlier file
     /// or sidecar of the run claimed its name, no other job reserved it, and nothing
     /// is there at the destination. A leftover sidecar is never merged with
     /// (IMPORT-019.11). Always free for a file that gets no sidecar.
@@ -20,9 +20,19 @@ impl TargetResolver<'_> {
         file: &TargetRequest<'_>,
         candidate: &str,
     ) -> Result<bool, ConflictError> {
-        let Some(naming) = file.sidecar else {
-            return Ok(true);
-        };
+        for naming in file.sidecars {
+            if !self.sidecar_name_is_free(*naming, candidate)? {
+                return Ok(false);
+            }
+        }
+        Ok(true)
+    }
+
+    fn sidecar_name_is_free(
+        &mut self,
+        naming: SidecarNaming,
+        candidate: &str,
+    ) -> Result<bool, ConflictError> {
         let sidecar = sidecar_target(naming, candidate);
         let key = caseless_key(&sidecar);
         if self.claimed.contains_key(&key)
@@ -35,11 +45,11 @@ impl TargetResolver<'_> {
         Ok(self.existing(&sidecar)?.is_empty())
     }
 
-    /// Claims the name of the sidecar `file` gets at `candidate`, if it gets one.
+    /// Claims the name of each sidecar `file` gets at `candidate`.
     pub(super) fn claim_sidecar(&mut self, file: &TargetRequest<'_>, candidate: &str) {
-        if let Some(naming) = file.sidecar {
+        for naming in file.sidecars {
             self.claimed_sidecars
-                .insert(caseless_key(&sidecar_target(naming, candidate)));
+                .insert(caseless_key(&sidecar_target(*naming, candidate)));
         }
     }
 

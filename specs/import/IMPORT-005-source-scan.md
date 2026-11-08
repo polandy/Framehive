@@ -30,7 +30,9 @@ The lists are the formats of requirements section 2.7.
 
 Until grouping (LIBRARY-001) is implemented, each file is its own asset, so a sidecar
 would be named from its own modification time and could land in another folder than its
-photo. The scan therefore leaves sidecars out, with the reason "sidecar, needs
+photo. The scan therefore attaches a `.xmp` sidecar to the file it names, which carries
+it along (IMPORT-020), leaves a `.xmp` without its file out with the reason "sidecar
+without its file", and leaves every other sidecar out with the reason "sidecar, needs
 grouping".
 
 The scan leaves out, and lists with the reason:
@@ -114,11 +116,12 @@ files it imported before. Such an import is refused before the scan starts.
 - **Then** it is refused before the scan, with an error that names both paths, and no
   file is copied
 
-### IMPORT-005.12 – Sidecars are left out until grouping
-- **Given** a source with `DSCF0001.RAF`, `DSCF0001.xmp` and `clip.Thm`
+### IMPORT-005.12 – XMP sidecars come with their file, other sidecars are left out
+- **Given** a source with `DSCF0001.RAF`, `DSCF0001.xmp`, `clip.Thm` and `notes.xmp`
 - **When** it is scanned
-- **Then** only `DSCF0001.RAF` is found, and `DSCF0001.xmp` and `clip.Thm` are listed as
-  left out with the reason "sidecar, needs grouping"
+- **Then** only `DSCF0001.RAF` is found, with `DSCF0001.xmp` attached; `clip.Thm` is
+  listed as left out with the reason "sidecar, needs grouping" and `notes.xmp` with the
+  reason "sidecar without its file"
 
 ## Out of scope
 
@@ -127,7 +130,8 @@ files it imported before. Such an import is refused before the scan starts.
 - Configurable scanned folders and ignore patterns (Q6), as part of a later version of
   the import profile (IMPORT-011).
 - Grouping files into assets (LIBRARY-001); until it is implemented, each file is its
-  own asset and sidecars are left out (IMPORT-005.12).
+  own asset, a `.xmp` sidecar comes with its file (IMPORT-020) and other sidecars are
+  left out (IMPORT-005.12).
 - The capture time of a file: CORE-005.
 - Files already imported, and name conflicts: IMPORT-003.
 - Deduplicating two card slots (Q8), and audio and proxy files (V7, G2): later specs.
@@ -143,3 +147,4 @@ files it imported before. Such an import is refused before the scan starts.
 | 2026-10-31 | Initial draft (milestone 1) |
 | 2026-10-31 | Sidecars are left out until grouping (IMPORT-005.12); accepted by the owner |
 | 2026-10-31 | `import::scan_source` covers IMPORT-005.1–.12 against `MemoryFileSystem`; a hidden folder is listed once and not entered; `adapter-fs` lists symbolic links and unreadable folders on a real file system as the scan needs |
+| 2026-11-08 | IMPORT-005.12: a `.xmp` sidecar is attached to the file it names, or left out as "sidecar without its file"; only other sidecars need grouping (IMPORT-020) |
