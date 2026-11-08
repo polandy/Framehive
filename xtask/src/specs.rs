@@ -190,6 +190,12 @@ fn check_markers(by_id: &BTreeMap<&str, &Spec>, markers: &[Marker], report: &mut
                 marker.location,
                 marker.criterion()
             ));
+        } else if spec.removed.contains(&marker.number) {
+            report.errors.push(format!(
+                "{}: criterion {} is removed",
+                marker.location,
+                marker.criterion()
+            ));
         } else if spec.status == "draft" || spec.status == "removed" {
             report.errors.push(format!(
                 "{}: tests must not reference the {} spec {}",
@@ -201,7 +207,7 @@ fn check_markers(by_id: &BTreeMap<&str, &Spec>, markers: &[Marker], report: &mut
 
 fn check_coverage(specs: &[Spec], markers: &[Marker], report: &mut Report) {
     for spec in specs.iter().filter(|spec| spec.status == "implemented") {
-        for number in &spec.criteria {
+        for number in spec.criteria.iter().filter(|n| !spec.removed.contains(n)) {
             let tested = markers
                 .iter()
                 .any(|marker| marker.spec_id == spec.id && marker.number == *number);
@@ -336,5 +342,20 @@ mod tests {
             "{:?}",
             report.errors
         );
+    }
+
+    #[test]
+    fn a_removed_criterion_needs_no_test_and_takes_none() {
+        let mut spec = valid_spec();
+        spec.removed.push(2);
+        let specs = [spec, library_spec()];
+        let report = check(&specs, &requirements(), &[marker("CORE-009", 1)]);
+        assert!(report.errors.is_empty(), "{:?}", report.errors);
+        let report = check(
+            &specs,
+            &requirements(),
+            &[marker("CORE-009", 1), marker("CORE-009", 2)],
+        );
+        assert_eq!(report.errors, ["x.rs:1: criterion CORE-009.2 is removed"]);
     }
 }

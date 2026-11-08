@@ -27,7 +27,8 @@ File name: `<ID>-<short-name>.md`, e.g. `IMPORT-002-sequence-numbers.md`.
   `PREVIEWS`.
 - Sequential number, three digits, never reused.
 - Acceptance criteria: `<ID>.<n>`, e.g. `IMPORT-002.3`. Numbers are never reassigned;
-  removed criteria stay listed, marked "(removed)".
+  removed criteria stay listed, with `(removed)` at the end of the heading, and need
+  no test.
 
 ## Status
 

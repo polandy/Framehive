@@ -32,8 +32,10 @@ pub(crate) struct Spec {
     pub(crate) status: String,
     pub(crate) origin: Vec<String>,
     pub(crate) depends_on: Vec<String>,
-    /// Criterion numbers in document order, e.g. `[1, 2, 3]`.
+    /// Criterion numbers in document order, e.g. `[1, 2, 3]`, removed ones included.
     pub(crate) criteria: Vec<u32>,
+    /// Criteria whose heading ends with `(removed)`; they keep their number but need no test.
+    pub(crate) removed: Vec<u32>,
     pub(crate) has_open_questions: bool,
 }
 
@@ -70,6 +72,7 @@ pub(crate) fn parse_spec(file: &str, text: &str) -> Result<Spec, Vec<String>> {
         .filter_map(|entry| entry.split_whitespace().next().map(str::to_owned))
         .collect();
     spec.criteria = criteria(file, &spec.id, text, &mut problems);
+    spec.removed = removed_criteria(&spec.id, text);
     spec.has_open_questions = has_open_questions(text);
     if problems.is_empty() {
         Ok(spec)
@@ -158,6 +161,15 @@ fn criteria(file: &str, id: &str, text: &str, problems: &mut Vec<String>) -> Vec
     numbers
 }
 
+fn removed_criteria(id: &str, text: &str) -> Vec<u32> {
+    text.lines()
+        .filter_map(|line| line.strip_prefix("### "))
+        .filter(|heading| heading.trim_end().ends_with("(removed)"))
+        .filter_map(|heading| heading.split(" – ").next())
+        .filter_map(|label| label.strip_prefix(&format!("{id}."))?.parse().ok())
+        .collect()
+}
+
 fn has_open_questions(text: &str) -> bool {
     let Some((_, rest)) = text.split_once("\n## Open questions\n") else {
         return false;
@@ -186,7 +198,16 @@ mod tests {
         assert_eq!(spec.origin, ["B19", "F1–F2", "2.7"]);
         assert_eq!(spec.depends_on, ["LIBRARY-001"]);
         assert_eq!(spec.criteria, [1, 2]);
+        assert!(spec.removed.is_empty());
         assert!(!spec.has_open_questions);
+    }
+
+    #[test]
+    fn keeps_a_removed_criterion_and_marks_it() {
+        let text = VALID.replace("CORE-009.2 – Two", "CORE-009.2 – Two (removed)");
+        let spec = parse_spec("specs/core/CORE-009-example.md", &text).expect("valid spec");
+        assert_eq!(spec.criteria, [1, 2]);
+        assert_eq!(spec.removed, [2]);
     }
 
     #[test]

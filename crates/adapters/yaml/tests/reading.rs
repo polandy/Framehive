@@ -276,6 +276,15 @@ fn columns_count_characters() {
     );
 }
 
+/// spec: CORE-006.21
+#[test]
+fn a_list_entry_without_a_value_is_an_error() {
+    assert_eq!(
+        located_message("schema_version: 1\njob_codes: [Smith, ~]\n"),
+        "2:20: job_codes has an entry with no value"
+    );
+}
+
 /// spec: CORE-006.20
 #[test]
 fn a_choice_accepts_only_its_texts() {

@@ -132,6 +132,7 @@ fn push_spec(text: &mut String, spec: &Spec, tests: &BTreeMap<String, Vec<&str>>
 fn criterion_ids(spec: &Spec) -> Vec<String> {
     spec.criteria
         .iter()
+        .filter(|number| !spec.removed.contains(number))
         .map(|number| format!("{}.{number}", spec.id))
         .collect()
 }
@@ -209,5 +210,14 @@ mod tests {
             | Criterion | Tests | Status |\n|---|---|---|\n\
             | CORE-002.1 | – | no test |\n";
         assert_eq!(report, expected);
+    }
+
+    #[test]
+    fn leaves_removed_criteria_out() {
+        let mut core = spec("CORE-001", "implemented", &[], &[1, 2]);
+        core.removed.push(2);
+        let report = render(&[core], &[marker("CORE-001", 1, "a.rs:3")]);
+        assert!(report.contains("1 of 1 criteria have a test"), "{report}");
+        assert!(!report.contains("CORE-001.2"), "{report}");
     }
 }
