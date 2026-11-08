@@ -212,3 +212,4 @@ parsed is never overwritten. Permissions are never changed.
 | Date | Change |
 |---|---|
 | 2026-11-08 | Created and accepted with the owner's XMP decisions D7–D10, D24, D25 (ADR 0039, ADR 0040) |
+| 2026-11-08 | CORE-009.1–.14 implemented: XMP model, parser and canonical serializer in `metadata`, `adapter-xmp` (ADR 0039) |

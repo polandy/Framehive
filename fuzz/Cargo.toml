@@ -7,7 +7,7 @@
 
 [package]
 name = "metadata-fuzz"
-description = "Coverage-guided fuzz targets for the EXIF parser of the metadata service"
+description = "Coverage-guided fuzz targets for the EXIF and XMP parsers of the metadata service"
 version = "0.1.0"
 edition = "2024"
 license = "GPL-3.0-or-later"
@@ -21,6 +21,8 @@ cargo-fuzz = true
 layer = "tooling"
 
 [dependencies]
+adapter-xmp.workspace = true
+domain.workspace = true
 libfuzzer-sys.workspace = true
 metadata.workspace = true
 
@@ -31,11 +33,20 @@ test = false
 doc = false
 bench = false
 
+[[bin]]
+name = "xmp"
+path = "fuzz_targets/xmp.rs"
+test = false
+doc = false
+bench = false
+
 [workspace]
 members = ["."]
 
 # Pinned once, as in the main workspace (ADR 0009).
 [workspace.dependencies]
+adapter-xmp = { path = "../crates/adapters/xmp" }
+domain = { path = "../crates/domain" }
 libfuzzer-sys = { version = "0.4", default-features = false, features = ["link_libfuzzer"] }
 metadata = { path = "../crates/services/metadata" }
 

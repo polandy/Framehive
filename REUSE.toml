@@ -4,7 +4,7 @@
 # Files without their own SPDX header. Specs must start with their title line
 # (`cargo xtask check-specs`), skills and agents start with front matter, JSON has
 # no comments, and lock files, mockups, schemas and public API snapshots are
-# generated.
+# generated. Test fixtures are compared byte for byte.
 version = 1
 
 [[annotations]]
@@ -24,6 +24,7 @@ path = [
     "mockups/**",
     "schemas/**",
     "crates/**/public-api.txt",
+    "crates/**/tests/fixtures/**",
 ]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Framehive contributors"

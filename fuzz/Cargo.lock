@@ -3,6 +3,14 @@
 version = 4
 
 [[package]]
+name = "adapter-xmp"
+version = "0.1.0"
+dependencies = [
+ "metadata",
+ "quick-xml",
+]
+
+[[package]]
 name = "arbitrary"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -85,6 +93,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "memchr"
+version = "2.8.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
+
+[[package]]
 name = "metadata"
 version = "0.1.0"
 dependencies = [
@@ -97,6 +111,8 @@ dependencies = [
 name = "metadata-fuzz"
 version = "0.1.0"
 dependencies = [
+ "adapter-xmp",
+ "domain",
  "libfuzzer-sys",
  "metadata",
 ]
@@ -108,6 +124,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "985e7ec9bb745e6ce6535b544d84d6cd6f7ad8bd711c398938ae983b91a766d9"
 dependencies = [
  "unicode-ident",
+]
+
+[[package]]
+name = "quick-xml"
+version = "0.42.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "41b1177fdf999d2321d3fb46ff47159d9c1fb9ad66a4879f8c50a0b504615e9b"
+dependencies = [
+ "memchr",
 ]
 
 [[package]]

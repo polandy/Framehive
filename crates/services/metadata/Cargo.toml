@@ -3,7 +3,7 @@
 
 [package]
 name = "metadata"
-description = "Metadata service of Framehive: reads the capture time from EXIF"
+description = "Metadata service of Framehive: reads the capture time from EXIF, reads and writes XMP"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
