@@ -15,6 +15,7 @@ fn values(job_code: Option<&str>) -> AssetValues {
         import_time: LocalDateTime::new(2026, 10, 19, 9, 0, 0).unwrap(),
         job_code: job_code.map(str::to_owned),
         sequence_number: None,
+        camera_model: None,
     }
 }
 

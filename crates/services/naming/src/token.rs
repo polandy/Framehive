@@ -32,6 +32,8 @@ pub(crate) enum Token {
     Sequence(SequenceToken),
     /// `{job}`: the job code of the import (IMPORT-006).
     JobCode,
+    /// `{camera}`: the camera model from the EXIF (IMPORT-021).
+    Camera,
 }
 
 /// The case option of `{name}` and `{ext}`.
@@ -65,7 +67,7 @@ impl Token {
             TemplateError::new(column, TemplateErrorKind::UnknownOption { token })
         };
         match (name, option) {
-            ("date" | "imported", Some("")) | ("seq_letters" | "job", Some(_)) => {
+            ("date" | "imported", Some("")) | ("seq_letters" | "job" | "camera", Some(_)) => {
                 Err(unknown_option())
             }
             ("date" | "imported", Some(format)) => {
@@ -97,6 +99,7 @@ impl Token {
                 text,
             })),
             ("job", None) => Ok(Token::JobCode),
+            ("camera", None) => Ok(Token::Camera),
             _ => Err(TemplateError::new(
                 column,
                 TemplateErrorKind::UnknownToken { token: text },

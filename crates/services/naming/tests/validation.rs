@@ -18,17 +18,17 @@ fn rejection(template: &str) -> TemplateError {
 /// spec: IMPORT-001.10
 #[test]
 fn unknown_token_is_rejected_with_its_column() {
-    let error = rejection("{date:%Y}/{camera}.{ext}");
+    let error = rejection("{date:%Y}/{colour}.{ext}");
 
     assert_eq!(error.column, 11);
     assert_eq!(
         error.kind,
         TemplateErrorKind::UnknownToken {
-            token: "{camera}".to_owned()
+            token: "{colour}".to_owned()
         }
     );
     let message = error.to_string();
-    assert!(message.contains("{camera}"), "{message}");
+    assert!(message.contains("{colour}"), "{message}");
     assert!(message.contains("column 11"), "{message}");
 }
 

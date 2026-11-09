@@ -30,6 +30,7 @@ Example: `{date:%Y}/{date:%Y-%m-%d}/{date:%Y%m%d}-{name}.{ext}`
 | `{number:N}` | The last N digits of the image number, padded with zeros to N (1–6) |
 | `{seq_today:N}`, `{seq_stored:N}`, `{seq_session:N}`, `{seq_letters}` | Sequence number (IMPORT-002) |
 | `{job}` | Job code of the import (IMPORT-006); it takes no option |
+| `{camera}` | Camera model from the EXIF (IMPORT-021); it takes no option |
 
 **Date formats.** A format is literal text with these codes. They are independent of
 the language setting, so the same template gives the same names on every machine.
@@ -142,9 +143,9 @@ can never contain `/`.
   `20261017-0042.xmp`
 
 ### IMPORT-001.10 – Unknown token
-- **Given** the template `{date:%Y}/{camera}.{ext}`
+- **Given** the template `{date:%Y}/{colour}.{ext}`
 - **When** the user saves it
-- **Then** it is rejected, and the error names `{camera}` and column 11
+- **Then** it is rejected, and the error names `{colour}` and column 11
 
 ### IMPORT-001.11 – Unknown date code
 - **Given** the template `{date:%Y-%B}/{name}.{ext}`
@@ -205,11 +206,11 @@ can never contain `/`.
 
 - Sequence numbers: IMPORT-002.
 - A target name that already exists, or two files with the same target: IMPORT-003.
-- Photo and video metadata tokens (R2, R3): later specs.
+- Metadata tokens: `{camera}` is IMPORT-021; others are later specs.
 - What a valid job code is, and an import whose template needs one: IMPORT-006.
 - The live preview and block editor (N9, R10): a UI spec.
-- Where a profile stores its template: IMPORT-011. The mode stays on (compatibility
-  mode) until a profile key for it is specified.
+- Where a profile stores its template: IMPORT-011. Compatibility mode stays on until a
+  profile key for it is specified.
 
 ## Open questions
 
@@ -221,6 +222,7 @@ can never contain `/`.
 |---|---|
 | 2026-10-19 | Initial draft |
 | 2026-10-19 | Accepted by the owner |
-| 2026-10-19 | Clarified the modification-time fallback order for assets without a capture time, and added IMPORT-001.18 for a rendered segment that would leave the destination (naming service, review) |
+| 2026-10-19 | Clarified the modification-time fallback order; added IMPORT-001.18 (review) |
 | 2026-10-31 | Implemented: `ImportPlan` in the import module, on the naming service |
-| 2026-11-01 | Added the `{job}` token with IMPORT-001.19 and IMPORT-001.20 (R9, IMPORT-006) |
+| 2026-11-01 | Added the `{job}` token with IMPORT-001.19 and .20 (R9, IMPORT-006) |
+| 2026-11-09 | `{camera}` token (IMPORT-021); unknown-token example is `{colour}` |

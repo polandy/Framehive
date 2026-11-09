@@ -10,7 +10,8 @@ Layer: `service` (architecture §2, §3)
 ## Purpose
 
 The metadata service reads metadata from photo files. It reads the capture time
-from EXIF with its own parser (CORE-005, ADR 0021). It reads only the few
+and the camera model (`Model`, IMPORT-021) from EXIF with its own parser (CORE-005,
+ADR 0021). It reads only the few
 kilobytes that lead to the EXIF, never a whole RAW file.
 
 It reads and writes XMP packets (CORE-009, ADR 0039) in `xmp`: the data model of

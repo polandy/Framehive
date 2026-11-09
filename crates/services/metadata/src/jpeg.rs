@@ -37,6 +37,22 @@ pub(crate) fn capture_time(
     tiff::capture_time(reader, exif)
 }
 
+/// The camera model of the JPEG that fills `window`; `None` when it has no EXIF.
+pub(crate) fn camera_model(
+    reader: &mut Reader<'_>,
+    window: Window,
+) -> Result<Option<Vec<u8>>, Failure> {
+    let start = reader.read(window, 0, 2, "JPEG start")?;
+    if !is_jpeg(&start) {
+        return Err(damaged("the JPEG start marker is missing"));
+    }
+    match exif_window(reader, window) {
+        Ok(exif) => tiff::camera_model(reader, exif),
+        Err(Failure::Reason(NoCaptureTime::Missing)) => Ok(None),
+        Err(failure) => Err(failure),
+    }
+}
+
 /// The TIFF data of the first EXIF `APP1` segment, walking the segments before the
 /// image data.
 fn exif_window(reader: &mut Reader<'_>, window: Window) -> Result<Window, Failure> {

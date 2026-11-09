@@ -18,10 +18,10 @@ fn rejects_an_invalid_template() {
     let folders = Folders::new();
     folders.add_raf();
 
-    let output = folders.import(&["--template", "{date:%Y}/{camera}.{ext}"]);
+    let output = folders.import(&["--template", "{date:%Y}/{colour}.{ext}"]);
 
     let error = stderr(&output);
-    assert!(error.contains("{camera}"), "{error}");
+    assert!(error.contains("{colour}"), "{error}");
     assert!(error.contains("column 11"), "{error}");
     assert!(!folders.destination().exists());
     assert_eq!(output.status.code(), Some(2));

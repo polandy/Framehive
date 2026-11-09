@@ -130,9 +130,9 @@ Errors that stop the command, and log messages, go to standard error.
   and the exit code is 0
 
 ### CLI-001.8 – Invalid template
-- **Given** the template `{date:%Y}/{camera}.{ext}`
+- **Given** the template `{date:%Y}/{colour}.{ext}`
 - **When** the command runs with it
-- **Then** standard error names `{camera}` and column 11, nothing is copied, and the
+- **Then** standard error names `{colour}` and column 11, nothing is copied, and the
   exit code is 2
 
 ### CLI-001.9 – Missing source

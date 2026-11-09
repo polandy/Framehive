@@ -21,6 +21,7 @@ const MAX_TEXT_LENGTH: u32 = 64;
 /// ORF (`RO`, `RS`) and Panasonic RW2 (`U`).
 const MAGIC_NUMBERS: [u16; 4] = [42, 0x4F52, 0x5352, 0x0055];
 
+const MODEL: u16 = 0x0110;
 const EXIF_IFD_POINTER: u16 = 0x8769;
 const DATE_TIME_ORIGINAL: u16 = 0x9003;
 const SUB_SEC_TIME_ORIGINAL: u16 = 0x9291;
@@ -46,21 +47,7 @@ pub(crate) fn capture_time(
     reader: &mut Reader<'_>,
     window: Window,
 ) -> Result<CaptureTime, Failure> {
-    let header = reader.read(window, 0, HEADER_LENGTH, "TIFF header")?;
-    if !is_tiff(&header) {
-        return Err(damaged("the TIFF header is not valid"));
-    }
-    let mut tiff = Tiff {
-        reader,
-        window,
-        order: if header[0] == b'I' {
-            ByteOrder::Little
-        } else {
-            ByteOrder::Big
-        },
-        visited: Vec::new(),
-    };
-    let ifd0 = tiff.order.u32(&header[4..8]);
+    let (mut tiff, ifd0) = Tiff::open(reader, window)?;
     let exif_pointer = tiff
         .entries(ifd0)?
         .into_iter()
@@ -77,6 +64,17 @@ pub(crate) fn capture_time(
         sub_seconds.as_deref(),
         offset.as_deref(),
     )?)
+}
+
+/// The camera model (`Model`, tag 0x0110 of IFD0) in the TIFF data that fills `window`,
+/// as recorded: not cleaned, and `None` when the tag is missing or not text.
+pub(crate) fn camera_model(
+    reader: &mut Reader<'_>,
+    window: Window,
+) -> Result<Option<Vec<u8>>, Failure> {
+    let (mut tiff, ifd0) = Tiff::open(reader, window)?;
+    let entries = tiff.entries(ifd0)?;
+    tiff.optional_text(entries.iter().find(|entry| entry.tag == MODEL))
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -119,6 +117,29 @@ struct Tiff<'r, 's> {
     order: ByteOrder,
     /// The offsets of the IFDs read so far, so crafted pointers cannot loop.
     visited: Vec<u32>,
+}
+
+impl<'r, 's> Tiff<'r, 's> {
+    /// Reads the header; also gives the offset of IFD0.
+    fn open(reader: &'r mut Reader<'s>, window: Window) -> Result<(Self, u32), Failure> {
+        let header = reader.read(window, 0, HEADER_LENGTH, "TIFF header")?;
+        if !is_tiff(&header) {
+            return Err(damaged("the TIFF header is not valid"));
+        }
+        let order = if header[0] == b'I' {
+            ByteOrder::Little
+        } else {
+            ByteOrder::Big
+        };
+        let ifd0 = order.u32(&header[4..8]);
+        let tiff = Tiff {
+            reader,
+            window,
+            order,
+            visited: Vec::new(),
+        };
+        Ok((tiff, ifd0))
+    }
 }
 
 impl Tiff<'_, '_> {

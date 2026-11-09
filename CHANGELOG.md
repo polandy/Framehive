@@ -27,6 +27,9 @@ All user-visible changes are listed here. The format follows
 - Coverage-guided fuzzing of the EXIF parser: the fuzz crate in `fuzz/`, the
   `nix develop .#fuzz` shell with a pinned nightly toolchain, `cargo xtask fuzz` and a
   nightly workflow (ADR 0037).
+- `{camera}` name template token: the camera model from the EXIF, cleaned for file
+  names, or `Unknown camera` (IMPORT-021). `{camera}` is no longer an unknown token. The `metadata` service gains
+  `read_camera_model`, and `naming::AssetValues` the field `camera_model`.
 - Name templates (IMPORT-001): the import plan gives each imported file its folders
   and name from a name template, keeps the files of one asset together, and marks
   files that cannot be named or are dated by their modification time.

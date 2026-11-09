@@ -6,7 +6,7 @@
 use std::path::Path;
 
 use domain::{CaptureTime, LocalDateTime, Timestamp};
-use metadata::{CaptureTimeError, NoCaptureTime, read_capture_time};
+use metadata::{CaptureTimeError, NoCaptureTime, read_camera_model, read_capture_time};
 
 use super::ImportRun;
 use crate::plan::AssetFile;
@@ -38,6 +38,8 @@ impl ImportRun<'_> {
                     return Err(FileError::CannotBeRead { error });
                 }
             };
+        let camera_model = read_camera_model(self.source_file_system, &source.join(&file.path))
+            .map_err(|error| FileError::CannotBeRead { error })?;
         let modification_time = self
             .local_time(file.modification_time)
             .ok_or(FileError::ModificationTimeOutOfRange)?;
@@ -51,6 +53,7 @@ impl ImportRun<'_> {
                 role: file.role,
                 capture_time,
                 modification_time,
+                camera_model,
             },
             no_capture_time,
         })

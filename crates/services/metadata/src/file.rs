@@ -11,6 +11,7 @@ use domain::CaptureTime;
 use files::{ReadOnlyFileSystem, ReadSeek};
 
 use crate::NoCaptureTime;
+use crate::camera_model::camera_model;
 use crate::capture_time::capture_time;
 use crate::source::{ByteSource, Failure};
 
@@ -86,6 +87,49 @@ pub fn read_capture_time(
         Failure::Reason(reason) => reason.into(),
         Failure::Io(error) => io_error(error),
     })
+}
+
+/// Reads the camera model of the file at `path` (IMPORT-021): the EXIF `Model`, as
+/// recorded.
+///
+/// The same files are opened and read as for [`read_capture_time`]. A file of another
+/// format, without a model, or with a damaged EXIF has none: `Ok(None)`.
+///
+/// # Errors
+///
+/// Returns the I/O error that stopped reading the file.
+///
+/// ```
+/// use std::path::Path;
+///
+/// use domain::Timestamp;
+/// use files::testing::MemoryFileSystem;
+/// use metadata::read_camera_model;
+/// use metadata::testing::{ByteOrder, MODEL, Tiff};
+///
+/// let raw = Tiff::new(ByteOrder::LittleEndian)
+///     .with_ifd0_text(MODEL, "NIKON Z 6")
+///     .to_bytes();
+/// let file_system = MemoryFileSystem::new();
+/// file_system.add_file(Path::new("/card/DSC_0001.NEF"), &raw, Timestamp::UNIX_EPOCH);
+///
+/// let model = read_camera_model(&file_system, Path::new("/card/DSC_0001.NEF"))?;
+/// assert_eq!(model.as_deref(), Some("NIKON Z 6"));
+/// # Ok::<(), std::io::Error>(())
+/// ```
+pub fn read_camera_model(
+    file_system: &dyn ReadOnlyFileSystem,
+    path: &Path,
+) -> io::Result<Option<String>> {
+    if !is_read(path) {
+        return Ok(None);
+    }
+    let mut source = FileSource::new(file_system.open_read(path)?)?;
+    match camera_model(&mut source) {
+        Ok(model) => Ok(model),
+        Err(Failure::Reason(_)) => Ok(None),
+        Err(Failure::Io(error)) => Err(error),
+    }
 }
 
 /// Whether the extension of `path` names a format CORE-005 reads.
