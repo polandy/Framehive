@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Framehive contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//! Reading and saving sidecar files through the `files` port (CORE-009, saving;
+//! Reading and saving sidecar files through the `files` port (CORE-010, saving;
 //! ADR 0040 §7).
 
 use std::ffi::OsString;
@@ -19,7 +19,7 @@ use super::xml::XmlSyntax;
 
 /// What was at a sidecar's path when it was read. A write compares it with what is
 /// there before its rename, so that it never replaces another program's change
-/// (CORE-009.17, .18).
+/// (CORE-010.3, .4).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FoundSidecar(Found);
 

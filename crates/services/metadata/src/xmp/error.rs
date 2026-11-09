@@ -66,7 +66,7 @@ pub enum XmpEditError {
 #[error("the clock shows a time outside the years 1 to 9999")]
 pub struct ClockOutOfRange;
 
-/// Why a sidecar file could not be read or saved (CORE-009.15–.19).
+/// Why a sidecar file could not be read or saved (CORE-010.1–.5).
 #[derive(Debug, Error)]
 #[error("the XMP sidecar {} {kind}", path.display())]
 pub struct SidecarError {
