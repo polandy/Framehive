@@ -123,6 +123,14 @@ Invalid sub-seconds or offsets are ignored; the date and time are still used.
 - **When** their capture times are read
 - **Then** both are 2016-10-12 14:01:18, without sub-seconds and without an offset
 
+### CORE-005.14 – Files of the reference cameras
+- **Given** the RAW or DNG file and the camera JPEG of the reference sets
+  `fujifilm/x-t2/`, `fujifilm/x-t5/` (CORE-001) and `canon/eos-7d/` (CORE-003)
+- **When** their capture times are read
+- **Then** the X-T2 files give 2023-10-02 12:05:23 without an offset; the X-T5 files
+  give 2024-09-28 13:25:29 +02:00; the EOS 7D DNG gives 2015-08-10 10:41:56 (Lightroom
+  shifted it) and its JPEG 2015-08-10 04:41:56.33, both without an offset
+
 ## Out of scope
 
 - Other EXIF fields, maker notes and GPS: CORE-001, CORE-003, CORE-004.
@@ -145,3 +153,4 @@ Invalid sub-seconds or offsets are ignored; the date and time are still used.
 | 2026-10-31 | Accepted by the owner |
 | 2026-10-31 | Implemented in the `metadata` service, with `LocalDateTime` and `CaptureTime` in `domain` |
 | 2026-11-09 | CORE-005.13 added and implemented: the owner's Canon EOS 350D DNG and JPEG |
+| 2026-11-09 | CORE-005.14 added and implemented: the owner's X-T2, X-T5 and EOS 7D files |

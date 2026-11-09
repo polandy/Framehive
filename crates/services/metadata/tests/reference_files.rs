@@ -12,7 +12,7 @@
 use std::env;
 use std::path::{Path, PathBuf};
 
-use domain::{CaptureTime, LocalDateTime, Timestamp};
+use domain::{CaptureTime, LocalDateTime, Timestamp, UtcOffset};
 use files::testing::MemoryFileSystem;
 use metadata::{read_camera_model, read_capture_time};
 
@@ -69,6 +69,80 @@ fn eos_350d_dng_and_jpeg_give_the_camera_model() {
             model.as_deref(),
             Some("Canon EOS 350D DIGITAL"),
             "{relative}"
+        );
+    }
+}
+
+/// A file of the owner's X-T2, X-T5 and EOS 7D sets with the values it gives.
+struct Expected {
+    relative: &'static str,
+    taken: CaptureTime,
+    model: &'static str,
+}
+
+/// The RAW and the camera JPEG of one shot from each of the three sets.
+fn other_cameras() -> [Expected; 6] {
+    let at = |year, month, day, hour, minute, second| {
+        CaptureTime::new(LocalDateTime::new(year, month, day, hour, minute, second).unwrap())
+    };
+    let x_t2 = at(2023, 10, 2, 12, 5, 23);
+    let x_t5 = at(2024, 9, 28, 13, 25, 29).with_offset(UtcOffset::from_seconds(7_200).unwrap());
+    // Lightroom shifted the DNG by six hours; the camera JPEG keeps the camera's clock.
+    let eos_7d_dng = at(2015, 8, 10, 10, 41, 56);
+    let eos_7d_jpeg = at(2015, 8, 10, 4, 41, 56)
+        .with_subsec_nanoseconds(330_000_000)
+        .unwrap();
+    [
+        ("fujifilm/x-t2/x-t2-stone-villa.RAF", x_t2, "X-T2"),
+        ("fujifilm/x-t2/x-t2-stone-villa.JPG", x_t2, "X-T2"),
+        ("fujifilm/x-t5/x-t5-mountain-lake.raf", x_t5, "X-T5"),
+        ("fujifilm/x-t5/x-t5-mountain-lake.jpg", x_t5, "X-T5"),
+        (
+            "canon/eos-7d/eos-7d-garden-house.dng",
+            eos_7d_dng,
+            "Canon EOS 7D",
+        ),
+        (
+            "canon/eos-7d/eos-7d-garden-house.JPG",
+            eos_7d_jpeg,
+            "Canon EOS 7D",
+        ),
+    ]
+    .map(|(relative, taken, model)| Expected {
+        relative,
+        taken,
+        model,
+    })
+}
+
+/// spec: CORE-005.14
+#[test]
+fn x_t2_x_t5_and_eos_7d_files_give_the_capture_time() {
+    for expected in other_cameras() {
+        let (file_system, path) = card_with(expected.relative);
+
+        assert_eq!(
+            read_capture_time(&file_system, &path).unwrap(),
+            expected.taken,
+            "{}",
+            expected.relative
+        );
+    }
+}
+
+/// spec: IMPORT-021.10
+#[test]
+fn x_t2_x_t5_and_eos_7d_files_give_the_camera_model() {
+    for expected in other_cameras() {
+        let (file_system, path) = card_with(expected.relative);
+
+        let model = read_camera_model(&file_system, &path).unwrap();
+
+        assert_eq!(
+            model.as_deref(),
+            Some(expected.model),
+            "{}",
+            expected.relative
         );
     }
 }

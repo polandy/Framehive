@@ -52,7 +52,8 @@ what exiftool wrote, compared field by field in exiftool's `-struct` output. It 
 the `exiftool` of the Nix shell over standard input and output and checks that it is the
 version `flake.lock` pins (13.59); a `nixpkgs` update that changes it must update the
 test. `tests/other_programs.rs` merges a keyword into the darktable sidecars in
-`tests/fixtures/darktable/` and checks that every property survives (CORE-010.9).
+`tests/fixtures/darktable/` and checks that every property survives and that the
+keyword arrays only grow (CORE-010.9).
 Those sidecars are the project owner's, under the Framehive Test Data Licence
 (`LICENSES/LicenseRef-Framehive-Test-Data.txt`), not GPL.
 

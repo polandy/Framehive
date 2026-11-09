@@ -75,11 +75,13 @@ parsed is never overwritten. Permissions are never changed.
 - **Then** it reports the same values and no warning
 
 ### CORE-010.9 – darktable sidecars survive
-- **Given** the checked-in sidecars that darktable wrote for the DNG and the JPEG of
-  `dng/canon-eos-350d/` (CORE-004)
+- **Given** the checked-in sidecars that darktable wrote for the raw or DNG file and the
+  JPEG of `dng/canon-eos-350d/` (CORE-004), `canon/eos-7d/` (CORE-003),
+  `fujifilm/x-t2/` and `fujifilm/x-t5/` (CORE-001)
 - **When** a keyword is merged into each and it is written
 - **Then** reading it again gives every original property, including darktable's
-  history, unchanged
+  history, unchanged; `dc:subject` and `lr:hierarchicalSubject` keep every original
+  item and gain the merged keyword
 
 ### CORE-010.10 – Framehive reads exiftool's sidecars
 - **Given** the .22 values, written by exiftool
@@ -108,3 +110,4 @@ parsed is never overwritten. Permissions are never changed.
 |---|---|
 | 2026-11-09 | Split from CORE-009 (.15–.24 became .1–.10); .1–.8 and .10 implemented, .9 (the fixtures of other programs) waits on the owner's darktable and digiKam sidecars |
 | 2026-11-09 | .9 split by program: .9 (darktable) implemented with the owner's EOS 350D sidecars, .11 (digiKam) waits on the owner's digiKam sidecars |
+| 2026-11-09 | .9 also covers the darktable sidecars of the owner's EOS 7D, X-T2 and X-T5 shots; keyword properties that already hold keywords gain the merged one |

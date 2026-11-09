@@ -87,6 +87,12 @@ A file that cannot be read at all fails as for the capture time.
 - **When** their camera model is read
 - **Then** both give `Canon EOS 350D DIGITAL`
 
+### IMPORT-021.10 – Files of the reference cameras
+- **Given** the RAW or DNG file and the camera JPEG of the reference sets
+  `fujifilm/x-t2/`, `fujifilm/x-t5/` (CORE-001) and `canon/eos-7d/` (CORE-003)
+- **When** their camera model is read
+- **Then** they give `X-T2`, `X-T5` and `Canon EOS 7D`
+
 ## Out of scope
 
 - Other metadata tokens (lens, make): later specs.
@@ -102,3 +108,4 @@ A file that cannot be read at all fails as for the capture time.
 |---|---|
 | 2026-11-09 | Initial draft, accepted by the owner |
 | 2026-11-09 | IMPORT-021.9 added and implemented: the owner's Canon EOS 350D DNG and JPEG |
+| 2026-11-09 | IMPORT-021.10 added and implemented: the owner's X-T2, X-T5 and EOS 7D files |

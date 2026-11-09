@@ -147,3 +147,36 @@ fn eos_350d_lightroom_dng_matches_its_reference() {
         "ef1d5614a77fa404b7715120ab525b5823d1509e6f6a6b272666e48127ca2871",
     );
 }
+
+/// spec: PREVIEWS-001.4
+#[test]
+fn x_t2_lossless_compressed_raf_of_the_owner_matches_its_reference() {
+    assert_reference(
+        "fujifilm/x-t2/x-t2-stone-villa.RAF",
+        6032,
+        4028,
+        "fc83e57a2ebe946701fc025d9da18563648272eb1bb716e1a4884a4591219fd6",
+    );
+}
+
+/// spec: PREVIEWS-001.4
+#[test]
+fn x_t5_lossless_compressed_raf_of_the_owner_matches_its_reference() {
+    assert_reference(
+        "fujifilm/x-t5/x-t5-mountain-lake.raf",
+        7752,
+        5178,
+        "f8905993450fda1bbbc3ec80c1da6f71ebeb267b94b0bb8ca1aea78bd60045fc",
+    );
+}
+
+/// spec: PREVIEWS-001.4
+#[test]
+fn eos_7d_lightroom_dng_matches_its_reference() {
+    assert_reference(
+        "canon/eos-7d/eos-7d-garden-house.dng",
+        5202,
+        3464,
+        "f8bdb9d39ffe39dec9cd0f5286964d98b812231119239081a84700d061e64474",
+    );
+}

@@ -32,3 +32,20 @@ a350b16ce530610c4c47e7a969cb42a0f0ba8ff8cd5f493f3005ee7e7c13d1d5  13920706  raw.
 # sidecars. Not CC0: Framehive Test Data Licence. Cleaned per canon-eos-350d/clean.yaml in
 # framehive-testdata. For CORE-004, CORE-005, IMPORT-021 and PREVIEWS-001.
 e25a402f536e51bef4d666b1df0d77587d8728f20fa23110a3288a1a6dc5791d   9889991  dng/canon-eos-350d/  https://github.com/polandy/framehive-testdata/releases/download/canon-eos-350d-v1/canon-eos-350d-v1.tar.zst
+
+# The project owner's Canon EOS 7D shot: Lightroom 6.3 DNG and camera JPEG with darktable
+# sidecars. Not CC0: Framehive Test Data Licence. Cleaned per canon-eos-7d/clean.yaml in
+# framehive-testdata. For CORE-003, CORE-005, CORE-010, IMPORT-021 and PREVIEWS-001.
+a03289b4b181422c41a044763b22d8cf47a0822977efa79dfdbe1704406e97db  22980853  canon/eos-7d/  https://github.com/polandy/framehive-testdata/releases/download/canon-eos-7d-v1/canon-eos-7d-v1.tar.zst
+
+# The project owner's Fujifilm X-T2 shot: lossless compressed RAF and camera JPEG with
+# darktable sidecars. Not CC0: Framehive Test Data Licence. Cleaned per
+# fujifilm-x-t2/clean.yaml in framehive-testdata. For CORE-001, CORE-005, CORE-010,
+# IMPORT-021 and PREVIEWS-001.
+a5277af7396f0912da75991a11e8c6565515df6dad7787605759e94acc628082  40815035  fujifilm/x-t2/  https://github.com/polandy/framehive-testdata/releases/download/fujifilm-x-t2-v1/fujifilm-x-t2-v1.tar.zst
+
+# The project owner's Fujifilm X-T5 shot: lossless compressed RAF and camera JPEG with
+# darktable sidecars. Not CC0: Framehive Test Data Licence. Cleaned per
+# fujifilm-x-t5/clean.yaml in framehive-testdata. For CORE-001, CORE-005, CORE-010,
+# IMPORT-021 and PREVIEWS-001.
+f315757ff8f0d72bc3f2d6399a3d39d0bb9976815556f9c6e78017ecec30b387  69552673  fujifilm/x-t5/  https://github.com/polandy/framehive-testdata/releases/download/fujifilm-x-t5-v1/fujifilm-x-t5-v1.tar.zst
