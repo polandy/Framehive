@@ -87,7 +87,7 @@ The default is the remembered template's preset, or 1. Any answer other than a n
 caret under the column of the error, and the error after it:
 
 ```
-  {date:%Y}/{camera}/{name}.{ext}
+  {date:%Y}/{colour}/{name}.{ext}
             ^ <the error of IMPORT-001>
 ```
 
@@ -176,7 +176,7 @@ has none.
 
 ### CLI-002.8 – Own template with an error
 - **Given** the template step
-- **When** the person types `{date:%Y}/{camera}/{name}.{ext}`
+- **When** the person types `{date:%Y}/{colour}/{name}.{ext}`
 - **Then** the template is printed with a caret under column 11 and the error of
   IMPORT-001, and the presets are shown again
 

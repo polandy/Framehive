@@ -22,9 +22,22 @@ pub(crate) fn capture_time(
     reader: &mut Reader<'_>,
     window: Window,
 ) -> Result<CaptureTime, Failure> {
+    let embedded = embedded_jpeg(reader, window)?;
+    jpeg::capture_time(reader, embedded)
+}
+
+fn embedded_jpeg(reader: &mut Reader<'_>, window: Window) -> Result<Window, Failure> {
     let pointer = reader.read(window, JPEG_POINTER_OFFSET, 8, "RAF header")?;
     let offset = u32::from_be_bytes([pointer[0], pointer[1], pointer[2], pointer[3]]);
     let length = u32::from_be_bytes([pointer[4], pointer[5], pointer[6], pointer[7]]);
-    let embedded = window.part(offset.into(), length.into(), "embedded JPEG")?;
-    jpeg::capture_time(reader, embedded)
+    window.part(offset.into(), length.into(), "embedded JPEG")
+}
+
+/// The camera model of the RAF that fills `window`.
+pub(crate) fn camera_model(
+    reader: &mut Reader<'_>,
+    window: Window,
+) -> Result<Option<Vec<u8>>, Failure> {
+    let embedded = embedded_jpeg(reader, window)?;
+    jpeg::camera_model(reader, embedded)
 }

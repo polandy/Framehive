@@ -34,6 +34,7 @@ fn captured(file_name: &str, role: AssetFileRole, capture_time: &str) -> AssetFi
         role,
         capture_time: Some(time(capture_time).into()),
         modification_time: time("2026-12-24 12:00:00"),
+        camera_model: None,
     }
 }
 

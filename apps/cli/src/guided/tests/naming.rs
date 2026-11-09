@@ -57,11 +57,11 @@ fn a_preset_is_previewed_and_remembered() {
 fn an_invalid_template_is_shown_with_a_caret() {
     let harness = with_card(None, &[]);
 
-    let transcript = harness.run(vec![Step::Line("{date:%Y}/{camera}/{name}.{ext}")]);
+    let transcript = harness.run(vec![Step::Line("{date:%Y}/{colour}/{name}.{ext}")]);
 
     let output = &transcript.output;
     let error =
-        "{date:%Y}/{camera}/{name}.{ext}\n  {date:%Y}/{camera}/{name}.{ext}\n            ^ ";
+        "{date:%Y}/{colour}/{name}.{ext}\n  {date:%Y}/{colour}/{name}.{ext}\n            ^ ";
     let shown = output.find(error).unwrap();
     assert!(output[shown..].contains(PRESETS), "{output}");
     let caret_line = output[shown..].lines().nth(2).unwrap();

@@ -9,6 +9,7 @@
 
 #![forbid(unsafe_code)]
 
+mod camera;
 mod counters;
 mod date_format;
 mod dating;

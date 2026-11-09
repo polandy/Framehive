@@ -26,6 +26,8 @@ pub struct AssetFile {
     pub capture_time: Option<CaptureTime>,
     /// The file modification time.
     pub modification_time: LocalDateTime,
+    /// The camera model from the EXIF, as the file records it (IMPORT-021).
+    pub camera_model: Option<String>,
 }
 
 /// What the import plan decided for one file.
@@ -68,6 +70,7 @@ impl PlannedFile {
 ///     role: AssetFileRole::Raw,
 ///     capture_time: Some(captured.into()),
 ///     modification_time: captured,
+///     camera_model: None,
 /// };
 /// let template = NameTemplate::parse("{date:%Y-%m-%d}/{name}.{ext}")?;
 /// let import_time = LocalDateTime::new(2026, 10, 31, 9, 0, 0)?;
@@ -205,6 +208,7 @@ fn plan_asset(
         import_time: shared.import_time,
         job_code: shared.job_code.map(|job_code| job_code.as_str().to_owned()),
         sequence_number: Some(sequence_number),
+        camera_model: camera_model(files),
     };
     files
         .iter()
@@ -225,6 +229,15 @@ fn file_times(file: &AssetFile) -> FileTimes {
         capture_time: file.capture_time,
         modification_time: file.modification_time,
     }
+}
+
+/// The camera model of an asset: the RAW file's if it has one, else the first other
+/// file's that has one (IMPORT-021, "Source").
+fn camera_model(files: &[AssetFile]) -> Option<String> {
+    let is_raw = |file: &&AssetFile| file.role == AssetFileRole::Raw;
+    let raw = files.iter().filter(is_raw);
+    let others = files.iter().filter(|file| !is_raw(file));
+    raw.chain(others).find_map(|file| file.camera_model.clone())
 }
 
 /// The base name of an asset: the stem of its first file that is not a sidecar, so

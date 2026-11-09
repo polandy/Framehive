@@ -19,7 +19,7 @@ use crate::{TemplateError, TemplateErrorKind};
 ///
 /// let template = NameTemplate::parse("{date:%Y}/{date:%Y-%m-%d}/{name}.{ext}")?;
 /// assert_eq!(template.as_str(), "{date:%Y}/{date:%Y-%m-%d}/{name}.{ext}");
-/// assert!(NameTemplate::parse("{date:%Y}/{camera}.{ext}").is_err());
+/// assert!(NameTemplate::parse("{date:%Y}/{colour}.{ext}").is_err());
 /// # Ok::<(), naming::TemplateError>(())
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq)]

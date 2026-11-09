@@ -7,6 +7,7 @@ use domain::LocalDateTime;
 use thiserror::Error;
 
 use crate::NameTemplate;
+use crate::camera;
 use crate::sequence::SequenceToken;
 use crate::template::Part;
 use crate::token::Token;
@@ -34,6 +35,9 @@ pub struct AssetValues {
     /// The asset's number from the import's reserved range (IMPORT-002). It gives the
     /// sequence token.
     pub sequence_number: Option<u32>,
+    /// The camera model from the EXIF, as the file records it (IMPORT-021). It gives
+    /// `{camera}`, which cleans it; `None` gives the fallback.
+    pub camera_model: Option<String>,
 }
 
 /// Whether rendered names are kept valid on exFAT, SMB and macOS.
@@ -112,6 +116,7 @@ impl NameTemplate {
     ///     import_time: LocalDateTime::new(2026, 10, 19, 9, 0, 0)?,
     ///     job_code: None,
     ///     sequence_number: None,
+    ///     camera_model: None,
     /// };
     /// let path = template.render(&values, "DSC_0042.RAF.xmp", CompatibilityMode::On)?;
     /// assert_eq!(path, "2026-10-17/DSC_0042.RAF.xmp");
@@ -168,6 +173,9 @@ fn render_part(
         }
         Part::Token(Token::JobCode) => {
             output.push_str(values.job_code.as_deref().ok_or(RenderError::NoJobCode)?);
+        }
+        Part::Token(Token::Camera) => {
+            output.push_str(&camera::name(values.camera_model.as_deref()));
         }
         Part::Token(Token::Sequence(token)) => {
             output.push_str(&sequence_number(token, values.sequence_number)?);
@@ -252,6 +260,7 @@ mod tests {
             import_time: time,
             job_code: None,
             sequence_number: None,
+            camera_model: None,
         }
     }
 
@@ -274,6 +283,7 @@ mod tests {
         let template = NameTemplate::parse("{seq_stored:2}.{ext}").unwrap();
         let values = AssetValues {
             sequence_number: Some(100),
+            camera_model: None,
             ..values()
         };
 

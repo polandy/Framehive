@@ -15,6 +15,8 @@ mod xml_syntax;
 pub use recorded_xml::RecordedXml;
 pub use xml_syntax::check_xml_syntax;
 
+/// EXIF tag `Model` (IFD0): the camera model.
+pub const MODEL: u16 = 0x0110;
 /// EXIF tag `DateTime` (IFD0): when the file was last changed, not a capture time.
 pub const DATE_TIME: u16 = 0x0132;
 /// EXIF tag `DateTimeOriginal` (EXIF IFD): the capture time.

@@ -233,6 +233,7 @@ impl core::panic::unwind_safe::RefUnwindSafe for naming::AssetDate
 impl core::panic::unwind_safe::UnwindSafe for naming::AssetDate
 pub struct naming::AssetValues
 pub naming::AssetValues::base_name: alloc::string::String
+pub naming::AssetValues::camera_model: core::option::Option<alloc::string::String>
 pub naming::AssetValues::capture_time: domain::date_time::LocalDateTime
 pub naming::AssetValues::import_time: domain::date_time::LocalDateTime
 pub naming::AssetValues::job_code: core::option::Option<alloc::string::String>

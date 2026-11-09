@@ -16,6 +16,7 @@ fn values(number: u32) -> AssetValues {
         import_time: time,
         job_code: None,
         sequence_number: Some(number),
+        camera_model: None,
     }
 }
 

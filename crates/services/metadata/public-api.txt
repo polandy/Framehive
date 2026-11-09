@@ -61,6 +61,7 @@ impl core::panic::unwind_safe::RefUnwindSafe for metadata::testing::Tiff
 impl core::panic::unwind_safe::UnwindSafe for metadata::testing::Tiff
 pub const metadata::testing::DATE_TIME: u16
 pub const metadata::testing::DATE_TIME_ORIGINAL: u16
+pub const metadata::testing::MODEL: u16
 pub const metadata::testing::OFFSET_TIME_ORIGINAL: u16
 pub const metadata::testing::SUB_SEC_TIME_ORIGINAL: u16
 pub fn metadata::testing::check_xml_syntax(&dyn metadata::xmp::XmlSyntax) -> alloc::vec::Vec<alloc::string::String>
@@ -601,5 +602,7 @@ impl core::marker::Unpin for metadata::NoCaptureTime
 impl core::marker::UnsafeUnpin for metadata::NoCaptureTime
 impl core::panic::unwind_safe::RefUnwindSafe for metadata::NoCaptureTime
 impl core::panic::unwind_safe::UnwindSafe for metadata::NoCaptureTime
+pub fn metadata::camera_model_from_bytes(&[u8]) -> core::option::Option<alloc::string::String>
 pub fn metadata::capture_time_from_bytes(&[u8]) -> core::result::Result<domain::capture_time::CaptureTime, metadata::NoCaptureTime>
+pub fn metadata::read_camera_model(&dyn files::ports::ReadOnlyFileSystem, &std::path::Path) -> core::io::error::Result<core::option::Option<alloc::string::String>>
 pub fn metadata::read_capture_time(&dyn files::ports::ReadOnlyFileSystem, &std::path::Path) -> core::result::Result<domain::capture_time::CaptureTime, metadata::CaptureTimeError>

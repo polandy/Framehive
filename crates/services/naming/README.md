@@ -17,7 +17,7 @@ destination.
 Boundaries:
 
 - **Pure.** Rendering is a function of the values it is given: capture time, import
-  time, base name, job code, sequence number and file name. The service reads no files and no clock; the caller
+  time, base name, job code, camera model, sequence number and file name. The service reads no files and no clock; the caller
   passes times as `LocalDateTime` and `CaptureTime` values of `domain` (architecture §3,
   ADR 0021).
 - **Asset values.** All files of one asset are rendered from one `AssetValues`.
@@ -29,6 +29,8 @@ Boundaries:
   import module's job (IMPORT-006). Without a job code, a file of a template with
   `{job}` cannot be named (`RenderError::NoJobCode`); `uses_job_code` lets the caller
   refuse such an import before it starts.
+- **Camera.** `{camera}` renders `AssetValues::camera_model` cleaned for file names in
+  every mode, or `Unknown camera` without one (IMPORT-021).
 - **Sequence numbers.** A sequence token renders `AssetValues::sequence_number`
   with a fixed number of digits or as letters `a`…`zz` (IMPORT-002). The caller
   reserves the numbers; `check_sequence_range` refuses a range whose last number does
