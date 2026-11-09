@@ -46,6 +46,12 @@ and `tests/writing.rs` test CORE-009.1–.14 end to end, `parse_xmp` and
 are built in code. `tests/mutated_packets.rs` damages the fixtures with a seeded PRNG:
 no input may panic, and every accepted one must read back the same after it is
 written. The fuzz target `xmp` in `fuzz/` does the same with libFuzzer (ADR 0037).
+`tests/exiftool.rs` runs the round trips with exiftool (CORE-009.22, .24, D25):
+exiftool reads what Framehive writes, and Framehive reads, merges into and writes back
+what exiftool wrote, compared field by field in exiftool's `-struct` output. It calls
+the `exiftool` of the Nix shell over standard input and output and checks that it is the
+version `flake.lock` pins (13.59); a `nixpkgs` update that changes it must update the
+test.
 
 ## Dependencies
 
