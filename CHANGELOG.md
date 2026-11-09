@@ -201,6 +201,9 @@ All user-visible changes are listed here. The format follows
   for each value a sidecar from the card already had, and `<n> sidecars written` after
   the summary. The guided import shows the creator, copyright and keywords in its plan
   summary and reports the replaced and kept values and the sidecar count.
+- Keep RAW marker in XMP (LIBRARY-002, ADR 0042): `XmpPacket::keep_raw` and
+  `set_keep_raw` read and write `framehive:KeepRaw`, the field with which the library
+  will record which RAWs Remove RAWs leaves alone.
 
 ### Changed
 

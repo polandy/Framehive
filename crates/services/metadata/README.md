@@ -29,6 +29,8 @@ form. XML tokens come through the `XmlSyntax` port, which `adapter-xmp` implemen
   values for one property. Every error names the file.
 - **Editing** sets a simple value (keeping its qualifiers), unions a Bag, replaces a
   Seq and sets one language of an Alt; everything else stays as read.
+- **Keep RAW** (LIBRARY-002, ADR 0042) reads and writes `framehive:KeepRaw`: marking
+  writes `True`, unmarking removes it, and only `True` in any case reads as marked.
 - **Serializing** writes `x:xmpmeta`, `rdf:RDF` and one `rdf:Description`, with the
   namespaces declared on it and sorted by prefix, the properties sorted by prefix and
   name, two-space indent, LF and a final newline, no `<?xpacket?>`. Simple values are
@@ -56,7 +58,7 @@ form. XML tokens come through the `XmlSyntax` port, which `adapter-xmp` implemen
 | `CaptureTimeError` | Why `read_capture_time` gives no capture time: a `NoCaptureTime` reason or an I/O error with the path |
 | `capture_time_from_bytes` | The capture time of a file's content in memory |
 | `NoCaptureTime` | Why a file has no capture time |
-| `xmp::XmpPacket`, `XmpName`, `XmpNode`, `XmpValue`, `ArrayKind` | The XMP data model; `XmpPacket::set_text`, `add_to_bag`, `replace_seq`, `set_language` and `add_keywords` (hierarchical keywords in `dc:subject`, `lr:hierarchicalSubject` and `mwg-kw:Keywords`, ADR 0040) edit it |
+| `xmp::XmpPacket`, `XmpName`, `XmpNode`, `XmpValue`, `ArrayKind` | The XMP data model; `XmpPacket::set_text`, `add_to_bag`, `replace_seq`, `set_language`, `add_keywords` and `set_keep_raw` (hierarchical keywords in `dc:subject`, `lr:hierarchicalSubject` and `mwg-kw:Keywords`, ADR 0040) edit it; `keep_raw` reads the Keep RAW marker |
 | `xmp::parse_xmp` | Parses a sidecar's bytes into an `XmpPacket` |
 | `xmp::serialize_xmp` | Writes an `XmpPacket` in the canonical form, setting `xmp:MetadataDate` |
 | `xmp::XmpError`, `XmpErrorReason` | Why a sidecar cannot be read, with its path |

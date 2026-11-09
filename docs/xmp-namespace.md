@@ -1,15 +1,15 @@
 # Framehive XMP namespace
 
 Framehive writes metadata into standard XMP properties (architecture §8). Its own
-namespace holds only what no standard covers: today, the records with which a sync
-remembers which values it wrote, so it never overwrites a value the user changed
-(ADR 0013, IMMICH-001). The design and its alternatives are in ADR 0041.
+namespace holds only what no standard covers: the records with which a sync remembers
+which values it wrote, so it never overwrites a value the user changed (ADR 0013,
+IMMICH-001, ADR 0041), and the Keep RAW marker (LIBRARY-002, ADR 0042).
 
 | | |
 |---|---|
 | Namespace URI | `https://polandy.github.io/framehive/ns/1.0/` |
 | Preferred prefix | `framehive` |
-| Written by | The Immich sync (IMMICH-001) |
+| Written by | The Immich sync (IMMICH-001), the library (LIBRARY-002) |
 
 The URI is an identifier and never has to resolve. As in every XMP namespace, the
 prefix is only a preference: a reader matches the URI, never the prefix (ISO 16684-1).
@@ -21,6 +21,13 @@ keeps fields and values it does not know, unchanged, as it does for every unknow
 field. A change that an older reader would misread gets a new URI (`…/ns/2.0/`).
 
 ## Properties
+
+### `framehive:KeepRaw`
+
+Boolean (`True` or `False`). `True` marks the asset Keep RAW: Remove RAWs leaves its RAW
+member alone (LIBRARY-002). Framehive writes `True` to the sidecar of every member and
+removes the property when the marker is turned off; it never writes `False`. A reader
+takes `True` in any case as marked, and anything else, or no property, as unmarked.
 
 ### `framehive:SyncRecords`
 

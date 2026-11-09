@@ -114,7 +114,7 @@ impl XmpPacket {
     }
 }
 
-fn wrong_form(name: &XmpName, expected: &'static str) -> XmpEditError {
+pub(super) fn wrong_form(name: &XmpName, expected: &'static str) -> XmpEditError {
     XmpEditError::WrongForm {
         property: name.to_string(),
         expected,

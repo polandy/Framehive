@@ -527,6 +527,9 @@ pub fn metadata::xmp::XmpPacket::replace_seq(&mut self, &metadata::xmp::XmpName,
 pub fn metadata::xmp::XmpPacket::set_language(&mut self, &metadata::xmp::XmpName, &str, &str) -> core::result::Result<(), metadata::xmp::XmpEditError>
 pub fn metadata::xmp::XmpPacket::set_text(&mut self, &metadata::xmp::XmpName, &str) -> core::result::Result<(), metadata::xmp::XmpEditError>
 impl metadata::xmp::XmpPacket
+pub fn metadata::xmp::XmpPacket::keep_raw(&self) -> bool
+pub fn metadata::xmp::XmpPacket::set_keep_raw(&mut self, bool) -> core::result::Result<(), metadata::xmp::XmpEditError>
+impl metadata::xmp::XmpPacket
 pub fn metadata::xmp::XmpPacket::new() -> Self
 pub fn metadata::xmp::XmpPacket::properties(&self) -> &alloc::collections::btree::map::BTreeMap<metadata::xmp::XmpName, metadata::xmp::XmpNode>
 pub fn metadata::xmp::XmpPacket::property(&self, &metadata::xmp::XmpName) -> core::option::Option<&metadata::xmp::XmpNode>

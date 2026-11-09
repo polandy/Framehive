@@ -51,8 +51,12 @@ the next write. The conflict is logged, and the asset shows a small conflict bad
 until the user dismisses it.
 
 **File operations.** Move, rename and delete (to trash) act on all members and their
-sidecars together. "Delete rendered member" and "Delete RAW member" are separate,
-explicit commands. They need a confirmation that names the file type.
+sidecars together; deleting an asset removes every sidecar form it has. "Delete
+rendered member" and "Delete RAW member" are separate, explicit commands. They need a
+confirmation that names the file type. They move the member and its own sidecar
+(`DSCF1234.RAF.xmp`) to the trash; the asset remains with the other member and its
+metadata. A shared sidecar `DSCF1234.xmp` is removed only when no member remains.
+Remove RAWs does "Delete RAW member" for many assets at once (LIBRARY-002).
 
 **Import.** The import plan uses the same grouping rule on the source. Members of an
 asset get the same sequence number, target folder and base name. With dual-slot "RAW /
@@ -117,6 +121,20 @@ and places its file next to it, with the same base name.
 - **Then** the `.JPG` and its own sidecar are in the trash, and the asset remains with
   the `Raw` member and its metadata
 
+### LIBRARY-001.15 – Delete only the RAW member
+- **Given** an asset with `DSCF1234.RAF`, `DSCF1234.RAF.xmp`, `DSCF1234.JPG` and
+  `DSCF1234.JPG.xmp`, rated 4 stars
+- **When** the user runs "Delete RAW member" and confirms
+- **Then** `DSCF1234.RAF` and `DSCF1234.RAF.xmp` are in the trash, and the asset remains
+  with the `Rendered` member, its sidecar and the rating 4
+
+### LIBRARY-001.16 – A shared sidecar goes only with the last member
+- **Given** an asset with `DSCF1234.RAF`, `DSCF1234.JPG` and the shared sidecar
+  `DSCF1234.xmp`
+- **When** the user runs "Delete RAW member" and confirms, and later deletes the asset
+- **Then** after the first step only `DSCF1234.RAF` is in the trash and `DSCF1234.xmp`
+  is unchanged; after the second, `DSCF1234.JPG` and `DSCF1234.xmp` are in the trash too
+
 ### LIBRARY-001.11 – Display mode raw only
 - **Given** assets `A` (RAF+JPG), `B` (JPG only) and `C` (RAF only)
 - **When** the view is set to `raw_only`
@@ -159,3 +177,4 @@ and places its file next to it, with the same base name.
 | 2026-10-17 | Decided: newest sidecar wins with a badge; pairing across jobs (.14) |
 | 2026-10-18 | `.THM` files join their video's asset (CORE-003) |
 | 2026-11-03 | The template in .12 ends with `.{ext}`, as IMPORT-001 requires |
+| 2026-11-09 | Delete RAW member (.15); a shared sidecar goes only with the last member (.16) |

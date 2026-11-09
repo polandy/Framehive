@@ -48,3 +48,4 @@ acceptance (a change means a new ADR that supersedes the old one).
 | [0039](../adr/0039-xmp-parser-and-serializer.md) | XMP parser and serializer: quick-xml and an own model | accepted |
 | [0040](../adr/0040-xmp-sidecars-written-by-the-import.md) | XMP sidecars written by the import | accepted |
 | [0041](../adr/0041-sync-records-in-the-framehive-xmp-namespace.md) | Sync records in the Framehive XMP namespace (numbered 0037 until 2026-11-08) | accepted |
+| [0042](../adr/0042-keep-raw-marker-in-the-framehive-xmp-namespace.md) | Keep RAW marker in the Framehive XMP namespace | accepted |
