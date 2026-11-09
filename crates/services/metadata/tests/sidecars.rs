@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 //! Sidecar files: their names, finding them, and merging into them through the
-//! `files` port (CORE-009, sidecar names and saving).
+//! `files` port (CORE-010, sidecar names and saving).
 
 #![allow(clippy::unwrap_used, reason = "tests may panic on bad fixtures")]
 
@@ -133,7 +133,7 @@ fn a_merge_without_a_sidecar_creates_one() {
     assert!(sidecars.part_is_gone());
 }
 
-/// spec: CORE-009.15
+/// spec: CORE-010.1
 #[test]
 fn a_sidecar_that_cannot_be_parsed_is_kept() {
     let unclosed = b"<x:xmpmeta><rdf:RDF>".to_vec();
@@ -153,7 +153,7 @@ fn a_sidecar_that_cannot_be_parsed_is_kept() {
     assert!(sidecars.part_is_gone());
 }
 
-/// spec: CORE-009.16
+/// spec: CORE-010.2
 #[test]
 fn a_failed_rename_leaves_the_sidecar_as_before() {
     for sidecars in [Sidecars::with_subject(), Sidecars::new(None)] {
@@ -181,7 +181,7 @@ fn a_failed_rename_leaves_the_sidecar_as_before() {
     }
 }
 
-/// spec: CORE-009.17
+/// spec: CORE-010.3
 #[test]
 fn a_sidecar_that_appeared_is_not_replaced() {
     let sidecars = Sidecars::new(None);
@@ -195,7 +195,7 @@ fn a_sidecar_that_appeared_is_not_replaced() {
     assert!(sidecars.part_is_gone());
 }
 
-/// spec: CORE-009.18
+/// spec: CORE-010.4
 #[test]
 fn a_sidecar_changed_meanwhile_is_not_replaced() {
     let sidecars = Sidecars::with_subject();
@@ -213,7 +213,7 @@ fn a_sidecar_changed_meanwhile_is_not_replaced() {
     assert!(sidecars.part_is_gone());
 }
 
-/// spec: CORE-009.19
+/// spec: CORE-010.5
 #[test]
 fn a_read_only_sidecar_is_kept() {
     let sidecars = Sidecars::with_subject();
@@ -232,7 +232,7 @@ fn a_read_only_sidecar_is_kept() {
     assert!(sidecars.part_is_gone());
 }
 
-/// spec: CORE-009.20
+/// spec: CORE-010.6
 #[test]
 fn both_sidecar_names_are_found() {
     let files = MemoryFileSystem::new();
@@ -271,7 +271,7 @@ fn the_sidecar_named_after_the_full_name_comes_first() {
     assert_eq!(found, [photos("DSCF0042.RAF.xmp"), photos("DSCF0042.xmp")]);
 }
 
-/// spec: CORE-009.21
+/// spec: CORE-010.7
 #[test]
 fn names_follow_the_naming_setting() {
     let file = photos("20261108-0042.RAF");

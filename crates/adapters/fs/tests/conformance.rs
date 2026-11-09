@@ -62,7 +62,7 @@ fn list_folder_fails_like_read_dir_for_a_folder_without_permission() {
 }
 
 /// A replaced file keeps its permissions, and a read-only file is refused for the
-/// superuser too (CORE-009.19).
+/// superuser too (CORE-010.5).
 #[cfg(unix)]
 #[test]
 fn replace_file_keeps_permissions_and_refuses_a_read_only_file() {

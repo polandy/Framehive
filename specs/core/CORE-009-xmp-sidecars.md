@@ -1,6 +1,6 @@
 # CORE-009 – XMP sidecars
 
-- Status: accepted
+- Status: implemented
 - Module: core (metadata service)
 - Origin: N16, 5.1, M2, T11
 - Depends on: –
@@ -9,7 +9,7 @@
 
 Framehive keeps metadata in XMP sidecars next to the photos (ADR 0003). Other programs
 write the same sidecars, so Framehive must read every form they use, change only the
-values it means to change, and never lose a field it does not know.
+values it means to change, and never lose a field it does not know. Sidecar files, names and saving are CORE-010.
 
 ## Behaviour
 
@@ -24,10 +24,6 @@ byte order mark is skipped.
 A sidecar is refused, with an error naming the file and the reason, when it is not
 well-formed XML, is not UTF-8, contains a document type declaration, or gives one
 property two different values.
-
-**Sidecar names.** Two namings exist (ADR 0040): `original_with_extension`
-(`DSCF0042.RAF.xmp`, the default) and `original_without_extension` (`DSCF0042.xmp`).
-Reading accepts both; the extension `xmp` is matched in any case.
 
 **Merging.** A change sets a simple value, adds items to an unordered array, replaces
 an ordered array, or sets one language of a language alternative. Every other
@@ -49,12 +45,6 @@ property, qualifier and value text stays exactly as read.
 Every write sets `xmp:MetadataDate` to the current time from the `Clock` port, with
 seconds and the local UTC offset. It never sets `xmp:CreatorTool`, `xmp:ModifyDate` or
 `xmpMM:History`.
-
-**Saving.** A sidecar is written through the `files` port to `<name>.part` and then
-renamed. Before the rename, the writer compares the file at the target with what it
-found there before: if a sidecar appeared or its size, modification time or BLAKE3
-changed, the target is left as it is and the write fails. A sidecar that cannot be
-parsed is never overwritten. Permissions are never changed.
 
 ## Acceptance criteria
 
@@ -140,66 +130,35 @@ parsed is never overwritten. Permissions are never changed.
 - **When** it is read
 - **Then** an error names the file and the property
 
-### CORE-009.15 – A sidecar that cannot be parsed is kept
-- **Given** a target sidecar that cannot be parsed
-- **When** a value is to be merged into it
-- **Then** the write fails with the parse error, and the file is byte for byte as before
+### CORE-009.15 – A sidecar that cannot be parsed is kept (removed)
+Moved to CORE-010.1.
 
-### CORE-009.16 – The write is atomic
-- **Given** a sidecar being written, and the `files` port failing the rename
-- **When** the write ends
-- **Then** the target is as before, no `.part` file is left, and the error names the
-  path
+### CORE-009.16 – The write is atomic (removed)
+Moved to CORE-010.2.
 
-### CORE-009.17 – A sidecar that appeared is not replaced
-- **Given** no sidecar at the target when the write began, and another program
-  creating one before the rename
-- **When** the write reaches the rename
-- **Then** the other program's sidecar is unchanged, and the write fails with an error
-  that names the path
+### CORE-009.17 – A sidecar that appeared is not replaced (removed)
+Moved to CORE-010.3.
 
-### CORE-009.18 – A sidecar changed meanwhile is not replaced
-- **Given** a sidecar read for a merge, and its content changed by another program
-  before the rename
-- **When** the write reaches the rename
-- **Then** the changed sidecar is kept, and the write fails with an error that names
-  the path
+### CORE-009.18 – A sidecar changed meanwhile is not replaced (removed)
+Moved to CORE-010.4.
 
-### CORE-009.19 – A read-only sidecar
-- **Given** a target sidecar the user cannot write
-- **When** a value is merged into it
-- **Then** the write fails with an error that names the path, and the file's
-  permissions and content are unchanged
+### CORE-009.19 – A read-only sidecar (removed)
+Moved to CORE-010.5.
 
-### CORE-009.20 – Both sidecar names are read
-- **Given** `DSCF0042.RAF` with `DSCF0042.RAF.XMP` next to it, and `DSCF0043.RAF` with
-  `DSCF0043.xmp`
-- **When** the sidecars of each file are looked up
-- **Then** `DSCF0042.RAF.XMP` is found for the first and `DSCF0043.xmp` for the second
+### CORE-009.20 – Both sidecar names are read (removed)
+Moved to CORE-010.6.
 
-### CORE-009.21 – Names follow the naming setting
-- **Given** the file `20261108-0042.RAF`
-- **When** its sidecar name is made with `original_with_extension` and with
-  `original_without_extension`
-- **Then** the names are `20261108-0042.RAF.xmp` and `20261108-0042.xmp`
+### CORE-009.21 – Names follow the naming setting (removed)
+Moved to CORE-010.7.
 
-### CORE-009.22 – exiftool reads what Framehive writes
-- **Given** a sidecar written with job code, creator, copyright and the keyword
-  `Holiday/Beach`
-- **When** exiftool reads it
-- **Then** it reports the same values and no warning
+### CORE-009.22 – exiftool reads what Framehive writes (removed)
+Moved to CORE-010.8.
 
-### CORE-009.23 – Sidecars of other programs survive
-- **Given** the checked-in sidecars exported from darktable and digiKam
-- **When** a keyword is merged into each and it is written
-- **Then** reading it again gives every original property, including darktable's
-  history and digiKam's `TagsList`, unchanged
+### CORE-009.23 – Sidecars of other programs survive (removed)
+Moved to CORE-010.9.
 
-### CORE-009.24 – Framehive reads exiftool's sidecars
-- **Given** the .22 values, written by exiftool
-- **When** Framehive reads them and adds `Holiday/Lisbon`
-- **Then** it reads the same; exiftool sees only that keyword and
-  `xmp:MetadataDate` as new, no warning
+### CORE-009.24 – Framehive reads exiftool's sidecars (removed)
+Moved to CORE-010.10.
 
 ## Out of scope
 
@@ -221,3 +180,4 @@ parsed is never overwritten. Permissions are never changed.
 | 2026-11-08 | CORE-009.1–.14 implemented: XMP model, parser and canonical serializer in `metadata`, `adapter-xmp` (ADR 0039) |
 | 2026-11-08 | CORE-009.15–.21 implemented: sidecar names, lookup and the checked atomic save in `metadata::xmp`; `FileSystem::replace_file` (ADR 0040 §7) |
 | 2026-11-09 | CORE-009.24 added; .22, .24 implemented with exiftool (D25) |
+| 2026-11-09 | Split below the 10 KB file limit: .15–.24 moved to CORE-010.1–.10, marked removed here |

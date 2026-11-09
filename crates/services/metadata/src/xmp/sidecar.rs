@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Framehive contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//! The names of sidecars and finding them next to their file (CORE-009, sidecar
+//! The names of sidecars and finding them next to their file (CORE-010, sidecar
 //! names; ADR 0040 §1).
 
 use std::ffi::OsStr;

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Framehive contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//! Round trips through exiftool, the version the Nix shell pins (CORE-009, D25).
+//! Round trips through exiftool, the version the Nix shell pins (CORE-010, D25).
 
 #![allow(clippy::unwrap_used, reason = "tests may panic on bad fixtures")]
 #![allow(
@@ -114,7 +114,7 @@ fn exiftool_is_the_pinned_version() {
     assert_eq!(version.trim(), PINNED_VERSION);
 }
 
-/// spec: CORE-009.22
+/// spec: CORE-010.8
 #[test]
 fn exiftool_reads_what_framehive_writes() {
     let written = serialize(&import_values());
@@ -136,7 +136,7 @@ fn exiftool_reads_what_framehive_writes() {
     );
 }
 
-/// spec: CORE-009.24
+/// spec: CORE-010.10
 #[test]
 fn framehive_reads_what_exiftool_writes() {
     let original = written_by_exiftool(&[
