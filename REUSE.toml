@@ -32,7 +32,25 @@ SPDX-License-Identifier = "GPL-3.0-or-later"
 
 # The owner's darktable sidecars, copies of the files in framehive-testdata.
 [[annotations]]
-path = "crates/adapters/xmp/tests/fixtures/darktable/**"
+path = "crates/adapters/xmp/tests/fixtures/darktable/eos-350d-cosmos.*"
 precedence = "override"
 SPDX-FileCopyrightText = "2016 Andy Pollari"
+SPDX-License-Identifier = "LicenseRef-Framehive-Test-Data"
+
+[[annotations]]
+path = "crates/adapters/xmp/tests/fixtures/darktable/eos-7d-garden-house.*"
+precedence = "override"
+SPDX-FileCopyrightText = "2015 Andy Pollari"
+SPDX-License-Identifier = "LicenseRef-Framehive-Test-Data"
+
+[[annotations]]
+path = "crates/adapters/xmp/tests/fixtures/darktable/x-t2-stone-villa.*"
+precedence = "override"
+SPDX-FileCopyrightText = "2023 Andy Pollari"
+SPDX-License-Identifier = "LicenseRef-Framehive-Test-Data"
+
+[[annotations]]
+path = "crates/adapters/xmp/tests/fixtures/darktable/x-t5-mountain-lake.*"
+precedence = "override"
+SPDX-FileCopyrightText = "2024 Andy Pollari"
 SPDX-License-Identifier = "LicenseRef-Framehive-Test-Data"
