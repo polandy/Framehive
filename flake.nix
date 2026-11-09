@@ -122,6 +122,8 @@
             pkgs.cargo-nextest
             pkgs.cargo-public-api
             pkgs.curl
+            # adapter-xmp's round trips read and write sidecars with it (CORE-009, D25).
+            pkgs.exiftool
             pkgs.gh
             pkgs.gnutar
             pkgs.reuse

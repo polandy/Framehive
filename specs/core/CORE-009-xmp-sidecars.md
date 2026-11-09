@@ -195,6 +195,12 @@ parsed is never overwritten. Permissions are never changed.
 - **Then** reading it again gives every original property, including darktable's
   history and digiKam's `TagsList`, unchanged
 
+### CORE-009.24 – Framehive reads exiftool's sidecars
+- **Given** the .22 values, written by exiftool
+- **When** Framehive reads them and adds `Holiday/Lisbon`
+- **Then** it reads the same; exiftool sees only that keyword and
+  `xmp:MetadataDate` as new, no warning
+
 ## Out of scope
 
 - Which values the import writes, and when: IMPORT-019 and IMPORT-020.
@@ -211,6 +217,7 @@ parsed is never overwritten. Permissions are never changed.
 
 | Date | Change |
 |---|---|
-| 2026-11-08 | Created and accepted with the owner's XMP decisions D7–D10, D24, D25 (ADR 0039, ADR 0040) |
+| 2026-11-08 | Created and accepted with the owner's XMP decisions D7–D10, D24, D25 (ADR 0039, 0040) |
 | 2026-11-08 | CORE-009.1–.14 implemented: XMP model, parser and canonical serializer in `metadata`, `adapter-xmp` (ADR 0039) |
 | 2026-11-08 | CORE-009.15–.21 implemented: sidecar names, lookup and the checked atomic save in `metadata::xmp`; `FileSystem::replace_file` (ADR 0040 §7) |
+| 2026-11-09 | CORE-009.24 added; .22, .24 implemented with exiftool (D25) |

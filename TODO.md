@@ -15,4 +15,4 @@ feature live in its spec, decisions in `docs/adr/`. Add items with `/todo`.
 
 Owner decisions D1–D27 of 2026-11-08 (requirements §12, ADR 0039, ADR 0040), in this order.
 
-- [ ] XMP PR 7: round trips with exiftool in CI and the darktable and digiKam fixtures (CORE-009.22, .23, D25); needs the owner's fixtures (2026-11-08)
+- [ ] XMP PR 7: the darktable and digiKam fixtures (CORE-009.23, D25); needs the owner's fixtures. The exiftool round trips (CORE-009.22, .24) are done; CORE-009 is at the 10 KB file limit, so split it first (2026-11-08)
