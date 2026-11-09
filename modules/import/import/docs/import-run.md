@@ -97,8 +97,8 @@ The sidecar holds the job code as `photoshop:TransmissionReference`, the creator
 the `dc:creator` Seq, the copyright as `dc:rights` `x-default`, with `{year}` the
 capture year or, for a file dated by its modification time, the year of the import
 date, and the keywords. It is named by `sidecar_naming` after the file's target name,
-and conflict resolution keeps its name free with the file's
-([scan and conflicts](scan-and-conflicts.md)).
+and conflict resolution keeps its name free with the file's, at the import destination
+and at each of the file's backup destinations ([scan and conflicts](scan-and-conflicts.md)).
 
 After the verified copy, the run serializes the packet once and writes it through a
 `.part` file and a rename, reads it back and requires the same bytes and the same
@@ -109,7 +109,10 @@ checksum with each copy. A sidecar that fails at the import target fails its fil
 a backup fails that backup (`BackupError::Sidecar`). A file found already imported at
 its target gets its sidecar only where nothing is at the sidecar's name, so a re-run
 completes a sidecar that failed and never changes one that is there; a file the history
-knows gets none. A dry run writes nothing and reports the sidecar it would write in
+knows gets none at its target. In both cases a backup that got the file but lacks the
+sidecar gets the target's sidecar byte for byte, verified, and the history records it
+with that copy, so a sidecar that failed only at a backup is completed on a re-run
+(IMPORT-007.15). A dry run writes nothing and reports the sidecar it would write in
 `FileReport::sidecar`.
 
 A source `.xmp` sidecar the scan attached comes with its file (IMPORT-020) and keeps

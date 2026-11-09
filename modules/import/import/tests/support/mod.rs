@@ -73,6 +73,7 @@ pub(crate) fn resolve_all(
                     size: file.size,
                     target: file.target,
                     sidecars: &[],
+                    backups: &[],
                 })
                 .unwrap()
         })

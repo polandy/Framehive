@@ -122,6 +122,9 @@ pub struct TargetRequest<'a> {
     /// How each of its XMP sidecars is named: their names must be free with the
     /// target's (IMPORT-019, "Conflicts", IMPORT-020).
     pub sidecars: &'a [SidecarNaming],
+    /// Its backup destinations: a sidecar name taken at one of them is taken
+    /// (IMPORT-007.14).
+    pub backups: &'a [PathBuf],
 }
 
 /// Resolves the targets of an import plan, file by file in scan order, against the

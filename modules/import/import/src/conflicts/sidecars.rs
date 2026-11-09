@@ -4,7 +4,7 @@
 //! A file that gets an XMP sidecar takes a target only when the sidecar's name is
 //! free as well, and claims both (IMPORT-019, "Conflicts").
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use metadata::xmp::SidecarNaming;
 
@@ -13,15 +13,16 @@ use super::{ConflictError, TargetRequest, TargetResolver, caseless_key};
 impl TargetResolver<'_> {
     /// Whether each sidecar `file` would get at `candidate` is free: no earlier file
     /// or sidecar of the run claimed its name, no other job reserved it, and nothing
-    /// is there at the destination. A leftover sidecar is never merged with
-    /// (IMPORT-019.11). Always free for a file that gets no sidecar.
+    /// is there at the destination or at one of the file's backup destinations. A
+    /// leftover sidecar is never merged with (IMPORT-019.11, IMPORT-007.14). Always
+    /// free for a file that gets no sidecar.
     pub(super) fn sidecar_is_free(
         &mut self,
         file: &TargetRequest<'_>,
         candidate: &str,
     ) -> Result<bool, ConflictError> {
         for naming in file.sidecars {
-            if !self.sidecar_name_is_free(*naming, candidate)? {
+            if !self.sidecar_name_is_free(*naming, candidate, file.backups)? {
                 return Ok(false);
             }
         }
@@ -32,6 +33,7 @@ impl TargetResolver<'_> {
         &mut self,
         naming: SidecarNaming,
         candidate: &str,
+        backups: &[PathBuf],
     ) -> Result<bool, ConflictError> {
         let sidecar = sidecar_target(naming, candidate);
         let key = caseless_key(&sidecar);
@@ -42,7 +44,17 @@ impl TargetResolver<'_> {
         {
             return Ok(false);
         }
-        Ok(self.existing(&sidecar)?.is_empty())
+        Ok(self.existing(&sidecar)?.is_empty() && !self.taken_at_a_backup(&sidecar, backups))
+    }
+
+    /// Whether something is at `sidecar` below one of `backups`. One that cannot be
+    /// checked counts as free: that backup reports the failure when it is written.
+    fn taken_at_a_backup(&self, sidecar: &str, backups: &[PathBuf]) -> bool {
+        backups.iter().any(|backup| {
+            self.file_system
+                .entry(&backup.join(sidecar))
+                .is_ok_and(|entry| entry.is_some())
+        })
     }
 
     /// Claims the name of each sidecar `file` gets at `candidate`.
