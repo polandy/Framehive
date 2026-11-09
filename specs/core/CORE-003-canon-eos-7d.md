@@ -25,6 +25,9 @@ raw.pixls.us samples otherwise.
 | CR2 + JPG pair shot in Adobe RGB (`_MG_1234`) |
 | Video `MVI_1234.MOV` with `MVI_1234.THM` |
 
+Published so far: `eos-7d-garden-house`, a Lightroom DNG of a CR2 with its camera JPEG
+and darktable sidecars. No CR2 is published yet.
+
 **File types.**
 
 | Kind | Extension | Notes |
@@ -140,3 +143,4 @@ is marked "damaged" with the reason.
 | 2026-10-18 | Initial draft |
 | 2026-10-18 | Reference set in `framehive-testdata` (ADR 0017) |
 | 2026-11-09 | Own photos under the Framehive Test Data Licence instead of CC0 (owner decision) |
+| 2026-11-09 | First set published: a Lightroom DNG + camera JPEG pair; the CR2 files are still missing |

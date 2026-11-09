@@ -5,10 +5,10 @@ feature live in its spec, decisions in `docs/adr/`. Add items with `/todo`.
 
 ## Open
 
-- [ ] Provide sample files from the X-T2, X-T5 and EOS 7D for the reference sets — owner; the X-T2/X-T5 files will arrive in `~/incoming/framehive`, EOS 7D CR2s are still missing. Clean them with `clean.sh` and publish them in `framehive-testdata` under the Framehive Test Data Licence (CORE-001, CORE-003, ADR 0017) (2026-10-18)
+- [ ] Provide the missing reference files — owner; clean them with `clean.sh` and publish them in `framehive-testdata` as new sets under the Framehive Test Data Licence. Published: one lossless RAF + JPG pair each from the X-T2 (`fujifilm-x-t2-v1`) and X-T5 (`fujifilm-x-t5-v1`), and a Lightroom DNG + JPG pair from the EOS 7D (`canon-eos-7d-v1`). Missing for CORE-001: an uncompressed RAF and a *Classic Chrome* shot from the X-T2; uncompressed and lossy compressed RAFs, a RAF + HIF pair, a *Nostalgic Neg.* shot and a dual-slot "RAW / JPEG separation" pair from the X-T5. Missing for CORE-003: EOS 7D CR2s (RAW, M-RAW, S-RAW), a CR2 + JPG pair, an Adobe RGB `_MG_` pair and an `MVI_` MOV with its THM (CORE-001, CORE-003, ADR 0017) (2026-10-18)
 - [ ] Extend the module template in `xtask/templates/module/` once the kernel has the `Module` contract, `kernel::testing::module_conformance` and `ui-kit`: implement `Module`, call the conformance suite, add a Slint view (architecture §4.5) — gated: waits for the GUI milestone, skip it until then (owner decision #68, 2026-11-08) (2026-10-19)
 - [ ] Store reference pixel hashes for aarch64-darwin in the LibRaw version test — on macOS it compares only sizes until the hashes are measured on a Mac (PREVIEWS-001, ADR 0028) (2026-11-03)
-- [ ] Export a handful of sidecars from digiKam on own photos as XMP fixtures: cleaned (no GPS, serial number or people), under the Framehive Test Data Licence — owner; darktable is done (EOS 350D); Lightroom and Capture One samples only if at hand (CORE-010.11, ADR 0039, D26) (2026-11-08)
+- [ ] Export a handful of sidecars from digiKam on own photos as XMP fixtures: cleaned (no GPS, serial number or people), under the Framehive Test Data Licence — owner; darktable is done (EOS 350D, EOS 7D, X-T2, X-T5); Lightroom and Capture One samples only if at hand (CORE-010.11, ADR 0039, D26) (2026-11-08)
 
 ## XMP milestone
 

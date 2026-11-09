@@ -14,19 +14,20 @@ and filtering.
 ## Behaviour
 
 **Reference set.** It is published in the `framehive-testdata` repository and pinned
-in `testdata.lock` as `fujifilm/` (ADR 0017). It consists of the project owner's own
-photos, cleaned before they are published: GPS removed, serial number replaced by a
-test value, no people. They are not CC0: the owner keeps the copyright, and the
+in `testdata.lock` as `fujifilm/x-t2/` and `fujifilm/x-t5/` (ADR 0017), one set per
+camera. It consists of the project owner's own photos, cleaned before they are
+published: GPS removed, serial numbers replaced by a test value, no recognisable people. They are not CC0: the owner keeps the copyright, and the
 Framehive Test Data Licence permits redistribution and use only for testing Framehive.
 raw.pixls.us samples complement it.
 
-| Camera | Files |
-|---|---|
-| X-T2 | uncompressed and lossless compressed RAF; RAF + JPG pair; one shot with *Classic Chrome* |
-| X-T5 | uncompressed, lossless and lossy compressed RAF; RAF + JPG and RAF + HIF pairs; one shot with *Nostalgic Neg.*; a dual-slot "RAW / JPEG separation" pair |
+| Camera | Files | Published so far |
+|---|---|---|
+| X-T2 | uncompressed and lossless compressed RAF; RAF + JPG pair; one shot with *Classic Chrome* | `x-t2-stone-villa`: lossless RAF + JPG pair (*Provia*), with darktable sidecars |
+| X-T5 | uncompressed, lossless and lossy compressed RAF; RAF + JPG and RAF + HIF pairs; one shot with *Nostalgic Neg.*; a dual-slot "RAW / JPEG separation" pair | `x-t5-mountain-lake`: lossless RAF + JPG pair (*Velvia*), with darktable sidecars |
 
-Because the serial number is removed, tests that need one use a value written by the
-cleaning script (`fujifilm/clean.yaml` in `framehive-testdata` documents every change).
+Because the serial numbers are removed, tests that need one use the value written by
+the cleaning script (`fujifilm-x-t2/clean.yaml` and `fujifilm-x-t5/clean.yaml` in
+`framehive-testdata` document every change).
 
 **File types.**
 
@@ -65,7 +66,7 @@ that can be read is kept. The asset gets a "damaged" marker with the reason.
 ## Acceptance criteria
 
 ### CORE-001.1 – Metadata from X-T2 RAF
-- **Given** the reference file `fujifilm/x-t2/lossless.RAF`
+- **Given** the reference file `fujifilm/x-t2/x-t2-stone-villa.RAF` (lossless compressed)
 - **When** its metadata is read
 - **Then** make, model, serial number, capture time, lens and exposure match the values
   in its `.expected.yaml`
@@ -125,3 +126,4 @@ that can be read is kept. The asset gets a "damaged" marker with the reason.
 | 2026-10-17 | Initial draft |
 | 2026-10-18 | Reference set moved to `framehive-testdata` (ADR 0017) |
 | 2026-11-09 | Own photos under the Framehive Test Data Licence instead of CC0 (owner decision) |
+| 2026-11-09 | First sets published: X-T2 and X-T5 lossless RAF + JPG pairs; their reference decode hashes are tested under PREVIEWS-001.4 |
