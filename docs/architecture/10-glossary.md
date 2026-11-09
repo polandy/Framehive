@@ -61,6 +61,8 @@ Names in the code follow this glossary.
 | Index | `Index` | Machine-local database, reconstructible from files |
 | Rating | `Rating` | 0–5 stars |
 | Pick state | `PickState` | Keep / pending / rejected |
+| Keep RAW | `keep_raw` | Per-asset marker, independent of rating and pick state (not the pick state *Keep*): Remove RAWs leaves the asset's RAW member alone (LIBRARY-002, ADR 0042) |
+| Remove RAWs | – | Moves the RAW member and its own sidecar of every asset in the view that has a rendered member, is not rejected and is not marked Keep RAW to the trash (LIBRARY-002) |
 | Color label | `ColorLabel` | Color used as a marker |
 | Tag | `Tag` | Hierarchical keyword, path with `/` |
 | Region | `Region` | Image area, e.g. a face, per MWG |

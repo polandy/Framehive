@@ -7,6 +7,7 @@
 
 mod edit;
 mod error;
+mod keep_raw;
 mod keywords;
 mod model;
 pub mod namespaces;

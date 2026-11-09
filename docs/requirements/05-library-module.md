@@ -36,7 +36,7 @@ Part of the [requirements](README.md).
 | B12 | Smart collections (saved searches) | S |
 | B13 | Move and rename files within the library (using the template engine from import); sidecars move with them; deleting goes to the trash; "clean up rejects" | M |
 | **Searching & Filtering** | | |
-| B14 | Filter bar: rating, pick/reject, label, tag, camera, lens, date, ISO, aperture, focal length, file type, location, person | M |
+| B14 | Filter bar: rating, pick/reject, label, Keep RAW, tag, camera, lens, date, ISO, aperture, focal length, file type, location, person | M |
 | B15 | Full-text search across file name, title, description, tags | M |
 | **Hand-off** | | |
 | B16 | Open in an external program (darktable, RawTherapee, GIMP, configurable) | M |
@@ -61,3 +61,5 @@ A key feature. A RAW file and the JPEG/HEIF the camera wrote for the same shot f
 | B26 | Rating, pick state, color label, tags and other metadata always apply to the whole asset and are written to every member's sidecar consistently | M |
 | B27 | Delete/move/rename act on the whole asset by default; "delete JPEG only" / "delete RAW only" are explicit commands (e.g. keep only the RAW after culling) | M |
 | B28 | Choose which member is shown as the preview (default: JPEG, because it carries the in-camera look such as the film simulation) and which one external programs and export use (default: RAW) | S |
+| B29 | A per-asset **Keep RAW** marker, its own toggle independent of rating, pick state and color label; key `R`, a filter for it; stored in the library and the sidecars | M |
+| B30 | **Remove RAWs**: for every asset in the view with a RAW and a rendered member that is not rejected and not marked Keep RAW, move only the RAW and its own sidecar to the trash; the rendered member, a shared sidecar and all metadata stay. The confirmation shows assets, files and bytes freed, and thumbnails of the assets whose RAW goes and of those kept by the marker; a click on a thumbnail toggles the marker. Binding: `specs/library/LIBRARY-002-keep-raw-and-remove-raws.md` | M |
