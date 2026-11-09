@@ -81,6 +81,12 @@ A file that cannot be read at all fails as for the capture time.
 - **When** the camera model is read
 - **Then** the first three give the model; the others give none and no error
 
+### IMPORT-021.9 – Files of a real camera
+- **Given** the Lightroom DNG and the camera JPEG of the reference set
+  `dng/canon-eos-350d/` (CORE-004)
+- **When** their camera model is read
+- **Then** both give `Canon EOS 350D DIGITAL`
+
 ## Out of scope
 
 - Other metadata tokens (lens, make): later specs.
@@ -95,3 +101,4 @@ A file that cannot be read at all fails as for the capture time.
 | Date | Change |
 |---|---|
 | 2026-11-09 | Initial draft, accepted by the owner |
+| 2026-11-09 | IMPORT-021.9 added and implemented: the owner's Canon EOS 350D DNG and JPEG |

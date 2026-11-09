@@ -74,17 +74,24 @@ parsed is never overwritten. Permissions are never changed.
 - **When** exiftool reads it
 - **Then** it reports the same values and no warning
 
-### CORE-010.9 – Sidecars of other programs survive
-- **Given** the checked-in sidecars exported from darktable and digiKam
+### CORE-010.9 – darktable sidecars survive
+- **Given** the checked-in sidecars that darktable wrote for the DNG and the JPEG of
+  `dng/canon-eos-350d/` (CORE-004)
 - **When** a keyword is merged into each and it is written
 - **Then** reading it again gives every original property, including darktable's
-  history and digiKam's `TagsList`, unchanged
+  history, unchanged
 
 ### CORE-010.10 – Framehive reads exiftool's sidecars
 - **Given** the .22 values, written by exiftool
 - **When** Framehive reads them and adds `Holiday/Lisbon`
 - **Then** it reads the same; exiftool sees only that keyword and
   `xmp:MetadataDate` as new, no warning
+
+### CORE-010.11 – digiKam sidecars survive
+- **Given** checked-in sidecars exported from digiKam
+- **When** a keyword is merged into each and it is written
+- **Then** reading it again gives every original property, including digiKam's
+  `TagsList`, unchanged
 
 ## Out of scope
 
@@ -100,3 +107,4 @@ parsed is never overwritten. Permissions are never changed.
 | Date | Change |
 |---|---|
 | 2026-11-09 | Split from CORE-009 (.15–.24 became .1–.10); .1–.8 and .10 implemented, .9 (the fixtures of other programs) waits on the owner's darktable and digiKam sidecars |
+| 2026-11-09 | .9 split by program: .9 (darktable) implemented with the owner's EOS 350D sidecars, .11 (digiKam) waits on the owner's digiKam sidecars |

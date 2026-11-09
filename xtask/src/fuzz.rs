@@ -164,25 +164,38 @@ fn capture_time_seeds() -> Vec<Seed> {
     seeds
 }
 
-/// Every RDF and wrapper form, merges, prefixes and the refused cases (CORE-009).
+/// Every RDF and wrapper form, merges, prefixes, the refused cases (CORE-009) and the
+/// sidecars of other programs in subdirectories (CORE-010).
 fn xmp_seeds(root: &Path) -> Result<Vec<Seed>, String> {
-    let directory = root.join(XMP_FIXTURES);
-    let entries = fs::read_dir(&directory)
-        .map_err(|error| format!("cannot list {}: {error}", directory.display()))?;
     let mut seeds = Vec::new();
+    add_xmp_seeds(&root.join(XMP_FIXTURES), "", &mut seeds)?;
+    seeds.sort_by(|left, right| left.name.cmp(&right.name));
+    Ok(seeds)
+}
+
+/// Adds every file below `directory`, named by its path with `-` for `/` after `prefix`.
+fn add_xmp_seeds(directory: &Path, prefix: &str, seeds: &mut Vec<Seed>) -> Result<(), String> {
+    let entries = fs::read_dir(directory)
+        .map_err(|error| format!("cannot list {}: {error}", directory.display()))?;
     for entry in entries {
         let path = entry
             .map_err(|error| format!("cannot list {}: {error}", directory.display()))?
             .path();
+        if path.is_dir() {
+            let name = path
+                .file_name()
+                .map_or_else(String::new, |name| name.to_string_lossy().into_owned());
+            add_xmp_seeds(&path, &format!("{prefix}{name}-"), seeds)?;
+            continue;
+        }
         let content =
             fs::read(&path).map_err(|error| format!("cannot read {}: {error}", path.display()))?;
         let name = path
             .file_stem()
             .map_or_else(String::new, |stem| stem.to_string_lossy().into_owned());
-        seeds.push(seed("xmp", &name, content));
+        seeds.push(seed("xmp", &format!("{prefix}{name}"), content));
     }
-    seeds.sort_by(|left, right| left.name.cmp(&right.name));
-    Ok(seeds)
+    Ok(())
 }
 
 fn tiff(order: ByteOrder, detailed: bool) -> Vec<u8> {
@@ -251,6 +264,11 @@ mod tests {
     fn the_xmp_seeds_are_the_fixtures() {
         let seeds = xmp_seeds(&crate::repository_root()).unwrap();
         assert!(seeds.iter().any(|seed| seed.name == "seed-xmp-canonical"));
+        assert!(
+            seeds
+                .iter()
+                .any(|seed| seed.name == "seed-xmp-darktable-eos-350d-cosmos.dng")
+        );
         assert!(seeds.iter().all(|seed| !seed.content.is_empty()));
     }
 }

@@ -117,6 +117,12 @@ Invalid sub-seconds or offsets are ignored; the date and time are still used.
 - **When** its capture time is read
 - **Then** at most 1 MB of it is read
 
+### CORE-005.13 – Files of a real camera
+- **Given** the Lightroom DNG and the camera JPEG of the reference set
+  `dng/canon-eos-350d/` (CORE-004)
+- **When** their capture times are read
+- **Then** both are 2016-10-12 14:01:18, without sub-seconds and without an offset
+
 ## Out of scope
 
 - Other EXIF fields, maker notes and GPS: CORE-001, CORE-003, CORE-004.
@@ -138,3 +144,4 @@ Invalid sub-seconds or offsets are ignored; the date and time are still used.
 | 2026-10-31 | Initial draft (milestone 1) |
 | 2026-10-31 | Accepted by the owner |
 | 2026-10-31 | Implemented in the `metadata` service, with `LocalDateTime` and `CaptureTime` in `domain` |
+| 2026-11-09 | CORE-005.13 added and implemented: the owner's Canon EOS 350D DNG and JPEG |

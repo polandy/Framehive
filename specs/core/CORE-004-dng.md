@@ -14,12 +14,13 @@ must stay visible in Lightroom when the user wants that.
 ## Behaviour
 
 **Reference set.** It is published in the `framehive-testdata` repository and pinned
-in `testdata.lock` as `dng/` (ADR 0017). It comes from raw.pixls.us and the project
-owner's own files.
+in `testdata.lock` under `dng/` (ADR 0017). It comes from raw.pixls.us and the project
+owner's own files, which are cleaned and licensed like the Fujifilm set (CORE-001).
 
 | Source | Files |
 |---|---|
 | Adobe DNG Converter | lossless; lossy; linear; without preview; with medium and full-size preview; with embedded original RAW; with embedded XMP |
+| Adobe Lightroom | `dng/canon-eos-350d/`: lossless DNG of a Canon EOS 350D CR2, with the camera JPEG and darktable sidecars |
 | Drone | DJI DNG with GPS altitude and DJI XMP fields |
 | Action camera | GoPro GPR |
 
@@ -140,3 +141,4 @@ preview with a notice.
 | 2026-10-18 | Initial draft |
 | 2026-10-18 | Reference set in `framehive-testdata` (ADR 0017) |
 | 2026-11-03 | Phase 0: the pinned LibRaw decodes neither GPR nor JPEG XL DNG, both use the preview fallback (ADR 0028) |
+| 2026-11-09 | The owner's Canon EOS 350D Lightroom DNG and JPEG published as `dng/canon-eos-350d/` |

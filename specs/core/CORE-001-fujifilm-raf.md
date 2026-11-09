@@ -15,8 +15,10 @@ and filtering.
 
 **Reference set.** It is published in the `framehive-testdata` repository and pinned
 in `testdata.lock` as `fujifilm/` (ADR 0017). It consists of the project owner's own
-photos, released as CC0 and cleaned before they are published: GPS and serial number
-removed, no people. raw.pixls.us samples complement it.
+photos, cleaned before they are published: GPS removed, serial number replaced by a
+test value, no people. They are not CC0: the owner keeps the copyright, and the
+Framehive Test Data Licence permits redistribution and use only for testing Framehive.
+raw.pixls.us samples complement it.
 
 | Camera | Files |
 |---|---|
@@ -122,3 +124,4 @@ that can be read is kept. The asset gets a "damaged" marker with the reason.
 |---|---|
 | 2026-10-17 | Initial draft |
 | 2026-10-18 | Reference set moved to `framehive-testdata` (ADR 0017) |
+| 2026-11-09 | Own photos under the Framehive Test Data Licence instead of CC0 (owner decision) |
