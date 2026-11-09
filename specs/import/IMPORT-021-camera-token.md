@@ -22,9 +22,9 @@ has a model, otherwise of the first other file that has one (IMPORT-001, "Assets
 
 **Value.** The text is cut at its first NUL and trimmed. Then, in every mode:
 
-- `/ \ < > : " | ? *` and control characters become `_`, so the value never splits a
+- `/ \ < > : " | ? *` and control characters other than blanks become `_`, so the value never splits a
   segment and is valid on every file system,
-- runs of blanks become one space, and leading and trailing blanks and dots are removed,
+- runs of blanks (space, tab, line breaks) become one space, and leading and trailing blanks and dots are removed,
 - at most 64 characters are kept, then trailing blanks and dots are removed again.
 
 Compatibility mode (IMPORT-001) then applies to the segment as usual.
