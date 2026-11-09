@@ -235,3 +235,17 @@ fn a_file_found_already_imported_completes_the_sidecar_at_a_backup() {
     assert_same_at_backups(&card, "DSCF0042.RAF.xmp");
     assert!(FormatReadiness::of(&summary).can_be_formatted());
 }
+
+/// spec: IMPORT-007.15
+#[test]
+fn a_dry_re_run_writes_no_sidecar_at_a_backup() {
+    let machine = Machine::new();
+    let card = raw_card();
+    card.inject_fault(Path::new(AT_BACKUP), Fault::RenameFails);
+    machine.import(&card, &Import::lisbon(FLAT).backed_up());
+    card.remove_fault(Path::new(AT_BACKUP));
+    let mut import = Import::lisbon(FLAT).backed_up();
+    import.dry_run = true;
+    machine.import(&card, &import);
+    assert_eq!(content(&card, AT_BACKUP), None);
+}
