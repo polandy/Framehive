@@ -38,10 +38,11 @@ fn exiftool(arguments: &[&str], input: &[u8]) -> Vec<u8> {
 }
 
 /// The XMP tags exiftool reads from `sidecar`, by `group:name`, with structs and
-/// lists in exiftool's `-struct` form. Warnings appear as `ExifTool:Warning`.
+/// lists in exiftool's `-struct` form. Fails when exiftool reports a warning or an
+/// error, which it lists as `ExifTool:Warning` or `ExifTool:Error`.
 fn exiftool_tags(sidecar: &[u8]) -> BTreeMap<String, String> {
     let output = exiftool(&["-args", "-G1", "-a", "-struct", "-"], sidecar);
-    String::from_utf8(output)
+    let tags: BTreeMap<String, String> = String::from_utf8(output)
         .unwrap()
         .lines()
         .map(|line| {
@@ -56,7 +57,20 @@ fn exiftool_tags(sidecar: &[u8]) -> BTreeMap<String, String> {
                     "ExifTool:ExifToolVersion" | "XMP-x:XMPToolkit"
                 )
         })
-        .collect()
+        .collect();
+    let problems: Vec<_> = tags
+        .iter()
+        .filter(|(tag, _)| tag.starts_with("ExifTool:"))
+        .collect();
+    assert!(problems.is_empty(), "exiftool reports {problems:?}");
+    tags
+}
+
+#[test]
+fn a_warning_of_exiftool_fails_the_round_trip() {
+    let unclosed = b"<x:xmpmeta xmlns:x=\"adobe:ns:meta/\">";
+    let result = std::panic::catch_unwind(|| exiftool_tags(unclosed));
+    assert!(result.is_err());
 }
 
 /// A new sidecar that exiftool writes with `assignments` such as `-XMP-dc:Creator=…`.
