@@ -31,6 +31,7 @@ mod content;
 mod kept;
 
 use content::merge_values;
+use kept::recorded_position;
 
 /// Writes the sidecars of one run: the job code and the `metadata` values of its
 /// settings, with `{year}` of a file dated by its modification time taken from the
@@ -87,9 +88,9 @@ impl<'s> Sidecars<'s> {
     /// Adds the sidecars of `file`, planned as `planned`, to what `imported` did: in a
     /// dry run only their names; otherwise writes them next to a copied file and to
     /// each backup that got the file. A file found already imported gets them only
-    /// where none is there, so that a re-run completes a failed one (IMPORT-019.18);
-    /// a source sidecar there counts where it holds what `history` recorded for it
-    /// (IMPORT-020.9). A failure at the import target fails the file (IMPORT-019.16),
+    /// where none is there, so that a re-run completes a failed one (IMPORT-019.18,
+    /// IMPORT-007.15); a source sidecar there counts where it holds what `history`
+    /// recorded for it (IMPORT-020.9). A failure at the import target fails the file (IMPORT-019.16),
     /// one at a backup fails that backup (IMPORT-019.14).
     pub(super) fn add_to(
         &self,
@@ -114,11 +115,7 @@ impl<'s> Sidecars<'s> {
             dry_run,
             keep_existing,
         };
-        // The history keeps one sidecar per copy: the one with the values, else the first.
-        let recorded = sidecars
-            .iter()
-            .position(|sidecar| sidecar.holds_values)
-            .unwrap_or(0);
+        let recorded = recorded_position(&sidecars);
         imported.carried.clear();
         for (position, sidecar) in sidecars.iter().enumerate() {
             let carried =
@@ -146,7 +143,9 @@ impl<'s> Sidecars<'s> {
         let at_import = placement.destination.join(&name);
         let expected = self.expected_where_kept(sidecar, placement, &name, history);
         let prepared = match self.needs_writing(&at_import, placement.keep_existing) {
-            Ok(false) => return self.kept(carried, &expected, placement, &imported.backups),
+            Ok(false) => {
+                return self.keep_found(carried, &expected, &name, placement, recorded, imported);
+            }
             Ok(true) if placement.dry_run => {
                 if sidecar.holds_values {
                     imported.sidecar = Some(name);

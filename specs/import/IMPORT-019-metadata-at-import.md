@@ -9,7 +9,7 @@
 ## Purpose
 
 A photographer wants each photo labelled with job code, creator, copyright and keywords
-the moment it is imported, as Photo Mechanic does, so other programs and the library
+the moment it is imported, so other programs and the library
 see them at once.
 
 ## Behaviour
@@ -37,10 +37,9 @@ The values come from two configuration files (CORE-006):
 | `metadata.keywords` | list of text | empty | Keywords; `/` separates the levels of a hierarchy |
 | `metadata.sidecar_naming` | text | `original_with_extension` | `original_with_extension` (`DSCF0042.RAF.xmp`) or `original_without_extension` (`DSCF0042.xmp`) |
 
-A key set in the profile replaces the same key of `config.yaml`; keys the profile
-leaves out come from `config.yaml`. A file `config.yaml` that does not exist sets
-nothing. A keyword that is empty, starts or ends with `/`, or contains `//` or `|` is an
-error at its position.
+A key set in the profile replaces the same key of `config.yaml`; the others come from
+`config.yaml`. A missing `config.yaml` sets nothing. A keyword that is empty, starts or
+ends with `/`, or contains `//` or `|` is an error at its position.
 
 **Keywords.** `Holiday/Beach` is written as `Holiday|Beach` in
 `lr:hierarchicalSubject`, as the hierarchy `Holiday` › `Beach` in `mwg-kw:Keywords`, and
@@ -56,13 +55,15 @@ unchanged. No empty sidecar is written. The sidecar's name follows `sidecar_nami
 and the file's target name (CORE-009).
 
 **Conflicts.** A sidecar shares its file's conflict outcome (IMPORT-003): a target is
-free only when the file's name and the names of its sidecars are free, a suffix goes to
-both, and a skipped or failed file takes its sidecars with it. A file found already at
-its target (IMPORT-003) gets its sidecar only where none is there, at the target and
-at each backup that holds the file, so a re-run completes a failed one; a sidecar that
-is there is never changed. A file the import history knows writes none. With `original_without_extension`, a RAW and its JPEG of the same
-base name would share a sidecar name, so the second of them in scan order takes a
-suffix: `DSCF0042.JPG` with `DSCF0042.xmp`, then `DSCF0042-1.RAF` with `DSCF0042-1.xmp`.
+free only when the file's name and the names of its sidecars are free, the sidecar names
+also at each backup destination (IMPORT-007), a suffix goes to both, and a skipped or
+failed file takes its sidecars with it. A file found already at its target gets its
+sidecar only where none is there, at the target and at each backup that holds the
+file, so a re-run completes a failed one (IMPORT-007.15); a sidecar that is there is
+never changed. A file the import history knows writes none at its target. With
+`original_without_extension`, a RAW and its JPEG of the same base name would share a
+sidecar name, so the second of them in scan order takes a suffix: `DSCF0042.JPG` with
+`DSCF0042.xmp`, then `DSCF0042-1.RAF` with `DSCF0042-1.xmp`.
 
 **Order, verification and backups.** A sidecar is written after its file's verified
 copy (IMPORT-004), through `<name>.part` and a rename (CORE-009), then read again and
@@ -71,9 +72,8 @@ history (IMPORT-009). Each backup destination (IMPORT-007) gets the same bytes,
 verified against them.
 
 **Failure.** A sidecar that cannot be written or verified fails its file, with an error
-that names the sidecar path; the file's copy stays in place. A failed file keeps the
-card from being formatted (IMPORT-008). A sidecar counts as saved at a location when
-it was written and verified there, or as IMPORT-020.9 says.
+that names the sidecar path; the file's copy stays in place. A sidecar counts as saved
+at a location when it was written and verified there, or as IMPORT-020.9 says.
 
 ## Acceptance criteria
 
@@ -208,3 +208,4 @@ it was written and verified there, or as IMPORT-020.9 says.
 | 2026-11-08 | Created and accepted with the owner's XMP decisions D4, D11–D17, D19–D22, D27 (ADR 0040) |
 | 2026-11-08 | Implemented: the import writes, verifies, backs up and records the sidecars. The suffix examples of .10 and .11 corrected to `-1`; a RAW and its JPEG that would share a sidecar name under `original_without_extension` follow the suffix rule |
 | 2026-11-08 | A re-run completes a failed sidecar (.13 reworded, .18 added) |
+| 2026-11-09 | Sidecar names are checked at the backups too (IMPORT-007) |

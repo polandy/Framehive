@@ -3,7 +3,7 @@
 - Status: implemented
 - Module: import
 - Origin: I2, I5
-- Depends on: IMPORT-003, IMPORT-004
+- Depends on: IMPORT-003, IMPORT-004, IMPORT-019
 
 ## Purpose
 
@@ -17,7 +17,9 @@ import destination, and verifies every copy.
 An import run has one import destination and zero or more backup destinations. The
 import plan decides each file's target path in the import destination, including the
 name conflicts of IMPORT-003. A backup destination never changes that decision: each
-file goes to the same target path below every backup destination.
+file goes to the same target path below every backup destination. A sidecar name
+(IMPORT-019) taken at a backup destination counts as taken, so a leftover sidecar there
+gives the file a suffix everywhere.
 
 **Which files are backed up.** A file that is copied to the import destination, and a
 file that is "already imported" there, is backed up. Backing up the files already
@@ -44,6 +46,10 @@ removed because another destination failed.
 | nothing | the file is copied and verified: "backed up" |
 | a file with identical content | the file is not written: "already backed up" |
 | a file with other content | the file is not written: "failed: name conflict" |
+
+**A sidecar at a backup** that fails fails the file there only, so the history records
+no copy there, and the next run writes it where none is there, with the bytes of the
+sidecar at the import target, also for a file imported before.
 
 **The result of a file** is its result at the import destination (IMPORT-003,
 IMPORT-004), plus one result per backup destination. A file counts as copied when its
@@ -146,6 +152,20 @@ import destination is, once the checks and the free-space check pass (IMPORT-012
 - **Then** the summary for that backup destination counts 1 backed up, 1 already backed
   up and 1 failed
 
+### IMPORT-007.14 – A leftover sidecar at a backup takes the suffix
+- **Given** the job code `Lisbon`, two backup destinations, and `DSCF0042.RAF.xmp` left
+  over at the first
+- **When** `DSCF0042.RAF` is imported with `add_suffix`
+- **Then** all three destinations get `DSCF0042-1.RAF` and its sidecar, the leftover is
+  unchanged and nothing fails; one more at the second gives `-2`; `skip` skips the file
+
+### IMPORT-007.15 – A re-run completes a sidecar that failed at a backup
+- **Given** `DSCF0042.RAF` imported with the job code `Lisbon` and two backup
+  destinations, its sidecar failed at the first
+- **When** the import runs again and the sidecar can be written there
+- **Then** it gets the import target's sidecar bytes and is recorded there, and the card
+  can be formatted; while it still fails, nothing is recorded there
+
 ## Out of scope
 
 - How the command line takes backup destinations and reports them: CLI-005; the guided
@@ -170,3 +190,4 @@ import destination is, once the checks and the free-space check pass (IMPORT-012
 | 2026-11-04 | Initial draft; owner decisions: the source is read once and each copy is verified against its checksum, a backup never overwrites, a failed backup does not undo the import; accepted by the owner |
 | 2026-11-04 | Implemented in `files` (`copy_verified_to_all`) and the import run; IMPORT-007.2 corrected to the suffix `-1` of IMPORT-003 |
 | 2026-11-07 | Missing destinations are created once the free-space check passes (IMPORT-012) |
+| 2026-11-09 | Owner decision: backup sidecars follow the conflict rule (.14); a re-run completes them (.15) |

@@ -62,7 +62,7 @@ impl ImportRun<'_> {
                     recognition,
                 );
                 if let Some(sidecars) = sidecars {
-                    sidecars.count_imported_before(&file.found, recorded_sidecars, &mut imported);
+                    sidecars.add_to_imported_before(&file.found, recorded_sidecars, &mut imported);
                 }
                 imported
             }
@@ -370,6 +370,7 @@ fn resolve_target(
         size: file.size,
         target,
         sidecars: &sidecars,
+        backups: settings.backup_destinations_of(file.role),
     };
     Ok(resolver.resolve(&request)?)
 }

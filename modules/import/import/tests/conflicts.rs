@@ -278,6 +278,7 @@ fn unreadable_file_to_compare_is_an_error() {
             size: 4,
             target: "DSCF0001.RAF",
             sidecars: &[],
+            backups: &[],
         })
         .unwrap_err();
 

@@ -137,6 +137,7 @@ fn written_target(
         size: file.found.size,
         target: planned.target.as_ref().ok()?,
         sidecars: &sidecars,
+        backups: settings.backup_destinations_of(file.found.role),
     };
     match resolver.resolve(&request).ok()? {
         ConflictOutcome::CopyTo { target } => Some((target, true)),

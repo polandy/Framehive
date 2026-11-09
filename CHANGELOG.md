@@ -215,6 +215,11 @@ All user-visible changes are listed here. The format follows
 
 ### Fixed
 
+- A sidecar left at a backup destination no longer fails that backup: its name counts
+  as taken, so the file takes a suffix at every destination, exactly as for a sidecar
+  left at the import destination (IMPORT-007.14). A re-run now writes a sidecar that
+  failed only at a backup destination there and records it, so the card can be
+  formatted afterwards (IMPORT-007.15).
 - A re-run over a card already imported no longer keeps the card for its source `.xmp`
   sidecars: the run reads each one at the file's target and at each backup, and it
   counts as saved where it has the checksum the import history recorded, or, copied
