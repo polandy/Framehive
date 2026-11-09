@@ -116,3 +116,4 @@ skipped.
 | 2026-11-03 | Created from the phase 0 LibRaw prototype (ADR 0028) |
 | 2026-11-03 | Implemented by `adapter-libraw` |
 | 2026-11-07 | JPEG XL DNG dropped as an `UnsupportedFormat` example: no CC0 sample tests it, and the pinned LibRaw may report a data error instead (ADR 0028) |
+| 2026-11-09 | Reference hash of the owner's Canon EOS 350D Lightroom DNG (`dng/canon-eos-350d/`) added |

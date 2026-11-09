@@ -136,3 +136,14 @@ fn floating_point_deflate_dng_matches_its_reference() {
         "4fc38d82fdd6e7e492447506bad7432042e7242dbbdf9b8afcbca59171daab86",
     );
 }
+
+/// spec: PREVIEWS-001.4
+#[test]
+fn eos_350d_lightroom_dng_matches_its_reference() {
+    assert_reference(
+        "dng/canon-eos-350d/eos-350d-cosmos.dng",
+        3474,
+        2314,
+        "ef1d5614a77fa404b7715120ab525b5823d1509e6f6a6b272666e48127ca2871",
+    );
+}

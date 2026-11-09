@@ -42,13 +42,13 @@ Large sample files are not stored in the source repository. They live in the sep
   or used directly as a folder source.
 - Fujifilm X-T2 and X-T5 reference set (F7): RAF in every compression mode, JPEG and HEIF
   pairs, a dual-slot "RAW / JPEG separation" card pair; from raw.pixls.us (CC0) and
-  the project owner's own photos (released for the repository).
+  the project owner's own photos (under the Framehive Test Data Licence, not CC0).
 - Canon EOS 7D reference set (C6): CR2 in RAW, M-RAW and S-RAW, a CR2 + JPG pair, an
   `_MG_` (Adobe RGB) pair, a video with `.THM`; own photos if available, otherwise
   raw.pixls.us.
 - DNG reference set (D7): Adobe DNG Converter output (lossless, lossy, linear, without
-  preview, with embedded original), a DJI drone DNG, a GoPro GPR; from raw.pixls.us and
-  the project owner's own files.
+  preview, with embedded original), a Lightroom DNG with its camera JPEG, a DJI drone
+  DNG, a GoPro GPR; from raw.pixls.us and the project owner's own files.
 - RAW samples per manufacturer from raw.pixls.us (CC0 license), plus HEIF, videos from
   Sony, GoPro (LRV/GPR), and iPhone.
 - Virtual camera via libgphoto2's test driver for PTP; a fake implementation of the

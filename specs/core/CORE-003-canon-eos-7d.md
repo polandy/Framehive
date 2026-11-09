@@ -15,8 +15,8 @@ import, thumbnails, loupe, 100% zoom, metadata and filtering.
 
 **Reference set.** It is published in the `framehive-testdata` repository and pinned
 in `testdata.lock` as `canon/eos-7d/` (ADR 0017). It uses the project owner's own
-photos where available, cleaned and released as CC0 like the Fujifilm set (CORE-001),
-and raw.pixls.us samples otherwise.
+photos where available, cleaned and licensed like the Fujifilm set (CORE-001), and
+raw.pixls.us samples otherwise.
 
 | Files |
 |---|
@@ -139,3 +139,4 @@ is marked "damaged" with the reason.
 |---|---|
 | 2026-10-18 | Initial draft |
 | 2026-10-18 | Reference set in `framehive-testdata` (ADR 0017) |
+| 2026-11-09 | Own photos under the Framehive Test Data Licence instead of CC0 (owner decision) |
