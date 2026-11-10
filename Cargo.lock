@@ -28,6 +28,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "adapter-freedesktop-trash"
+version = "0.1.0"
+dependencies = [
+ "domain",
+ "files",
+]
+
+[[package]]
 name = "adapter-fs"
 version = "0.1.0"
 dependencies = [
@@ -49,6 +57,13 @@ version = "0.1.0"
 dependencies = [
  "blake3",
  "previews",
+]
+
+[[package]]
+name = "adapter-macos-trash"
+version = "0.1.0"
+dependencies = [
+ "files",
 ]
 
 [[package]]

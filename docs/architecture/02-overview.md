@@ -34,6 +34,7 @@ Part of the [architecture](README.md).
 ┌──────────────────────── Adapters (implementations of the ports) ────────────────────────┐
 │  adapter-sqlite   adapter-fs   adapter-blake3   adapter-clock   adapter-gphoto2         │
 │  adapter-mtp   adapter-udisks   adapter-yaml   adapter-free-space                       │
+│  adapter-freedesktop-trash   adapter-macos-trash                                        │
 │  adapter-macos-disks   adapter-xmp   adapter-raw   adapter-ffmpeg                       │
 │  adapter-onnx   adapter-osm-tiles   adapter-digikam-db   adapter-immich-http            │
 └─────────────────────────────────────────────────────────────────────────────────────────┘

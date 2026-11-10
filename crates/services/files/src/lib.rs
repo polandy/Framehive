@@ -7,7 +7,8 @@
 //! Every write of an imported file goes through this service. It reaches storage
 //! devices only through the [`FileSystem`] port, or the [`ReadOnlyFileSystem`] port
 //! for a source it only reads (ADR 0034), and computes checksums only through the
-//! [`Hasher`] port; `adapter-fs` and `adapter-blake3` implement them.
+//! [`Hasher`] port; `adapter-fs` and `adapter-blake3` implement them. Files leave the
+//! library only through the [`Trash`] port (ADR 0043).
 
 #![forbid(unsafe_code)]
 
@@ -17,6 +18,7 @@ mod copy;
 mod copy_error;
 mod ports;
 pub mod testing;
+mod trash;
 
 pub use cameras::{Camera, CameraError, Cameras};
 pub use checksum::checksum_file;
@@ -26,3 +28,4 @@ pub use ports::{
     EntryKind, FileSystem, FileSystemId, FolderEntry, FreeSpace, HashState, Hasher,
     ReadOnlyFileSystem, ReadSeek, SpaceOnFileSystem, WriteFile,
 };
+pub use trash::{Trash, not_a_file};

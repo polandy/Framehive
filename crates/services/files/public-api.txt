@@ -177,6 +177,24 @@ impl core::marker::Unpin for files::testing::MemoryFreeSpace
 impl core::marker::UnsafeUnpin for files::testing::MemoryFreeSpace
 impl core::panic::unwind_safe::RefUnwindSafe for files::testing::MemoryFreeSpace
 impl core::panic::unwind_safe::UnwindSafe for files::testing::MemoryFreeSpace
+pub struct files::testing::MemoryTrash
+impl files::testing::MemoryTrash
+pub fn files::testing::MemoryTrash::moved(&self) -> alloc::vec::Vec<std::path::PathBuf>
+pub fn files::testing::MemoryTrash::new(files::testing::MemoryFileSystem, impl core::convert::Into<std::path::PathBuf>) -> Self
+pub fn files::testing::MemoryTrash::refuse(&self, &std::path::Path)
+impl core::clone::Clone for files::testing::MemoryTrash
+pub fn files::testing::MemoryTrash::clone(&self) -> files::testing::MemoryTrash
+impl core::fmt::Debug for files::testing::MemoryTrash
+pub fn files::testing::MemoryTrash::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl files::Trash for files::testing::MemoryTrash
+pub fn files::testing::MemoryTrash::move_to_trash(&self, &std::path::Path) -> core::io::error::Result<std::path::PathBuf>
+impl core::marker::Freeze for files::testing::MemoryTrash
+impl core::marker::Send for files::testing::MemoryTrash
+impl core::marker::Sync for files::testing::MemoryTrash
+impl core::marker::Unpin for files::testing::MemoryTrash
+impl core::marker::UnsafeUnpin for files::testing::MemoryTrash
+impl core::panic::unwind_safe::RefUnwindSafe for files::testing::MemoryTrash
+impl core::panic::unwind_safe::UnwindSafe for files::testing::MemoryTrash
 pub struct files::testing::ReadOnlyFileSystemUnderTest<'a>
 pub files::testing::ReadOnlyFileSystemUnderTest::add_file: &'a files::testing::AddFile<'a>
 pub files::testing::ReadOnlyFileSystemUnderTest::add_folder: &'a files::testing::AddFolder<'a>
@@ -205,14 +223,31 @@ impl core::marker::Unpin for files::testing::TempDir
 impl core::marker::UnsafeUnpin for files::testing::TempDir
 impl core::panic::unwind_safe::RefUnwindSafe for files::testing::TempDir
 impl core::panic::unwind_safe::UnwindSafe for files::testing::TempDir
+pub struct files::testing::TrashUnderTest<'a>
+pub files::testing::TrashUnderTest::read_file: &'a files::testing::ReadTrashFile<'a>
+pub files::testing::TrashUnderTest::remove_file: &'a files::testing::RemoveTrashFile<'a>
+pub files::testing::TrashUnderTest::root: &'a std::path::Path
+pub files::testing::TrashUnderTest::trash: &'a dyn files::Trash
+pub files::testing::TrashUnderTest::write_file: &'a files::testing::WriteTrashFile<'a>
+impl<'a> core::marker::Freeze for files::testing::TrashUnderTest<'a>
+impl<'a> !core::marker::Send for files::testing::TrashUnderTest<'a>
+impl<'a> !core::marker::Sync for files::testing::TrashUnderTest<'a>
+impl<'a> core::marker::Unpin for files::testing::TrashUnderTest<'a>
+impl<'a> core::marker::UnsafeUnpin for files::testing::TrashUnderTest<'a>
+impl<'a> !core::panic::unwind_safe::RefUnwindSafe for files::testing::TrashUnderTest<'a>
+impl<'a> !core::panic::unwind_safe::UnwindSafe for files::testing::TrashUnderTest<'a>
 pub fn files::testing::check_cameras(&files::testing::CamerasUnderTest<'_>) -> alloc::vec::Vec<alloc::string::String>
 pub fn files::testing::check_file_system(&files::testing::FileSystemUnderTest<'_>) -> alloc::vec::Vec<alloc::string::String>
 pub fn files::testing::check_free_space(&files::testing::FreeSpaceUnderTest<'_>) -> alloc::vec::Vec<alloc::string::String>
 pub fn files::testing::check_hasher(&files::testing::HasherUnderTest<'_>) -> alloc::vec::Vec<alloc::string::String>
 pub fn files::testing::check_read_only_file_system(&files::testing::ReadOnlyFileSystemUnderTest<'_>) -> alloc::vec::Vec<alloc::string::String>
+pub fn files::testing::check_trash(&files::testing::TrashUnderTest<'_>) -> alloc::vec::Vec<alloc::string::String>
 pub type files::testing::AddFile<'a> = (dyn core::ops::function::Fn(&std::path::Path, &[u8], domain::time::Timestamp) -> core::io::error::Result<()> + 'a)
 pub type files::testing::AddFolder<'a> = (dyn core::ops::function::Fn(&std::path::Path) -> core::io::error::Result<()> + 'a)
 pub type files::testing::MakeSymbolicLink<'a> = (dyn core::ops::function::Fn(&std::path::Path, &std::path::Path) -> core::io::error::Result<()> + 'a)
+pub type files::testing::ReadTrashFile<'a> = (dyn core::ops::function::Fn(&std::path::Path) -> core::io::error::Result<alloc::vec::Vec<u8>> + 'a)
+pub type files::testing::RemoveTrashFile<'a> = (dyn core::ops::function::Fn(&std::path::Path) -> core::io::error::Result<()> + 'a)
+pub type files::testing::WriteTrashFile<'a> = (dyn core::ops::function::Fn(&std::path::Path, &[u8]) -> core::io::error::Result<()> + 'a)
 pub enum files::CameraError
 pub files::CameraError::InUse
 pub files::CameraError::InUse::port: alloc::string::String
@@ -492,9 +527,14 @@ pub fn files::testing::MemoryFileSystem::modification_time(&self, &std::path::Pa
 pub fn files::testing::MemoryFileSystem::open_read(&self, &std::path::Path) -> core::io::error::Result<alloc::boxed::Box<dyn files::ReadSeek>>
 pub trait files::ReadSeek: std::io::Read + std::io::Seek
 impl<T: std::io::Read + std::io::Seek + ?core::marker::Sized> files::ReadSeek for T
+pub trait files::Trash
+pub fn files::Trash::move_to_trash(&self, &std::path::Path) -> core::io::error::Result<std::path::PathBuf>
+impl files::Trash for files::testing::MemoryTrash
+pub fn files::testing::MemoryTrash::move_to_trash(&self, &std::path::Path) -> core::io::error::Result<std::path::PathBuf>
 pub trait files::WriteFile: std::io::Write
 pub fn files::WriteFile::set_modification_time(&mut self, domain::time::Timestamp) -> core::io::error::Result<()>
 pub fn files::WriteFile::sync(&mut self) -> core::io::error::Result<()>
 pub fn files::checksum_file(&dyn files::ReadOnlyFileSystem, &dyn files::Hasher, &std::path::Path) -> core::io::error::Result<domain::checksum::Checksum>
 pub fn files::copy_verified(&dyn files::FileSystem, &dyn files::Hasher, &std::path::Path, &std::path::Path) -> core::result::Result<domain::checksum::Checksum, files::CopyError>
 pub fn files::copy_verified_to_all(&dyn files::ReadOnlyFileSystem, &dyn files::FileSystem, &dyn files::Hasher, &std::path::Path, &[&std::path::Path]) -> files::VerifiedCopies
+pub fn files::not_a_file(&std::path::Path) -> core::io::error::Error
