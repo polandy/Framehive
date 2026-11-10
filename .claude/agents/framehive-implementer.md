@@ -25,8 +25,8 @@ answer goes back to the caller with your recommendation, instead of being guesse
 2. Watch each new test fail once before you make it pass. Mark it `/// spec: <ID>.<n>`.
 3. Run single crates while iterating (`cargo nextest run -p <crate>`), and
    `nix develop -c cargo xtask ci` before you report. It must be green.
-4. Update the spec status, the crate README, `CHANGELOG.md` for user-visible changes, and
-   `TODO.md` if the change closes an item.
+4. Update the spec status, the crate README, and `TODO.md` if the change closes an item.
+   Never edit `CHANGELOG.md`; release-please writes it from `feat` and `fix` commits.
 5. Commit, push or open a pull request only when the brief says so, and then follow
    `docs/pull-requests.md`. Never merge.
 

@@ -5,11 +5,13 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 # Changelog
 
-All user-visible changes are listed here. The format follows
-[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
-[Semantic Versioning](https://semver.org/).
+All user-visible changes are listed here, and versions follow
+[Semantic Versioning](https://semver.org/). From 0.1.0 on, release-please writes this
+file from the Conventional Commits on `main`; never edit it by hand (ADR 0045). The
+0.1.0 notes were written by hand in the
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
-## [Unreleased]
+## [0.1.0]
 
 ### Added
 

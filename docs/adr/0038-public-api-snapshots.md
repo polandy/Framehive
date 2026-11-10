@@ -1,6 +1,6 @@
 # 0038 – Public API snapshots with cargo-public-api on the stable toolchain
 
-- Status: accepted
+- Status: accepted; §3 superseded by ADR 0045 (releases with release-please)
 - Date: 2026-11-07
 
 ## Context

@@ -5,8 +5,8 @@
 //! `kernel` and the services as committed text snapshots (architecture §7, ADR 0038).
 //!
 //! rustdoc writes the API as JSON, and `cargo-public-api` renders that JSON as one
-//! sorted line per item. A change to the API must update the snapshot and add a
-//! `CHANGELOG.md` entry (`changelog`).
+//! sorted line per item. A change to the API must update the snapshot and come with a
+//! commit that release-please lists in the changelog (`changelog`).
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -123,8 +123,8 @@ fn rustdoc_json(root: &Path, name: &str) -> Result<PathBuf, String> {
 
 /// The problem with one crate's snapshot, if any: missing, or the items that differ.
 fn compare(name: &str, expected: Option<&str>, actual: &str) -> Option<String> {
-    let hint = "if the change is intended, run `cargo xtask public-api` and add a \
-                CHANGELOG.md entry";
+    let hint = "if the change is intended, run `cargo xtask public-api` and commit it \
+                as feat, fix or a breaking change";
     let Some(expected) = expected else {
         return Some(format!("{name}: no {SNAPSHOT} yet; {hint}"));
     };
@@ -206,7 +206,7 @@ mod tests {
         assert_eq!(
             problem,
             "kernel: the public API differs from public-api.txt; if the change is intended, \
-             run `cargo xtask public-api` and add a CHANGELOG.md entry\n  \
+             run `cargo xtask public-api` and commit it as feat, fix or a breaking change\n  \
              + pub fn kernel::new()\n  - pub fn kernel::old()"
         );
     }

@@ -102,11 +102,12 @@ Every tool result is re-read, and paid for, on each later turn.
    one concern.
 5. Run `cargo xtask ci` (the same as CI). It must be green. It prints one line per
    step and the full output only for a failing step.
-6. Update docs: the spec status, the crate README, `CHANGELOG.md` for user-visible
-   changes, and the ADRs and requirements if they are affected.
+6. Update docs: the spec status, the crate README, and the ADRs and requirements if they
+   are affected. `CHANGELOG.md` is written by release-please, never by hand (ADR 0045).
 7. Commit using Conventional Commits, in English. The body explains why. Use the
    `Spec-Unchanged:` or `Spec-Only:` trailer when ADR 0010 asks for it. No `Co-Authored-By`
-   or "Generated with" lines. `main` changes only by pull request (`docs/pull-requests.md`).
+   or "Generated with" lines. `main` changes only by pull request (`docs/pull-requests.md`;
+   releases in its §8).
 
 ## Adding things
 

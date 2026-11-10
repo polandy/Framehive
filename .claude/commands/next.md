@@ -11,7 +11,7 @@ Identify the next task and plan it:
    whole directory.
 4. Propose a plan of at most 5 steps. Each step is one Conventional Commit with a green
    `cargo xtask ci`. Spec first (CLAUDE.md, Workflow), and the last step updates the spec
-   status, the crate README, `CHANGELOG.md` for user-visible changes, and removes the item from
-   `TODO.md`.
+   status and the crate README and removes the item from `TODO.md`. A user-visible change
+   is a `feat` or `fix` commit; release-please writes `CHANGELOG.md` from it.
 5. Name the decisions the owner has to make, each with your recommendation. Do not start
    implementing until the owner agrees.
