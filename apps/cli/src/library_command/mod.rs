@@ -119,6 +119,10 @@ fn absolute_paths(paths: &[PathBuf]) -> Result<Vec<PathBuf>, String> {
 }
 
 #[cfg(target_os = "macos")]
+#[expect(
+    clippy::unnecessary_wraps,
+    reason = "the same signature as the freedesktop trash, which can fail"
+)]
 fn system_trash() -> Result<Box<dyn Trash>, String> {
     Ok(Box::new(adapter_macos_trash::MacosTrash::new()))
 }
