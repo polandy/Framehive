@@ -1,0 +1,174 @@
+<?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>
+<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="XMP Core 4.4.0-Exiv2">
+ <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+  <rdf:Description rdf:about=""
+    xmlns:xmp="http://ns.adobe.com/xap/1.0/"
+    xmlns:aux="http://ns.adobe.com/exif/1.0/aux/"
+    xmlns:xmpMM="http://ns.adobe.com/xap/1.0/mm/"
+    xmlns:stEvt="http://ns.adobe.com/xap/1.0/sType/ResourceEvent#"
+    xmlns:dc="http://purl.org/dc/elements/1.1/"
+    xmlns:crs="http://ns.adobe.com/camera-raw-settings/1.0/"
+    xmlns:mwg-rs="http://www.metadataworkinggroup.com/schemas/regions/"
+    xmlns:stDim="http://ns.adobe.com/xap/1.0/sType/Dimensions#"
+    xmlns:stArea="http://ns.adobe.com/xmp/sType/Area#"
+    xmlns:lr="http://ns.adobe.com/lightroom/1.0/"
+    xmlns:MP="http://ns.microsoft.com/photo/1.2/"
+    xmlns:MPRI="http://ns.microsoft.com/photo/1.2/t/RegionInfo#"
+    xmlns:MPReg="http://ns.microsoft.com/photo/1.2/t/Region#"
+    xmlns:digiKam="http://www.digikam.org/ns/1.0/"
+    xmlns:MicrosoftPhoto="http://ns.microsoft.com/photo/1.0/"
+    xmlns:mediapro="http://ns.iview-multimedia.com/mediapro/1.0/"
+    xmlns:acdsee="http://ns.acdsee.com/iptc/1.0/"
+    xmlns:tiff="http://ns.adobe.com/tiff/1.0/"
+    xmlns:exif="http://ns.adobe.com/exif/1.0/"
+    xmlns:photoshop="http://ns.adobe.com/photoshop/1.0/"
+   xmp:MetadataDate="2017-05-01T22:12:07+02:00"
+   xmp:ModifyDate="2013-10-07T11:29:19"
+   xmp:CreateDate="2013-10-07T11:29:19"
+   aux:LensInfo="6000/1000 22500/1000 0/0 0/0"
+   aux:Lens="6.0-22.5 mm"
+   aux:ApproximateFocusDistance="139/100"
+   aux:FlashCompensation="0/1"
+   aux:Firmware="1.00"
+   xmpMM:DocumentID="735FF103BF21AE3E5EB9A7BA7F94A8BF"
+   xmpMM:OriginalDocumentID="735FF103BF21AE3E5EB9A7BA7F94A8BF"
+   xmpMM:InstanceID="xmp.iid:8aeb36d1-5e2c-3b47-8ac0-3de69db2abe8"
+   dc:format="image/jpeg"
+   crs:RawFileName="powershot-faces.JPG"
+   acdsee:categories="&lt;Categories&gt;&lt;Category Assigned=&quot;0&quot;&gt;People&lt;Category Assigned=&quot;1&quot;&gt;Person D&lt;/Category&gt;&lt;/Category&gt;&lt;/Categories&gt;"
+   tiff:Orientation="8"
+   tiff:YCbCrPositioning="2"
+   tiff:XResolution="180/1"
+   tiff:YResolution="180/1"
+   tiff:ResolutionUnit="2"
+   tiff:Make="Canon"
+   tiff:Model="Canon PowerShot S95"
+   exif:ExifVersion="0230"
+   exif:FlashpixVersion="0100"
+   exif:ColorSpace="1"
+   exif:CompressedBitsPerPixel="3/1"
+   exif:PixelXDimension="3648"
+   exif:PixelYDimension="2736"
+   exif:ExposureTime="1/40"
+   exif:FNumber="40/10"
+   exif:ShutterSpeedValue="170/32"
+   exif:ApertureValue="128/32"
+   exif:ExposureBiasValue="3/3"
+   exif:MaxApertureValue="64/32"
+   exif:MeteringMode="5"
+   exif:FocalLength="6000/1000"
+   exif:FocalPlaneXResolution="3648000/292"
+   exif:FocalPlaneYResolution="2736000/219"
+   exif:FocalPlaneResolutionUnit="2"
+   exif:SensingMethod="2"
+   exif:FileSource="3"
+   exif:CustomRendered="0"
+   exif:ExposureMode="1"
+   exif:WhiteBalance="0"
+   exif:DigitalZoomRatio="3648/3648"
+   exif:SceneCaptureType="0"
+   photoshop:DateCreated="2013-10-07T11:29:19">
+   <xmpMM:History>
+    <rdf:Seq>
+     <rdf:li
+      stEvt:action="saved"
+      stEvt:instanceID="xmp.iid:8aeb36d1-5e2c-3b47-8ac0-3de69db2abe8"
+      stEvt:when="2017-05-01T22:12:07+02:00"
+      stEvt:softwareAgent="Adobe Photoshop Lightroom 6.6.1 (Windows)"
+      stEvt:changed="/metadata"/>
+    </rdf:Seq>
+   </xmpMM:History>
+   <dc:subject>
+    <rdf:Bag>
+     <rdf:li>Person D</rdf:li>
+    </rdf:Bag>
+   </dc:subject>
+   <mwg-rs:Regions rdf:parseType="Resource">
+    <mwg-rs:AppliedToDimensions
+     stDim:w="2736"
+     stDim:h="3648"
+     stDim:unit="pixel"/>
+    <mwg-rs:RegionList>
+     <rdf:Bag>
+      <rdf:li>
+       <rdf:Description
+        mwg-rs:Name="Person D"
+        mwg-rs:Type="Face">
+       <mwg-rs:Area
+        stArea:x="0.679002"
+        stArea:y="0.994152"
+        stArea:w="0.225329"
+        stArea:h="0.300439"
+        stArea:unit="normalized"/>
+       </rdf:Description>
+      </rdf:li>
+      <rdf:li>
+       <rdf:Description
+        mwg-rs:Name="Person D"
+        mwg-rs:Type="Face">
+       <mwg-rs:Area
+        stArea:x="0.723136"
+        stArea:y="0.432383"
+        stArea:w="0.173794"
+        stArea:h="0.231725"
+        stArea:unit="normalized"/>
+       </rdf:Description>
+      </rdf:li>
+     </rdf:Bag>
+    </mwg-rs:RegionList>
+   </mwg-rs:Regions>
+   <lr:hierarchicalSubject>
+    <rdf:Bag>
+     <rdf:li>People|Person D</rdf:li>
+    </rdf:Bag>
+   </lr:hierarchicalSubject>
+   <MP:RegionInfo rdf:parseType="Resource">
+    <MPRI:Regions>
+     <rdf:Bag>
+      <rdf:li
+       MPReg:Rectangle="0.566338, 0.843933, 0.225329, 0.300439"
+       MPReg:PersonDisplayName="Person D"/>
+      <rdf:li
+       MPReg:Rectangle="0.636239, 0.31652, 0.173794, 0.231725"
+       MPReg:PersonDisplayName="Person D"/>
+     </rdf:Bag>
+    </MPRI:Regions>
+   </MP:RegionInfo>
+   <digiKam:TagsList>
+    <rdf:Seq>
+     <rdf:li>People/Person D</rdf:li>
+    </rdf:Seq>
+   </digiKam:TagsList>
+   <MicrosoftPhoto:LastKeywordXMP>
+    <rdf:Bag>
+     <rdf:li>People/Person D</rdf:li>
+    </rdf:Bag>
+   </MicrosoftPhoto:LastKeywordXMP>
+   <mediapro:CatalogSets>
+    <rdf:Bag>
+     <rdf:li>People|Person D</rdf:li>
+    </rdf:Bag>
+   </mediapro:CatalogSets>
+   <exif:ComponentsConfiguration>
+    <rdf:Seq>
+     <rdf:li>1</rdf:li>
+     <rdf:li>2</rdf:li>
+     <rdf:li>3</rdf:li>
+     <rdf:li>0</rdf:li>
+    </rdf:Seq>
+   </exif:ComponentsConfiguration>
+   <exif:ISOSpeedRatings>
+    <rdf:Seq>
+     <rdf:li>160</rdf:li>
+    </rdf:Seq>
+   </exif:ISOSpeedRatings>
+   <exif:Flash
+    exif:Fired="False"
+    exif:Return="0"
+    exif:Mode="2"
+    exif:Function="False"
+    exif:RedEyeMode="False"/>
+  </rdf:Description>
+ </rdf:RDF>
+</x:xmpmeta>
+<?xpacket end="w"?>

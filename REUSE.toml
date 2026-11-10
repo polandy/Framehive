@@ -30,6 +30,13 @@ precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Framehive contributors"
 SPDX-License-Identifier = "GPL-3.0-or-later"
 
+# The owner's digiKam sidecars, cleaned of people, GPS and serial numbers.
+[[annotations]]
+path = "crates/adapters/xmp/tests/fixtures/digikam/*"
+precedence = "override"
+SPDX-FileCopyrightText = "2018 Andy Pollari"
+SPDX-License-Identifier = "LicenseRef-Framehive-Test-Data"
+
 # The owner's darktable sidecars, copies of the files in framehive-testdata.
 [[annotations]]
 path = "crates/adapters/xmp/tests/fixtures/darktable/eos-350d-cosmos.*"
