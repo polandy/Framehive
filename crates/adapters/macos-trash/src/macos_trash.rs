@@ -19,7 +19,7 @@ use crate::ffi;
 /// use adapter_macos_trash::MacosTrash;
 /// use files::Trash;
 ///
-/// let in_trash = MacosTrash::new().move_to_trash(Path::new("/Users/a/DSCF0001.RAF"))?;
+/// let _in_trash = MacosTrash::new().move_to_trash(Path::new("/Users/a/DSCF0001.RAF"))?;
 /// # Ok::<(), std::io::Error>(())
 /// ```
 #[derive(Debug, Clone, Copy, Default)]

@@ -163,8 +163,9 @@ fn string(value: Object) -> String {
     }
     // SAFETY: `value` is a valid CFString.
     let length = unsafe { CFStringGetLength(value) };
-    let size = CFStringGetMaximumSizeForEncoding(length, UTF8).saturating_add(1);
-    let mut buffer = vec![0_u8; usize::try_from(size).unwrap_or(0)];
+    let capacity = CFStringGetMaximumSizeForEncoding(length, UTF8).saturating_add(1);
+    let mut buffer = vec![0_u8; usize::try_from(capacity).unwrap_or(0)];
+    let size = CfIndex::try_from(buffer.len()).unwrap_or(0);
     // SAFETY: `value` is a valid CFString and `buffer` is writable for `size` bytes.
     let copied = unsafe { CFStringGetCString(value, buffer.as_mut_ptr().cast(), size, UTF8) };
     let text = CStr::from_bytes_until_nul(&buffer)
