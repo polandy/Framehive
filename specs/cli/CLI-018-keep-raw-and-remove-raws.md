@@ -104,11 +104,10 @@ an unknown home folder on Linux.
   is 1
 
 ### CLI-018.5 – The summary
-- **Given** `A` (RAF 30 MB + JPG, sidecar `A.RAF.xmp`), `B` (RAF+JPG, marked), `C` (JPG
+- **Given** `A` (RAF 2.95 MB + JPG, sidecar `A.RAF.xmp`), `B` (RAF+JPG, marked), `C` (JPG
   only), `D` (RAF only) and `E` (RAF+JPG, rejected)
 - **When** the user runs `framehive library remove-raws <folder> --dry-run`
-- **Then** standard output shows 1 asset, 2 files and the size of `A.RAF` and
-  `A.RAF.xmp`; *RAW will be removed* (1): `A`; *RAW stays (Keep RAW)* (1): `B`;
+- **Then** standard output shows 1 asset, 2 files and `3.0 MB` freed; *RAW will be removed* (1): `A`; *RAW stays (Keep RAW)* (1): `B`;
   skipped 1 rejected, 1 JPEG only, 1 RAW only; then `A.RAF` and `A.RAF.xmp`; and no
   file moved
 
@@ -142,7 +141,7 @@ an unknown home folder on Linux.
 ### CLI-018.10 – An unreadable sidecar keeps its asset out
 - **Given** an unmarked RAF+JPG asset `A` whose `A.JPG.xmp` is not XMP, and an unmarked
   RAF+JPG asset `B`
-- **When** the user runs `framehive library remove-raws <folder> --dry-run`
+- **When** the user runs `framehive library remove-raws <folder>`
 - **Then** standard error warns that `A.JPG.xmp` cannot be read, and only `B` is in
   *RAW will be removed*
 
