@@ -30,6 +30,8 @@ members = [
     "crates/services/previews",
     "modules/import/import",
     "modules/import/import-ui",
+    "modules/library/library",
+    "modules/library/library-ui",
     "xtask",
 ]
 
@@ -64,6 +66,8 @@ import = { path = "modules/import/import" }
 import-ui = { path = "modules/import/import-ui" }
 jobs = { path = "crates/services/jobs" }
 kernel = { path = "crates/kernel" }
+library = { path = "modules/library/library" }
+library-ui = { path = "modules/library/library-ui" }
 metadata = { path = "crates/services/metadata" }
 naming = { path = "crates/services/naming" }
 previews = { path = "crates/services/previews" }

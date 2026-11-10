@@ -1,7 +1,7 @@
 # LIBRARY-001 – RAW + JPEG grouping
 
-- Status: draft
-- Module: library (grouping rule in the catalog service, used by import and library)
+- Status: accepted
+- Module: library (the grouping rule is in the library module; import will share it once it moves to the catalog service)
 - Origin: B23, B24, B25, B26, B27, B28, G8, N11, R5, F5, F6
 - Depends on: IMPORT-002 (sequence numbers)
 
@@ -178,3 +178,4 @@ and places its file next to it, with the same base name.
 | 2026-10-18 | `.THM` files join their video's asset (CORE-003) |
 | 2026-11-03 | The template in .12 ends with `.{ext}`, as IMPORT-001 requires |
 | 2026-11-09 | Delete RAW member (.15); a shared sidecar goes only with the last member (.16) |
+| 2026-11-10 | Accepted with the library module (owner decision A, #109); grouping .1–.4 built |

@@ -50,3 +50,4 @@ acceptance (a change means a new ADR that supersedes the old one).
 | [0041](../adr/0041-sync-records-in-the-framehive-xmp-namespace.md) | Sync records in the Framehive XMP namespace (numbered 0037 until 2026-11-08) | accepted |
 | [0042](../adr/0042-keep-raw-marker-in-the-framehive-xmp-namespace.md) | Keep RAW marker in the Framehive XMP namespace | accepted |
 | [0043](../adr/0043-trash-port-freedesktop-and-macos-trash.md) | Trash port: the freedesktop.org trash and the macOS Trash | accepted |
+| [0044](../adr/0044-rejected-pick-state-as-xmp-rating-minus-one.md) | Rejected pick state as `xmp:Rating` -1 | accepted |
