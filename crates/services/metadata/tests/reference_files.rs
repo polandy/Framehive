@@ -73,15 +73,15 @@ fn eos_350d_dng_and_jpeg_give_the_camera_model() {
     }
 }
 
-/// A file of the owner's X-T2, X-T5 and EOS 7D sets with the values it gives.
+/// A file of the owner's X-T2, X-T5 and two EOS 7D sets with the values it gives.
 struct Expected {
     relative: &'static str,
     taken: CaptureTime,
     model: &'static str,
 }
 
-/// The RAW and the camera JPEG of one shot from each of the three sets.
-fn other_cameras() -> [Expected; 6] {
+/// The RAW and the camera JPEG of one shot from each of the four sets.
+fn other_cameras() -> [Expected; 8] {
     let at = |year, month, day, hour, minute, second| {
         CaptureTime::new(LocalDateTime::new(year, month, day, hour, minute, second).unwrap())
     };
@@ -91,6 +91,9 @@ fn other_cameras() -> [Expected; 6] {
     let eos_7d_dng = at(2015, 8, 10, 10, 41, 56);
     let eos_7d_jpeg = at(2015, 8, 10, 4, 41, 56)
         .with_subsec_nanoseconds(330_000_000)
+        .unwrap();
+    let eos_7d_adobe_rgb = at(2014, 10, 16, 15, 58, 5)
+        .with_subsec_nanoseconds(0)
         .unwrap();
     [
         ("fujifilm/x-t2/x-t2-stone-villa.RAF", x_t2, "X-T2"),
@@ -105,6 +108,16 @@ fn other_cameras() -> [Expected; 6] {
         (
             "canon/eos-7d/eos-7d-garden-house.JPG",
             eos_7d_jpeg,
+            "Canon EOS 7D",
+        ),
+        (
+            "canon/eos-7d-v2/_MG_1309.CR2",
+            eos_7d_adobe_rgb,
+            "Canon EOS 7D",
+        ),
+        (
+            "canon/eos-7d-v2/_MG_1309.JPG",
+            eos_7d_adobe_rgb,
             "Canon EOS 7D",
         ),
     ]

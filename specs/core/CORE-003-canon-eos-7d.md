@@ -26,10 +26,11 @@ raw.pixls.us samples otherwise.
 | Video `MVI_1234.MOV` with `MVI_1234.THM` |
 
 Published so far: `eos-7d-garden-house`, a Lightroom DNG of a CR2 with its camera JPEG
-and darktable sidecars. By owner decision of 2026-11-10 there will be no further
-reference files for the 7D: the CR2 files (RAW, M-RAW, S-RAW), the CR2 + JPG pairs,
-the Adobe RGB `_MG_` pair and the `MVI_` MOV with its THM have no fixture. CORE-003.1
-and CORE-003.2 are not covered by reference tests.
+and darktable sidecars. `canon/eos-7d-v2/` adds a CR2 in RAW size with its camera JPEG,
+both shot in Adobe RGB (`_MG_1309`), and a video `MVI_9726.MOV` without a THM. By owner
+decision of 2026-11-10 there will be no further reference files for the 7D: M-RAW and
+S-RAW CR2 files, an `IMG_` CR2 + JPG pair and a THM file have no fixture. CORE-003.2 is
+not covered by reference tests.
 
 **File types.**
 
@@ -106,9 +107,9 @@ is marked "damaged" with the reason.
 - **Then** it is produced from the embedded JPEG, and the RAW decoder is not called
 
 ### CORE-003.6 – Full decode
-- **Given** `canon/eos-7d/raw.CR2`
+- **Given** `canon/eos-7d-v2/_MG_1309.CR2`
 - **When** it is decoded at full resolution
-- **Then** the output is 5184×3456, and its hash matches the stored reference hash for
+- **Then** the output is 5202×3464, and its hash matches the stored reference hash for
   the pinned decoder version and configuration
 
 ### CORE-003.7 – Adobe RGB pair
@@ -147,4 +148,5 @@ is marked "damaged" with the reason.
 | 2026-10-18 | Reference set in `framehive-testdata` (ADR 0017) |
 | 2026-11-09 | Own photos under the Framehive Test Data Licence instead of CC0 (owner decision) |
 | 2026-11-09 | First set published: a Lightroom DNG + camera JPEG pair; the CR2 files are still missing |
+| 2026-11-10 | Reference set `canon/eos-7d-v2/` published: Adobe RGB CR2 + JPG pair and an MVI video without THM; CORE-003.6 decodes the CR2 (5202×3464, the full sensor area) |
 | 2026-11-10 | No further reference files by owner decision; the CR2 and video cases have no fixture and no reference tests |

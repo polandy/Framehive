@@ -49,3 +49,8 @@ a5277af7396f0912da75991a11e8c6565515df6dad7787605759e94acc628082  40815035  fuji
 # fujifilm-x-t5/clean.yaml in framehive-testdata. For CORE-001, CORE-005, CORE-010,
 # IMPORT-021 and PREVIEWS-001.
 f315757ff8f0d72bc3f2d6399a3d39d0bb9976815556f9c6e78017ecec30b387  69552673  fujifilm/x-t5/  https://github.com/polandy/framehive-testdata/releases/download/fujifilm-x-t5-v1/fujifilm-x-t5-v1.tar.zst
+
+# The project owner's Canon EOS 7D shot in Adobe RGB: CR2 and camera JPEG with the `_MG_`
+# prefix, and an `MVI_` MOV without THM. Not CC0: Framehive Test Data Licence. Cleaned per
+# canon-eos-7d-v2/clean.yaml in framehive-testdata. For CORE-001, CORE-003 and ADR 0017.
+4a2069cbba18ca34c6d27f5736465d882b4c31f79496caab6c1aa115a2b98069  35683901  canon/eos-7d-v2/  https://github.com/polandy/framehive-testdata/releases/download/canon-eos-7d-v2/canon-eos-7d-v2.tar.zst
