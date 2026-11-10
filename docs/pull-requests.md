@@ -17,8 +17,8 @@ and humans alike.
 ## 2. Before opening
 
 - `cargo xtask ci` is green locally. CI runs exactly the same command.
-- The spec, the docs, `CHANGELOG.md` and `TODO.md` are part of the same change
-  (`CLAUDE.md`, Workflow).
+- The spec, the docs and `TODO.md` are part of the same change (`CLAUDE.md`,
+  Workflow). `CHANGELOG.md` is never edited by hand: release-please writes it (§8).
 - Commit, push and open the pull request only when the owner asked for it. An approval
   for one of these steps does not cover the next.
 
@@ -28,7 +28,8 @@ The pull request is squash-merged. Its title becomes the commit subject and its
 description becomes the commit body, word for word. So:
 
 - **Title:** a Conventional Commit subject in English, such as
-  `feat(import): skip files already in the catalog`.
+  `feat(import): skip files already in the catalog`. A `feat` or `fix` title becomes the
+  `CHANGELOG.md` entry, so it says what changed for the user; other types are not listed.
 - **Description:** only commit body text. It explains *why*, and it ends with the
   `Spec-Unchanged:` or `Spec-Only:` trailer when ADR 0010 asks for one.
 - **Trailers are checked.** `cargo xtask check-spec-trailers` judges each commit of the
@@ -91,3 +92,18 @@ and keeps review comments anchored, and the squash merge removes the merge commi
 - Squash merge: `gh pr merge <pr> --squash`. The branch is deleted automatically.
 - Afterwards, update the local `main` (`git switch main && git pull --ff-only`) and remove
   the worktree, if one was used.
+
+## 8. Releases
+
+release-please (ADR 0045) keeps a release pull request open on `main`, titled
+`chore(main): release <version>`. It bumps the version in `Cargo.toml`, `Cargo.lock` and
+`.release-please-manifest.json` and adds the changelog entry from the `feat`, `fix` and
+breaking commits since the last release. Before 1.0 a `feat` bumps the patch version and
+a breaking change the minor version.
+
+- Releasing is merging that pull request, an owner decision like every merge. The merge
+  tags `v<version>` and creates the GitHub release. Never tag or release by hand.
+- Never edit the release pull request or `CHANGELOG.md` by hand; the next push to `main`
+  rewrites them from the commits.
+- With the `RELEASE_PLEASE_TOKEN` secret, CI runs on the release pull request; without
+  it, the pull request is created with `GITHUB_TOKEN` and CI must be started by hand.

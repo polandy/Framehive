@@ -13,6 +13,8 @@ Review uncommitted or recently committed changes against the project's standards
    - Are glossary terms used (`docs/architecture/10-glossary.md`), with no new synonyms?
    - Does an architecture change come with an ADR (CLAUDE.md rule 6)?
    - Do comments explain *why*, and does every public item have a doc comment?
-   - Is a user-visible change in `CHANGELOG.md`, and is a closed `TODO.md` item removed?
+   - Is a user-visible change a `feat` or `fix` commit with a user-facing subject, is
+     `CHANGELOG.md` untouched (release-please writes it), and is a closed `TODO.md` item
+     removed?
 4. Report concisely: what needs fixing, with `file:line`. If everything is clean, say so in one
    line.
