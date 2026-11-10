@@ -1,7 +1,7 @@
 # LIBRARY-001 – RAW + JPEG grouping
 
 - Status: accepted
-- Module: library (grouping rule in the catalog service, used by import and library)
+- Module: library (the grouping rule is in the library module; import will share it once it moves to the catalog service)
 - Origin: B23, B24, B25, B26, B27, B28, G8, N11, R5, F5, F6
 - Depends on: IMPORT-002 (sequence numbers)
 
