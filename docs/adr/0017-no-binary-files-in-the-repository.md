@@ -74,6 +74,9 @@ rule must be enforced by `cargo xtask ci` (CLAUDE.md), not by review.
   the tools of the Nix shell and fixes the format of `testdata.lock`.
 - Releasing the owner's own photos as test data happens in `framehive-testdata`,
   including the cleaning step (CORE-001).
+- By owner decision of 2026-11-10 the X-T2, X-T5 and EOS 7D sets stay as published
+  (`fujifilm-x-t2-v1`, `fujifilm-x-t5-v1`, `canon-eos-7d-v1`). Cases without a fixture
+  (CORE-001, CORE-003) are not covered by reference tests.
 - Any accidental binary, such as a screenshot or a core dump, fails CI before it can be
   committed through a reviewed change.
 - A screenshot hash also changes when the pinned Slint version, the embedded fonts or

@@ -20,10 +20,16 @@ published: GPS removed, serial numbers replaced by a test value, no recognisable
 Framehive Test Data Licence permits redistribution and use only for testing Framehive.
 raw.pixls.us samples complement it.
 
-| Camera | Files | Published so far |
+| Camera | Wanted files | Published |
 |---|---|---|
 | X-T2 | uncompressed and lossless compressed RAF; RAF + JPG pair; one shot with *Classic Chrome* | `x-t2-stone-villa`: lossless RAF + JPG pair (*Provia*), with darktable sidecars |
 | X-T5 | uncompressed, lossless and lossy compressed RAF; RAF + JPG and RAF + HIF pairs; one shot with *Nostalgic Neg.*; a dual-slot "RAW / JPEG separation" pair | `x-t5-mountain-lake`: lossless RAF + JPG pair (*Velvia*), with darktable sidecars |
+
+By owner decision of 2026-11-10 there will be no further reference files for the X-T2
+and X-T5. The wanted files that are not published (X-T2: uncompressed RAF, *Classic
+Chrome*; X-T5: uncompressed and lossy RAF, RAF + HIF pair, *Nostalgic Neg.*, dual-slot
+"RAW / JPEG separation" pair) have no fixture. CORE-001.2, CORE-001.3 and CORE-001.6
+are not covered by reference tests for those cases.
 
 Because the serial numbers are removed, tests that need one use the value written by
 the cleaning script (`fujifilm-x-t2/clean.yaml` and `fujifilm-x-t5/clean.yaml` in
@@ -127,3 +133,4 @@ that can be read is kept. The asset gets a "damaged" marker with the reason.
 | 2026-10-18 | Reference set moved to `framehive-testdata` (ADR 0017) |
 | 2026-11-09 | Own photos under the Framehive Test Data Licence instead of CC0 (owner decision) |
 | 2026-11-09 | First sets published: X-T2 and X-T5 lossless RAF + JPG pairs; their reference decode hashes are tested under PREVIEWS-001.4 |
+| 2026-11-10 | No further reference files by owner decision; unpublished cases have no fixture and no reference tests |
