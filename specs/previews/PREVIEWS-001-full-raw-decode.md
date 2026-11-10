@@ -118,3 +118,4 @@ skipped.
 | 2026-11-07 | JPEG XL DNG dropped as an `UnsupportedFormat` example: no CC0 sample tests it, and the pinned LibRaw may report a data error instead (ADR 0028) |
 | 2026-11-09 | Reference hash of the owner's Canon EOS 350D Lightroom DNG (`dng/canon-eos-350d/`) added |
 | 2026-11-09 | Reference hashes of the owner's X-T2 and X-T5 lossless compressed RAFs and EOS 7D Lightroom DNG added |
+| 2026-11-10 | Reference hash of the owner's EOS 7D Adobe RGB CR2 added |

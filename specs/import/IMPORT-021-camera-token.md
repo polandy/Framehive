@@ -89,7 +89,8 @@ A file that cannot be read at all fails as for the capture time.
 
 ### IMPORT-021.10 – Files of the reference cameras
 - **Given** the RAW or DNG file and the camera JPEG of the reference sets
-  `fujifilm/x-t2/`, `fujifilm/x-t5/` (CORE-001) and `canon/eos-7d/` (CORE-003)
+  `fujifilm/x-t2/`, `fujifilm/x-t5/` (CORE-001), `canon/eos-7d/` and `canon/eos-7d-v2/`
+  (CORE-003)
 - **When** their camera model is read
 - **Then** they give `X-T2`, `X-T5` and `Canon EOS 7D`
 
