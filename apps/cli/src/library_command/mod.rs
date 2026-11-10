@@ -9,7 +9,6 @@ mod remove_raws;
 #[cfg(test)]
 mod tests;
 
-use std::ffi::OsStr;
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
@@ -140,9 +139,13 @@ fn system_trash() -> Result<Box<dyn Trash>, String> {
     )))
 }
 
+#[cfg(not(target_os = "macos"))]
 /// The home trash of the freedesktop.org trash: `$XDG_DATA_HOME/Trash` when it is set
 /// and absolute, else `<home>/.local/share/Trash`; `None` without an absolute home.
-fn home_trash(xdg_data_home: Option<&OsStr>, home: Option<&OsStr>) -> Option<PathBuf> {
+fn home_trash(
+    xdg_data_home: Option<&std::ffi::OsStr>,
+    home: Option<&std::ffi::OsStr>,
+) -> Option<PathBuf> {
     let data_home = xdg_data_home
         .map(Path::new)
         .filter(|path| path.is_absolute())

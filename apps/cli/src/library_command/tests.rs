@@ -3,7 +3,6 @@
 
 #![allow(clippy::unwrap_used, reason = "tests may panic on bad fixtures")]
 
-use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
 use adapter_xmp::QuickXml;
@@ -237,8 +236,11 @@ fn an_ambiguous_base_name_is_warned_about() {
     );
 }
 
+#[cfg(not(target_os = "macos"))]
 #[test]
 fn the_home_trash_follows_xdg_data_home_and_else_the_home_folder() {
+    use std::ffi::OsStr;
+
     let home = Some(OsStr::new("/home/ada"));
     assert_eq!(
         home_trash(Some(OsStr::new("/data")), home),
