@@ -3,7 +3,7 @@
 
 [package]
 name = "framehive-cli"
-description = "The framehive command: imports photos and videos from the command line"
+description = "The framehive command: imports photos and videos and works on the library from the command line"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -21,8 +21,10 @@ path = "src/main.rs"
 adapter-blake3.workspace = true
 adapter-clock.workspace = true
 adapter-free-space.workspace = true
+adapter-freedesktop-trash.workspace = true
 adapter-fs.workspace = true
 adapter-gphoto2.workspace = true
+adapter-macos-trash.workspace = true
 adapter-mounts.workspace = true
 adapter-sequence-counters.workspace = true
 adapter-sqlite.workspace = true
@@ -36,11 +38,12 @@ files.workspace = true
 history.workspace = true
 jobs.workspace = true
 import.workspace = true
+library.workspace = true
+metadata.workspace = true
 naming.workspace = true
 
 [dev-dependencies]
 files.workspace = true
-metadata.workspace = true
 
 [lints]
 workspace = true

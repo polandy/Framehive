@@ -11,7 +11,8 @@ Layer: `app` (architecture §3). Binary: `framehive`.
 
 The command line of Framehive: `framehive import` (CLI-001, CLI-004, CLI-010, CLI-011,
 CLI-013), `framehive cameras` (CLI-013), `framehive import-log` (CLI-009),
-`framehive config init` (CLI-010) and, without a subcommand, the guided import
+`framehive config init` (CLI-010), `framehive library keep-raw` and
+`framehive library remove-raws` (CLI-018) and, without a subcommand, the guided import
 (CLI-002, CLI-003, ADR 0024). It parses the arguments
 with `clap` (builder API, ADR 0020 §6) and is one of the two places, with
 `framehive-gui`, that know the concrete adapters and wire them to the ports.
@@ -31,6 +32,8 @@ framehive import camera:[<model>|<port>] <destination> [other options]
 framehive cameras
 framehive import-log [<run>|last] [--format text|json|csv]
 framehive config init
+framehive library keep-raw <file>... [--off]
+framehive library remove-raws <folder> [--dry-run]
 framehive --help
 framehive --version
 ```
@@ -45,6 +48,8 @@ framehive --version
 - [Guided import](docs/guided-import.md): `framehive` without a subcommand (CLI-002,
   CLI-003, CLI-014)
 - [Import log](docs/import-log.md): `framehive import-log` (CLI-009)
+- [Library commands](docs/library.md): `framehive library keep-raw` and
+  `framehive library remove-raws` (CLI-018)
 - [Report and exit codes](docs/report.md): the report lines, the sidecar lines
   (CLI-017) and the exit codes
 - [Tests](docs/tests.md): how the tests run the binary
@@ -53,7 +58,7 @@ framehive --version
 
 | Module | Meaning |
 |---|---|
-| `arguments` | The `clap` command line and the parsed `Invocation` |
+| `arguments` | The `clap` command line and the parsed `Invocation`; `framehive library` in `library.rs` |
 | `paths` | Source and destination resolution, the inside check, creating the destination |
 | `import_command` | Wires the adapters to the import job of each source (`run.rs`, tested in-crate with `MemoryFreeSpace` and `MemoryCameras`), follows the jobs on threads of their own (`sources.rs`) and maps the results to the exit code |
 | `cameras` | `camera:` sources and `framehive cameras` (CLI-013): naming, finding and opening a camera |
@@ -61,14 +66,17 @@ framehive --version
 | `profiles` | The configuration folder, profile names, and reading the profile of `--profile` (CLI-010) |
 | `config_init` | `framehive config init`: the example profile (CLI-010) |
 | `import_log` | `framehive import-log` (CLI-009): reading the history, and the `text`, `json` and `csv` writers |
+| `library_command` | `framehive library keep-raw` and `remove-raws` (CLI-018): the adapters and the trash of the system (`mod.rs`), marking (`keep_raw.rs`) and the summary, question and run (`remove_raws.rs`) |
 | `format_readiness` | The format readiness lines (CLI-007), shared by `framehive import` and the guided import |
 | `guided` | The guided import (CLI-002, CLI-003, CLI-014): `dialog` (prompts, waiting, remembered answers), `source` (a card or an opened camera), `device` (opening and reading, eject or release), `card` (summary, import, report), `summary` (plan summary, blockers), `template` (template step, job code), `progress` (progress line, stop on a pulled card), `format` (sizes, rate, time left), `state` (state file), `events` (input events) |
 
 ## Dependencies
 
-- `adapter-blake3`, `adapter-clock`, `adapter-fs`, `adapter-gphoto2`, `adapter-mounts`,
-  `adapter-sequence-counters`, `adapter-sqlite`, `adapter-yaml`, `config`, `devices`,
-  `domain`, `files`, `history`, `import`, `jobs`, `naming`
+- `adapter-blake3`, `adapter-clock`, `adapter-free-space`, `adapter-freedesktop-trash`,
+  `adapter-fs`, `adapter-gphoto2`, `adapter-macos-trash`, `adapter-mounts`,
+  `adapter-sequence-counters`, `adapter-sqlite`, `adapter-xmp`, `adapter-yaml`, `config`,
+  `devices`, `domain`, `files`, `history`, `import`, `jobs`, `library`, `metadata`,
+  `naming`
 
 - `clap` (ADR 0020 §6): `default-features = false`, features `std`, `help`, `usage`,
   `error-context`.

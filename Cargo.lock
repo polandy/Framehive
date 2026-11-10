@@ -291,8 +291,10 @@ dependencies = [
  "adapter-blake3",
  "adapter-clock",
  "adapter-free-space",
+ "adapter-freedesktop-trash",
  "adapter-fs",
  "adapter-gphoto2",
+ "adapter-macos-trash",
  "adapter-mounts",
  "adapter-sequence-counters",
  "adapter-sqlite",
@@ -306,6 +308,7 @@ dependencies = [
  "history",
  "import",
  "jobs",
+ "library",
  "metadata",
  "naming",
 ]

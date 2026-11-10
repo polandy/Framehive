@@ -11,6 +11,11 @@ use clap::builder::PossibleValuesParser;
 use clap::{Arg, ArgAction, ArgMatches, Command, value_parser};
 use import::DEFAULT_NAME_TEMPLATE;
 
+mod library;
+
+pub(crate) use library::{KeepRawArguments, RemoveRawsArguments};
+use library::{library_command, library_invocation};
+
 /// The values of `--on-conflict`, as the policies of IMPORT-003 are named.
 const CONFLICT_POLICIES: [&str; 3] = ["add_suffix", "skip", "fail"];
 
@@ -30,6 +35,10 @@ pub(crate) enum Invocation {
     ConfigInit,
     /// `framehive cameras` (CLI-013).
     Cameras,
+    /// `framehive library keep-raw` (CLI-018).
+    KeepRaw(KeepRawArguments),
+    /// `framehive library remove-raws` (CLI-018).
+    RemoveRaws(RemoveRawsArguments),
 }
 
 /// The arguments of `framehive import-log` (CLI-009), checked by the parser.
@@ -118,6 +127,7 @@ pub(crate) fn parse(
         Some(("import", import)) => Invocation::Import(import_arguments(import)),
         Some(("config", _)) => Invocation::ConfigInit,
         Some(("cameras", _)) => Invocation::Cameras,
+        Some(("library", library)) => library_invocation(library),
         Some((_, import_log)) => Invocation::ImportLog(import_log_arguments(import_log)),
         None => Invocation::Guided,
     })
@@ -133,6 +143,7 @@ fn command() -> Command {
         .subcommand(Command::new("cameras").about(
             "List the cameras and phones connected over PTP or MTP, to import from with camera:",
         ))
+        .subcommand(library_command())
 }
 
 /// `framehive config`; `init` is its only subcommand so far (CLI-010).

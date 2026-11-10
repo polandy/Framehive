@@ -34,8 +34,8 @@ that cannot be moved keeps its sidecars, and every file that was not moved is re
 with the reason.
 
 The module touches files only through the `files` ports and sidecars only through
-`metadata`. The CLI commands and their registration in the apps come with the next
-change; key `R`, the filter, the index and the thumbnail summary wait for the GUI.
+`metadata`. `framehive library keep-raw` and `framehive library remove-raws` use it
+(CLI-018); key `R`, the filter, the index and the thumbnail summary wait for the GUI.
 
 ## Public API
 
