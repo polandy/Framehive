@@ -53,7 +53,9 @@ the `exiftool` of the Nix shell over standard input and output and checks that i
 version `flake.lock` pins (13.59); a `nixpkgs` update that changes it must update the
 test. `tests/other_programs.rs` merges a keyword into the darktable sidecars in
 `tests/fixtures/darktable/` and checks that every property survives and that the
-keyword arrays only grow (CORE-010.9).
+keyword arrays only grow (CORE-010.9). It does the same for the digiKam sidecars in
+`tests/fixtures/digikam/` (CORE-010.11): ratings, colour and pick labels, tags and face
+regions, with people names replaced by `Person A`–`Person D`, and GPS removed.
 Those sidecars are the project owner's, under the Framehive Test Data Licence
 (`LICENSES/LicenseRef-Framehive-Test-Data.txt`), not GPL.
 

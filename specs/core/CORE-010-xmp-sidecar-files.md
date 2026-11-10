@@ -92,7 +92,7 @@ parsed is never overwritten. Permissions are never changed.
 ### CORE-010.11 – digiKam sidecars survive
 - **Given** checked-in sidecars exported from digiKam
 - **When** a keyword is merged into each and it is written
-- **Then** reading it again gives every original property, including digiKam's
+- **Then** reading it again gives every original property, including digiKam's labels and
   `TagsList`, unchanged
 
 ## Out of scope
@@ -111,3 +111,4 @@ parsed is never overwritten. Permissions are never changed.
 | 2026-11-09 | Split from CORE-009 (.15–.24 became .1–.10); .1–.8 and .10 implemented, .9 (the fixtures of other programs) waits on the owner's darktable and digiKam sidecars |
 | 2026-11-09 | .9 split by program: .9 (darktable) implemented with the owner's EOS 350D sidecars, .11 (digiKam) waits on the owner's digiKam sidecars |
 | 2026-11-09 | .9 also covers the darktable sidecars of the owner's EOS 7D, X-T2 and X-T5 shots; keyword properties that already hold keywords gain the merged one |
+| 2026-11-10 | .11 implemented with seven digiKam sidecars (RAF and JPG: rating, colour and pick labels, tags, face regions), cleaned of people names, GPS and serial numbers |
