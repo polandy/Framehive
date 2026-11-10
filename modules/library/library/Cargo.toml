@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: 2026 Framehive contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+[package]
+name = "library"
+description = "Business logic, use cases and ViewModels of the library module of Framehive"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[package.metadata.framehive]
+layer = "module"
+
+[dependencies]
+domain.workspace = true
+files.workspace = true
+kernel.workspace = true
+metadata.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true

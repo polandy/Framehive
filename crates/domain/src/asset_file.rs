@@ -24,3 +24,14 @@ pub enum AssetFileRole {
     /// video thumbnail file (`.THM`).
     Sidecar,
 }
+
+/// The extensions of RAW files, in upper case (requirements 2.7).
+pub const RAW_EXTENSIONS: [&str; 22] = [
+    "3FR", "ARW", "CR2", "CR3", "CRW", "DCR", "DNG", "FFF", "IIQ", "MEF", "MOS", "MRW", "NEF",
+    "NRW", "ORF", "PEF", "RAF", "RAW", "RW2", "SR2", "SRW", "X3F",
+];
+
+/// The extensions of video files, in upper case (requirements 2.7).
+pub const VIDEO_EXTENSIONS: [&str; 12] = [
+    "3GP", "AVI", "M2T", "M2TS", "MOV", "MP4", "MPEG", "MPG", "MOD", "TOD", "MTS", "MKV",
+];

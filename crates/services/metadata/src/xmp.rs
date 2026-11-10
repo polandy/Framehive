@@ -14,6 +14,7 @@ pub mod namespaces;
 mod parse;
 mod prefixes;
 mod rdf;
+mod rejected;
 mod save;
 mod serialize;
 mod sidecar;

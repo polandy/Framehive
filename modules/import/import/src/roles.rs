@@ -4,19 +4,10 @@
 //! The role of a file from its extension: the formats of requirements section 2.7
 //! (IMPORT-005).
 
-use domain::AssetFileRole;
-
-const RAW: [&str; 22] = [
-    "3FR", "ARW", "CR2", "CR3", "CRW", "DCR", "DNG", "FFF", "IIQ", "MEF", "MOS", "MRW", "NEF",
-    "NRW", "ORF", "PEF", "RAF", "RAW", "RW2", "SR2", "SRW", "X3F",
-];
+use domain::{AssetFileRole, RAW_EXTENSIONS, VIDEO_EXTENSIONS};
 
 const RENDERED: [&str; 11] = [
     "JPG", "JPEG", "HEIF", "HEIC", "HIF", "TIF", "TIFF", "MPO", "AVIF", "JXL", "PNG",
-];
-
-const VIDEO: [&str; 12] = [
-    "3GP", "AVI", "M2T", "M2TS", "MOV", "MP4", "MPEG", "MPG", "MOD", "TOD", "MTS", "MKV",
 ];
 
 const SIDECAR: [&str; 2] = ["XMP", "THM"];
@@ -25,9 +16,9 @@ const SIDECAR: [&str; 2] = ["XMP", "THM"];
 /// for a format the import does not support.
 pub(crate) fn role_for_extension(extension: &str) -> Option<AssetFileRole> {
     let lists: [(&[&str], AssetFileRole); 4] = [
-        (&RAW, AssetFileRole::Raw),
+        (&RAW_EXTENSIONS, AssetFileRole::Raw),
         (&RENDERED, AssetFileRole::Rendered),
-        (&VIDEO, AssetFileRole::Video),
+        (&VIDEO_EXTENSIONS, AssetFileRole::Video),
         (&SIDECAR, AssetFileRole::Sidecar),
     ];
     lists

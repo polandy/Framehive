@@ -15,7 +15,7 @@ way.
 | EXIF | CIPA DC-008 (Exif 3.0), DCF (CIPA DC-009) | Read only; time zones via `OffsetTime*` |
 | TIFF, DNG | TIFF 6.0, Adobe DNG Specification 1.7 | Own reader for CR2 and DNG structure; XMP embedded into DNG only as an option (ADR 0015) |
 | Color labels | `xmp:Label` (text, Lightroom-compatible) | Color ↔ text mapping configurable, default matches Lightroom |
-| Pick/reject | No official standard | Mapping documented in an ADR (e.g. reject = `xmp:Rating -1`, as in Lightroom and darktable) |
+| Pick/reject | No official standard | Reject = `xmp:Rating -1`, as in Lightroom and darktable (ADR 0044); keep and pending in a later ADR |
 | Geodata | EXIF GPS, GPX 1.1 | Geotagging from GPX, written to `exif:GPS*` in XMP |
 | Directories | XDG Base Directory, freedesktop.org Trash Spec; macOS File System Programming Guide | Configuration, cache, data, trash |
 | Checksums | BLAKE3 | In the log with algorithm prefix (`blake3:…`) |
