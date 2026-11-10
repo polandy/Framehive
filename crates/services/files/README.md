@@ -42,6 +42,10 @@ Boundaries:
   MTP and opens one as a `ReadOnlyFileSystem` with one folder per storage; dropping it
   releases the camera, and a camera another program holds is a `CameraError::InUse`
   (ADR 0034 §2, §6).
+- **Trash.** The `Trash` port moves one file to the desktop's trash and returns where it
+  lies there; a name already taken gets its own, and on an error the file stays.
+  Folders and symbolic links are refused (ADR 0043). `adapter-freedesktop-trash` and
+  `adapter-macos-trash` implement it.
 - **Not covered here:** which files to copy and name conflicts (IMPORT-001, IMPORT-003),
   and continuing after a failed file (IMPORT-004.11), which is the import run's job.
 
@@ -52,6 +56,7 @@ Boundaries:
 | `ReadOnlyFileSystem`, `ReadSeek`, `EntryKind`, `FolderEntry` | Port for reading files and folders (`entry`, `list_folder`, `file_size`, `modification_time`, `open_read`); files are read from any offset (ADR 0021); folders are listed without following symbolic links (IMPORT-005); the import reads its source only through it (ADR 0034) |
 | `FileSystem`, `WriteFile` | Port for files and folders: `ReadOnlyFileSystem` with creating, renaming, replacing a file in one step (keeping its permissions, refusing a read-only file), removing and explicit syncing |
 | `FreeSpace`, `SpaceOnFileSystem`, `FileSystemId` | Port for the free space and the identity of the file system a folder lies on; a missing folder is answered for its nearest existing parent (ADR 0033) |
+| `Trash`, `not_a_file` | Port for moving a file to the trash, and the `InvalidInput` error every implementation returns for a path that is not a file (ADR 0043) |
 | `Hasher`, `HashState` | Port for a hash function that yields a `domain::Checksum` with its algorithm id |
 | `checksum_file` | Reads a file in full and returns its checksum; used to compare content (IMPORT-003) and to read a copy back |
 | `copy_verified` | Copies one file through a `.part` file and verifies it (IMPORT-004) |
@@ -68,6 +73,8 @@ Boundaries:
 | `testing::MemoryFreeSpace` | `FreeSpace` with fixed answers per mounted folder, and file systems that do not report their free space |
 | `testing::check_free_space`, `testing::FreeSpaceUnderTest` | Conformance suite of the `FreeSpace` port |
 | `testing::check_hasher`, `testing::HasherUnderTest` | Conformance suite of the `Hasher` port |
+| `testing::MemoryTrash` | `Trash` that moves files to a folder of a `MemoryFileSystem`, records what it moved, and refuses chosen files |
+| `testing::check_trash`, `testing::TrashUnderTest`, `testing::WriteTrashFile`, `testing::ReadTrashFile`, `testing::RemoveTrashFile` | Conformance suite of the `Trash` port; it lays out and reads its files through the storage of the implementation and removes what it trashed |
 
 ## Dependencies
 

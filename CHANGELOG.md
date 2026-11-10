@@ -13,6 +13,10 @@ All user-visible changes are listed here. The format follows
 
 ### Added
 
+- A `Trash` port in `files` with two adapters: the freedesktop.org trash on Linux, in
+  own code, and the macOS Trash through `NSFileManager`, so Finder can put a file back.
+  `testing::MemoryTrash` and the conformance suite `testing::check_trash` come with it
+  (ADR 0043). Remove RAWs will use it (LIBRARY-002).
 - Repository scaffold: Cargo workspace with the `domain` and `kernel` crates, pinned
   Rust toolchain, Nix development shell, and REUSE-compliant licensing
   (GPL-3.0-or-later).

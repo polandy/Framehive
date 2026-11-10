@@ -8,9 +8,11 @@ members = [
     "crates/adapters/blake3",
     "crates/adapters/clock",
     "crates/adapters/free-space",
+    "crates/adapters/freedesktop-trash",
     "crates/adapters/fs",
     "crates/adapters/gphoto2",
     "crates/adapters/libraw",
+    "crates/adapters/macos-trash",
     "crates/adapters/mounts",
     "crates/adapters/sequence-counters",
     "crates/adapters/sqlite",
@@ -43,9 +45,11 @@ publish = false
 adapter-blake3 = { path = "crates/adapters/blake3" }
 adapter-clock = { path = "crates/adapters/clock" }
 adapter-free-space = { path = "crates/adapters/free-space" }
+adapter-freedesktop-trash = { path = "crates/adapters/freedesktop-trash" }
 adapter-fs = { path = "crates/adapters/fs" }
 adapter-gphoto2 = { path = "crates/adapters/gphoto2" }
 adapter-libraw = { path = "crates/adapters/libraw" }
+adapter-macos-trash = { path = "crates/adapters/macos-trash" }
 adapter-mounts = { path = "crates/adapters/mounts" }
 adapter-sequence-counters = { path = "crates/adapters/sequence-counters" }
 adapter-sqlite = { path = "crates/adapters/sqlite" }
