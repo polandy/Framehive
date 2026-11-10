@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 //! The Objective-C runtime and CoreFoundation calls behind [`trash_item`]. NSURL and
-//! NSError are toll-free bridged to CFURL and CFError, so only two messages are sent.
+//! `NSError` are toll-free bridged to CFURL and `CFError`, so only two messages are sent.
 
 use std::ffi::{CStr, OsStr, c_char, c_void};
 use std::io;
@@ -127,7 +127,7 @@ fn path_of(url: Object) -> io::Result<PathBuf> {
     Ok(PathBuf::from(OsStr::from_bytes(path.to_bytes())))
 }
 
-/// The I/O error for the NSError `error`, which may be null.
+/// The I/O error for the `NSError` `error`, which may be null.
 fn io_error(error: Object) -> io::Error {
     if error.is_null() {
         return io::Error::other("the Trash did not take the file");
@@ -156,7 +156,7 @@ fn cocoa_error_kind(code: CfIndex) -> io::ErrorKind {
     }
 }
 
-/// The CFString `value` as UTF-8, or an empty string for null.
+/// The `CFString` `value` as UTF-8, or an empty string for null.
 fn string(value: Object) -> String {
     if value.is_null() {
         return String::new();
