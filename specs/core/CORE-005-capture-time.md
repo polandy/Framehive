@@ -125,11 +125,13 @@ Invalid sub-seconds or offsets are ignored; the date and time are still used.
 
 ### CORE-005.14 – Files of the reference cameras
 - **Given** the RAW or DNG file and the camera JPEG of the reference sets
-  `fujifilm/x-t2/`, `fujifilm/x-t5/` (CORE-001) and `canon/eos-7d/` (CORE-003)
+  `fujifilm/x-t2/`, `fujifilm/x-t5/` (CORE-001), `canon/eos-7d/` and `canon/eos-7d-v2/`
+  (CORE-003)
 - **When** their capture times are read
 - **Then** the X-T2 files give 2023-10-02 12:05:23 without an offset; the X-T5 files
   give 2024-09-28 13:25:29 +02:00; the EOS 7D DNG gives 2015-08-10 10:41:56 (Lightroom
-  shifted it) and its JPEG 2015-08-10 04:41:56.33, both without an offset
+  shifted it) and its JPEG 2015-08-10 04:41:56.33, both without an offset; the `_MG_` CR2
+  and JPEG of `canon/eos-7d-v2/` give 2014-10-16 15:58:05.00, without an offset
 
 ## Out of scope
 

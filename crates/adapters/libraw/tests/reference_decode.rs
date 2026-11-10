@@ -180,3 +180,14 @@ fn eos_7d_lightroom_dng_matches_its_reference() {
         "f8bdb9d39ffe39dec9cd0f5286964d98b812231119239081a84700d061e64474",
     );
 }
+
+/// spec: PREVIEWS-001.4
+#[test]
+fn eos_7d_adobe_rgb_cr2_of_the_owner_matches_its_reference() {
+    assert_reference(
+        "canon/eos-7d-v2/_MG_1309.CR2",
+        5202,
+        3464,
+        "096112bd33111b809faff8456dcdb08e932bf3f932419a5ee46873625f0bf675",
+    );
+}
