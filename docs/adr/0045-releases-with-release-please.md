@@ -48,9 +48,10 @@ enforces it; a local run only warns, because the commit may not be written yet.
 `Cargo.toml` already says 0.1.0, and there is no tag. The config pins the release with
 `release-as: 0.1.0`. The hand-written notes become the `[0.1.0]` section, and
 `skip-changelog: true` keeps release-please from adding a second, generated 0.1.0
-section above them. `bootstrap-sha`, the last commit before this decision, keeps the
-generated release notes from listing the whole history. After the 0.1.0 release the
-three settings are removed (`TODO.md`).
+section above them. The GitHub release of 0.1.0 lists every `feat` and `fix` commit since
+the start; a `bootstrap-sha` would shorten it but leaves no user-facing commit, and
+release-please opens no release pull request without one. After the 0.1.0 release both
+settings are removed (`TODO.md`).
 
 ## Alternatives
 
@@ -59,8 +60,8 @@ three settings are removed (`TODO.md`).
 - *Keep the hand-written changelog*: every pull request touches the same section, which
   conflicts between parallel branches, and the release still needs a manual version bump
   and tag. Rejected.
-- *Let release-please generate 0.1.0 from all commits*: duplicates the curated notes
-  with over a hundred raw commit subjects. Rejected.
+- *Let release-please write 0.1.0 into `CHANGELOG.md` from all commits*: duplicates the
+  curated notes with over a hundred raw commit subjects. Rejected.
 
 ## Consequences
 
