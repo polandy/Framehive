@@ -58,7 +58,7 @@ form. XML tokens come through the `XmlSyntax` port, which `adapter-xmp` implemen
 | `CaptureTimeError` | Why `read_capture_time` gives no capture time: a `NoCaptureTime` reason or an I/O error with the path |
 | `capture_time_from_bytes` | The capture time of a file's content in memory |
 | `NoCaptureTime` | Why a file has no capture time |
-| `xmp::XmpPacket`, `XmpName`, `XmpNode`, `XmpValue`, `ArrayKind` | The XMP data model; `XmpPacket::set_text`, `add_to_bag`, `replace_seq`, `set_language`, `add_keywords` and `set_keep_raw` (hierarchical keywords in `dc:subject`, `lr:hierarchicalSubject` and `mwg-kw:Keywords`, ADR 0040) edit it; `keep_raw` reads the Keep RAW marker |
+| `xmp::XmpPacket`, `XmpName`, `XmpNode`, `XmpValue`, `ArrayKind` | The XMP data model; `XmpPacket::set_text`, `add_to_bag`, `replace_seq`, `set_language`, `add_keywords` and `set_keep_raw` (hierarchical keywords in `dc:subject`, `lr:hierarchicalSubject` and `mwg-kw:Keywords`, ADR 0040) edit it; `keep_raw` reads the Keep RAW marker and `is_rejected` the rejected state (ADR 0044) |
 | `xmp::parse_xmp` | Parses a sidecar's bytes into an `XmpPacket` |
 | `xmp::serialize_xmp` | Writes an `XmpPacket` in the canonical form, setting `xmp:MetadataDate` |
 | `xmp::XmpError`, `XmpErrorReason` | Why a sidecar cannot be read, with its path |

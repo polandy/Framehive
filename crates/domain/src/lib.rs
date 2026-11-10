@@ -17,7 +17,7 @@ mod rating;
 pub mod testing;
 mod time;
 
-pub use asset_file::AssetFileRole;
+pub use asset_file::{AssetFileRole, RAW_EXTENSIONS, VIDEO_EXTENSIONS};
 pub use capture_time::CaptureTime;
 pub use checksum::{Checksum, ChecksumError};
 pub use clock::Clock;

@@ -13,6 +13,12 @@ All user-visible changes are listed here. The format follows
 
 ### Added
 
+- The `library` module: it groups a folder's files into assets (LIBRARY-001), writes
+  the Keep RAW marker into the sidecar of every member of an asset, and plans and runs
+  Remove RAWs on the `Trash` port, keeping a shared sidecar and reporting every file it
+  could not move (LIBRARY-002). The commands come with the CLI.
+- `XmpPacket::is_rejected` reads a rejected photo as `xmp:Rating` -1, as Lightroom,
+  darktable and digiKam write it (ADR 0044).
 - A `Trash` port in `files` with two adapters: the freedesktop.org trash on Linux, in
   own code, and the macOS Trash through `NSFileManager`, so Finder can put a file back.
   `testing::MemoryTrash` and the conformance suite `testing::check_trash` come with it
