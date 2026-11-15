@@ -79,6 +79,10 @@ Every tool result is re-read, and paid for, on each later turn.
 11. **Everything in the repository is English.** That covers code, comments, docs,
     specs, ADRs, UI strings in mockups, commit messages, PR titles and descriptions,
     and issue text. It applies even when you talk to the user in another language.
+12. **`docs/` has exactly two folders.** `docs/user/` holds user and admin docs (manual,
+    installation, usage, operator configuration). `docs/dev/` holds ADRs, specs, plan,
+    architecture, reviews, mockups and developer runbooks. New documents go into one of
+    them, when in doubt into `docs/dev/`.
 
 ## Code style
 
