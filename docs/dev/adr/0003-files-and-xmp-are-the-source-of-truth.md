@@ -11,7 +11,7 @@ Lightroom.
 
 ## Decision
 
-- Metadata is stored in standards-compliant XMP sidecars (see `docs/architecture/`
+- Metadata is stored in standards-compliant XMP sidecars (see `docs/dev/architecture/`
   section 8). These are the single source of truth.
 - Each machine has its own SQLite index. It never lives on a network drive and can be
   rebuilt from the files at any time.

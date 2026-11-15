@@ -15,10 +15,12 @@ framehive/
 ├── flake.nix / flake.lock
 ├── deny.toml  clippy.toml  rustfmt.toml  .config/nextest.toml
 ├── docs/
-│   ├── requirements/  architecture/   one file per section
-│   ├── pull-requests.md      # How a change reaches main
-│   ├── xmp-namespace.md      # Fields of Framehive's own XMP namespace (ADR 0041, 0042)
-│   └── adr/
+│   ├── user/                 # User and administrator documentation
+│   └── dev/                  # Everything technical
+│       ├── requirements/  architecture/   one file per section
+│       ├── pull-requests.md  # How a change reaches main
+│       ├── xmp-namespace.md  # Fields of Framehive's own XMP namespace (ADR 0041, 0042)
+│       └── adr/
 ├── specs/                    # Feature specifications (ADR 0010)
 ├── schemas/                  # JSON Schemas for the YAML configuration (ADR 0011)
 ├── crates/

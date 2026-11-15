@@ -122,6 +122,6 @@ needs one), perceptual hash, file-watcher reconciliation via polling on a NAS.
 - More of our own code for small functions; per ADR 0006 this code must be especially
   well tested (property tests, fuzzing for parsers).
 - Every library is wrapped behind an adapter and therefore swappable.
-- Libraries mentioned in `docs/requirements/` (e.g. `nom-exif`, `rawler`, `image_hasher`,
+- Libraries mentioned in `docs/dev/requirements/` (e.g. `nom-exif`, `rawler`, `image_hasher`,
   `sqlite-vec`, `usearch`, `criterion`) are only ideas and must go through this
   process.

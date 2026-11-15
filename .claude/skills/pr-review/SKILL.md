@@ -7,7 +7,7 @@ argument-hint: <PR number or branch>
 # Pull request review
 
 Review the pull request in `$ARGUMENTS` (a number or a branch; without one, the pull request
-of the current branch). The procedure around it is `docs/pull-requests.md`.
+of the current branch). The procedure around it is `docs/dev/pull-requests.md`.
 
 ## Pick the tier first
 
@@ -36,7 +36,7 @@ Decide from `gh pr diff <PR> --name-only`, and name the tier in the verdict.
 - `gh pr view <PR> --json title,body,headRefName,mergeStateStatus,statusCheckRollup`.
 - `gh pr diff <PR>`. Review the code against the intent the description states.
 - A UI change needs a `## Screenshots` comment with images from `framehive-assets`
-  (`docs/pull-requests.md` section 5). Missing screenshots block the review.
+  (`docs/dev/pull-requests.md` section 5). Missing screenshots block the review.
 - The title must be a Conventional Commit subject, and the description must be pure commit
   body text with the right trailer, because both become the squash commit.
 

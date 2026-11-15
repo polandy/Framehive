@@ -11,7 +11,7 @@ value the user changed. For that, the sync records which values it wrote, with a
 in Framehive's own namespace `https://polandy.github.io/framehive/ns/1.0/`. No standard
 defines such fields, so CLAUDE.md rule 3 asks for an ADR before the mapping is
 implemented. ADR 0013 left the field names and the hash format open and points to
-`docs/xmp-namespace.md`.
+`docs/dev/xmp-namespace.md`.
 
 The records must survive other programs: digiKam, darktable and Lightroom keep unknown
 fields but may rewrite a packet with other prefixes, reorder array items or reformat
@@ -34,7 +34,7 @@ values. IMMICH-001 compares tags and regions per entry, not per property.
 5. **Versioning.** Version 1.0 may gain optional fields and new sources; readers keep
    what they do not know. An incompatible change gets a new namespace URI.
 
-The full definition, with an example, is `docs/xmp-namespace.md`.
+The full definition, with an example, is `docs/dev/xmp-namespace.md`.
 
 ## Alternatives
 

@@ -18,7 +18,7 @@ is implemented. A keyboard shortcut is needed too (N14).
 ## Decision
 
 1. **The marker is `framehive:KeepRaw`**, a simple XMP Boolean in Framehive's namespace
-   (ADR 0041, `docs/xmp-namespace.md`), written to the sidecar of every member like the
+   (ADR 0041, `docs/dev/xmp-namespace.md`), written to the sidecar of every member like the
    rating.
 2. **Marked writes `True`; unmarked removes the property.** A sidecar of an unmarked
    asset thus gains nothing, and other programs see no new field on most assets.

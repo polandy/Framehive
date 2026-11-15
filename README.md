@@ -53,21 +53,21 @@ SPDX-License-Identifier: GPL-3.0-or-later
 | **Map** | Photos by location and geotagging | soon after v1 |
 | Editor | Image editing; until then, Framehive hands photos to an external editor | later |
 
-The full plan is in the [roadmap](docs/requirements/10-roadmap.md).
+The full plan is in the [roadmap](docs/dev/requirements/10-roadmap.md).
 
 ## How it is built
 
 - **Modular.** Each feature is a module behind a small kernel. Modules never depend on
   each other, and only the apps know concrete adapters
-  ([architecture](docs/architecture/README.md)).
+  ([architecture](docs/dev/architecture/README.md)).
 - **Specified before it is coded.** Every feature has a spec in [`specs/`](specs/), and
   every acceptance criterion has a test that points back to it.
 - **Few dependencies.** Standard library and small, well-tested own code first; a
-  library only for large or security-critical problems ([ADR 0009](docs/adr/0009-minimal-dependencies.md)).
+  library only for large or security-critical problems ([ADR 0009](docs/dev/adr/0009-minimal-dependencies.md)).
 - **Reproducible and deterministic.** A pinned toolchain in a Nix shell, and tests
   without sleeps, wall clock or network.
 - **Developed by AI agents, readable by humans.** Every rule is enforced by
-  `cargo xtask ci`, not by hope ([ADR 0008](docs/adr/0008-development-by-ai-agents.md),
+  `cargo xtask ci`, not by hope ([ADR 0008](docs/dev/adr/0008-development-by-ai-agents.md),
   [CLAUDE.md](CLAUDE.md)).
 
 ## Getting started
@@ -101,16 +101,18 @@ cargo xtask ci       # every check, exactly as CI runs it
 ```
 
 Changes reach `main` only through pull requests, see
-[docs/pull-requests.md](docs/pull-requests.md).
+[docs/dev/pull-requests.md](docs/dev/pull-requests.md).
 
 ## Documentation
 
 | Topic | Document |
 |---|---|
-| What we build | [docs/requirements/](docs/requirements/README.md) |
+| What we build | [docs/dev/requirements/](docs/dev/requirements/README.md) |
+| Users and administrators | [docs/user/](docs/user/README.md) |
+| Developers | [docs/dev/](docs/dev/README.md) |
 | Feature behaviour | [specs/](specs/) |
-| Architecture | [docs/architecture/](docs/architecture/README.md) |
-| Decisions | [docs/adr/](docs/adr/) |
+| Architecture | [docs/dev/architecture/](docs/dev/architecture/README.md) |
+| Decisions | [docs/dev/adr/](docs/dev/adr/) |
 | Logo, colours and type | [assets/brand/](assets/brand/README.md) |
 | Rules for contributors and AI agents | [CLAUDE.md](CLAUDE.md) |
 | Changes | [CHANGELOG.md](CHANGELOG.md) |
@@ -118,4 +120,4 @@ Changes reach `main` only through pull requests, see
 ## License
 
 Framehive is free software under the GPL-3.0-or-later, see [LICENSE](LICENSE) and
-[ADR 0014](docs/adr/0014-license-gpl-3-or-later.md).
+[ADR 0014](docs/dev/adr/0014-license-gpl-3-or-later.md).

@@ -60,7 +60,7 @@ writes into the sidecar of every member of the matched asset:
 | Album | Framehive album `.framehive/albums/immich-<album-id>.yaml`, `source: immich`, read-only in Framehive |
 
 **Ownership.** For every value it writes, the sync stores the field and a hash of the
-value in Framehive's XMP namespace (`docs/xmp-namespace.md`). On the next sync:
+value in Framehive's XMP namespace (`docs/dev/xmp-namespace.md`). On the next sync:
 
 | Current value in XMP | Immich value | Result |
 |---|---|---|

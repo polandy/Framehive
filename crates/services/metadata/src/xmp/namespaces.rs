@@ -19,7 +19,7 @@ pub const PHOTOSHOP: &str = "http://ns.adobe.com/photoshop/1.0/";
 pub const LIGHTROOM: &str = "http://ns.adobe.com/lightroom/1.0/";
 /// MWG keywords, prefix `mwg-kw`.
 pub const MWG_KEYWORDS: &str = "http://www.metadataworkinggroup.com/schemas/keywords/";
-/// Framehive's own namespace, prefix `framehive` (`docs/xmp-namespace.md`).
+/// Framehive's own namespace, prefix `framehive` (`docs/dev/xmp-namespace.md`).
 pub const FRAMEHIVE: &str = "https://polandy.github.io/framehive/ns/1.0/";
 
 /// The prefixes of the packet structure itself; no property namespace may take them.

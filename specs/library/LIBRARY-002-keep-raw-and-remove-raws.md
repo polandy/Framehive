@@ -22,7 +22,7 @@ command. `R` is free in the library key map (B6: `P`, `X`, `1`–`9`; mockups: `
 
 The marker belongs to the asset like the rating (LIBRARY-001, metadata): it is stored in
 the library and written to the sidecar of every member as `framehive:KeepRaw`
-(`docs/xmp-namespace.md`, ADR 0042). Marking writes `True`; unmarking removes the
+(`docs/dev/xmp-namespace.md`, ADR 0042). Marking writes `True`; unmarking removes the
 property. A value `True` in any case counts as marked; a missing property, `False` and
 any other text count as unmarked. A `framehive:KeepRaw` that is a struct or an array is
 never overwritten: the change is refused for that asset and reported. Rebuilding the

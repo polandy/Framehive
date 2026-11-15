@@ -24,10 +24,10 @@ Run them inside `nix develop`, or prefix them with `nix develop -c`.
 
 | Topic | Document |
 |---|---|
-| What we build | `docs/requirements/` (one file per section) |
+| What we build | `docs/dev/requirements/` (one file per section) |
 | Exact behavior of each feature | `specs/` (rules in `specs/README.md`) |
-| How it is structured | `docs/architecture/` (one file per section), especially §3 layers, §4 modules, §8 standards, §10 glossary |
-| Why decisions were made | `docs/adr/` |
+| How it is structured | `docs/dev/architecture/` (one file per section), especially §3 layers, §4 modules, §8 standards, §10 glossary |
+| Why decisions were made | `docs/dev/adr/` |
 | A specific crate | that crate's `README.md` |
 
 ## Reading budget
@@ -106,7 +106,7 @@ Every tool result is re-read, and paid for, on each later turn.
    are affected. `CHANGELOG.md` is written by release-please, never by hand (ADR 0045).
 7. Commit using Conventional Commits, in English. The body explains why. Use the
    `Spec-Unchanged:` or `Spec-Only:` trailer when ADR 0010 asks for it. No `Co-Authored-By`
-   or "Generated with" lines. `main` changes only by pull request (`docs/pull-requests.md`;
+   or "Generated with" lines. `main` changes only by pull request (`docs/dev/pull-requests.md`;
    releases in its §8).
 
 ## Adding things

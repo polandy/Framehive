@@ -1,7 +1,7 @@
 # Open work
 
 One line per item, newest at the end. A finished item is deleted. Open questions about a
-feature live in its spec, decisions in `docs/adr/`. Add items with `/todo`.
+feature live in its spec, decisions in `docs/dev/adr/`. Add items with `/todo`.
 
 ## Open
 
