@@ -10,7 +10,7 @@ understandable and traceable for humans, and quality must not depend on human re
 
 ## Decision
 
-- Every architecture and style rule has an automated check (`docs/architecture/`
+- Every architecture and style rule has an automated check (`docs/dev/architecture/`
   section 7). Whatever is not checked counts as not enforced.
 - Everything in the repository is English – code, comments, docs, specs, ADRs, commit
   messages, PR titles and descriptions – regardless of the language used when talking

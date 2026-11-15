@@ -9,7 +9,7 @@
 ADR 0017 keeps review screenshots in the separate repository `framehive-assets`, under
 `pr-<n>/`, and links them from the pull request description. Pull requests are
 squash-merged, and the description becomes the commit body word for word
-(`docs/pull-requests.md`). The links would then stay in the history of `main` for good,
+(`docs/dev/pull-requests.md`). The links would then stay in the history of `main` for good,
 while ADR 0017 itself calls the images disposable and allows pruning the repository at
 any time. Every pruning would leave broken links in commit messages.
 

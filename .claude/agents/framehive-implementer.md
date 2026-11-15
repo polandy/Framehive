@@ -28,7 +28,7 @@ answer goes back to the caller with your recommendation, instead of being guesse
 4. Update the spec status, the crate README, and `TODO.md` if the change closes an item.
    Never edit `CHANGELOG.md`; release-please writes it from `feat` and `fix` commits.
 5. Commit, push or open a pull request only when the brief says so, and then follow
-   `docs/pull-requests.md`. Never merge.
+   `docs/dev/pull-requests.md`. Never merge.
 
 ## Report back (short)
 

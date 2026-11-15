@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Framehive contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//! Requirement IDs and section numbers from `docs/requirements/`.
+//! Requirement IDs and section numbers from `docs/dev/requirements/`.
 
 use std::collections::BTreeSet;
 

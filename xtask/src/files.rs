@@ -21,7 +21,7 @@ const MAX_DOCUMENT_BYTES: usize = 10 * 1024;
 
 /// Documents exempt from the size limit: ADRs are immutable records, and the changelog
 /// is read from the top.
-const UNLIMITED_DOCUMENTS: [&str; 2] = ["docs/adr/", "CHANGELOG.md"];
+const UNLIMITED_DOCUMENTS: [&str; 2] = ["docs/dev/adr/", "CHANGELOG.md"];
 
 /// Checks every file Git tracks or would track (untracked but not ignored).
 pub(crate) fn check_repository(root: &Path) -> Result<Vec<String>, String> {
@@ -161,7 +161,7 @@ mod tests {
         let problem = check_content("docs/guide.md", content.as_bytes()).expect("rejected");
         assert!(problem.contains("one file per section"), "{problem}");
         assert_eq!(
-            check_content("docs/adr/0001-x.md", content.as_bytes()),
+            check_content("docs/dev/adr/0001-x.md", content.as_bytes()),
             None
         );
         assert_eq!(check_content("CHANGELOG.md", content.as_bytes()), None);

@@ -45,7 +45,7 @@ reachable, for example when travelling. Immich must never be written to.
    with a hash, in Framehive's XMP namespace
    `https://polandy.github.io/framehive/ns/1.0/` with the prefix `framehive`. The
    project controls that URI; like every XMP namespace URI, it is an identifier and
-   never has to resolve. Its fields are documented in `docs/xmp-namespace.md`. A later sync updates or removes only values that
+   never has to resolve. Its fields are documented in `docs/dev/xmp-namespace.md`. A later sync updates or removes only values that
    still match what it wrote. A field the user changed belongs to the user from then
    on.
 5. **Live features use Immich directly** while it is reachable:

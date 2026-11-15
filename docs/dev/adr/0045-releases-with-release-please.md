@@ -7,7 +7,7 @@
 
 The owner asked for the first release, 0.1.0, and for a release process that needs no
 hand-made steps. Every commit on `main` is already a Conventional Commit, because pull
-requests are squash-merged with a Conventional Commit title (`docs/pull-requests.md`).
+requests are squash-merged with a Conventional Commit title (`docs/dev/pull-requests.md`).
 Until now `CHANGELOG.md` was written by hand in the Keep a Changelog format, and ADR 0038
 §3 made a changed public API snapshot require a `CHANGELOG.md` change.
 
@@ -69,4 +69,4 @@ settings are removed (`TODO.md`).
   user.
 - Between this decision and the 0.1.0 release, user-visible changes appear only in the
   release pull request and the GitHub release, not in `CHANGELOG.md`.
-- A release is merging the release pull request; `docs/pull-requests.md` §8 describes it.
+- A release is merging the release pull request; `docs/dev/pull-requests.md` §8 describes it.

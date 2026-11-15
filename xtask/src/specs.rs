@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 //! `cargo xtask check-specs`: specifications are well-formed, consistent with
-//! `docs/requirements/`, and linked to tests via `/// spec: <ID>.<n>` (ADR 0010).
+//! `docs/dev/requirements/`, and linked to tests via `/// spec: <ID>.<n>` (ADR 0010).
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
@@ -19,7 +19,7 @@ use markers::{Marker, test_markers};
 use requirements::requirement_ids;
 
 /// The requirements catalogue, one file per section.
-const REQUIREMENTS_DIRECTORY: &str = "docs/requirements";
+const REQUIREMENTS_DIRECTORY: &str = "docs/dev/requirements";
 /// Where `cargo xtask spec-report` writes; CI keeps it as an artifact.
 const REPORT_FILE: &str = "target/spec-report.md";
 /// Directories whose `.rs` files may contain test markers.
@@ -134,7 +134,7 @@ fn check_origin(spec: &Spec, requirements: &BTreeSet<String>, report: &mut Repor
     for token in &spec.origin {
         if !origin_exists(token, requirements) {
             report.errors.push(format!(
-                "{}: origin {token:?} is not in docs/requirements/",
+                "{}: origin {token:?} is not in docs/dev/requirements/",
                 spec.file
             ));
         }

@@ -45,7 +45,7 @@ File name: `<ID>-<short-name>.md`, e.g. `IMPORT-002-sequence-numbers.md`.
    files, or a public service API. Implementation details belong in the code and the
    crate README.
 2. Every criterion is unambiguously verifiable, as Given / When / Then.
-3. Use terms from the glossary (`docs/architecture/10-glossary.md`).
+3. Use terms from the glossary (`docs/dev/architecture/10-glossary.md`).
 4. Edge cases and error behaviour are their own criteria.
 5. One feature per file; prefer several small specifications over one large one.
 6. Tests reference the criterion they verify with `/// spec: <ID>.<n>`.
@@ -59,7 +59,7 @@ File name: `<ID>-<short-name>.md`, e.g. `IMPORT-002-sequence-numbers.md`.
 
 - Status: draft | accepted | implemented | removed
 - Module: <module>
-- Origin: <requirement IDs from docs/requirements/, e.g. R4, R5>
+- Origin: <requirement IDs from docs/dev/requirements/, e.g. R4, R5>
 - Depends on: <other spec IDs or "–">
 
 ## Purpose

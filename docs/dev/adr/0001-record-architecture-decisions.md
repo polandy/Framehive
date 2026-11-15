@@ -13,7 +13,7 @@ way it was.
 
 Every decision that affects structure, interfaces between crates, data formats,
 standards mappings or tools is recorded **before** implementation as an ADR in MADR
-format under `docs/adr/`. Accepted ADRs are never changed afterwards; a new ADR
+format under `docs/dev/adr/`. Accepted ADRs are never changed afterwards; a new ADR
 supersedes them ("superseded by 00NN").
 
 ## Consequences

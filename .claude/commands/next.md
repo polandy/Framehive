@@ -4,7 +4,7 @@ Identify the next task and plan it:
    - whatever the owner has just asked for
    - `TODO.md` (open items only, oldest first unless one blocks another)
    - specs with status `accepted`, which are ready to implement: `grep -l 'Status: accepted' specs/*/*.md`
-   - the current roadmap phase in `docs/requirements/10-roadmap.md`
+   - the current roadmap phase in `docs/dev/requirements/10-roadmap.md`
 2. Open questions are not tasks for you; they need the owner. List them only if one blocks the
    chosen task: `grep -n -A4 '^## Open questions' specs/*/*.md`.
 3. Read ONLY the spec, the requirement sections and the ADRs that the item references, never a

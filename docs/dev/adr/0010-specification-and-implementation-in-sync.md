@@ -18,9 +18,9 @@ technically coupled to the code.
   `specs/README.md`). Cross-cutting features (kernel, services) live under
   `specs/core/`.
 - A specification has a stable ID (`IMPORT-001`), a status, its origin (requirement
-  IDs from `docs/requirements/`, e.g. R4, J3), a description of the behavior and
+  IDs from `docs/dev/requirements/`, e.g. R4, J3), a description of the behavior and
   **numbered acceptance criteria** (`IMPORT-001.3`) in Given / When / Then form.
-- `docs/requirements/` remains the catalog (what, why, priority); the specification is
+- `docs/dev/requirements/` remains the catalog (what, why, priority); the specification is
   the binding, detailed description of the behavior. Mockups are illustrative, not
   binding.
 
@@ -57,7 +57,7 @@ the code.
 ### 4. Automated checks (`cargo xtask check-specs`, part of `cargo xtask ci`)
 
 - Every specification has valid required fields; IDs are unique; origin IDs exist in
-  `docs/requirements/`.
+  `docs/dev/requirements/`.
 - Every criterion of a specification with status `implemented` has at least one test;
   every `spec:` reference in a test points to an existing criterion.
 - No test references a specification with status `draft` or `removed` (otherwise the
@@ -78,7 +78,7 @@ a step of `cargo xtask ci`, implements the diff check as follows.
   only the head commit (`HEAD^..HEAD`): the squash commit of a merged pull request is
   judged as a whole. Locally, `main..HEAD`. Older history is never checked.
 - *The future squash commit.* The squash commit is built from the pull request title
-  and description (`docs/pull-requests.md` §3), so a pull request run also judges one
+  and description (`docs/dev/pull-requests.md` §3), so a pull request run also judges one
   composed commit: its message is the title, a blank line and the description; its
   changed files are those of `merge-base(origin/<base>, HEAD)..HEAD`; rules A and B
   apply as to the squash commit on `main`. The workflow passes the title and description
@@ -112,7 +112,7 @@ Example specification path: `specs/import/IMPORT-002-sequence-numbers.md`.
 
 - *Executable Cucumber/Gherkin*: an extra dependency and a second test language; the
   ID-based coupling achieves the same with what we already have.
-- *`docs/requirements/` only*: too coarse for unambiguous behavior and not coupled to
+- *`docs/dev/requirements/` only*: too coarse for unambiguous behavior and not coupled to
   tests.
 
 ## Consequences

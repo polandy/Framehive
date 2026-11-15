@@ -2,7 +2,7 @@
 
 Part of the [architecture](README.md).
 
-ADRs live under [`docs/adr/`](../adr/) in MADR format, numbered, immutable after
+ADRs live under [`docs/dev/adr/`](../adr/) in MADR format, numbered, immutable after
 acceptance (a change means a new ADR that supersedes the old one).
 
 | No. | Title | Status |
