@@ -7,7 +7,9 @@ Review uncommitted or recently committed changes against the project's standards
    without anything turning red.
 3. Beyond what `cargo xtask ci` enforces, check by reading:
    - Does every new behaviour have a test whose name says which rule would break, marked
-     `/// spec: <ID>.<n>`?
+     `/// spec: <ID>.<n>`, at the level the user sees it (`apps/cli/tests/` for anything
+     `framehive` prints or writes)? Does every test there carry a marker, and does each
+     criterion's sentence match its assertions?
    - Is the spec changed in the same change, or does the commit carry `Spec-Unchanged:` or
      `Spec-Only:` (ADR 0010)?
    - Are glossary terms used (`docs/dev/architecture/10-glossary.md`), with no new synonyms?
