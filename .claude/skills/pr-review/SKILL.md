@@ -52,6 +52,26 @@ lines* (file and test name) and its `/// spec: <ID>.<n>` marker. A row you canno
 finding, whatever the title says. A pull request often carries a second change, and that one
 ships without tests.
 
+Then, for every spec section or criterion the diff adds or changes, add a row that names its
+e2e case, or says in one line why unit is the right layer. A flow across client and server,
+or a change to files or the system, needs e2e.
+
+- **Level.** A criterion a user can observe through `framehive` (every `CLI-*` criterion, and
+  an `IMPORT-*` or `LIBRARY-*` one the pull request makes reachable from the command line)
+  needs a test in `apps/cli/tests/` that runs the real binary. A marker only on a unit or
+  golden test is a finding, unless the row says why the binary cannot reach it (hardware,
+  the user's real Trash).
+- **Promise against assertion.** Read the criterion sentence by sentence against the test
+  body; every promise is an assertion. A promise no test can assert is reworded in the spec.
+- **Both directions.** Grep for tests that still assert changed or removed behaviour and
+  update them in the same pull request. A new or changed test in `apps/cli/tests/` without
+  `/// spec:` is a finding (ADR 0010 section 2).
+- **Faults.** A change to copying, verifying, backups or devices names the requirements
+  section 9.2 scenario (T1-T10) it touches and the test that drives it.
+- **Prove the headline test.** Revert the fix, watch that test go red, restore.
+- **Owed e2e.** A pull request with e2e still owed is not ready. If it is merged anyway,
+  list every debt in the verdict as `e2e owed: <criterion>` and add each to `TODO.md`.
+
 ## 4. CI
 
 `gh pr checks <PR>`: both `xtask ci` jobs green. When red, fix the cause on the branch,
