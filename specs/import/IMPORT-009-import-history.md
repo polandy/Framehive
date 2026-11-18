@@ -2,7 +2,7 @@
 
 - Status: implemented
 - Module: import
-- Origin: N3, N4, T1, T8
+- Origin: N3, N4, T1, T7, T8
 - Depends on: IMPORT-002, IMPORT-003, IMPORT-004, IMPORT-007, IMPORT-008
 
 ## Purpose
