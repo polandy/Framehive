@@ -113,7 +113,8 @@ pub trait FileSystem: ReadOnlyFileSystem {
     /// # Errors
     ///
     /// Returns [`io::ErrorKind::NotFound`] if the parent folder is missing, and an
-    /// error if `path` names something that is not a file.
+    /// error if `path` names something that is not a file; a symbolic link is never
+    /// followed.
     fn create_file(&self, path: &Path) -> io::Result<Box<dyn WriteFile>>;
 
     /// Renames the file `from` to `to`, which must not exist. It never replaces a

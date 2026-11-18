@@ -10,7 +10,9 @@ mod common;
 use std::collections::BTreeMap;
 
 use common::{dc, fixture, parse, parse_bytes, xmp};
-use metadata::xmp::{ArrayKind, XmpErrorReason, XmpName, XmpNode, XmpPacket, XmpValue};
+use metadata::xmp::{
+    ArrayKind, MAX_SIDECAR_BYTES, XmpErrorReason, XmpName, XmpNode, XmpPacket, XmpValue,
+};
 
 const IPTC_CORE: &str = "http://iptc.org/std/Iptc4xmpCore/1.0/xmlns/";
 
@@ -145,4 +147,33 @@ fn equal_values_in_two_descriptions_are_one_property() {
         .replace("\"2\"", "\"4\"");
     let packet: XmpPacket = parse_bytes("same.xmp", text.as_bytes()).unwrap();
     assert_eq!(packet.property(&xmp("Rating")), Some(&XmpNode::text("4")));
+}
+
+/// spec: CORE-009.25
+#[test]
+fn a_deeply_nested_sidecar_is_refused_without_running_out_of_stack() {
+    let depth = 100_000;
+    let text = format!(
+        "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\">{}{}</x:xmpmeta>",
+        "<a>".repeat(depth),
+        "</a>".repeat(depth)
+    );
+
+    let error = parse_bytes("deep.xmp", text.as_bytes()).unwrap_err();
+
+    let message = error.to_string();
+    assert!(message.contains("deep.xmp"), "{message}");
+    assert!(message.contains("nested too deeply"), "{message}");
+}
+
+/// spec: CORE-009.26
+#[test]
+fn a_sidecar_larger_than_16_mib_is_refused() {
+    let mut content = fixture("subject.xmp");
+    content.resize(MAX_SIDECAR_BYTES + 1, b' ');
+
+    let error = parse_bytes("large.xmp", &content).unwrap_err();
+
+    assert_eq!(error.reason, XmpErrorReason::TooLarge);
+    assert!(error.to_string().contains("large.xmp"));
 }

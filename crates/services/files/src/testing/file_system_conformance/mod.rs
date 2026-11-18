@@ -44,13 +44,17 @@ type CaseFn = fn(&Case<'_>) -> CaseResult;
 /// Each case works in its own folder below `root`.
 #[must_use]
 pub fn check_file_system(under_test: &FileSystemUnderTest<'_>) -> Vec<String> {
-    let cases: [(&str, CaseFn); 12] = [
+    let cases: [(&str, CaseFn); 13] = [
         ("create_folder_needs_a_parent_and_no_entry", create_folder),
         ("written_content_reads_back", written_content_reads_back),
         ("create_file_empties_an_existing_file", create_file_empties),
         (
             "create_file_needs_a_parent_folder",
             create_file_needs_parent,
+        ),
+        (
+            "create_file_does_not_follow_a_symbolic_link",
+            create_file_does_not_follow_links,
         ),
         ("modification_time_is_kept", modification_time_is_kept),
         ("rename_moves_the_file", rename_moves),
@@ -200,6 +204,22 @@ fn create_file_empties(case: &Case<'_>) -> CaseResult {
     case.write(&path, b"left by an interrupted import")?;
     case.write(&path, b"new")?;
     case.expect_content(&path, b"new")
+}
+
+/// A `.part` file that is a link must not overwrite the file it points to
+/// (IMPORT-004.14).
+fn create_file_does_not_follow_links(case: &Case<'_>) -> CaseResult {
+    let Some(make_symbolic_link) = case.under_test.make_symbolic_link else {
+        return Ok(());
+    };
+    let target = case.path("elsewhere.raf");
+    let link = case.path("photo.raf.part");
+    case.write(&target, b"theirs")?;
+    make_symbolic_link(&link, &target).map_err(failed("make_symbolic_link"))?;
+    if case.fs().create_file(&link).is_ok() {
+        return Err("create_file opened a symbolic link".to_owned());
+    }
+    case.expect_content(&target, b"theirs")
 }
 
 fn create_file_needs_parent(case: &Case<'_>) -> CaseResult {

@@ -23,6 +23,9 @@ pub enum XmpErrorReason {
     /// The content is not UTF-8, such as UTF-16.
     #[error("it is not UTF-8")]
     NotUtf8,
+    /// The content is larger than [`MAX_SIDECAR_BYTES`](super::MAX_SIDECAR_BYTES).
+    #[error("it is larger than 16 MiB")]
+    TooLarge,
     /// The XML is not well-formed.
     #[error("the XML is malformed at line {line}, column {column}: {message}")]
     Malformed {

@@ -288,6 +288,19 @@ fn leftover_part_file_is_replaced() {
     assert_eq!(import.entry(&part(&target)), None);
 }
 
+/// spec: IMPORT-004.14
+#[test]
+fn a_part_file_that_is_a_link_fails_the_file() {
+    let import = Import::new();
+    let target = destination("2026/DSCF0001.RAF");
+    import.file_system.add_symbolic_link(&part(&target));
+
+    let error = import.copy_to(&target).unwrap_err();
+
+    assert_eq!(error.step, CopyStep::WritePart);
+    assert_eq!(import.entry(&target), None);
+}
+
 /// spec: IMPORT-004.12
 #[test]
 fn target_keeps_the_modification_time() {

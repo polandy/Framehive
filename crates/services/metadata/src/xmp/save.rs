@@ -13,7 +13,7 @@ use files::{EntryKind, FileSystem, Hasher, checksum_file};
 
 use super::error::{SidecarError, SidecarErrorKind, SidecarStep, XmpEditError};
 use super::model::XmpPacket;
-use super::parse::parse_xmp;
+use super::parse::{MAX_SIDECAR_BYTES, parse_xmp};
 use super::serialize::serialize_xmp;
 use super::xml::XmlSyntax;
 
@@ -168,7 +168,12 @@ impl SidecarFiles<'_> {
     fn read_content(&self, path: &Path) -> io::Result<(Timestamp, Vec<u8>)> {
         let modified = self.files.modification_time(path)?;
         let mut content = Vec::new();
-        self.files.open_read(path)?.read_to_end(&mut content)?;
+        // One byte past the limit is enough for the parser to refuse it.
+        let limit = u64::try_from(MAX_SIDECAR_BYTES).map_or(u64::MAX, |bytes| bytes + 1);
+        self.files
+            .open_read(path)?
+            .take(limit)
+            .read_to_end(&mut content)?;
         Ok((modified, content))
     }
 

@@ -15,6 +15,9 @@ use crate::guided::state::{
     RememberedState, format_state, load_state, parse_state, save_state, state_file,
 };
 
+/// The process ID in the name of the `.part` file.
+const PROCESS_ID: u32 = 7;
+
 const PRESET_2: &str = "{date:%Y}/{date:%Y-%m-%d}_{job}/{name}.{ext}";
 
 fn example_state() -> RememberedState {
@@ -32,7 +35,7 @@ fn the_state_file_has_the_lines_of_adr_0025_and_reads_back() {
     let file_system = MemoryFileSystem::new();
     let path = state_file(Some(OsStr::new("/home/ada/.state")), Path::new("/home/ada"));
 
-    save_state(&file_system, &path, &example_state()).unwrap();
+    save_state(&file_system, &path, &example_state(), PROCESS_ID).unwrap();
 
     assert_eq!(
         path,
@@ -59,14 +62,32 @@ fn the_state_file_has_the_lines_of_adr_0025_and_reads_back() {
 fn writing_again_replaces_the_file_and_leaves_no_part_file() {
     let file_system = MemoryFileSystem::new();
     let path = Path::new("/state/framehive/guided-import.txt");
-    save_state(&file_system, path, &RememberedState::default()).unwrap();
+    save_state(&file_system, path, &RememberedState::default(), PROCESS_ID).unwrap();
 
-    save_state(&file_system, path, &example_state()).unwrap();
+    save_state(&file_system, path, &example_state(), PROCESS_ID).unwrap();
 
     assert_eq!(load_state(&file_system, path).state, example_state());
     assert_eq!(
-        file_system.content(Path::new("/state/framehive/guided-import.txt.part")),
+        file_system.content(Path::new("/state/framehive/guided-import.txt.7.part")),
         None
+    );
+}
+
+/// spec: CLI-003.11
+#[test]
+fn the_part_file_of_another_process_is_left_alone() {
+    let file_system = MemoryFileSystem::new();
+    let path = Path::new("/state/framehive/guided-import.txt");
+    let other_part = Path::new("/state/framehive/guided-import.txt.4242.part");
+    save_state(&file_system, path, &RememberedState::default(), PROCESS_ID).unwrap();
+    file_system.add_file(other_part, b"half written", Timestamp::from_unix_seconds(0));
+
+    save_state(&file_system, path, &example_state(), PROCESS_ID).unwrap();
+
+    assert_eq!(load_state(&file_system, path).state, example_state());
+    assert_eq!(
+        file_system.content(other_part).as_deref(),
+        Some(&b"half written"[..])
     );
 }
 

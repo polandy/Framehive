@@ -25,8 +25,10 @@ form. XML tokens come through the `XmlSyntax` port, which `adapter-xmp` implemen
   `rdf:parseType="Resource"`, `rdf:value` qualifiers, several `rdf:Description`
   elements, an `<?xpacket?>` wrapper, an `x:xmpmeta` or `x:xapmeta` root or a bare
   `rdf:RDF` root, and a UTF-8 byte order mark. It refuses input that is not UTF-8, a
-  document type declaration, malformed XML (with line and column) and two different
-  values for one property. Every error names the file.
+  document type declaration, malformed XML (with line and column), two different
+  values for one property, more than 16 MiB and elements nested deeper than 64
+  levels, so a hostile sidecar cannot exhaust memory or the stack (CORE-009.25, .26).
+  Every error names the file.
 - **Editing** sets a simple value (keeping its qualifiers), unions a Bag, replaces a
   Seq and sets one language of an Alt; everything else stays as read.
 - **Keep RAW** (LIBRARY-002, ADR 0042) reads and writes `framehive:KeepRaw`: marking

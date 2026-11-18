@@ -13,15 +13,19 @@ use super::xml::{XmlSyntax, XmlSyntaxError, XmlSyntaxErrorKind};
 
 const UTF8_BYTE_ORDER_MARK: &str = "\u{feff}";
 
+/// The largest sidecar that is parsed, in bytes; real ones have a few KiB.
+pub const MAX_SIDECAR_BYTES: usize = 16 * 1024 * 1024;
+
 /// Parses the content of the sidecar at `path` into a packet.
 ///
 /// `path` only names the file in an error. A UTF-8 byte order mark is skipped.
 ///
 /// # Errors
 ///
-/// An [`XmpError`] naming `path` when the content is not UTF-8, not well-formed XML,
-/// holds a document type declaration, is not an XMP packet, or gives one property two
-/// different values.
+/// An [`XmpError`] naming `path` when the content is larger than
+/// [`MAX_SIDECAR_BYTES`], not UTF-8, not well-formed XML, nested deeper than
+/// [`MAX_XML_DEPTH`](super::MAX_XML_DEPTH), holds a document type declaration, is
+/// not an XMP packet, or gives one property two different values.
 pub fn parse_xmp(path: &Path, content: &[u8], xml: &dyn XmlSyntax) -> Result<XmpPacket, XmpError> {
     parse(content, xml).map_err(|reason| XmpError {
         path: path.to_path_buf(),
@@ -30,6 +34,9 @@ pub fn parse_xmp(path: &Path, content: &[u8], xml: &dyn XmlSyntax) -> Result<Xmp
 }
 
 fn parse(content: &[u8], xml: &dyn XmlSyntax) -> Result<XmpPacket, XmpErrorReason> {
+    if content.len() > MAX_SIDECAR_BYTES {
+        return Err(XmpErrorReason::TooLarge);
+    }
     let text = std::str::from_utf8(content).map_err(|_| XmpErrorReason::NotUtf8)?;
     // UTF-16 and UTF-32 text in ASCII range is valid UTF-8 with NUL bytes between.
     if text.contains('\0') {

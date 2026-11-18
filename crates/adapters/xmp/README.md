@@ -19,7 +19,7 @@ Reading:
 - resolves every element and attribute name to its namespace, from the declarations
   in scope; an unprefixed attribute is in no namespace, `xml` is predefined;
 - refuses a name that is not an XML name, an undeclared prefix, `<` in an attribute
-  value and an unclosed or mismatched element;
+  value, an unclosed or mismatched element and nesting deeper than `MAX_XML_DEPTH`;
 - refuses a document type declaration, so no entity is ever declared or expanded; of
   the references, only the five predefined entities and character references exist;
 - normalizes attribute values and line ends as XML 1.0 asks, joins CDATA into text

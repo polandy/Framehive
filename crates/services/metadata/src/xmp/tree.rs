@@ -3,7 +3,7 @@
 
 //! Builds an element tree from the events of the [`XmlSyntax`](super::XmlSyntax) port.
 
-use super::xml::{XmlAttribute, XmlEvent, XmlName};
+use super::xml::{MAX_XML_DEPTH, XmlAttribute, XmlEvent, XmlName};
 
 /// An element with its attributes, child elements and text.
 #[derive(Debug, Default)]
@@ -49,6 +49,9 @@ pub(crate) fn root(events: Vec<XmlEvent>) -> Result<Element, &'static str> {
                 if open.is_empty() && root.is_some() {
                     return Err("the document has more than one root element");
                 }
+                if open.len() == MAX_XML_DEPTH {
+                    return Err("the elements are nested too deeply");
+                }
                 open.push(Element {
                     name: start.name,
                     attributes: start.attributes,
@@ -73,4 +76,32 @@ pub(crate) fn root(events: Vec<XmlEvent>) -> Result<Element, &'static str> {
         return Err("an element is not closed");
     }
     root.ok_or("the document has no root element")
+}
+
+#[cfg(test)]
+mod tests {
+    #![allow(clippy::unwrap_used, reason = "tests may panic on bad fixtures")]
+
+    use super::*;
+    use crate::xmp::XmlStart;
+
+    fn nested(depth: usize) -> Vec<XmlEvent> {
+        let start = XmlEvent::Start(XmlStart {
+            name: XmlName::new("", "", "a"),
+            ..XmlStart::default()
+        });
+        let mut events = vec![start; depth];
+        events.extend(vec![XmlEvent::End; depth]);
+        events
+    }
+
+    /// spec: CORE-009.25
+    #[test]
+    fn nesting_deeper_than_the_limit_is_refused_whatever_the_tokenizer() {
+        assert!(root(nested(MAX_XML_DEPTH)).is_ok());
+        assert_eq!(
+            root(nested(MAX_XML_DEPTH + 1)).unwrap_err(),
+            "the elements are nested too deeply"
+        );
+    }
 }

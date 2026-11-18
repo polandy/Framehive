@@ -240,6 +240,7 @@ pub metadata::xmp::XmpErrorReason::Malformed::line: usize
 pub metadata::xmp::XmpErrorReason::Malformed::message: alloc::string::String
 pub metadata::xmp::XmpErrorReason::NotUtf8
 pub metadata::xmp::XmpErrorReason::NotXmp(alloc::string::String)
+pub metadata::xmp::XmpErrorReason::TooLarge
 impl core::clone::Clone for metadata::xmp::XmpErrorReason
 pub fn metadata::xmp::XmpErrorReason::clone(&self) -> metadata::xmp::XmpErrorReason
 impl core::cmp::Eq for metadata::xmp::XmpErrorReason
@@ -551,6 +552,8 @@ impl core::marker::Unpin for metadata::xmp::XmpPacket
 impl core::marker::UnsafeUnpin for metadata::xmp::XmpPacket
 impl core::panic::unwind_safe::RefUnwindSafe for metadata::xmp::XmpPacket
 impl core::panic::unwind_safe::UnwindSafe for metadata::xmp::XmpPacket
+pub const metadata::xmp::MAX_SIDECAR_BYTES: usize
+pub const metadata::xmp::MAX_XML_DEPTH: usize
 pub trait metadata::xmp::XmlSyntax
 pub fn metadata::xmp::XmlSyntax::read(&self, &str) -> core::result::Result<alloc::vec::Vec<metadata::xmp::XmlEvent>, metadata::xmp::XmlSyntaxError>
 pub fn metadata::xmp::XmlSyntax::write(&self, &[metadata::xmp::XmlEvent]) -> alloc::string::String

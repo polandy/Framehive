@@ -356,7 +356,8 @@ impl<'a> Dialog<'a> {
     /// Writes the state file; a failure is a warning (CLI-003, "Remembered state").
     pub(super) fn remember(&mut self) {
         let path = self.environment.state_file.clone();
-        if let Err(error) = save_state(self.ports.file_system(), &path, &self.state) {
+        let process_id = std::process::id();
+        if let Err(error) = save_state(self.ports.file_system(), &path, &self.state, process_id) {
             self.warn(&format!(
                 "the answers cannot be remembered in {}: {error}",
                 path.display()
