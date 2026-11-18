@@ -7,7 +7,7 @@
 use std::path::{Path, PathBuf};
 
 use domain::{Checksum, LocalDateTime};
-use files::checksum_file;
+use files::{EntryKind, checksum_file};
 use history::{
     CopyKey, CopyRecord, FoundCopy, HistoryError, RecordedTime, RunId, RunStart, SidecarRecord,
 };
@@ -173,11 +173,27 @@ impl ImportRun<'_> {
             .map(|copy| copy.target);
         recognized.recognition.backed_up_before = at_backups
             .into_iter()
-            .filter(|(_, copies)| copies.iter().any(|copy| copy.checksum == checksum))
+            .filter(|(destination, copies)| {
+                copies.iter().any(|copy| {
+                    copy.checksum == checksum && self.is_on_disk(destination, copy, file.size)
+                })
+            })
             .map(|(destination, _)| destination.clone())
             .collect();
         recognized.recognition.checksum = Some(checksum);
         Ok(Ok(recognized))
+    }
+
+    /// Whether the recorded `copy` is still a file of `size` bytes at `destination`
+    /// (IMPORT-009, "Backed up before"). A target that cannot be checked is not: the
+    /// backup then inspects it again and reports why.
+    fn is_on_disk(&self, destination: &Path, copy: &FoundCopy, size: u64) -> bool {
+        let path = destination.join(&copy.target);
+        matches!(self.file_system.entry(&path), Ok(Some(EntryKind::File)))
+            && self
+                .file_system
+                .file_size(&path)
+                .is_ok_and(|found| found == size)
     }
 
     /// The recorded copies at `destination` with the name, size and capture time of
