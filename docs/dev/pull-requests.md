@@ -105,5 +105,5 @@ a breaking change the minor version.
   tags `v<version>` and creates the GitHub release. Never tag or release by hand.
 - Never edit the release pull request or `CHANGELOG.md` by hand; the next push to `main`
   rewrites them from the commits.
-- With the `RELEASE_PLEASE_TOKEN` secret, CI runs on the release pull request; without
-  it, the pull request is created with `GITHUB_TOKEN` and CI must be started by hand.
+- The `RELEASE_PLEASE_TOKEN` secret is required, so CI runs on the release pull request.
+  Without it the release-please workflow fails with an error; renew the token there.
