@@ -226,3 +226,52 @@ fn a_destination_named_through_a_link_is_the_same_destination() {
     assert!(has_line(&output, IMPORTED_BEFORE), "{}", stdout(&output));
     assert_eq!(summary_line(&output), SECOND_RUN_SUMMARY);
 }
+
+/// spec: IMPORT-009.19
+#[test]
+fn a_backup_deleted_since_is_backed_up_again() {
+    let folders = Folders::new();
+    folders.add_raf();
+    let backup = folders.root.path().join("backup");
+    let backup_arg = backup.display().to_string();
+    folders.import(&["--backup", &backup_arg]);
+    fs::remove_file(backup.join(DEFAULT_TARGET)).unwrap();
+
+    let output = folders.import(&["--backup", &backup_arg]);
+
+    assert!(has_line(&output, IMPORTED_BEFORE), "{}", stdout(&output));
+    assert!(backup.join(DEFAULT_TARGET).is_file());
+    assert!(
+        has_line(
+            &output,
+            "The source can be formatted: every file is verified in 2 locations."
+        ),
+        "{}",
+        stdout(&output)
+    );
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+}
+
+/// spec: IMPORT-009.20
+#[test]
+fn a_backup_cut_since_keeps_the_card() {
+    let folders = Folders::new();
+    folders.add_raf();
+    let backup = folders.root.path().join("backup");
+    let backup_arg = backup.display().to_string();
+    folders.import(&["--backup", &backup_arg]);
+    let target = backup.join(DEFAULT_TARGET);
+    let content = fs::read(&target).unwrap();
+    fs::write(&target, &content[..content.len() / 2]).unwrap();
+
+    let output = folders.import(&["--backup", &backup_arg]);
+
+    assert!(
+        lines(&output)
+            .iter()
+            .any(|line| line.starts_with("Do not format")),
+        "{}",
+        stdout(&output)
+    );
+    assert_eq!(fs::read(&target).unwrap().len(), content.len() / 2);
+}
