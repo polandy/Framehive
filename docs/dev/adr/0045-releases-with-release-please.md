@@ -23,7 +23,9 @@ The workflow `.github/workflows/release-please.yml` runs
 `main`. It keeps a release pull request open with the next version and the changelog
 entry built from the commits since the last release. Merging that pull request tags
 `v<version>` and creates the GitHub release. The token is the `RELEASE_PLEASE_TOKEN`
-secret, so CI runs on the release pull request, or `GITHUB_TOKEN` without it.
+secret, so CI runs on the release pull request. Without the secret the workflow fails
+with a clear error instead of falling back to `GITHUB_TOKEN`, whose pull requests start
+no CI and leave the required checks pending.
 
 ### 2. One version for the workspace
 
@@ -50,8 +52,8 @@ enforces it; a local run only warns, because the commit may not be written yet.
 `skip-changelog: true` keeps release-please from adding a second, generated 0.1.0
 section above them. The GitHub release of 0.1.0 lists every `feat` and `fix` commit since
 the start; a `bootstrap-sha` would shorten it but leaves no user-facing commit, and
-release-please opens no release pull request without one. After the 0.1.0 release both
-settings are removed (`TODO.md`).
+release-please opens no release pull request without one. Both settings were removed
+after the 0.1.0 release, so later versions and changelog sections come from the commits.
 
 ## Alternatives
 
