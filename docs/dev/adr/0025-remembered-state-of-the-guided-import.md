@@ -63,11 +63,17 @@ rest is kept.
 ### 4. Written whole, never half
 
 After each answer that changes it, the dialog writes the whole file to
-`guided-import.txt.part`, syncs it, removes the old file and renames the new one into
-place with the `FileSystem` port's `rename_no_replace`. A crash never leaves half a
-file; a crash between removing and renaming loses the remembered answers, and the next
-start is a first run. The port gets no replacing rename for this. A failed write is a
-warning; the import goes on.
+`guided-import.txt.<process_id>.part`, syncs it and renames it into place: with the
+`FileSystem` port's `rename_no_replace` when there is no file yet, otherwise with
+`replace_file`, which swaps the old file for the new one in one step. A crash never
+leaves half a file and never loses the old one. The process ID keeps two guided imports
+running at once in two terminals from writing into the same `.part` file; the last one
+to rename wins. A
+failed write is a warning; the import goes on.
+
+*Amended 2026-11-19 (review E4):* the first version removed the old file before a
+`rename_no_replace` from a shared `guided-import.txt.part`, because the port had no
+replacing rename yet; `replace_file` came with ADR 0040 §7.
 
 ### 5. Where the code lives
 

@@ -26,10 +26,11 @@ pub use error::{
     XmpErrorReason,
 };
 pub use model::{ArrayKind, XmpName, XmpNode, XmpPacket, XmpValue};
-pub use parse::parse_xmp;
+pub use parse::{MAX_SIDECAR_BYTES, parse_xmp};
 pub use save::{FoundSidecar, ReadSidecar, SidecarFiles};
 pub use serialize::serialize_xmp;
 pub use sidecar::{SidecarNaming, find_sidecars};
 pub use xml::{
-    XmlAttribute, XmlEvent, XmlName, XmlStart, XmlSyntax, XmlSyntaxError, XmlSyntaxErrorKind,
+    MAX_XML_DEPTH, XmlAttribute, XmlEvent, XmlName, XmlStart, XmlSyntax, XmlSyntaxError,
+    XmlSyntaxErrorKind,
 };

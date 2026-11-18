@@ -3,6 +3,10 @@
 
 //! The port that turns XML text into events and back (ADR 0039, decision 1).
 
+/// The deepest nesting of elements that [`XmlSyntax::read`] accepts; real packets
+/// stay below 20, and the limit keeps a hostile sidecar from exhausting the stack.
+pub const MAX_XML_DEPTH: usize = 64;
+
 /// Reads and writes XML as a list of [`XmlEvent`]s; the XMP model, the RDF parser and
 /// the serializer stay in this crate, so the tokenizer is replaceable.
 ///
@@ -17,8 +21,9 @@ pub trait XmlSyntax {
     ///
     /// # Errors
     ///
-    /// The first well-formedness error, an undeclared prefix, an unknown entity or a
-    /// document type declaration, with its byte offset in `text`.
+    /// The first well-formedness error, an undeclared prefix, an unknown entity, an
+    /// element nested deeper than [`MAX_XML_DEPTH`] or a document type declaration,
+    /// with its byte offset in `text`.
     fn read(&self, text: &str) -> Result<Vec<XmlEvent>, XmlSyntaxError>;
 
     /// Writes `events` exactly in order, adding no white space of its own.

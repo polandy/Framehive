@@ -253,33 +253,48 @@ fn fits_on_a_line(text: &str) -> bool {
     !text.contains(['\n', '\r'])
 }
 
-/// Writes the state file whole (ADR 0025 §4): to `<file>.part`, synced, then the old
-/// file is removed and the new one renamed into place. Missing folders are created.
+/// Writes the state file whole (ADR 0025 §4): to `<file>.<process_id>.part`, synced,
+/// then renamed into place, over the old file if there is one. Missing folders are
+/// created.
 ///
 /// # Errors
 ///
-/// Returns the first error of the file system; the old file may then be gone.
+/// Returns the first error of the file system; the old file is then unchanged.
 pub(crate) fn save_state(
     file_system: &dyn FileSystem,
     path: &Path,
     state: &RememberedState,
+    process_id: u32,
 ) -> io::Result<()> {
     let folder = path.parent().unwrap_or(Path::new("/"));
     create_folders(file_system, folder)?;
     let mut part_name = path.as_os_str().to_owned();
-    part_name.push(".part");
+    part_name.push(format!(".{process_id}.part"));
     let part = PathBuf::from(part_name);
-    let mut file = file_system.create_file(&part)?;
-    file.write_all(format_state(state).as_bytes())?;
-    file.sync()?;
-    drop(file);
-    match file_system.remove_file(path) {
-        Ok(()) => {}
-        Err(error) if error.kind() == io::ErrorKind::NotFound => {}
-        Err(error) => return Err(error),
+    let written = write_part(file_system, &part, state).and_then(|()| {
+        match file_system.rename_no_replace(&part, path) {
+            Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {
+                file_system.replace_file(&part, path)
+            }
+            renamed => renamed,
+        }
+    });
+    if let Err(error) = written {
+        // The `.part` file is ours; nothing more can be done when it stays.
+        let _ = file_system.remove_file(&part);
+        return Err(error);
     }
-    file_system.rename_no_replace(&part, path)?;
     file_system.sync_folder(folder)
+}
+
+fn write_part(
+    file_system: &dyn FileSystem,
+    part: &Path,
+    state: &RememberedState,
+) -> io::Result<()> {
+    let mut file = file_system.create_file(part)?;
+    file.write_all(format_state(state).as_bytes())?;
+    file.sync()
 }
 
 /// Creates `folder` and the folders above it that are missing, outermost first.

@@ -137,8 +137,20 @@ impl FileSystem for StdFileSystem {
         fs::create_dir(path)
     }
 
+    /// Creates the file exclusively, which never follows a symbolic link; an old file
+    /// is removed first instead of being emptied.
     fn create_file(&self, path: &Path) -> io::Result<Box<dyn WriteFile>> {
-        Ok(Box::new(StdWriteFile(File::create(path)?)))
+        let file = match create_new(path) {
+            Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {
+                if !fs::symlink_metadata(path)?.is_file() {
+                    return Err(not_a_file(path));
+                }
+                fs::remove_file(path)?;
+                create_new(path)?
+            }
+            created => created?,
+        };
+        Ok(Box::new(StdWriteFile(file)))
     }
 
     /// Links `to` to the file and removes the name `from`, which never replaces: the
@@ -158,7 +170,7 @@ impl FileSystem for StdFileSystem {
     fn replace_file(&self, from: &Path, to: &Path) -> io::Result<()> {
         let replaced = fs::symlink_metadata(to)?;
         if !replaced.is_file() {
-            return Err(io::Error::other(format!("{} is not a file", to.display())));
+            return Err(not_a_file(to));
         }
         if replaced.permissions().readonly() {
             return Err(io::Error::new(
@@ -213,11 +225,19 @@ fn has_no_hard_links(error: &io::Error) -> bool {
     )
 }
 
+fn create_new(path: &Path) -> io::Result<File> {
+    OpenOptions::new().write(true).create_new(true).open(path)
+}
+
 fn already_exists(path: &Path) -> io::Error {
     io::Error::new(
         io::ErrorKind::AlreadyExists,
         format!("{} already exists", path.display()),
     )
+}
+
+fn not_a_file(path: &Path) -> io::Error {
+    io::Error::other(format!("{} is not a file", path.display()))
 }
 
 fn is_a_folder(path: &Path) -> io::Error {

@@ -197,14 +197,14 @@ impl Harness {
             job_codes: RecentJobCodes::from_stored(job_codes),
             ..RememberedState::default()
         };
-        save_state(&self.memory, &Self::state_file(), &state).unwrap();
+        save_state(&self.memory, &Self::state_file(), &state, 7).unwrap();
     }
 
     /// Adds the backup destinations `backups` to the remembered answers (CLI-006).
     pub(super) fn remember_backups(&self, backups: &[&str]) {
         let mut state = load_state(&self.memory, &Self::state_file()).state;
         state.backups = backups.iter().map(PathBuf::from).collect();
-        save_state(&self.memory, &Self::state_file(), &state).unwrap();
+        save_state(&self.memory, &Self::state_file(), &state, 7).unwrap();
     }
 
     /// The remembered answers as the state file holds them.

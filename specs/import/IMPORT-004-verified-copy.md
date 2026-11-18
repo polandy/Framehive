@@ -41,7 +41,8 @@ name is decided by IMPORT-003, so a file found there at this point appeared duri
 copy.
 
 A `.part` file that is already at `<target>.part` is the remainder of an interrupted
-import. It is replaced.
+import. It is replaced. A symbolic link at `<target>.part` is never followed: the file
+it points to stays unchanged, and the file is reported as failed.
 
 **Stopping.** Before each file, the import run asks the caller whether to go on. When
 the caller says stop, the run ends: the file that is being copied is finished first,
@@ -126,6 +127,11 @@ stopped. Callers that never stop are not affected (ADR 0024).
 - **Then** the first file is copied and verified, the second and third are neither
   copied nor reported, and the summary says the run was stopped
 
+### IMPORT-004.14 – A `.part` link is not followed
+- **Given** `<target>.part` is a symbolic link to another file
+- **When** the file is imported
+- **Then** the other file is unchanged, and the file is reported as failed
+
 ## Out of scope
 
 - A target name that already exists, or two files with the same target, and files
@@ -152,3 +158,4 @@ stopped. Callers that never stop are not affected (ADR 0024).
 | 2026-10-31 | `ImportRun` in the import module dates, names, resolves and copies each file and goes on after a failed file (IMPORT-004.11); `implemented` |
 | 2026-11-01 | The run stops between files when the caller asks (IMPORT-004.13), for a card pulled during the guided import (ADR 0024); status `accepted` until implemented |
 | 2026-11-01 | `ProgressSink::should_continue` and `ImportSummary::stopped` cover IMPORT-004.13; `implemented` |
+| 2026-11-19 | IMPORT-004.14 added and implemented: `create_file` of the `fs` adapter never follows a symbolic link (review E6) |

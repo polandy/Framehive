@@ -16,6 +16,8 @@ the source scan of the import (ADR 0020 §3, §4). It adds no dependency.
   `DirEntry::file_type`); a link is `EntryKind::SymbolicLink`, so a scan cannot loop
   or leave its source (IMPORT-005). `file_size` and `modification_time` follow links,
   like `open_read`.
+- `create_file` opens with `create_new`, which never follows a symbolic link; an old
+  file is removed first, and a link or folder is refused (IMPORT-004.14).
 - `create_file` sets the modification time with `File::set_modified` and syncs with
   `File::sync_all`; `sync_folder` opens the folder and syncs it.
 - `rename_no_replace` never replaces: it creates `to` as a hard link to the file,

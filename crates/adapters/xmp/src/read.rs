@@ -4,7 +4,7 @@
 //! Turns the tokens of `quick-xml` into the events of the port.
 
 use metadata::xmp::{
-    XmlAttribute, XmlEvent, XmlName, XmlStart, XmlSyntaxError, XmlSyntaxErrorKind,
+    MAX_XML_DEPTH, XmlAttribute, XmlEvent, XmlName, XmlStart, XmlSyntaxError, XmlSyntaxErrorKind,
 };
 use quick_xml::XmlVersion;
 use quick_xml::escape::resolve_predefined_entity;
@@ -54,6 +54,9 @@ pub(crate) fn events(text: &str) -> Result<Vec<XmlEvent>, XmlSyntaxError> {
             .map_err(|error| malformed(error_offset(&reader), &error.to_string()))?;
         match event {
             Event::Start(start) => {
+                if scopes.0.len() == MAX_XML_DEPTH {
+                    return Err(malformed(offset, "the elements are nested too deeply"));
+                }
                 let tag = start_tag(&mut scopes, &start, offset)?;
                 events.push(XmlEvent::Start(tag));
             }

@@ -4,7 +4,8 @@
 //! The conformance suite of the [`XmlSyntax`] port (CLAUDE.md, "Adding things").
 
 use crate::xmp::{
-    XmlAttribute, XmlEvent, XmlName, XmlStart, XmlSyntax, XmlSyntaxError, XmlSyntaxErrorKind,
+    MAX_XML_DEPTH, XmlAttribute, XmlEvent, XmlName, XmlStart, XmlSyntax, XmlSyntaxError,
+    XmlSyntaxErrorKind,
 };
 
 const NAMESPACE: &str = "urn:example:a";
@@ -21,7 +22,7 @@ pub fn check_xml_syntax(xml: &dyn XmlSyntax) -> Vec<String> {
 
 type Check = fn(&dyn XmlSyntax) -> Result<(), String>;
 
-const CHECKS: [(&str, Check); 10] = [
+const CHECKS: [(&str, Check); 11] = [
     ("names are resolved to their namespace", names),
     ("namespace names are unescaped", escaped_namespace),
     ("an empty element is a start and an end", empty_element),
@@ -33,6 +34,7 @@ const CHECKS: [(&str, Check); 10] = [
     ("attribute values are normalized", attribute_values),
     ("a document type declaration is refused", document_type),
     ("malformed text is refused within the text", malformed),
+    ("nesting deeper than MAX_XML_DEPTH is refused", nesting),
     ("events are written as given", written),
     ("written text and attributes read back", round_trip),
 ];
@@ -149,6 +151,21 @@ fn malformed(xml: &dyn XmlSyntax) -> Result<(), String> {
         }
     }
     Ok(())
+}
+
+fn nesting(xml: &dyn XmlSyntax) -> Result<(), String> {
+    let nested = |depth: usize| format!("{}{}", "<a>".repeat(depth), "</a>".repeat(depth));
+    let deepest = nested(MAX_XML_DEPTH);
+    xml.read(&deepest)
+        .map_err(|error| format!("{MAX_XML_DEPTH} levels gave {error:?}"))?;
+    let deeper = nested(MAX_XML_DEPTH + 1);
+    match xml.read(&deeper) {
+        Err(XmlSyntaxError {
+            offset,
+            kind: XmlSyntaxErrorKind::Malformed(_),
+        }) if offset <= deeper.len() => Ok(()),
+        other => Err(format!("{} levels gave {other:?}", MAX_XML_DEPTH + 1)),
+    }
 }
 
 fn written(xml: &dyn XmlSyntax) -> Result<(), String> {

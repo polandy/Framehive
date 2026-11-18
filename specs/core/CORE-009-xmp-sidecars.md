@@ -23,7 +23,10 @@ byte order mark is skipped.
 
 A sidecar is refused, with an error naming the file and the reason, when it is not
 well-formed XML, is not UTF-8, contains a document type declaration, or gives one
-property two different values.
+property two different values. It is refused as well when it is larger than 16 MiB or
+nests elements deeper than 64 levels: real sidecars have a few KiB and fewer than 20
+levels, and the limits keep a hostile sidecar on a card from exhausting memory or the
+stack.
 
 **Merging.** A change sets a simple value, adds items to an unordered array, replaces
 an ordered array, or sets one language of a language alternative. Every other
@@ -160,6 +163,17 @@ Moved to CORE-010.9.
 ### CORE-009.24 – Framehive reads exiftool's sidecars (removed)
 Moved to CORE-010.10.
 
+### CORE-009.25 – Deep nesting is refused
+- **Given** a sidecar with elements nested 100,000 levels deep
+- **When** it is read
+- **Then** an error names the file and says the elements are nested too deeply, and
+  the process does not run out of stack
+
+### CORE-009.26 – A large sidecar is refused
+- **Given** a sidecar of 16 MiB and one byte
+- **When** it is read
+- **Then** an error names the file and says it is larger than 16 MiB
+
 ## Out of scope
 
 - Which values the import writes, and when: IMPORT-019 and IMPORT-020.
@@ -181,3 +195,4 @@ Moved to CORE-010.10.
 | 2026-11-08 | CORE-009.15–.21 implemented: sidecar names, lookup and the checked atomic save in `metadata::xmp`; `FileSystem::replace_file` (ADR 0040 §7) |
 | 2026-11-09 | CORE-009.24 added; .22, .24 implemented with exiftool (D25) |
 | 2026-11-09 | Split below the 10 KB file limit: .15–.24 moved to CORE-010.1–.10, marked removed here |
+| 2026-11-19 | CORE-009.25, .26 added and implemented: limits on nesting depth and size (review E3) |
