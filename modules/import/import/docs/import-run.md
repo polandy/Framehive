@@ -59,7 +59,10 @@ reads its checksum only when a lookup finds a copy. A file whose most recent cop
 import destination has the same checksum is `FilePlan::ImportedBefore`: it is left out of
 the import plan, gets no sequence number, and is reported as `FileOutcome::ImportedBefore`
 with the recorded target, without looking at the destination. It is still backed up to
-each backup destination where it is not `BackupOutcome::BackedUpBefore`. `start` records
+each backup destination where it is not `BackupOutcome::BackedUpBefore`. A backup
+destination counts as backed up before only while a file of the recorded size is at a
+recorded copy's target path there (an `entry` and a `file_size` through the `FileSystem`
+port); otherwise the file is backed up again. `start` records
 the run, `execute` records each verified copy (copied, already imported, backed up,
 already backed up) right after it is verified and the end of the run, also when it is
 stopped. A dry run records nothing. A history that cannot be read stops the plan

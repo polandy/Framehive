@@ -18,7 +18,9 @@ use std::path::{Path, PathBuf};
 use domain::LocalDateTime;
 use files::Hasher;
 use files::testing::{Fault, FnvHasher};
-use import::{BackupOutcome, ConflictPolicy, FileOutcome, FormatReadiness, NoProgress, RunError};
+use import::{
+    BackupError, BackupOutcome, ConflictPolicy, FileOutcome, FormatReadiness, NoProgress, RunError,
+};
 
 use history_support::{
     BACKUP, BY_DATE, DESTINATION, FLAT, Import, Machine, OTHER_DESTINATION, SOURCE, add, at,
@@ -95,6 +97,7 @@ fn backed_up_before_writes_nothing() {
     let file_system = source_with(&[("DSCF0001.JPG", &photo(1))]);
     machine.import(&file_system, &Import::with(BY_DATE).backed_up());
     let emptied = source_with(&[("DSCF0001.JPG", &photo(1))]);
+    add(&emptied, BACKUP, "2026-10-17/DSCF0001.JPG", &photo(1));
     let paths = emptied.paths();
 
     let summary = machine.import(&emptied, &Import::with(BY_DATE).backed_up());
@@ -229,12 +232,61 @@ fn format_readiness_counts_recorded_copies() {
     let file_system = source_with(&[("DSCF0001.JPG", &photo(1))]);
     machine.import(&file_system, &Import::with(BY_DATE).backed_up());
     let emptied = source_with(&[("DSCF0001.JPG", &photo(1))]);
+    add(&emptied, BACKUP, "2026-10-17/DSCF0001.JPG", &photo(1));
 
     let summary = machine.import(&emptied, &Import::with(BY_DATE).backed_up());
 
+    assert!(matches!(
+        report(&summary, "DSCF0001.JPG").backups[0].outcome,
+        BackupOutcome::BackedUpBefore
+    ));
     let readiness = FormatReadiness::of(&summary);
     assert!(readiness.can_be_formatted(), "{readiness:?}");
     assert_eq!(readiness.required_locations, 2);
+}
+
+/// spec: IMPORT-009.19
+#[test]
+fn a_backup_deleted_since_is_backed_up_again() {
+    let machine = Machine::new();
+    let file_system = source_with(&[("DSCF0001.JPG", &photo(1))]);
+    machine.import(&file_system, &Import::with(BY_DATE).backed_up());
+    let swapped = source_with(&[("DSCF0001.JPG", &photo(1))]);
+
+    let summary = machine.import(&swapped, &Import::with(BY_DATE).backed_up());
+
+    let file = report(&summary, "DSCF0001.JPG");
+    assert_eq!(imported_before(file), "2026-10-17/DSCF0001.JPG");
+    assert!(matches!(file.backups[0].outcome, BackupOutcome::BackedUp));
+    assert_eq!(
+        swapped.content(&at(BACKUP, "2026-10-17/DSCF0001.JPG")),
+        Some(photo(1))
+    );
+    let readiness = FormatReadiness::of(&summary);
+    assert!(readiness.can_be_formatted(), "{readiness:?}");
+}
+
+/// spec: IMPORT-009.20
+#[test]
+fn a_backup_of_another_size_since_keeps_the_card() {
+    let machine = Machine::new();
+    let file_system = source_with(&[("DSCF0001.JPG", &photo(1))]);
+    machine.import(&file_system, &Import::with(BY_DATE).backed_up());
+    let cut = source_with(&[("DSCF0001.JPG", &photo(1))]);
+    let half = &photo(1)[..photo(1).len() / 2];
+    add(&cut, BACKUP, "2026-10-17/DSCF0001.JPG", half);
+
+    let summary = machine.import(&cut, &Import::with(BY_DATE).backed_up());
+
+    let backup = &report(&summary, "DSCF0001.JPG").backups[0].outcome;
+    assert!(
+        matches!(
+            backup,
+            BackupOutcome::Failed(BackupError::NameConflict { .. })
+        ),
+        "{backup:?}"
+    );
+    assert!(!FormatReadiness::of(&summary).can_be_formatted());
 }
 
 /// spec: IMPORT-009.18
