@@ -260,3 +260,65 @@ fn a_missing_folder_does_not_start() {
     assert_eq!(output.status.code(), Some(2));
     assert!(stderr(&output).starts_with(&format!("error: cannot read {missing}: ")));
 }
+
+/// Asset `A` with `sidecar` as its `A.JPG.xmp`, and the plain asset `B`.
+fn folder_with_a_bad_sidecar(folders: &Folders, sidecar: &[u8]) {
+    folders.add("A.RAF", b"raw");
+    folders.add("A.JPG", b"jpeg");
+    folders.add("A.JPG.xmp", sidecar);
+    folders.add("B.RAF", b"raw");
+    folders.add("B.JPG", b"jpeg");
+}
+
+fn remove_raws_answering_no(folders: &Folders) -> Output {
+    let folder = folders.source().display().to_string();
+    library(folders, &["remove-raws", &folder], b"n\n")
+}
+
+/// spec: CORE-009.25
+#[test]
+fn a_deeply_nested_sidecar_keeps_its_asset_out() {
+    let folders = Folders::new();
+    let depth = 100_000;
+    folder_with_a_bad_sidecar(
+        &folders,
+        format!("{}{}", "<a>".repeat(depth), "</a>".repeat(depth)).as_bytes(),
+    );
+
+    let output = remove_raws_answering_no(&folders);
+
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    assert!(
+        stderr(&output).contains("nested too deeply"),
+        "{}",
+        stderr(&output)
+    );
+    assert!(
+        lines(&output).contains(&"  RAW will be removed (1): B".to_owned()),
+        "{}",
+        stdout(&output)
+    );
+}
+
+/// spec: CORE-009.26
+#[test]
+fn a_sidecar_larger_than_16_mib_keeps_its_asset_out() {
+    let folders = Folders::new();
+    let mut sidecar = UNMARKED.as_bytes().to_vec();
+    sidecar.resize(16 * 1024 * 1024 + 1, b' ');
+    folder_with_a_bad_sidecar(&folders, &sidecar);
+
+    let output = remove_raws_answering_no(&folders);
+
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    assert!(
+        stderr(&output).contains("larger than 16 MiB"),
+        "{}",
+        stderr(&output)
+    );
+    assert!(
+        lines(&output).contains(&"  RAW will be removed (1): B".to_owned()),
+        "{}",
+        stdout(&output)
+    );
+}

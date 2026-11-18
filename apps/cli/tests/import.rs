@@ -258,3 +258,26 @@ fn reports_a_folder_that_cannot_be_read() {
     );
     assert_eq!(output.status.code(), Some(1));
 }
+
+/// spec: IMPORT-004.14
+#[test]
+fn a_part_file_that_is_a_link_is_not_followed() {
+    let folders = Folders::new();
+    folders.add_raf();
+    let target = folders.destination().join(DEFAULT_TARGET);
+    fs::create_dir_all(target.parent().unwrap()).unwrap();
+    let outside = folders.root.path().join("outside");
+    fs::write(&outside, b"not ours").unwrap();
+    std::os::unix::fs::symlink(&outside, target.with_extension("RAF.part")).unwrap();
+
+    let output = folders.import(&[]);
+
+    assert_eq!(fs::read(&outside).unwrap(), b"not ours");
+    assert!(
+        has_line_starting_with(&output, "failed  DSCF0001.RAF"),
+        "{}",
+        stdout(&output)
+    );
+    assert!(!target.exists());
+    assert_eq!(output.status.code(), Some(1));
+}
