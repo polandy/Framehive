@@ -54,7 +54,7 @@ Boundaries:
 | Item | Meaning |
 |---|---|
 | `ReadOnlyFileSystem`, `ReadSeek`, `EntryKind`, `FolderEntry` | Port for reading files and folders (`entry`, `list_folder`, `file_size`, `modification_time`, `open_read`); files are read from any offset (ADR 0021); folders are listed without following symbolic links (IMPORT-005); the import reads its source only through it (ADR 0034) |
-| `FileSystem`, `WriteFile` | Port for files and folders: `ReadOnlyFileSystem` with creating, renaming, replacing a file in one step (keeping its permissions, refusing a read-only file), removing and explicit syncing |
+| `FileSystem`, `WriteFile` | Port for files and folders: `ReadOnlyFileSystem` with creating, renaming, replacing a file in one step (keeping its permissions, refusing a read-only file), removing and explicit syncing; `open_read_from_medium` reads a file back from the storage device, not the page cache, for the read-back of the verified copy (IMPORT-004.15, ADR 0047) |
 | `FreeSpace`, `SpaceOnFileSystem`, `FileSystemId` | Port for the free space and the identity of the file system a folder lies on; a missing folder is answered for its nearest existing parent (ADR 0033) |
 | `Trash`, `not_a_file` | Port for moving a file to the trash, and the `InvalidInput` error every implementation returns for a path that is not a file (ADR 0043) |
 | `Hasher`, `HashState` | Port for a hash function that yields a `domain::Checksum` with its algorithm id |

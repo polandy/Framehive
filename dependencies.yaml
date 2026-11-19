@@ -70,12 +70,12 @@ dependencies:
     features: []
 
   - name: libc
-    purpose: The statvfs(3) call that reads the free space of a file system, in adapter-free-space (IMPORT-012)
+    purpose: The statvfs(3) call that reads the free space of a file system, in adapter-free-space (IMPORT-012), and the calls that read a copied file back from the storage device instead of the page cache, in adapter-fs (IMPORT-004.15, ADR 0047)
     rationale: std cannot tell how much space a file system has free; the system call needs the C library's types and declarations, which libc maintains for every platform, so own bindings would duplicate them
     review: By the rust-lang organization, the binding of the C library std itself uses, version 0.2, MIT OR Apache-2.0; it links the C library std already links and adds no build step; already in Cargo.lock as a transitive dependency (ADR 0033)
     adr: "0033"
     allowed_layers: [adapter]
-    allowed_crates: [adapter-free-space]
+    allowed_crates: [adapter-free-space, adapter-fs]
     features: []
 
   - name: libfuzzer-sys

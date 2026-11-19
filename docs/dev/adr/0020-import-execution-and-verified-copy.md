@@ -49,6 +49,9 @@ Each file is copied as IMPORT-004 specifies:
 4. Read the target back, hash it, and compare it with the source checksum. On a
    mismatch, remove the target and report the file as failed.
 
+**Amendment (2026-11-19):** the read-back in step 4 comes from the storage device, not
+the page cache (ADR 0047).
+
 The rename never replaces. `adapter-fs` makes it atomic with a hard link to the target
 followed by removing the `.part` file. Where the file system has no hard links (exFAT,
 some SMB shares), it checks that the target does not exist and renames; the remaining

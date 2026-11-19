@@ -16,8 +16,7 @@ pub(crate) const BUFFER_SIZE: usize = 64 * 1024;
 /// Reads the file `path` in full and returns the checksum of its content.
 ///
 /// The import uses it to tell whether a file at a target path holds the same content
-/// as the source (IMPORT-003); the verified copy uses it to read the target back
-/// (IMPORT-004).
+/// as the source (IMPORT-003).
 ///
 /// ```
 /// use std::path::Path;
@@ -44,11 +43,18 @@ pub fn checksum_file(
     hasher: &dyn Hasher,
     path: &Path,
 ) -> io::Result<Checksum> {
-    let mut reader = file_system.open_read(path)?;
+    checksum_of_reader(&mut *file_system.open_read(path)?, hasher)
+}
+
+/// Reads `reader` to its end and returns the checksum of what it read.
+pub(crate) fn checksum_of_reader(
+    reader: &mut dyn Read,
+    hasher: &dyn Hasher,
+) -> io::Result<Checksum> {
     let mut hash = hasher.start();
     let mut buffer = vec![0; BUFFER_SIZE];
     loop {
-        let count = read_some(&mut *reader, &mut buffer)?;
+        let count = read_some(reader, &mut buffer)?;
         if count == 0 {
             return Ok(hash.finish());
         }

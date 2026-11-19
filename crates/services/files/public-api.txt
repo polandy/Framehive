@@ -140,6 +140,7 @@ pub fn files::testing::MemoryFileSystem::fmt(&self, &mut core::fmt::Formatter<'_
 impl files::FileSystem for files::testing::MemoryFileSystem
 pub fn files::testing::MemoryFileSystem::create_file(&self, &std::path::Path) -> core::io::error::Result<alloc::boxed::Box<dyn files::WriteFile>>
 pub fn files::testing::MemoryFileSystem::create_folder(&self, &std::path::Path) -> core::io::error::Result<()>
+pub fn files::testing::MemoryFileSystem::open_read_from_medium(&self, &std::path::Path) -> core::io::error::Result<alloc::boxed::Box<dyn files::ReadSeek>>
 pub fn files::testing::MemoryFileSystem::remove_file(&self, &std::path::Path) -> core::io::error::Result<()>
 pub fn files::testing::MemoryFileSystem::rename_no_replace(&self, &std::path::Path, &std::path::Path) -> core::io::error::Result<()>
 pub fn files::testing::MemoryFileSystem::replace_file(&self, &std::path::Path, &std::path::Path) -> core::io::error::Result<()>
@@ -492,6 +493,7 @@ pub fn files::testing::MemoryCameras::open(&self, &str) -> core::result::Result<
 pub trait files::FileSystem: files::ReadOnlyFileSystem
 pub fn files::FileSystem::create_file(&self, &std::path::Path) -> core::io::error::Result<alloc::boxed::Box<dyn files::WriteFile>>
 pub fn files::FileSystem::create_folder(&self, &std::path::Path) -> core::io::error::Result<()>
+pub fn files::FileSystem::open_read_from_medium(&self, &std::path::Path) -> core::io::error::Result<alloc::boxed::Box<dyn files::ReadSeek>>
 pub fn files::FileSystem::remove_file(&self, &std::path::Path) -> core::io::error::Result<()>
 pub fn files::FileSystem::rename_no_replace(&self, &std::path::Path, &std::path::Path) -> core::io::error::Result<()>
 pub fn files::FileSystem::replace_file(&self, &std::path::Path, &std::path::Path) -> core::io::error::Result<()>
@@ -499,6 +501,7 @@ pub fn files::FileSystem::sync_folder(&self, &std::path::Path) -> core::io::erro
 impl files::FileSystem for files::testing::MemoryFileSystem
 pub fn files::testing::MemoryFileSystem::create_file(&self, &std::path::Path) -> core::io::error::Result<alloc::boxed::Box<dyn files::WriteFile>>
 pub fn files::testing::MemoryFileSystem::create_folder(&self, &std::path::Path) -> core::io::error::Result<()>
+pub fn files::testing::MemoryFileSystem::open_read_from_medium(&self, &std::path::Path) -> core::io::error::Result<alloc::boxed::Box<dyn files::ReadSeek>>
 pub fn files::testing::MemoryFileSystem::remove_file(&self, &std::path::Path) -> core::io::error::Result<()>
 pub fn files::testing::MemoryFileSystem::rename_no_replace(&self, &std::path::Path, &std::path::Path) -> core::io::error::Result<()>
 pub fn files::testing::MemoryFileSystem::replace_file(&self, &std::path::Path, &std::path::Path) -> core::io::error::Result<()>

@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 use domain::{Checksum, Timestamp};
 
 use super::{Copy, Failure, part_path};
-use crate::checksum::checksum_file;
+use crate::checksum::checksum_of_reader;
 use crate::{CleanupFailure, CopyError, CopyErrorKind, CopyStep, EntryKind, FileSystem, WriteFile};
 
 /// Where a target of a verified copy is.
@@ -174,9 +174,13 @@ impl<'a> TargetCopy<'a> {
             .map_err(Failure::io(CopyStep::SyncFolder, folder))
     }
 
-    /// Reads the target back in full and compares its checksum with the source's.
+    /// Reads the target back in full from the storage device and compares its
+    /// checksum with the source's.
     fn verify_target(&self, copy: &Copy<'_>, source_checksum: &Checksum) -> Result<(), Failure> {
-        let target_checksum = checksum_file(copy.file_system, copy.hasher, self.target)
+        let target_checksum = copy
+            .file_system
+            .open_read_from_medium(self.target)
+            .and_then(|mut reader| checksum_of_reader(&mut *reader, copy.hasher))
             .map_err(Failure::io(CopyStep::ReadBack, self.target))?;
         if target_checksum != *source_checksum {
             return Err(Failure {

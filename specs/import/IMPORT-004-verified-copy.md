@@ -27,7 +27,9 @@ For each file:
    device (synced), then renamed to the target name, and the folder is synced. The
    rename never replaces a file.
 4. The target is read back in full, and its checksum is compared with the source
-   checksum.
+   checksum. It is read from the storage device, not from the copy the operating
+   system still holds in memory, so a device that stored other bytes than it was sent
+   is caught (ADR 0047).
 
 Only then is the file reported as copied, with its checksum. Checksums use BLAKE3 and
 are written `blake3:<hex>` (architecture §8).
@@ -132,6 +134,13 @@ stopped. Callers that never stop are not affected (ADR 0024).
 - **When** the file is imported
 - **Then** the other file is unchanged, and the file is reported as failed
 
+### IMPORT-004.15 – The target is read back from the storage device
+- **Given** a destination whose storage device holds other bytes than the operating
+  system still holds in memory for the target
+- **When** a file is imported
+- **Then** the target is removed, and the file is reported as failed verification,
+  with both checksums
+
 ## Out of scope
 
 - A target name that already exists, or two files with the same target, and files
@@ -159,3 +168,4 @@ stopped. Callers that never stop are not affected (ADR 0024).
 | 2026-11-01 | The run stops between files when the caller asks (IMPORT-004.13), for a card pulled during the guided import (ADR 0024); status `accepted` until implemented |
 | 2026-11-01 | `ProgressSink::should_continue` and `ImportSummary::stopped` cover IMPORT-004.13; `implemented` |
 | 2026-11-19 | IMPORT-004.14 added and implemented: `create_file` of the `fs` adapter never follows a symbolic link (review E6) |
+| 2026-11-19 | The read-back comes from the storage device, not the page cache (IMPORT-004.15, review E2, ADR 0047) |
