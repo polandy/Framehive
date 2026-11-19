@@ -28,6 +28,6 @@ until the GUI has them. `src/library_command/` holds them:
 
 Both functions take the ports and the streams, so `src/library_command/tests.rs` runs
 them on a `MemoryFileSystem` with a `MemoryTrash` that can refuse a file (CLI-018.4,
-.6, .8, .10), and with an input that changes the folder before it answers (CLI-018.14). `tests/library.rs` and `tests/remove_raws_changed.rs` run the binary with `XDG_DATA_HOME` below a temporary
+.6, .8, .10), and with an input that changes the folder before it answers (CLI-018.14). `tests/library.rs`, `tests/keep_raw_refused.rs`, `tests/remove_raws_binary.rs` and `tests/remove_raws_changed.rs` run the binary (CLI-018.4, .8, .10, .14) with `XDG_DATA_HOME` below a temporary
 folder; the confirmed run is not run against the binary on macOS, where it would use
 the Trash of the user who runs the tests.
