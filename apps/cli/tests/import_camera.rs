@@ -145,6 +145,55 @@ fn a_port_that_cannot_be_opened_stops() {
     assert_eq!(output.status.code(), Some(2));
 }
 
+/// spec: CLI-013.7
+#[test]
+fn a_camera_is_chosen_by_its_model_ignoring_case() {
+    let folders = Folders::new();
+    folders.add("DCIM/100_FUJI/DSCF0001.RAF", &raf(&photo()));
+    let destination = folders.destination();
+
+    let output = import_from(
+        &folders,
+        "camera:nikon dsc d750",
+        &iolib_folder("vusb"),
+        &destination,
+    );
+
+    assert!(
+        has_line(
+            &output,
+            &format!("copied  store_00010001/DCIM/100_FUJI/DSCF0001.RAF -> {DEFAULT_TARGET}")
+        ),
+        "{}{}",
+        stdout(&output),
+        stderr(&output)
+    );
+    assert_eq!(output.status.code(), Some(0));
+}
+
+/// spec: CLI-013.8
+#[test]
+fn an_unknown_model_stops() {
+    let folders = Folders::new();
+    folders.add("DCIM/100_FUJI/DSCF0001.RAF", &raf(&photo()));
+    let destination = folders.destination();
+
+    let output = import_from(
+        &folders,
+        "camera:Canon",
+        &iolib_folder("vusb"),
+        &destination,
+    );
+
+    assert!(
+        stderr(&output).contains("no camera Canon is connected"),
+        "{}",
+        stderr(&output)
+    );
+    assert!(!destination.exists());
+    assert_eq!(output.status.code(), Some(2));
+}
+
 /// Runs `framehive import camera:` with libgphoto2's port drivers loaded from `iolibs`
 /// only, so no real USB device is seen; `vusb` serves the source folder as a Nikon D750.
 fn import_from_virtual_camera(folders: &Folders, iolibs: &Path, destination: &Path) -> Output {
