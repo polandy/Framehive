@@ -8,19 +8,21 @@
 //! [`check_read_only_file_system`], `adapter-blake3` runs [`check_hasher`] with
 //! the reference checksums of BLAKE3, `adapter-free-space` runs [`check_free_space`]
 //! in a [`TempDir`]. A camera adapter runs [`check_cameras`], a trash adapter
-//! [`check_trash`].
+//! [`check_trash`], `adapter-timer` [`check_timer`].
 
 mod cameras_conformance;
 mod file_system_conformance;
 mod fnv;
 mod free_space_conformance;
 mod hasher_conformance;
+mod manual_timer;
 mod memory;
 mod memory_cameras;
 mod memory_free_space;
 mod memory_trash;
 mod read_only_file_system_conformance;
 mod temp_dir;
+mod timer_conformance;
 mod trash_conformance;
 
 pub use cameras_conformance::{CamerasUnderTest, check_cameras};
@@ -28,6 +30,7 @@ pub use file_system_conformance::{FileSystemUnderTest, check_file_system};
 pub use fnv::FnvHasher;
 pub use free_space_conformance::{FreeSpaceUnderTest, check_free_space};
 pub use hasher_conformance::{HasherUnderTest, check_hasher};
+pub use manual_timer::ManualTimer;
 pub use memory::{Fault, MemoryFileSystem};
 pub use memory_cameras::MemoryCameras;
 pub use memory_free_space::MemoryFreeSpace;
@@ -36,6 +39,7 @@ pub use read_only_file_system_conformance::{
     AddFile, AddFolder, MakeSymbolicLink, ReadOnlyFileSystemUnderTest, check_read_only_file_system,
 };
 pub use temp_dir::TempDir;
+pub use timer_conformance::{TimerUnderTest, check_timer};
 pub use trash_conformance::{
     ReadTrashFile, RemoveTrashFile, TrashUnderTest, WriteTrashFile, check_trash,
 };

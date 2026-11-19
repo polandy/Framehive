@@ -16,6 +16,7 @@ members = [
     "crates/adapters/mounts",
     "crates/adapters/sequence-counters",
     "crates/adapters/sqlite",
+    "crates/adapters/timer",
     "crates/adapters/xmp",
     "crates/adapters/yaml",
     "crates/domain",
@@ -55,6 +56,7 @@ adapter-macos-trash = { path = "crates/adapters/macos-trash" }
 adapter-mounts = { path = "crates/adapters/mounts" }
 adapter-sequence-counters = { path = "crates/adapters/sequence-counters" }
 adapter-sqlite = { path = "crates/adapters/sqlite" }
+adapter-timer = { path = "crates/adapters/timer" }
 adapter-xmp = { path = "crates/adapters/xmp" }
 adapter-yaml = { path = "crates/adapters/yaml" }
 config = { path = "crates/services/config" }
