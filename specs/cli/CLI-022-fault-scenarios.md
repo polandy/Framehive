@@ -27,7 +27,7 @@ new behaviour: they combine the rules of the specifications they depend on.
 
 A backup destination that is missing when the command starts is created, or stops the
 command when it cannot be (CLI-005); the faults that need an injection point in the
-binary (T1, T3, T5, T6) follow with their own ADR.
+binary (T1, T3, T6) are in CLI-025 (ADR 0048).
 
 ## Acceptance criteria
 
@@ -94,7 +94,8 @@ binary (T1, T3, T5, T6) follow with their own ADR.
 
 ## Out of scope
 
-- T1, T3, T5 and T6: they need a fault-injection point in the binary (`TODO.md`).
+- T1, T3 and T6: CLI-025 runs them through the fault-injection point of ADR 0048.
+- T5 (a slow or hanging device): it needs a per-file time limit that no spec defines yet.
 - T2 (destination fills up): it needs a small file system of its own.
 - T10 (cross-device staging): the import has no staging area; it copies into
   `<target>.part` beside the target (IMPORT-004).
