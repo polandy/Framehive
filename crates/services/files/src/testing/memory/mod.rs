@@ -47,6 +47,8 @@ pub enum Fault {
     /// Renaming a file to the path fails with an I/O error; both files stay
     /// unchanged.
     RenameFails,
+    /// Removing the file fails with an I/O error; the file stays.
+    RemoveFails,
 }
 
 /// A [`FileSystem`] in memory, for tests.
@@ -326,6 +328,12 @@ impl FileSystem for MemoryFileSystem {
     fn remove_file(&self, path: &Path) -> io::Result<()> {
         self.operate(|state| {
             state.file_id(path)?;
+            if let Some(Fault::RemoveFails) = state.fault_for(path) {
+                return Err(io::Error::other(format!(
+                    "removing {} failed",
+                    path.display()
+                )));
+            }
             state.entries.remove(path);
             Ok(())
         })

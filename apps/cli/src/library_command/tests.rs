@@ -90,12 +90,17 @@ impl Library {
     }
 
     fn remove_raws(&self, answer: &str) -> Ran {
+        self.run_remove_raws(answer, false)
+    }
+
+    fn run_remove_raws(&self, answer: &str, yes: bool) -> Ran {
         let (mut output, mut errors) = (Vec::new(), Vec::new());
         let exit_code = remove_raws(
             self.sidecars(),
             &self.trash,
             Path::new(FOLDER),
             false,
+            yes,
             &mut Terminal {
                 input: &mut answer.as_bytes(),
                 output: &mut output,
@@ -174,6 +179,19 @@ fn confirming_moves_the_raw_and_its_own_sidecar() {
         ran.output
             .ends_with("Moved to the trash: 1 asset, 2 files, 0.0 MB freed\n")
     );
+}
+
+/// spec: CLI-018.12
+#[test]
+fn yes_moves_without_asking() {
+    let library = Library::new();
+    library.add_pair_with_sidecars("A");
+
+    let ran = library.run_remove_raws("", true);
+
+    assert_eq!(ran.exit_code, 0, "{}", ran.errors);
+    assert_eq!(library.trash.moved(), paths(&["A.RAF", "A.RAF.xmp"]));
+    assert!(!ran.output.contains("[y/N]"));
 }
 
 /// spec: CLI-018.8

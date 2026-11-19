@@ -65,6 +65,7 @@ pub(crate) fn run_remove_raws(arguments: &RemoveRawsArguments) -> ExitCode {
         trash.as_ref(),
         &folder,
         arguments.dry_run,
+        arguments.yes,
         &mut Terminal {
             input: &mut io::stdin().lock(),
             output: &mut io::stdout().lock(),

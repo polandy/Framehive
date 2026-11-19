@@ -155,8 +155,8 @@ impl SidecarFiles<'_> {
         match written {
             Ok(()) => self.sync_folder(path),
             Err(mut error) => {
-                if self.files.entry(&part).ok().flatten().is_some()
-                    && self.files.remove_file(&part).is_err()
+                if let Err(remove) = self.files.remove_file(&part)
+                    && remove.kind() != io::ErrorKind::NotFound
                 {
                     error.part_left = Some(part);
                 }

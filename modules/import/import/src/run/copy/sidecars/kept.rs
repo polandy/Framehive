@@ -196,6 +196,7 @@ impl Sidecars<'_> {
             .collect();
         if let Some(source) = sidecar.source.filter(|_| !sidecar.holds_values) {
             let path = self.settings.source.join(&source.path);
+            // An unreadable source only lowers the count of verified locations, never raises it.
             if let Ok(checksum) = checksum_file(self.source_files, self.files.hasher, &path) {
                 expected.push(checksum);
             }

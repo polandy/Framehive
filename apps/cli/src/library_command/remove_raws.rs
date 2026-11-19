@@ -13,7 +13,7 @@ use metadata::xmp::SidecarFiles;
 
 use super::{read_library_folder, write_line};
 use crate::guided::size_text;
-use crate::{FILES_FAILED, NOT_STARTED, write_error};
+use crate::{FILES_FAILED, NOT_STARTED, write_error, write_hint};
 
 /// The answers that confirm, in any case.
 const YES: [&str; 2] = ["y", "yes"];
@@ -28,13 +28,22 @@ pub(crate) struct Terminal<'a> {
     pub(crate) errors: &'a mut dyn Write,
 }
 
+/// The answer to the question whether to move the files.
+enum Answer {
+    Yes,
+    No,
+    /// Standard input ended, or could not be read, before a line was answered.
+    Missing,
+}
+
 /// Runs Remove RAWs on the assets of `folder`, which is absolute, and returns the exit
-/// code of CLI-018.
+/// code of CLI-018; `yes` moves the files without asking.
 pub(crate) fn remove_raws(
     sidecars: SidecarFiles<'_>,
     trash: &dyn Trash,
     folder: &Path,
     dry_run: bool,
+    yes: bool,
     terminal: &mut Terminal<'_>,
 ) -> u8 {
     let library_folder = match read_library_folder(sidecars, folder, terminal.errors) {
@@ -57,9 +66,25 @@ pub(crate) fn remove_raws(
         write_line(terminal.output, "Nothing to remove.");
         return 0;
     }
-    if !confirmed(terminal, files) {
-        write_line(terminal.output, "Nothing moved.");
-        return 0;
+    let answer = if yes {
+        Answer::Yes
+    } else {
+        ask(terminal, files)
+    };
+    match answer {
+        Answer::Yes => {}
+        Answer::No => {
+            write_line(terminal.output, "Nothing moved.");
+            return 0;
+        }
+        Answer::Missing => {
+            write_error(terminal.errors, "no answer to the question; nothing moved");
+            write_hint(
+                terminal.errors,
+                &format!("framehive library remove-raws --yes {}", folder.display()),
+            );
+            return NOT_STARTED;
+        }
     }
     let report = plan.run(trash);
     for not_moved in &report.not_moved {
@@ -126,17 +151,20 @@ fn counted(count: usize, noun: &str) -> String {
     }
 }
 
-/// Asks whether to move `files` files and reads the answer; the end of input or a
-/// failed read is no.
-fn confirmed(terminal: &mut Terminal<'_>, files: usize) -> bool {
+/// Asks whether to move `files` files and reads the answer.
+fn ask(terminal: &mut Terminal<'_>, files: usize) -> Answer {
     let question = format!("Move {} to the trash? [y/N] ", counted(files, "file"));
     // A question that cannot be shown still gets its answer read.
     let _ = write!(terminal.output, "{question}").and_then(|()| terminal.output.flush());
     let mut answer = String::new();
     match terminal.input.read_line(&mut answer) {
-        Ok(0) | Err(_) => false,
-        Ok(_) => YES
-            .iter()
-            .any(|yes| answer.trim().eq_ignore_ascii_case(yes)),
+        Ok(0) | Err(_) => Answer::Missing,
+        Ok(_) if is_yes(&answer) => Answer::Yes,
+        Ok(_) => Answer::No,
     }
+}
+
+fn is_yes(answer: &str) -> bool {
+    YES.iter()
+        .any(|yes| answer.trim().eq_ignore_ascii_case(yes))
 }

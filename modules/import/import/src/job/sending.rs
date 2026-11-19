@@ -25,6 +25,8 @@ pub(super) struct SendingSteps<'s> {
     open_question: Arc<Mutex<Option<Arc<Question>>>>,
 }
 
+/// A report whose enqueuer is gone is dropped on purpose: the job still finishes and
+/// records its copies in the history, so a closed view never cuts a run short.
 impl RunSteps for SendingSteps<'_> {
     fn scan_finished(&mut self, scan: &SourceScan) {
         let _ = self.reports.send(Report::ScanFinished(scan.clone()));
