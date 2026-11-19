@@ -84,7 +84,10 @@ impl Library {
             self.sidecars(),
             SidecarNaming::OriginalWithExtension,
             &files,
-            true,
+            KeepRawChange {
+                marked: true,
+                dry_run: false,
+            },
             &mut output,
             &mut errors,
         );

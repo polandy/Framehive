@@ -168,6 +168,32 @@ fn command() -> Command {
             "List the cameras and phones connected over PTP or MTP, to import from with camera:",
         ))
         .subcommand(library_command())
+        .after_help(after_help())
+}
+
+/// The examples, folders and exit codes below the commands of `framehive --help`
+/// (CLI-023).
+fn after_help() -> String {
+    let configuration = if cfg!(target_os = "macos") {
+        "~/Library/Application Support/framehive"
+    } else {
+        "$XDG_CONFIG_HOME/framehive, or ~/.config/framehive"
+    };
+    format!(
+        "Examples:
+  framehive                                 Import a memory card, guided by questions
+  framehive import /media/card ~/Pictures   Import a card into ~/Pictures
+  framehive import-log last                 Show where each file of the last run went
+
+Folders:
+  Configuration: {configuration}
+  State and import history: $XDG_STATE_HOME/framehive, or ~/.local/state/framehive
+
+Exit codes:
+  0  Done
+  1  The command ran, but a file or folder failed
+  2  The command did not start: invalid arguments, or a missing or unusable folder"
+    )
 }
 
 /// `framehive config`; `init` is its only subcommand so far (CLI-020).
@@ -232,16 +258,7 @@ fn import_command() -> Command {
             "framehive import [OPTIONS] <source>... <destination>\n       \
              framehive import [OPTIONS] --destination <folder> <source>...",
         )
-        .arg(
-            // Not required here, and split into sources and destination only after
-            // parsing, so that a missing source or destination gets the message of
-            // CLI-016 with an example instead of clap's.
-            Arg::new("positionals")
-                .num_args(1..)
-                .value_name("source")
-                .value_parser(value_parser!(PathBuf))
-                .help("Folders or cameras to import from, each a folder or camera:[<model>|<port>] for a camera (./camera:… for a folder of that name), then the folder to import into, created with its parents when missing; with --destination, every one is a source"),
-        )
+        .arg(positionals_argument())
         .arg(
             Arg::new("destination")
                 .long("destination")
@@ -288,6 +305,24 @@ fn import_command() -> Command {
                 .long("dry-run")
                 .action(ArgAction::SetTrue)
                 .help("Make the plan and print it, copy nothing"),
+        )
+}
+
+/// The sources and the destination of `framehive import` (CLI-016).
+fn positionals_argument() -> Arg {
+    // Not required here, and split into sources and destination only after parsing,
+    // so that a missing source or destination gets the message of CLI-016 with an
+    // example instead of clap's.
+    Arg::new("positionals")
+        .num_args(1..)
+        .value_name("source")
+        .value_parser(value_parser!(PathBuf))
+        .help("Folders or cameras to import from, then the folder to import into")
+        .long_help(
+            "Folders or cameras to import from, then the folder to import into.\n\
+             A camera is camera:[<model>|<port>]; ./camera:… is a folder of that name.\n\
+             The folder to import into is created with its parents when missing.\n\
+             With --destination, every one is a source.",
         )
 }
 
