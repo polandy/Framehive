@@ -8,7 +8,7 @@
 
 mod support;
 
-use std::sync::mpsc::{self, Receiver, Sender};
+use std::sync::mpsc::{self, Sender};
 
 use jobs::{Job, JobControl, JobEnd, JobQueue, JobState, JobUpdate};
 use support::*;
