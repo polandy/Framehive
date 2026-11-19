@@ -11,6 +11,32 @@ file from the Conventional Commits on `main`; never edit it by hand (ADR 0045). 
 0.1.0 notes were written by hand in the
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
+## [0.1.1](https://github.com/polandy/Framehive/compare/v0.1.0...v0.1.1) (2026-11-19)
+
+
+### Features
+
+* **cli:** read the guided import's scan and plan through the stall guard (IMPORT-022) ([#166](https://github.com/polandy/Framehive/issues/166)) ([9831201](https://github.com/polandy/Framehive/commit/9831201fc811c915b1db59f5d22a01eb00a44ec4))
+* **cli:** show examples, folders and exit codes in the help, and add keep-raw --dry-run (E27) ([#150](https://github.com/polandy/Framehive/issues/150)) ([03713d9](https://github.com/polandy/Framehive/commit/03713d998063b6332d3deaf20ee98ccf287f876e))
+* **cli:** write diagnostic lines with tracing and add --verbose (E28, E17) ([#131](https://github.com/polandy/Framehive/issues/131)) ([c3cce78](https://github.com/polandy/Framehive/commit/c3cce78a33600151d92fe6ccef6aabd725403e6a))
+* **files:** add StallGuard, the stall limit of a source (ADR 0049) ([#162](https://github.com/polandy/Framehive/issues/162)) ([af6fef5](https://github.com/polandy/Framehive/commit/af6fef5477b140f64818981cc2afb085dd1c382f))
+* **files:** add the Timer port, ManualTimer and adapter-timer (ADR 0049) ([#161](https://github.com/polandy/Framehive/issues/161)) ([345a053](https://github.com/polandy/Framehive/commit/345a053134f80c678d6ab737f500ab659a366aa7))
+* **import:** read each source through a stall guard (IMPORT-022) ([#164](https://github.com/polandy/Framehive/issues/164)) ([85e6bf7](https://github.com/polandy/Framehive/commit/85e6bf7eb2297200392548e9a437710834fd325e))
+
+
+### Bug Fixes
+
+* build the Nix package again and smoke-test each release on Linux and macOS (E29, E33) ([#137](https://github.com/polandy/Framehive/issues/137)) ([1f85a37](https://github.com/polandy/Framehive/commit/1f85a3759dee20d9ce636c33d331bb2d1370c41c))
+* **cli:** name system reasons in plain words and add the missing hints (E26) ([#130](https://github.com/polandy/Framehive/issues/130)) ([aa932d8](https://github.com/polandy/Framehive/commit/aa932d8a15a2af6a830526ced1dd0b778723e23b))
+* **files:** read the verified copy back from the storage device (E2) ([#136](https://github.com/polandy/Framehive/issues/136)) ([57162cf](https://github.com/polandy/Framehive/commit/57162cfa9a1d82b498bf8d897a610a8704be4e8e))
+* **fs:** take the rename without hard links only on EPERM and test failed writes on disk (E7, E19) ([#139](https://github.com/polandy/Framehive/issues/139)) ([973fc6d](https://github.com/polandy/Framehive/commit/973fc6db3b2bd7c732769dc6340335c9baef4e50))
+* **import:** count a backup made before only while it is still on disk (E1) ([#124](https://github.com/polandy/Framehive/issues/124)) ([4cb4890](https://github.com/polandy/Framehive/commit/4cb489005b712584a02f61cb3dbbe8c8da224fa8))
+* **import:** warn about a backup on the same file system as the library (E8) ([#145](https://github.com/polandy/Framehive/issues/145)) ([356b1db](https://github.com/polandy/Framehive/commit/356b1dba256d070fe58f3260a53a6bcb6d047acb))
+* keep foreign trash folders, path separators and oversized RAWs out (E9, E10, E11) ([#143](https://github.com/polandy/Framehive/issues/143)) ([6bb88e0](https://github.com/polandy/Framehive/commit/6bb88e0c072cfcd66b99fab080aaf8f04ba960c2))
+* **library:** check each asset again before Remove RAWs moves its RAW (E5) ([#135](https://github.com/polandy/Framehive/issues/135)) ([63ebb9d](https://github.com/polandy/Framehive/commit/63ebb9d3f5c5960583aa51508a6b0ee833e5b13e))
+* refuse remove-raws without an answer and stop swallowing errors (E25, E12, E13) ([#129](https://github.com/polandy/Framehive/issues/129)) ([7a9c3a6](https://github.com/polandy/Framehive/commit/7a9c3a667c7d071279a90041568b0211ded2ff35))
+* save the guided state atomically and bound XMP parsing and .part links (E4, E3, E6) ([#127](https://github.com/polandy/Framehive/issues/127)) ([da58158](https://github.com/polandy/Framehive/commit/da581580a4a72d9a3dee3dd1a3c6d1c14727c736))
+
 ## [0.1.0]
 
 ### Added
