@@ -32,7 +32,7 @@ framehive import camera:[<model>|<port>] <destination> [other options]
 framehive cameras
 framehive import-log [<run>|last] [--format text|json|csv]
 framehive config init
-framehive library keep-raw <file>... [--off]
+framehive library keep-raw <file>... [--off] [--dry-run]
 framehive library remove-raws <folder> [--dry-run] [--yes]
 framehive --help
 framehive --version
@@ -40,6 +40,16 @@ framehive --version
 
 `-v` or `--verbose`, before or after the subcommand, writes diagnostic lines to
 standard error; twice or three times for more detail (CLI-021, ADR 0046).
+`framehive --help` ends with examples, the folders and the exit codes (CLI-023).
+
+Flag conventions for every command (CLI-023):
+
+- `--dry-run` on each command that copies, marks or moves photos and videos: it checks
+  and prints as a real run would, and changes nothing.
+- `--yes` on each command outside the guided import that asks before it changes files,
+  for scripts; without it and without an answer the command stops with exit code 2.
+- Long, full-word flags; `-h`, `-v` and `-V` are the only short ones.
+- Exit codes: 0 done, 1 ran but a file failed, 2 did not start.
 
 ## Sections
 

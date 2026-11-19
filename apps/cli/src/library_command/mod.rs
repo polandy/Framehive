@@ -26,7 +26,7 @@ use crate::configuration_file::process_configuration;
 use crate::system_reason::PlainReason;
 use crate::{NOT_STARTED, report_error, write_warning};
 
-pub(crate) use keep_raw::keep_raw;
+pub(crate) use keep_raw::{KeepRawChange, keep_raw};
 #[cfg(test)]
 use remove_raws::change_text;
 pub(crate) use remove_raws::{Terminal, remove_raws};
@@ -46,7 +46,10 @@ pub(crate) fn run_keep_raw(arguments: &KeepRawArguments) -> ExitCode {
         ports.sidecars(),
         naming,
         &files,
-        !arguments.off,
+        KeepRawChange {
+            marked: !arguments.off,
+            dry_run: arguments.dry_run,
+        },
         &mut io::stdout().lock(),
         &mut io::stderr().lock(),
     ))

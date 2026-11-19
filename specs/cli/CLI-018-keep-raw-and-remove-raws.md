@@ -14,7 +14,7 @@ rules of LIBRARY-002 and a text summary to confirm (owner decision A on #109).
 ## Behaviour
 
 ```
-framehive library keep-raw <file>... [--off]
+framehive library keep-raw <file>... [--off] [--dry-run]
 framehive library remove-raws <folder> [--dry-run] [--yes]
 ```
 
@@ -37,6 +37,8 @@ gets one line per asset, in the order of the command line:
 Keep RAW on: <folder>/<base>
 Keep RAW off: <folder>/<base>
 ```
+
+`--dry-run` changes nothing (CLI-023).
 
 A file that is not part of a readable asset stops the command before any sidecar
 changes: `error: <file> is not a photo or video of the library`, exit code 2. An asset
@@ -208,3 +210,4 @@ Linux.
 | 2026-11-19 | `--yes`, and no answer stops with exit code 2 (review finding E25) |
 | 2026-11-19 | A folder that cannot be read names the reason in plain words, CLI-018.13 (review E26) |
 | 2026-11-19 | An asset that changed since the summary keeps its RAW, CLI-018.14 (review E5) |
+| 2026-11-19 | `keep-raw --dry-run` (CLI-023) |
