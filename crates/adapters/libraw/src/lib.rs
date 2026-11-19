@@ -20,4 +20,4 @@
 mod decoder;
 mod ffi;
 
-pub use decoder::LibRawDecoder;
+pub use decoder::{LibRawDecoder, MAX_FILE_SIZE};

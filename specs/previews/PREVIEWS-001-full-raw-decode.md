@@ -54,6 +54,7 @@ skipped.
 | The decoder does not support the format, for example GoPro GPR with the pinned LibRaw | `UnsupportedFormat`, with the path; CORE-004 then shows the embedded preview |
 | The file is truncated or its data is damaged | `Corrupt`, with the path and the decoder's message |
 | Any other decoder failure, such as running out of memory | `Failed`, with the path and the decoder's message |
+| The file is larger than 512 MiB, far above any RAW of a current camera | `Failed`, with the path; the decoder never sees the file |
 
 ## Acceptance criteria
 
@@ -99,6 +100,12 @@ skipped.
 - **When** it is decoded
 - **Then** the decode fails with `Io` naming the path, and the cause is "not found"
 
+### PREVIEWS-001.9 – File above the size limit
+- **Given** a file larger than 512 MiB
+- **When** it is decoded
+- **Then** the decode fails with `Failed` naming the file and the limit, and the file
+  is not read
+
 ## Out of scope
 
 - Thumbnails and the loupe preview from embedded JPEGs: CORE-001, CORE-003, CORE-004.
@@ -119,3 +126,4 @@ skipped.
 | 2026-11-09 | Reference hash of the owner's Canon EOS 350D Lightroom DNG (`dng/canon-eos-350d/`) added |
 | 2026-11-09 | Reference hashes of the owner's X-T2 and X-T5 lossless compressed RAFs and EOS 7D Lightroom DNG added |
 | 2026-11-10 | Reference hash of the owner's EOS 7D Adobe RGB CR2 added |
+| 2026-11-19 | Size limit of 512 MiB before the decoder reads a file (PREVIEWS-001.9) |

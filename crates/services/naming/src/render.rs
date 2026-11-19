@@ -12,8 +12,9 @@ use crate::sequence::SequenceToken;
 use crate::template::Part;
 use crate::token::Token;
 
-/// Characters that exFAT, SMB or macOS do not accept in a name.
-const INCOMPATIBLE_CHARACTERS: [char; 9] = ['<', '>', ':', '"', '\\', '|', '?', '*', '\u{7f}'];
+/// Characters that exFAT, SMB or macOS do not accept in a name, and the path separator.
+const INCOMPATIBLE_CHARACTERS: [char; 10] =
+    ['<', '>', ':', '"', '\\', '|', '?', '*', '\u{7f}', '/'];
 
 /// The values every file of one asset is rendered from (IMPORT-001, "Assets").
 ///
@@ -43,7 +44,7 @@ pub struct AssetValues {
 /// Whether rendered names are kept valid on exFAT, SMB and macOS.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum CompatibilityMode {
-    /// Replace `< > : " \ | ? *` and control characters with `_`, and remove trailing
+    /// Replace `< > : " \ | ? * /` and control characters with `_`, and remove trailing
     /// dots and spaces, in every segment.
     #[default]
     On,
@@ -70,8 +71,8 @@ pub enum RenderError {
         /// The base name of the asset.
         base_name: String,
     },
-    /// A rendered segment is empty, `.` or `..`, so it would not stay inside the
-    /// destination.
+    /// A rendered segment is empty, `.` or `..`, or holds `/` or NUL, so it would not
+    /// stay inside the destination.
     #[error("the rendered segment {segment:?} is not a valid folder or file name")]
     InvalidSegment {
         /// The segment as rendered.
@@ -228,7 +229,7 @@ fn finish_segment(segment: String, mode: CompatibilityMode) -> Result<String, Re
         CompatibilityMode::On => make_compatible(&segment),
         CompatibilityMode::Off => segment,
     };
-    if segment.is_empty() || segment == "." || segment == ".." {
+    if segment.is_empty() || segment == "." || segment == ".." || segment.contains(['/', '\0']) {
         return Err(RenderError::InvalidSegment { segment });
     }
     Ok(segment)

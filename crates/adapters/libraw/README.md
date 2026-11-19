@@ -19,6 +19,7 @@ it. Embedded previews, the preview cache and orientation are left to other crate
 | Item | Meaning |
 |---|---|
 | `LibRawDecoder` | `previews::PreviewDecoder` backed by LibRaw; the reference mode decodes with one OpenMP thread (ADR 0028 §3) |
+| `MAX_FILE_SIZE` | The largest file the decoder reads, 512 MiB; a larger one fails with `DecodeError::Failed` before LibRaw sees it (PREVIEWS-001.9) |
 
 ## Conformance
 

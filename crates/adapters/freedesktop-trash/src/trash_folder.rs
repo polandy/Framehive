@@ -13,6 +13,9 @@ use std::path::{Path, PathBuf};
 /// The sticky bit, which the shared `.Trash` folder of a file system must have.
 const STICKY: u32 = 0o1000;
 
+/// The permission bits for the group and others, which a user's trash must not grant.
+const GROUP_AND_OTHERS: u32 = 0o077;
+
 /// A trash folder with its `files` and `info` folders, which exist.
 #[derive(Debug)]
 pub(crate) struct TrashFolder {
@@ -40,11 +43,20 @@ impl TrashFolder {
         let shared = top_folder.join(".Trash");
         if is_usable_shared_trash(&shared) {
             let folder = shared.join(user_id.to_string());
-            if let Ok(trash) = TrashFolder::create(folder, Some(top_folder.to_path_buf())) {
+            if let Ok(trash) = TrashFolder::create_private(folder, top_folder, user_id) {
                 return Ok(trash);
             }
         }
         let folder = top_folder.join(format!(".Trash-{user_id}"));
+        TrashFolder::create_private(folder, top_folder, user_id)
+    }
+
+    /// A trash at the top folder that only `user_id` can read; a folder made before
+    /// must belong to `user_id`.
+    fn create_private(folder: PathBuf, top_folder: &Path, user_id: u32) -> io::Result<Self> {
+        if fs::symlink_metadata(&folder).is_ok() {
+            make_private(&folder, user_id)?;
+        }
         TrashFolder::create(folder, Some(top_folder.to_path_buf()))
     }
 
@@ -103,6 +115,30 @@ fn is_usable_shared_trash(shared: &Path) -> bool {
         .is_ok_and(|metadata| metadata.is_dir() && metadata.permissions().mode() & STICKY != 0)
 }
 
+/// Refuses a trash folder of another user or a symbolic link, and closes one that the
+/// group or others can open.
+fn make_private(folder: &Path, user_id: u32) -> io::Result<()> {
+    let metadata = fs::symlink_metadata(folder)?;
+    if !metadata.is_dir() || metadata.uid() != user_id {
+        return Err(io::Error::new(
+            io::ErrorKind::PermissionDenied,
+            format!(
+                "the trash folder {} is not a folder of user {user_id}; \
+                 remove it or ask its owner to",
+                folder.display()
+            ),
+        ));
+    }
+    if metadata.permissions().mode() & GROUP_AND_OTHERS == 0 {
+        return Ok(());
+    }
+    match fs::set_permissions(folder, fs::Permissions::from_mode(0o700)) {
+        // exFAT and FAT have no modes per file: the mount options decide who can read.
+        Err(error) if error.kind() == io::ErrorKind::PermissionDenied => Ok(()),
+        result => result,
+    }
+}
+
 /// The user id of this process; Linux shows it as the owner of `/proc/self`.
 fn user_id() -> io::Result<u32> {
     Ok(fs::metadata("/proc/self")?.uid())
@@ -117,7 +153,10 @@ mod tests {
 
     use super::*;
 
-    const USER_ID: u32 = 1000;
+    /// The user who runs the test, as the owner of a folder it made.
+    fn user_id_of(top: &TempDir) -> u32 {
+        fs::metadata(top.path()).unwrap().uid()
+    }
 
     #[test]
     fn a_shared_trash_with_the_sticky_bit_gets_a_folder_per_user() {
@@ -125,10 +164,18 @@ mod tests {
         fs::create_dir(top.path().join(".Trash")).unwrap();
         fs::set_permissions(top.path().join(".Trash"), Permissions::from_mode(0o1777)).unwrap();
 
-        let trash = TrashFolder::in_top_folder(top.path(), USER_ID).unwrap();
+        let trash = TrashFolder::in_top_folder(top.path(), user_id_of(&top)).unwrap();
 
-        assert_eq!(trash.files(), top.path().join(".Trash/1000/files"));
-        assert!(top.path().join(".Trash/1000/info").is_dir());
+        assert_eq!(
+            trash.files(),
+            top.path()
+                .join(format!(".Trash/{}/files", user_id_of(&top)))
+        );
+        assert!(
+            top.path()
+                .join(format!(".Trash/{}/info", user_id_of(&top)))
+                .is_dir()
+        );
     }
 
     #[test]
@@ -137,10 +184,18 @@ mod tests {
         fs::create_dir(top.path().join(".Trash")).unwrap();
         fs::set_permissions(top.path().join(".Trash"), Permissions::from_mode(0o777)).unwrap();
 
-        let trash = TrashFolder::in_top_folder(top.path(), USER_ID).unwrap();
+        let trash = TrashFolder::in_top_folder(top.path(), user_id_of(&top)).unwrap();
 
-        assert_eq!(trash.files(), top.path().join(".Trash-1000/files"));
-        assert!(!top.path().join(".Trash/1000").exists());
+        assert_eq!(
+            trash.files(),
+            top.path()
+                .join(format!(".Trash-{}/files", user_id_of(&top)))
+        );
+        assert!(
+            !top.path()
+                .join(format!(".Trash/{}", user_id_of(&top)))
+                .exists()
+        );
     }
 
     #[test]
@@ -150,25 +205,76 @@ mod tests {
         fs::set_permissions(top.path().join("elsewhere"), Permissions::from_mode(0o1777)).unwrap();
         symlink(top.path().join("elsewhere"), top.path().join(".Trash")).unwrap();
 
-        let trash = TrashFolder::in_top_folder(top.path(), USER_ID).unwrap();
+        let trash = TrashFolder::in_top_folder(top.path(), user_id_of(&top)).unwrap();
 
-        assert_eq!(trash.files(), top.path().join(".Trash-1000/files"));
+        assert_eq!(
+            trash.files(),
+            top.path()
+                .join(format!(".Trash-{}/files", user_id_of(&top)))
+        );
     }
 
     #[test]
     fn without_a_shared_trash_the_user_trash_is_created_private() {
         let top = TempDir::new().unwrap();
 
-        let trash = TrashFolder::in_top_folder(top.path(), USER_ID).unwrap();
+        let trash = TrashFolder::in_top_folder(top.path(), user_id_of(&top)).unwrap();
 
         let mode = fs::metadata(trash.files()).unwrap().permissions().mode();
         assert_eq!(mode & 0o777, 0o700);
     }
 
     #[test]
+    fn a_user_trash_made_by_another_user_is_refused() {
+        let top = TempDir::new().unwrap();
+        let other_user = user_id_of(&top) + 1;
+        fs::create_dir(top.path().join(format!(".Trash-{other_user}"))).unwrap();
+
+        let error = TrashFolder::in_top_folder(top.path(), other_user).unwrap_err();
+
+        assert_eq!(error.kind(), io::ErrorKind::PermissionDenied);
+        assert!(error.to_string().contains(&format!(".Trash-{other_user}")));
+    }
+
+    #[test]
+    fn a_shared_user_trash_of_another_user_falls_back_to_the_user_trash() {
+        let top = TempDir::new().unwrap();
+        let user_id = user_id_of(&top);
+        fs::create_dir(top.path().join(".Trash")).unwrap();
+        fs::set_permissions(top.path().join(".Trash"), Permissions::from_mode(0o1777)).unwrap();
+        fs::create_dir(top.path().join("elsewhere")).unwrap();
+        symlink(
+            top.path().join("elsewhere"),
+            top.path().join(format!(".Trash/{user_id}")),
+        )
+        .unwrap();
+
+        let trash = TrashFolder::in_top_folder(top.path(), user_id).unwrap();
+
+        assert_eq!(
+            trash.files(),
+            top.path().join(format!(".Trash-{user_id}/files"))
+        );
+        assert!(!top.path().join("elsewhere/files").exists());
+    }
+
+    #[test]
+    fn an_open_user_trash_made_before_is_closed() {
+        let top = TempDir::new().unwrap();
+        let folder = top.path().join(format!(".Trash-{}", user_id_of(&top)));
+        fs::create_dir(&folder).unwrap();
+        fs::set_permissions(&folder, Permissions::from_mode(0o777)).unwrap();
+
+        TrashFolder::in_top_folder(top.path(), user_id_of(&top)).unwrap();
+
+        let mode = fs::metadata(&folder).unwrap().permissions().mode();
+        assert_eq!(mode & 0o777, 0o700);
+    }
+
+    #[test]
     fn the_original_path_is_relative_to_the_top_folder() {
         let top = TempDir::new().unwrap();
-        let trash = TrashFolder::in_top_folder(top.path(), USER_ID).unwrap();
+        let trash = TrashFolder::in_top_folder(top.path(), user_id_of(&top)).unwrap();
 
         let original = trash.original_path(&top.path().join("2026/DSCF0001.RAF"));
 

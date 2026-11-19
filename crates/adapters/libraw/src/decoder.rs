@@ -4,7 +4,8 @@
 //! The [`LibRawDecoder`].
 
 use std::ffi::{CStr, c_int};
-use std::fs;
+use std::fs::File;
+use std::io::{self, Read};
 use std::marker::PhantomData;
 use std::path::Path;
 use std::ptr::NonNull;
@@ -18,6 +19,9 @@ use crate::ffi;
 const BITS_PER_SAMPLE: c_int = 16;
 /// Samples per pixel of the decoded image.
 const CHANNELS: u16 = 3;
+/// The largest file in bytes that LibRaw is given, far above any RAW of a current camera
+/// (PREVIEWS-001.9).
+pub const MAX_FILE_SIZE: u64 = 512 * 1024 * 1024;
 
 /// A [`PreviewDecoder`] that decodes RAW files with LibRaw (ADR 0012).
 ///
@@ -47,13 +51,44 @@ impl PreviewDecoder for LibRawDecoder {
     }
 
     fn decode_full(&self, path: &Path, mode: DecodeMode) -> Result<DecodedImage, DecodeError> {
-        let file = fs::read(path).map_err(|source| DecodeError::Io {
-            path: path.to_path_buf(),
-            source,
+        let file = read_limited(path, MAX_FILE_SIZE).map_err(|source| match source {
+            ReadFailure::Io(source) => DecodeError::Io {
+                path: path.to_path_buf(),
+                source,
+            },
+            ReadFailure::TooLarge => DecodeError::Failed {
+                path: path.to_path_buf(),
+                message: format!("the file is larger than {} MiB", MAX_FILE_SIZE >> 20),
+            },
         })?;
         let _threads = ThreadLimit::for_mode(mode);
         decode(&file).map_err(|failure| failure.into_error(path))
     }
+}
+
+/// Why a file was not read for LibRaw.
+enum ReadFailure {
+    Io(io::Error),
+    /// The file has more than the limit of bytes.
+    TooLarge,
+}
+
+/// The content of `path`, if it has at most `limit` bytes; a file that grows while it
+/// is read is caught too.
+fn read_limited(path: &Path, limit: u64) -> Result<Vec<u8>, ReadFailure> {
+    let file = File::open(path).map_err(ReadFailure::Io)?;
+    let size = file.metadata().map_err(ReadFailure::Io)?.len();
+    if size > limit {
+        return Err(ReadFailure::TooLarge);
+    }
+    let mut content = Vec::with_capacity(usize::try_from(size).unwrap_or(0));
+    file.take(limit + 1)
+        .read_to_end(&mut content)
+        .map_err(ReadFailure::Io)?;
+    if content.len() as u64 > limit {
+        return Err(ReadFailure::TooLarge);
+    }
+    Ok(content)
 }
 
 /// Why LibRaw did not return an image.
