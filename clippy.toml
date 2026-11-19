@@ -12,6 +12,6 @@ doc-valid-idents = ["ViewModel", "ViewModels", "LibRaw", "OpenMP", ".."]
 # Wall clock, sleeping and randomness only through ports (architecture §6, §9.2).
 disallowed-methods = [
     { path = "std::time::SystemTime::now", reason = "use the Clock port" },
-    { path = "std::time::Instant::now", reason = "use the Clock port" },
+    { path = "std::time::Instant::now", reason = "use the Clock or Timer port" },
     { path = "std::thread::sleep", reason = "wait on events, never on time" },
 ]

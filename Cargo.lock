@@ -94,6 +94,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "adapter-timer"
+version = "0.1.0"
+dependencies = [
+ "files",
+]
+
+[[package]]
 name = "adapter-xmp"
 version = "0.1.0"
 dependencies = [

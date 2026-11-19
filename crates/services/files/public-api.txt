@@ -92,6 +92,26 @@ impl<'a> core::marker::Unpin for files::testing::HasherUnderTest<'a>
 impl<'a> core::marker::UnsafeUnpin for files::testing::HasherUnderTest<'a>
 impl<'a> !core::panic::unwind_safe::RefUnwindSafe for files::testing::HasherUnderTest<'a>
 impl<'a> !core::panic::unwind_safe::UnwindSafe for files::testing::HasherUnderTest<'a>
+pub struct files::testing::ManualTimer
+impl files::testing::ManualTimer
+pub fn files::testing::ManualTimer::advance(&self, core::time::Duration)
+pub fn files::testing::ManualTimer::new() -> Self
+pub fn files::testing::ManualTimer::time_since_start(&self) -> core::time::Duration
+pub fn files::testing::ManualTimer::waits(&self) -> usize
+impl core::default::Default for files::testing::ManualTimer
+pub fn files::testing::ManualTimer::default() -> files::testing::ManualTimer
+impl core::fmt::Debug for files::testing::ManualTimer
+pub fn files::testing::ManualTimer::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl files::Timer for files::testing::ManualTimer
+pub fn files::testing::ManualTimer::deadline(&self, core::time::Duration) -> files::Deadline
+pub fn files::testing::ManualTimer::wait(&self, &files::AnswerSignal, files::Deadline) -> files::WaitOutcome
+impl !core::marker::Freeze for files::testing::ManualTimer
+impl core::marker::Send for files::testing::ManualTimer
+impl core::marker::Sync for files::testing::ManualTimer
+impl core::marker::Unpin for files::testing::ManualTimer
+impl core::marker::UnsafeUnpin for files::testing::ManualTimer
+impl core::panic::unwind_safe::RefUnwindSafe for files::testing::ManualTimer
+impl core::panic::unwind_safe::UnwindSafe for files::testing::ManualTimer
 pub struct files::testing::MemoryCameras
 impl files::testing::MemoryCameras
 pub fn files::testing::MemoryCameras::is_open(&self, &str) -> bool
@@ -225,6 +245,15 @@ impl core::marker::Unpin for files::testing::TempDir
 impl core::marker::UnsafeUnpin for files::testing::TempDir
 impl core::panic::unwind_safe::RefUnwindSafe for files::testing::TempDir
 impl core::panic::unwind_safe::UnwindSafe for files::testing::TempDir
+pub struct files::testing::TimerUnderTest<'a>
+pub files::testing::TimerUnderTest::timer: &'a dyn files::Timer
+impl<'a> core::marker::Freeze for files::testing::TimerUnderTest<'a>
+impl<'a> core::marker::Send for files::testing::TimerUnderTest<'a>
+impl<'a> core::marker::Sync for files::testing::TimerUnderTest<'a>
+impl<'a> core::marker::Unpin for files::testing::TimerUnderTest<'a>
+impl<'a> core::marker::UnsafeUnpin for files::testing::TimerUnderTest<'a>
+impl<'a> !core::panic::unwind_safe::RefUnwindSafe for files::testing::TimerUnderTest<'a>
+impl<'a> !core::panic::unwind_safe::UnwindSafe for files::testing::TimerUnderTest<'a>
 pub struct files::testing::TrashUnderTest<'a>
 pub files::testing::TrashUnderTest::read_file: &'a files::testing::ReadTrashFile<'a>
 pub files::testing::TrashUnderTest::remove_file: &'a files::testing::RemoveTrashFile<'a>
@@ -243,6 +272,7 @@ pub fn files::testing::check_file_system(&files::testing::FileSystemUnderTest<'_
 pub fn files::testing::check_free_space(&files::testing::FreeSpaceUnderTest<'_>) -> alloc::vec::Vec<alloc::string::String>
 pub fn files::testing::check_hasher(&files::testing::HasherUnderTest<'_>) -> alloc::vec::Vec<alloc::string::String>
 pub fn files::testing::check_read_only_file_system(&files::testing::ReadOnlyFileSystemUnderTest<'_>) -> alloc::vec::Vec<alloc::string::String>
+pub fn files::testing::check_timer(&files::testing::TimerUnderTest<'_>) -> alloc::vec::Vec<alloc::string::String>
 pub fn files::testing::check_trash(&files::testing::TrashUnderTest<'_>) -> alloc::vec::Vec<alloc::string::String>
 pub type files::testing::AddFile<'a> = (dyn core::ops::function::Fn(&std::path::Path, &[u8], domain::time::Timestamp) -> core::io::error::Result<()> + 'a)
 pub type files::testing::AddFolder<'a> = (dyn core::ops::function::Fn(&std::path::Path) -> core::io::error::Result<()> + 'a)
@@ -350,6 +380,44 @@ impl core::marker::Unpin for files::EntryKind
 impl core::marker::UnsafeUnpin for files::EntryKind
 impl core::panic::unwind_safe::RefUnwindSafe for files::EntryKind
 impl core::panic::unwind_safe::UnwindSafe for files::EntryKind
+pub enum files::WaitOutcome
+pub files::WaitOutcome::Answered
+pub files::WaitOutcome::DeadlinePassed
+impl core::clone::Clone for files::WaitOutcome
+pub fn files::WaitOutcome::clone(&self) -> files::WaitOutcome
+impl core::cmp::Eq for files::WaitOutcome
+impl core::cmp::PartialEq for files::WaitOutcome
+pub fn files::WaitOutcome::eq(&self, &files::WaitOutcome) -> bool
+impl core::fmt::Debug for files::WaitOutcome
+pub fn files::WaitOutcome::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for files::WaitOutcome
+impl core::marker::StructuralPartialEq for files::WaitOutcome
+impl core::marker::Freeze for files::WaitOutcome
+impl core::marker::Send for files::WaitOutcome
+impl core::marker::Sync for files::WaitOutcome
+impl core::marker::Unpin for files::WaitOutcome
+impl core::marker::UnsafeUnpin for files::WaitOutcome
+impl core::panic::unwind_safe::RefUnwindSafe for files::WaitOutcome
+impl core::panic::unwind_safe::UnwindSafe for files::WaitOutcome
+pub struct files::AnswerSignal
+impl files::AnswerSignal
+pub fn files::AnswerSignal::is_signalled(&self) -> bool
+pub fn files::AnswerSignal::new() -> Self
+pub fn files::AnswerSignal::signal(&self)
+pub fn files::AnswerSignal::wait_for(&self, core::time::Duration) -> bool
+impl core::clone::Clone for files::AnswerSignal
+pub fn files::AnswerSignal::clone(&self) -> files::AnswerSignal
+impl core::default::Default for files::AnswerSignal
+pub fn files::AnswerSignal::default() -> files::AnswerSignal
+impl core::fmt::Debug for files::AnswerSignal
+pub fn files::AnswerSignal::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for files::AnswerSignal
+impl core::marker::Send for files::AnswerSignal
+impl core::marker::Sync for files::AnswerSignal
+impl core::marker::Unpin for files::AnswerSignal
+impl core::marker::UnsafeUnpin for files::AnswerSignal
+impl core::panic::unwind_safe::RefUnwindSafe for files::AnswerSignal
+impl core::panic::unwind_safe::UnwindSafe for files::AnswerSignal
 pub struct files::Camera
 pub files::Camera::model: alloc::string::String
 pub files::Camera::port: alloc::string::String
@@ -405,6 +473,32 @@ impl core::marker::Unpin for files::CopyError
 impl core::marker::UnsafeUnpin for files::CopyError
 impl !core::panic::unwind_safe::RefUnwindSafe for files::CopyError
 impl !core::panic::unwind_safe::UnwindSafe for files::CopyError
+pub struct files::Deadline
+impl files::Deadline
+pub fn files::Deadline::from_time_since_start(core::time::Duration) -> Self
+pub fn files::Deadline::time_since_start(self) -> core::time::Duration
+impl core::clone::Clone for files::Deadline
+pub fn files::Deadline::clone(&self) -> files::Deadline
+impl core::cmp::Eq for files::Deadline
+impl core::cmp::Ord for files::Deadline
+pub fn files::Deadline::cmp(&self, &files::Deadline) -> core::cmp::Ordering
+impl core::cmp::PartialEq for files::Deadline
+pub fn files::Deadline::eq(&self, &files::Deadline) -> bool
+impl core::cmp::PartialOrd for files::Deadline
+pub fn files::Deadline::partial_cmp(&self, &files::Deadline) -> core::option::Option<core::cmp::Ordering>
+impl core::fmt::Debug for files::Deadline
+pub fn files::Deadline::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::hash::Hash for files::Deadline
+pub fn files::Deadline::hash<__H: core::hash::Hasher>(&self, &mut __H)
+impl core::marker::Copy for files::Deadline
+impl core::marker::StructuralPartialEq for files::Deadline
+impl core::marker::Freeze for files::Deadline
+impl core::marker::Send for files::Deadline
+impl core::marker::Sync for files::Deadline
+impl core::marker::Unpin for files::Deadline
+impl core::marker::UnsafeUnpin for files::Deadline
+impl core::panic::unwind_safe::RefUnwindSafe for files::Deadline
+impl core::panic::unwind_safe::UnwindSafe for files::Deadline
 pub struct files::FileSystemId(_)
 impl files::FileSystemId
 pub const fn files::FileSystemId::get(self) -> u64
@@ -531,6 +625,12 @@ pub fn files::testing::MemoryFileSystem::modification_time(&self, &std::path::Pa
 pub fn files::testing::MemoryFileSystem::open_read(&self, &std::path::Path) -> core::io::error::Result<alloc::boxed::Box<dyn files::ReadSeek>>
 pub trait files::ReadSeek: std::io::Read + std::io::Seek
 impl<T: std::io::Read + std::io::Seek + ?core::marker::Sized> files::ReadSeek for T
+pub trait files::Timer: core::marker::Send + core::marker::Sync
+pub fn files::Timer::deadline(&self, core::time::Duration) -> files::Deadline
+pub fn files::Timer::wait(&self, &files::AnswerSignal, files::Deadline) -> files::WaitOutcome
+impl files::Timer for files::testing::ManualTimer
+pub fn files::testing::ManualTimer::deadline(&self, core::time::Duration) -> files::Deadline
+pub fn files::testing::ManualTimer::wait(&self, &files::AnswerSignal, files::Deadline) -> files::WaitOutcome
 pub trait files::Trash
 pub fn files::Trash::move_to_trash(&self, &std::path::Path) -> core::io::error::Result<std::path::PathBuf>
 impl files::Trash for files::testing::MemoryTrash

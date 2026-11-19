@@ -19,6 +19,9 @@ Boundaries:
   `FileSystem`, `adapter-blake3` implements `Hasher` and `adapter-free-space`
   implements `FreeSpace`. Only `testing::TempDir`
   touches the real file system, for adapter tests.
+- **No clock of its own.** Waiting with a limit goes through the `Timer` port, which
+  `adapter-timer` implements with `std::time::Instant` (ADR 0049 §3); tests use
+  `testing::ManualTimer`, whose time passes only when the test advances it.
 - **Verified copy.** `copy_verified` reads the source once, hashes it while writing
   `<target>.part`, syncs it with the source's modification time, renames it without
   replacing a file, syncs the folder, and reads the target back to compare checksums.
@@ -57,6 +60,7 @@ Boundaries:
 | `FileSystem`, `WriteFile` | Port for files and folders: `ReadOnlyFileSystem` with creating, renaming, replacing a file in one step (keeping its permissions, refusing a read-only file), removing and explicit syncing; `open_read_from_medium` reads a file back from the storage device, not the page cache, for the read-back of the verified copy (IMPORT-004.15, ADR 0047) |
 | `FreeSpace`, `SpaceOnFileSystem`, `FileSystemId` | Port for the free space and the identity of the file system a folder lies on; a missing folder is answered for its nearest existing parent (ADR 0033) |
 | `Trash`, `not_a_file` | Port for moving a file to the trash, and the `InvalidInput` error every implementation returns for a path that is not a file (ADR 0043) |
+| `Timer`, `Deadline`, `WaitOutcome`, `AnswerSignal` | Port for waiting until an answer is signalled or a deadline in monotonic time passes; an answer signalled before the wait wins (ADR 0049 §3) |
 | `Hasher`, `HashState` | Port for a hash function that yields a `domain::Checksum` with its algorithm id |
 | `checksum_file` | Reads a file in full and returns its checksum; used to compare content (IMPORT-003) and to read a copy back |
 | `copy_verified` | Copies one file through a `.part` file and verifies it (IMPORT-004) |
@@ -72,6 +76,8 @@ Boundaries:
 | `testing::check_cameras`, `testing::CamerasUnderTest` | Conformance suite of the `Cameras` port; it runs the `ReadOnlyFileSystem` suite on an opened camera |
 | `testing::MemoryFreeSpace` | `FreeSpace` with fixed answers per mounted folder, and file systems that do not report their free space |
 | `testing::check_free_space`, `testing::FreeSpaceUnderTest` | Conformance suite of the `FreeSpace` port |
+| `testing::ManualTimer` | `Timer` whose time passes only by `advance`, which wakes the waits whose deadline has passed; `waits` tells a test that a wait has begun |
+| `testing::check_timer`, `testing::TimerUnderTest` | Conformance suite of the `Timer` port; it lets no time pass, using deadlines that have passed at once or that no check reaches |
 | `testing::check_hasher`, `testing::HasherUnderTest` | Conformance suite of the `Hasher` port |
 | `testing::MemoryTrash` | `Trash` that moves files to a folder of a `MemoryFileSystem`, records what it moved, and refuses chosen files |
 | `testing::check_trash`, `testing::TrashUnderTest`, `testing::WriteTrashFile`, `testing::ReadTrashFile`, `testing::RemoveTrashFile` | Conformance suite of the `Trash` port; it lays out and reads its files through the storage of the implementation and removes what it trashed |

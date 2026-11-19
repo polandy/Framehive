@@ -72,7 +72,7 @@ answer arrives or the deadline passes and says which came first. The answer is s
 through a small type of the service (a flag behind a mutex and condition variable), so
 the port stays object-safe and knows nothing of requests.
 
-- **`adapter-timer`**, made with `cargo xtask new-adapter timer std`, implements it with
+- **`adapter-timer`**, made with `cargo xtask new-adapter files timer`, implements it with
   `std::time::Instant` and `Condvar::wait_timeout`. It needs no dependency. It passes
   the port's conformance suite, which checks that an answer before the deadline wins
   and that a deadline with no answer ends the wait.
