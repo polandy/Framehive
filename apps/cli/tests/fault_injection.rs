@@ -15,10 +15,7 @@ use std::os::unix::process::ExitStatusExt;
 use std::process::Output;
 
 use metadata::testing::raf;
-use support::{
-    DEFAULT_TARGET, Folders, has_line, has_line_starting_with, lines, photo, picture, stderr,
-    summary_line,
-};
+use support::{DEFAULT_TARGET, Folders, has_line, lines, photo, picture, stderr, summary_line};
 
 const NAMES: [&str; 3] = ["DSCF0001.RAF", "DSCF0002.RAF", "DSCF0003.RAF"];
 const SIGABRT: i32 = 6;
@@ -125,10 +122,16 @@ fn a_bit_error_at_the_destination_fails_the_file_and_a_rerun_copies_it() {
     let output = import_with_fault(&folders, "flip-bit-after-sync DSCF0002.RAF");
 
     assert!(has_line(&output, &copied("DSCF0001.RAF")));
-    assert!(has_line_starting_with(
-        &output,
-        "failed  DSCF0002.RAF: cannot verify the target: the target has the checksum blake3:"
-    ));
+    let failed = lines(&output)
+        .into_iter()
+        .find(|line| line.starts_with("failed  DSCF0002.RAF: "))
+        .unwrap_or_default();
+    assert!(
+        failed.starts_with(
+            "failed  DSCF0002.RAF: cannot verify the target: the target has the checksum blake3:"
+        ) && failed.contains(", the source blake3:"),
+        "{failed}"
+    );
     assert!(has_line(&output, &copied("DSCF0003.RAF")));
     assert_eq!(
         summary_line(&output),
@@ -231,6 +234,22 @@ fn an_unknown_fault_is_a_usage_error() {
         stderr(&output),
         "error: FRAMEHIVE_FAULT: unknown fault `flip-bits`; the faults are \
          abort-while-writing, flip-bit-after-sync, unplug-while-reading\n"
+    );
+    assert!(!folders.destination().exists());
+    assert_eq!(output.status.code(), Some(2));
+}
+
+/// spec: CLI-025.4
+#[test]
+fn a_fault_without_a_file_name_is_a_usage_error() {
+    let folders = Folders::new();
+    add_three_files(&folders);
+
+    let output = import_with_fault(&folders, "unplug-while-reading");
+
+    assert_eq!(
+        stderr(&output),
+        "error: FRAMEHIVE_FAULT: `unplug-while-reading` needs a file name\n"
     );
     assert!(!folders.destination().exists());
     assert_eq!(output.status.code(), Some(2));
