@@ -19,7 +19,8 @@ const PREFIXES: [&str; 11] = [
     "DEVICES",
     "PREVIEWS",
 ];
-const STATUSES: [&str; 4] = ["draft", "accepted", "implemented", "removed"];
+const STATUSES: [&str; 5] = ["draft", "accepted", "partial", "implemented", "removed"];
+const PARTIAL: &str = "partial";
 pub(super) const NONE_MARKER: &str = "–";
 
 /// A parsed specification file.
@@ -36,6 +37,8 @@ pub(crate) struct Spec {
     pub(crate) criteria: Vec<u32>,
     /// Criteria whose heading ends with `(removed)`; they keep their number but need no test.
     pub(crate) removed: Vec<u32>,
+    /// Criteria of a `partial` spec that are not reachable in the code yet; they need no test.
+    pub(crate) pending: Vec<u32>,
     pub(crate) has_open_questions: bool,
 }
 
@@ -73,6 +76,7 @@ pub(crate) fn parse_spec(file: &str, text: &str) -> Result<Spec, Vec<String>> {
         .collect();
     spec.criteria = criteria(file, &spec.id, text, &mut problems);
     spec.removed = removed_criteria(&spec.id, text);
+    spec.pending = pending_criteria(&spec, fields.get("Pending"), &mut problems);
     spec.has_open_questions = has_open_questions(text);
     if problems.is_empty() {
         Ok(spec)
@@ -170,6 +174,42 @@ fn removed_criteria(id: &str, text: &str) -> Vec<u32> {
         .collect()
 }
 
+/// Parses `- Pending: 1, 8`, which a `partial` spec needs and no other spec may have.
+fn pending_criteria(spec: &Spec, value: Option<&String>, problems: &mut Vec<String>) -> Vec<u32> {
+    let file = &spec.file;
+    let Some(value) = value else {
+        if spec.status == PARTIAL {
+            problems.push(format!(
+                "{file}: a partial spec needs `- Pending: <criterion numbers>`"
+            ));
+        }
+        return Vec::new();
+    };
+    if spec.status != PARTIAL {
+        problems.push(format!("{file}: only a partial spec has `- Pending:`"));
+        return Vec::new();
+    }
+    let mut numbers = Vec::new();
+    for entry in list_field(Some(value)) {
+        let id = &spec.id;
+        match entry.parse::<u32>() {
+            Ok(number) if spec.removed.contains(&number) => {
+                problems.push(format!(
+                    "{file}: pending criterion {id}.{number} is removed"
+                ));
+            }
+            Ok(number) if !spec.criteria.contains(&number) => {
+                problems.push(format!(
+                    "{file}: pending criterion {id}.{number} does not exist"
+                ));
+            }
+            Ok(number) => numbers.push(number),
+            Err(_) => problems.push(format!("{file}: invalid pending criterion {entry:?}")),
+        }
+    }
+    numbers
+}
+
 fn has_open_questions(text: &str) -> bool {
     let Some((_, rest)) = text.split_once("\n## Open questions\n") else {
         return false;
@@ -231,6 +271,52 @@ mod tests {
         assert_eq!(
             problems,
             ["specs/core/CORE-009-example.md: duplicate criterion CORE-009.1"]
+        );
+    }
+
+    #[test]
+    fn a_partial_spec_lists_its_pending_criteria() {
+        let text = VALID.replace("implemented\n", "partial\n- Pending: 2\n");
+        let spec = parse_spec("specs/core/CORE-009-example.md", &text).expect("valid spec");
+        assert_eq!(spec.status, "partial");
+        assert_eq!(spec.pending, [2]);
+    }
+
+    #[test]
+    fn rejects_a_partial_spec_without_pending_criteria() {
+        let text = VALID.replace("implemented\n", "partial\n");
+        let problems = parse_spec("specs/core/CORE-009-example.md", &text).unwrap_err();
+        assert_eq!(
+            problems,
+            [
+                "specs/core/CORE-009-example.md: a partial spec needs `- Pending: <criterion numbers>`"
+            ]
+        );
+    }
+
+    #[test]
+    fn rejects_pending_criteria_outside_a_partial_spec() {
+        let text = VALID.replace("implemented\n", "implemented\n- Pending: 2\n");
+        let problems = parse_spec("specs/core/CORE-009-example.md", &text).unwrap_err();
+        assert_eq!(
+            problems,
+            ["specs/core/CORE-009-example.md: only a partial spec has `- Pending:`"]
+        );
+    }
+
+    #[test]
+    fn rejects_unknown_removed_and_malformed_pending_criteria() {
+        let text = VALID
+            .replace("implemented\n", "partial\n- Pending: 2, 7, x\n")
+            .replace("CORE-009.2 – Two", "CORE-009.2 – Two (removed)");
+        let problems = parse_spec("specs/core/CORE-009-example.md", &text).unwrap_err();
+        assert_eq!(
+            problems,
+            [
+                "specs/core/CORE-009-example.md: pending criterion CORE-009.2 is removed",
+                "specs/core/CORE-009-example.md: pending criterion CORE-009.7 does not exist",
+                "specs/core/CORE-009-example.md: invalid pending criterion \"x\"",
+            ]
         );
     }
 }
