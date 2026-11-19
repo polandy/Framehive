@@ -15,7 +15,7 @@ rules of LIBRARY-002 and a text summary to confirm (owner decision A on #109).
 
 ```
 framehive library keep-raw <file>... [--off]
-framehive library remove-raws <folder> [--dry-run]
+framehive library remove-raws <folder> [--dry-run] [--yes]
 ```
 
 **Assets.** Both commands group the files directly in a folder into assets
@@ -58,9 +58,17 @@ Remove RAWs: <assets> assets, <files> files, <size> freed
 
 With `--dry-run`, the files that would go to the trash follow, one per line indented by
 four spaces, and nothing moves. Otherwise, when no file would go, `Nothing to remove.`
-follows. Else the command asks `Move <files> files to the trash? [y/N] ` on standard
-output and reads one line from standard input: `y` or `yes`, in any case, moves the
-files; anything else, or the end of input, prints `Nothing moved.` and moves none.
+follows. Else, with `--yes`, the files move without a question. Without it the command
+asks `Move <files> files to the trash? [y/N] ` on standard output and reads one line
+from standard input: `y` or `yes`, in any case, moves the files; any other answer
+prints `Nothing moved.` and moves none. When standard input ends, or cannot be read,
+before a line is answered, nothing moves and the command stops with exit code 2, so a
+script without an answer does not pass for a success:
+
+```
+error: no answer to the question; nothing moved
+hint: framehive library remove-raws --yes <folder>
+```
 
 The files move asset by asset to the trash of the system: on Linux the freedesktop.org
 trash, with the home trash in `$XDG_DATA_HOME/Trash`, or `~/.local/share/Trash` when it
@@ -120,7 +128,7 @@ an unknown home folder on Linux.
 
 ### CLI-018.7 – Any other answer moves nothing
 - **Given** the folder of .5
-- **When** the user answers `n`, or standard input ends
+- **When** the user answers `n`
 - **Then** standard output ends with `Nothing moved.`, no file moved, and the exit code
   is 0
 
@@ -145,6 +153,22 @@ an unknown home folder on Linux.
 - **Then** standard error warns that `A.JPG.xmp` cannot be read, and only `B` is in
   *RAW will be removed*
 
+### CLI-018.11 – No answer is an error
+- **Given** the folder of .5
+- **When** the user runs `framehive library remove-raws <folder>` and standard input
+  ends without a line
+- **Then** standard error has `error: no answer to the question; nothing moved` and
+  `hint: framehive library remove-raws --yes <folder>`, no file moved, and the exit code
+  is 2
+
+### CLI-018.12 – --yes moves without asking
+- **Given** the folder of .5
+- **When** the user runs `framehive library remove-raws <folder> --yes` with nothing on
+  standard input
+- **Then** the command asks nothing, `A.RAF` and `A.RAF.xmp` are in the trash, standard
+  output ends with `Moved to the trash: 1 asset, 2 files, <size> freed`, and the exit
+  code is 0
+
 ## Out of scope
 
 - Key `R`, the filter, the index and the summary with thumbnails, which toggle the
@@ -160,3 +184,4 @@ an unknown home folder on Linux.
 | Date | Change |
 |---|---|
 | 2026-11-10 | Initial version, owner decision A on #109 |
+| 2026-11-19 | `--yes`, and no answer stops with exit code 2 (review finding E25) |

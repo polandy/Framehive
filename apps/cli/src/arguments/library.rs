@@ -25,6 +25,8 @@ pub(crate) struct RemoveRawsArguments {
     pub(crate) folder: PathBuf,
     /// `--dry-run`: print the summary and the files, move nothing.
     pub(crate) dry_run: bool,
+    /// `--yes`: move the files without asking.
+    pub(crate) yes: bool,
 }
 
 /// `framehive library` with `keep-raw` and `remove-raws` (CLI-018).
@@ -65,6 +67,12 @@ pub(super) fn library_command() -> Command {
                         .long("dry-run")
                         .action(ArgAction::SetTrue)
                         .help("Print the summary and the files, move nothing"),
+                )
+                .arg(
+                    Arg::new("yes")
+                        .long("yes")
+                        .action(ArgAction::SetTrue)
+                        .help("Move the files without asking, for scripts"),
                 ),
         )
 }
@@ -87,5 +95,6 @@ pub(super) fn library_invocation(matches: &ArgMatches) -> Invocation {
             .cloned()
             .unwrap_or_default(),
         dry_run: remove_raws.is_some_and(|remove_raws| remove_raws.get_flag("dry-run")),
+        yes: remove_raws.is_some_and(|remove_raws| remove_raws.get_flag("yes")),
     })
 }

@@ -8,6 +8,7 @@ pub files::testing::Fault::OtherProgramCreates::path: std::path::PathBuf
 pub files::testing::Fault::ReadFails
 pub files::testing::Fault::ReadFails::after_bytes: usize
 pub files::testing::Fault::ReadReturnsDifferentBytes
+pub files::testing::Fault::RemoveFails
 pub files::testing::Fault::RenameFails
 pub files::testing::Fault::WriteFails
 pub files::testing::Fault::WriteFails::after_bytes: usize

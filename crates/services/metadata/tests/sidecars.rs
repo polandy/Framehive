@@ -181,6 +181,26 @@ fn a_failed_rename_leaves_the_sidecar_as_before() {
     }
 }
 
+#[test]
+fn a_part_file_that_cannot_be_removed_is_reported() {
+    let sidecars = Sidecars::with_subject();
+    sidecars
+        .files
+        .inject_fault(Path::new(SIDECAR), Fault::RenameFails);
+    sidecars
+        .files
+        .inject_fault(Path::new(PART), Fault::RemoveFails);
+
+    let error = sidecars.merge_job_code().unwrap_err();
+
+    assert_eq!(
+        error.part_left.as_deref(),
+        Some(Path::new(PART)),
+        "{error:?}"
+    );
+    assert!(!sidecars.part_is_gone());
+}
+
 /// spec: CORE-010.3
 #[test]
 fn a_sidecar_that_appeared_is_not_replaced() {

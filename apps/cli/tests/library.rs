@@ -9,7 +9,7 @@
 mod support;
 
 use std::fs;
-use std::io::Write;
+use std::io::{ErrorKind, Write};
 use std::process::{Output, Stdio};
 
 use support::{Folders, lines, stderr, stdout};
@@ -48,7 +48,10 @@ fn library(folders: &Folders, arguments: &[&str], input: &[u8]) -> Output {
         .stderr(Stdio::piped())
         .spawn()
         .unwrap();
-    child.stdin.take().unwrap().write_all(input).unwrap();
+    // A run that asks nothing may exit before it reads, which closes the pipe.
+    if let Err(error) = child.stdin.take().unwrap().write_all(input) {
+        assert_eq!(error.kind(), ErrorKind::BrokenPipe, "{error}");
+    }
     child.wait_with_output().unwrap()
 }
 
@@ -215,14 +218,62 @@ fn any_other_answer_moves_nothing() {
     summary_folder(&folders);
     let folder = folders.source().display().to_string();
 
-    for input in [&b"n\n"[..], b""] {
-        let output = library(&folders, &["remove-raws", &folder], input);
+    let output = library(&folders, &["remove-raws", &folder], b"n\n");
 
-        assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
-        assert!(last_line(&output).ends_with("Nothing moved."));
-        assert!(trashed(&folders).is_empty());
-        assert!(in_source(&folders, &["A.RAF", "A.RAF.xmp"]));
-    }
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    assert!(last_line(&output).ends_with("Nothing moved."));
+    assert!(trashed(&folders).is_empty());
+    assert!(in_source(&folders, &["A.RAF", "A.RAF.xmp"]));
+}
+
+/// spec: CLI-018.11
+#[test]
+fn no_answer_is_an_error() {
+    let folders = Folders::new();
+    summary_folder(&folders);
+    let folder = folders.source().display().to_string();
+
+    let output = library(&folders, &["remove-raws", &folder], b"");
+
+    assert_eq!(output.status.code(), Some(2));
+    assert_eq!(
+        stderr(&output),
+        format!(
+            "error: no answer to the question; nothing moved\n\
+             hint: framehive library remove-raws --yes {folder}\n"
+        )
+    );
+    assert!(!stdout(&output).contains("Nothing moved."));
+    assert!(trashed(&folders).is_empty());
+    assert!(in_source(&folders, &["A.RAF", "A.RAF.xmp"]));
+}
+
+/// spec: CLI-018.12
+// On macOS the run would use the Trash of the user who runs the tests; the in-crate
+// test with a trash in memory covers it there.
+#[cfg(not(target_os = "macos"))]
+#[test]
+fn yes_moves_without_asking() {
+    let folders = Folders::new();
+    summary_folder(&folders);
+
+    let output = library(
+        &folders,
+        &[
+            "remove-raws",
+            &folders.source().display().to_string(),
+            "--yes",
+        ],
+        b"",
+    );
+
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    assert_eq!(trashed(&folders), ["A.RAF", "A.RAF.xmp"]);
+    assert!(!stdout(&output).contains("[y/N]"));
+    assert_eq!(
+        last_line(&output),
+        "Moved to the trash: 1 asset, 2 files, 3.0 MB freed"
+    );
 }
 
 /// spec: CLI-018.9
