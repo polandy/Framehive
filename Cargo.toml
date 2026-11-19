@@ -79,6 +79,8 @@ rusqlite = { version = "0.41", default-features = false, features = ["bundled"] 
 libc = { version = "0.2", default-features = false }
 jiff = { version = "0.2", default-features = false, features = ["std", "tz-system", "tzdb-zoneinfo"] }
 thiserror = { version = "2", default-features = false, features = ["std"] }
+tracing = { version = "0.1", default-features = false, features = ["std"] }
+tracing-subscriber = { version = "0.3", default-features = false, features = ["std", "fmt"] }
 unicode-normalization = { version = "0.1", default-features = false }
 
 [workspace.lints.rust]

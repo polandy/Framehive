@@ -80,14 +80,18 @@ mod tests {
     use std::ffi::OsString;
 
     use super::*;
-    use crate::arguments::{Invocation, parse};
+    use crate::arguments::{CommandLine, Invocation, parse};
 
     fn located(arguments: &[&str]) -> Result<Locations, NotStarted> {
         let line = ["framehive", "import"]
             .iter()
             .chain(arguments)
             .map(OsString::from);
-        let Ok(Invocation::Import(arguments)) = parse(line) else {
+        let Ok(CommandLine {
+            invocation: Invocation::Import(arguments),
+            ..
+        }) = parse(line)
+        else {
             panic!("not an import");
         };
         locations(&arguments)

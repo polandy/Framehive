@@ -38,6 +38,9 @@ framehive --help
 framehive --version
 ```
 
+`-v` or `--verbose`, before or after the subcommand, writes diagnostic lines to
+standard error; twice or three times for more detail (CLI-021, ADR 0046).
+
 ## Sections
 
 - [The import command](docs/import-command.md): `framehive import`, from the arguments
@@ -59,6 +62,7 @@ framehive --version
 | Module | Meaning |
 |---|---|
 | `arguments` | The `clap` command line and the parsed `Invocation`; `framehive library` in `library.rs` |
+| `diagnostics` | The `tracing` subscriber on standard error, by `--verbose` (CLI-021, ADR 0046) |
 | `paths` | Source and destination resolution, the inside check, creating the destination |
 | `import_command` | Wires the adapters to the import job of each source (`run.rs`, tested in-crate with `MemoryFreeSpace` and `MemoryCameras`), follows the jobs on threads of their own (`sources.rs`) and maps the results to the exit code |
 | `cameras` | `camera:` sources and `framehive cameras` (CLI-013): naming, finding and opening a camera |
@@ -80,3 +84,5 @@ framehive --version
 
 - `clap` (ADR 0020 §6): `default-features = false`, features `std`, `help`, `usage`,
   `error-context`.
+- `tracing`, and `tracing-subscriber` with only `fmt` (ADR 0046): the diagnostic
+  output of `--verbose`.

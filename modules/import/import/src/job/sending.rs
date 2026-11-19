@@ -23,21 +23,23 @@ pub(super) struct SendingSteps<'s> {
     asks: bool,
     /// The question the job waits on, so that a stop request can answer it.
     open_question: Arc<Mutex<Option<Arc<Question>>>>,
+    /// Whether a report found the enqueuer gone, so that it is logged once.
+    enqueuer_gone: bool,
 }
 
 /// A report whose enqueuer is gone is dropped on purpose: the job still finishes and
 /// records its copies in the history, so a closed view never cuts a run short.
 impl RunSteps for SendingSteps<'_> {
     fn scan_finished(&mut self, scan: &SourceScan) {
-        let _ = self.reports.send(Report::ScanFinished(scan.clone()));
+        self.send(Report::ScanFinished(scan.clone()));
     }
 
     fn file_started(&mut self, path: &Path) {
-        let _ = self.reports.send(Report::FileStarted(path.to_path_buf()));
+        self.send(Report::FileStarted(path.to_path_buf()));
     }
 
     fn file_finished(&mut self, report: FileReport) {
-        let _ = self.reports.send(Report::FileFinished(report));
+        self.send(Report::FileFinished(report));
     }
 
     /// The enqueuer is asked first, so that a stop it asked for while it followed
@@ -55,11 +57,20 @@ impl<'s> SendingSteps<'s> {
             control,
             asks,
             open_question: Arc::new(Mutex::new(None)),
+            enqueuer_gone: false,
         };
         if asks {
             steps.answer_no_when_stopped();
         }
         steps
+    }
+
+    /// Sends `report`, logging the first one whose enqueuer is gone.
+    fn send(&mut self, report: Report) {
+        if self.reports.send(report).is_err() && !self.enqueuer_gone {
+            self.enqueuer_gone = true;
+            tracing::info!("the enqueuer is gone; the job goes on without reports");
+        }
     }
 
     /// Answers the open question "no" when the job is asked to stop, so that a job

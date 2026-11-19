@@ -257,6 +257,7 @@ impl ImportJob {
             dry_run_memory,
         } = self;
         let settings = settings.settings();
+        let _job = tracing::info_span!("import_job", source = %settings.source.display()).entered();
         let mut steps = SendingSteps::new(&reports, control, asks);
         let result = {
             let mut run = ports
@@ -277,6 +278,7 @@ impl ImportJob {
             Ok(_) => JobEnd::Finished,
             Err(error) => JobEnd::Failed(error.to_string()),
         };
+        tracing::info!(end = ?end, "import job done");
         let source = source.map(|(file_system, _)| file_system);
         // Released before the enqueuer hears of the end, so a job it enqueues next
         // finds the names free; a dry run keeps them, as it created no file.

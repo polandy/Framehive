@@ -220,6 +220,7 @@ fn camera_with_model(listed: &[Camera], model: &str) -> Result<(String, Option<S
 fn listed_model(cameras: &dyn Cameras, port: &str) -> Option<String> {
     cameras
         .list()
+        .inspect_err(|error| tracing::info!(%error, "the cameras cannot be listed for the model"))
         .ok()?
         .into_iter()
         .find(|camera| camera.port == port)
