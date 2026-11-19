@@ -199,6 +199,11 @@ CORE-008.
 - **When** it is read
 - **Then** the error is at line 2, column 20: `job_codes has an entry with no value`
 
+### CORE-006.22 – A damaged file never crashes
+- **Given** the texts of this spec, cut off or with a character changed or added
+- **When** each is read
+- **Then** each is a file or an error at a position inside the text, never a crash
+
 ## Out of scope
 
 - Finding and reading the file, and the configuration folder: CLI-010.
@@ -220,3 +225,4 @@ CORE-008.
 | 2026-11-05 | Choices (CORE-006.20) |
 | 2026-11-07 | `schema_version:` without a value (CORE-006.13) |
 | 2026-11-08 | JSON Schema moved to CORE-008 (CORE-006.18 removed); a list entry without a value (CORE-006.21) |
+| 2026-11-19 | CORE-006.22 (review E21) |

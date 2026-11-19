@@ -35,10 +35,26 @@ enum Open {
     },
 }
 
-/// The position of a `saphyr-parser` marker: its line is counted from 1, its column
-/// in characters from 0.
-pub(crate) fn position(marker: Marker) -> Position {
-    Position::new(marker.line(), marker.col() + 1)
+/// The position of a `saphyr-parser` marker in `text`, counted from its character index
+/// because the parser's line and column can be wrong after unusual input. An index past
+/// the end, as after wide characters in a directive, is put after the last character.
+/// Like YAML, lines break at `\n`, `\r` and `\r\n` (CORE-006.22).
+pub(crate) fn position(text: &str, marker: Marker) -> Position {
+    let mut line = 1;
+    let mut column = 1;
+    let mut previous = None;
+    for character in text.chars().take(marker.index()) {
+        match character {
+            '\n' if previous == Some('\r') => {}
+            '\n' | '\r' => {
+                line += 1;
+                column = 1;
+            }
+            _ => column += 1,
+        }
+        previous = Some(character);
+    }
+    Position::new(line, column)
 }
 
 impl<'t> TreeBuilder<'t> {
@@ -59,11 +75,11 @@ impl<'t> TreeBuilder<'t> {
         match event {
             Event::Nothing | Event::StreamStart | Event::StreamEnd | Event::DocumentEnd => Ok(()),
             Event::DocumentStart(_) => self.start_document(start),
-            Event::Alias(_) => Err(error(start, YamlParseErrorKind::AnchorOrAlias)),
+            Event::Alias(_) => Err(error(self.text, start, YamlParseErrorKind::AnchorOrAlias)),
             Event::Scalar(text, style, anchor, tag) => {
                 self.reject_properties(start, anchor, tag.as_ref())?;
                 self.add(YamlNode {
-                    position: position(start),
+                    position: position(self.text, start),
                     value: YamlValue::Scalar {
                         text: text.into_owned(),
                         style: scalar_style(style),
@@ -74,7 +90,7 @@ impl<'t> TreeBuilder<'t> {
             Event::SequenceStart(anchor, tag) => {
                 self.reject_properties(start, anchor, tag.as_ref())?;
                 self.open.push(Open::Sequence {
-                    position: position(start),
+                    position: position(self.text, start),
                     entries: Vec::new(),
                 });
                 Ok(())
@@ -82,7 +98,7 @@ impl<'t> TreeBuilder<'t> {
             Event::MappingStart(anchor, tag) => {
                 self.reject_properties(start, anchor, tag.as_ref())?;
                 self.open.push(Open::Mapping {
-                    position: position(start),
+                    position: position(self.text, start),
                     entries: Vec::new(),
                     key: None,
                 });
@@ -103,7 +119,7 @@ impl<'t> TreeBuilder<'t> {
     fn start_document(&mut self, start: Marker) -> Result<(), YamlParseError> {
         self.documents += 1;
         if self.documents > 1 {
-            return Err(error(start, YamlParseErrorKind::SecondDocument));
+            return Err(error(self.text, start, YamlParseErrorKind::SecondDocument));
         }
         Ok(())
     }
@@ -128,7 +144,7 @@ impl<'t> TreeBuilder<'t> {
         } else {
             YamlParseErrorKind::Tag
         };
-        Err(error(start, kind))
+        Err(error(self.text, start, kind))
     }
 
     fn close(&mut self) {
@@ -172,9 +188,9 @@ fn scalar_style(style: SaphyrStyle) -> ScalarStyle {
     }
 }
 
-fn error(start: Marker, kind: YamlParseErrorKind) -> YamlParseError {
+fn error(text: &str, start: Marker, kind: YamlParseErrorKind) -> YamlParseError {
     YamlParseError {
-        position: position(start),
+        position: position(text, start),
         kind,
     }
 }

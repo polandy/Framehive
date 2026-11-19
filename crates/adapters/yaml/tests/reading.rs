@@ -306,3 +306,37 @@ fn a_choice_accepts_only_its_texts() {
         "2:14: expected add_suffix, skip or fail, found overwrite"
     );
 }
+
+/// spec: CORE-006.22
+#[test]
+fn a_syntax_error_at_the_end_is_after_the_last_character() {
+    assert_eq!(
+        located_message("schema_version: 1\ndestination: /a\nd"),
+        "3:2: simple key expected"
+    );
+}
+
+/// spec: CORE-006.22
+#[test]
+fn a_syntax_error_at_the_end_counts_carriage_returns_as_line_breaks() {
+    assert_eq!(
+        located_message("schema_version: 1\rdestination: /a\r\nd"),
+        "3:2: simple key expected"
+    );
+}
+
+/// spec: CORE-006.22
+#[test]
+fn a_key_at_the_end_is_after_the_last_character() {
+    let text = format!("{}?{}{}", "\r".repeat(17), "\r".repeat(7), " ".repeat(70));
+    assert_eq!(located_message(&text), "25:71: unknown key ");
+}
+
+/// spec: CORE-006.22
+#[test]
+fn a_directive_with_wide_characters_keeps_the_error_inside_the_line() {
+    assert_eq!(
+        located_message("%I \u{0252} \u{0252}\0"),
+        "1:8: found unprintable character"
+    );
+}

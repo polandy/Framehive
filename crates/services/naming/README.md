@@ -42,7 +42,9 @@ Boundaries:
   every template of the import, which share one counter and must each fit (IMPORT-018). The
   imported-today counter starts again on a new machine-local day.
   `naming::testing` holds `MemorySequenceCounters` and the conformance suite
-  `check_sequence_counters`.
+  `check_sequence_counters`. `tests/mutated_templates.rs` validates and renders
+  damaged templates from a fixed seed (IMPORT-001.21), and the `name_template` fuzz
+  target in `fuzz/` does the same without a bound (ADR 0037).
 - **Not here:** the import plan, which marks files that cannot be named or are dated
   by their modification time, belongs to the import module.
 

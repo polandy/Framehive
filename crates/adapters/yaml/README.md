@@ -36,6 +36,11 @@ double quoted, literal and folded scalars are all `ScalarStyle::Quoted`.
 
 `tests/conformance.rs` runs `config::testing::check_yaml_parser`. `tests/reading.rs`
 tests the criteria of CORE-006 end to end, `config::read` with this parser.
+`tests/mutated_files.rs` reads damaged texts from a fixed seed (CORE-006.22); the
+`configuration` fuzz target in `fuzz/` does the same without a bound (ADR 0037). Each
+position is counted from the parser's character index, not its line and column, which
+can be wrong after unusual input; an index past the end is put after the last
+character. Like YAML, lines break at `\n`, `\r` and `\r\n`.
 
 ## Dependencies
 

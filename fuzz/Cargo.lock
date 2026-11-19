@@ -11,10 +11,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "adapter-yaml"
+version = "0.1.0"
+dependencies = [
+ "config",
+ "saphyr-parser",
+]
+
+[[package]]
 name = "arbitrary"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3bc62ac97cc33321f50863d514c3bc38a453947a8f9e781137e47c7401020aed"
+
+[[package]]
+name = "arraydeque"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7d902e3d592a523def97af8f317b08ce16b7ab854c1985a0c671e6f15cebc236"
 
 [[package]]
 name = "cc"
@@ -33,6 +47,13 @@ name = "cfg-if"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4e7648175b45a9a48536d676f68d918270699102aa8dab5496df06904c914600"
+
+[[package]]
+name = "config"
+version = "0.1.0"
+dependencies = [
+ "thiserror",
+]
 
 [[package]]
 name = "domain"
@@ -112,9 +133,20 @@ name = "metadata-fuzz"
 version = "0.1.0"
 dependencies = [
  "adapter-xmp",
+ "adapter-yaml",
+ "config",
  "domain",
  "libfuzzer-sys",
  "metadata",
+ "naming",
+]
+
+[[package]]
+name = "naming"
+version = "0.1.0"
+dependencies = [
+ "domain",
+ "thiserror",
 ]
 
 [[package]]
@@ -149,6 +181,16 @@ name = "r-efi"
 version = "6.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8dcc9c7d52a811697d2151c701e0d08956f92b0e24136cf4cf27b57a6a0d9bf"
+
+[[package]]
+name = "saphyr-parser"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "48cf5a82d41247a625f040af08e91008fec945bce3b0bffba992c44af092caa2"
+dependencies = [
+ "arraydeque",
+ "thiserror",
+]
 
 [[package]]
 name = "shlex"

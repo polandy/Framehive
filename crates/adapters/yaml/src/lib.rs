@@ -34,7 +34,7 @@ impl YamlParser for SaphyrParser {
         let mut builder = TreeBuilder::new(text);
         while let Some(next) = parser.next_event() {
             let (event, span) = next.map_err(|error| YamlParseError {
-                position: position(*error.marker()),
+                position: position(text, *error.marker()),
                 kind: syntax_error_kind(text, error.marker().index(), error.info()),
             })?;
             builder.push(event, span)?;

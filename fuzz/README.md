@@ -19,6 +19,8 @@ still check it.
 |---|---|
 | `capture_time` | `metadata::capture_time_from_bytes`, the EXIF reader (CORE-005, ADR 0021) |
 | `xmp` | `metadata::xmp::parse_xmp` with `adapter-xmp`; an accepted packet must read back the same after `serialize_xmp` (CORE-009, ADR 0039) |
+| `configuration` | `config::read` with `adapter-yaml`, for a file type with a key of every kind; an error must point inside the text (CORE-006.22) |
+| `name_template` | `naming::NameTemplate::parse`, and an accepted template rendered in both compatibility modes; a rendered path must stay inside the destination (IMPORT-001.21) |
 
 ## Running
 
@@ -39,13 +41,16 @@ libFuzzer keeps a crashing input in `fuzz/artifacts/<target>/`; the nightly work
 uploads it with the log. Replay it with `cargo fuzz run <target> <file>`. Each finding
 is fixed by a deterministic regression test that builds the bytes in code, never as
 a file, and carries the `spec:` marker of the criterion it broke (CORE-005.9 or .12 in
-`metadata`, CORE-009 in `adapter-xmp`). The mutation tests in
-`crates/services/metadata/tests/mutated_files.rs` and
-`crates/adapters/xmp/tests/mutated_packets.rs` stay the deterministic gate in every
-pull request.
+`metadata`, CORE-009 in `adapter-xmp`, CORE-006.22 in `adapter-yaml`, IMPORT-001.21 in
+`naming`). The mutation tests in `crates/services/metadata/tests/mutated_files.rs`,
+`crates/adapters/xmp/tests/mutated_packets.rs`,
+`crates/adapters/yaml/tests/mutated_files.rs` and
+`crates/services/naming/tests/mutated_templates.rs` stay the deterministic gate in
+every pull request.
 
 ## Dependencies
 
-- `metadata`, `adapter-xmp` and `domain` (its `ManualClock`)
+- `metadata`, `adapter-xmp`, `config`, `adapter-yaml`, `naming` and `domain` (its
+  `ManualClock` and `LocalDateTime`)
 - `libfuzzer-sys` (ADR 0037), which builds libFuzzer's C++ sources and pulls in
   `arbitrary`; the targets take raw bytes and do not use it
