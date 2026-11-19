@@ -107,3 +107,6 @@ a breaking change the minor version.
   rewrites them from the commits.
 - The `RELEASE_PLEASE_TOKEN` secret is required, so CI runs on the release pull request.
   Without it the release-please workflow fails with an error; renew the token there.
+- The release workflow then builds the tag with Nix on Linux and macOS and runs the
+  command once (ADR 0045 §5). It uploads nothing; a red run means the documented install
+  of that version is broken, so fix it in a `fix` pull request and release again.

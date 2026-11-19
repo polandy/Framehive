@@ -55,6 +55,18 @@ the start; a `bootstrap-sha` would shorten it but leaves no user-facing commit, 
 release-please opens no release pull request without one. Both settings were removed
 after the 0.1.0 release, so later versions and changelog sections come from the commits.
 
+### 5. Each release is built with Nix, and nothing is uploaded
+
+Owner decision of 2026-11-19 (issue #132): Nix stays the only install channel. The
+workflow `.github/workflows/release.yml` runs on every published release, builds the
+tag with `nix build` on Linux and macOS, and runs `framehive --help` and
+`framehive --version`, which must name the tagged version. It uploads no assets: the
+binary links LibRaw and libgphoto2 dynamically, so a file outside the Nix store would
+need bundled native libraries and their licences. The documented install is
+`nix profile install github:polandy/Framehive/v<version>`. The same build also runs on
+a pull request that changes the flake, the Nix patches or the toolchain, so a broken
+release build shows before the tag. The release profile sets `strip = "symbols"`.
+
 ## Alternatives
 
 - *One release-please package per crate with the `cargo-workspace` plugin*: 29 versions
@@ -62,6 +74,10 @@ after the 0.1.0 release, so later versions and changelog sections come from the 
 - *Keep the hand-written changelog*: every pull request touches the same section, which
   conflicts between parallel branches, and the release still needs a manual version bump
   and tag. Rejected.
+- *Release assets built with Nix* (`nix bundle` for Linux, a relinked macOS tarball,
+  `SHA256SUMS`): serves users without Nix, but needs the native library licences shipped
+  and a test on a clean machine. Deferred until there is a first outside user.
+- *Homebrew tap and AUR package*: maintenance on every release. Rejected for now.
 - *Let release-please write 0.1.0 into `CHANGELOG.md` from all commits*: duplicates the
   curated notes with over a hundred raw commit subjects. Rejected.
 

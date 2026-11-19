@@ -82,7 +82,8 @@ nix develop -c cargo run --locked -p framehive-cli -- import <source> <destinati
 ```
 
 `cargo run` needs the Nix shell (`nix develop`): outside it, the build cannot find the
-native libraries LibRaw and libgphoto2. There are no prebuilt downloads yet; install
+native libraries LibRaw and libgphoto2. Releases have no prebuilt downloads; install
+a release with `nix profile install github:polandy/Framehive/v<version>`, or a checkout
 with `nix profile install .` as below.
 
 `--template` sets the folders and names, `--on-conflict add_suffix|skip|fail` decides
