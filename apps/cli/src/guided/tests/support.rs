@@ -6,7 +6,7 @@
 
 use std::cell::RefCell;
 use std::collections::{HashMap, VecDeque};
-use std::io::{self, Write};
+use std::io;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
@@ -25,7 +25,7 @@ use history::{ImportHistory, testing::MemoryImportHistory};
 use import::{ImportMetadata, ImportPorts, RecentJobCodes, ReservedTargetNames, SessionSequence};
 use naming::{NameTemplate, testing::MemorySequenceCounters};
 
-use super::shared::{HarnessCameras, Shared};
+use super::shared::{HarnessCameras, Screen, Shared};
 use crate::guided::dialog::Dialog;
 use crate::guided::events::{Event, EventSource};
 use crate::guided::state::{RememberedState, load_state, save_state, state_file};
@@ -103,6 +103,8 @@ pub(super) struct World {
     pub(super) memory: MemoryFileSystem,
     pub(super) clock: Arc<ManualClock>,
     pub(super) devices: MemoryDeviceSource,
+    /// Measures the stall limit of the sources; time passes on it only when a test says so.
+    pub(super) timer: Arc<ManualTimer>,
     /// The connected cameras; steps replace them as cameras come and go.
     pub(super) cameras: Shared<MemoryCameras>,
     /// The storage of the test camera, shared with the cameras it is connected as.
@@ -140,6 +142,7 @@ impl Harness {
                 UtcOffset::UTC,
             )),
             devices: MemoryDeviceSource::new(),
+            timer: Arc::new(ManualTimer::new()),
             cameras: Shared::new(MemoryCameras::new()),
             camera_storage: MemoryFileSystem::new(),
             after_copies: Shared::new(None),
@@ -225,7 +228,7 @@ impl Harness {
             free_space: Arc::clone(&self.free_space),
             reserved_names: Arc::new(ReservedTargetNames::new()),
             xml_syntax: Arc::new(QuickXml::new()),
-            timer: Arc::new(ManualTimer::new()),
+            timer: Arc::clone(&self.timer) as _,
         };
         let ports = Ports {
             import: &import,
@@ -254,20 +257,6 @@ impl Harness {
             output,
             warnings: String::from_utf8(warnings).unwrap(),
         }
-    }
-}
-
-/// The terminal screen, shared by the dialog's output and the echo of typed lines.
-struct Screen(Rc<RefCell<Vec<u8>>>);
-
-impl Write for Screen {
-    fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
-        self.0.borrow_mut().extend_from_slice(bytes);
-        Ok(bytes.len())
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        Ok(())
     }
 }
 

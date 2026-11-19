@@ -3,7 +3,10 @@
 
 //! The parts of the harness that the dialog and the import job share (IMPORT-015).
 
+use std::cell::RefCell;
+use std::io::{self, Write};
 use std::mem;
+use std::rc::Rc;
 use std::sync::{Mutex, MutexGuard, PoisonError};
 
 use files::{Camera, CameraError, Cameras, ReadOnlyFileSystem};
@@ -60,5 +63,19 @@ impl Cameras for HarnessCameras<'_> {
 
     fn open(&self, port: &str) -> Result<Box<dyn ReadOnlyFileSystem + Send>, CameraError> {
         self.harness.cameras.borrow().open(port)
+    }
+}
+
+/// The terminal screen, shared by the dialog's output and the echo of typed lines.
+pub(super) struct Screen(pub(super) Rc<RefCell<Vec<u8>>>);
+
+impl Write for Screen {
+    fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+        self.0.borrow_mut().extend_from_slice(bytes);
+        Ok(bytes.len())
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
     }
 }
