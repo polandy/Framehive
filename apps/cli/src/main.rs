@@ -82,8 +82,13 @@ fn report_error(message: &str) {
 /// Writes a hint that shows what to write instead to standard error, after the error it
 /// belongs to (CLI-001).
 fn report_hint(message: &str) {
+    write_hint(&mut io::stderr().lock(), message);
+}
+
+/// Writes a hint to `errors`, which stands for standard error.
+fn write_hint(errors: &mut dyn Write, message: &str) {
     // Nothing more can be reported when standard error is gone.
-    let _ = writeln!(io::stderr().lock(), "hint: {message}");
+    let _ = writeln!(errors, "hint: {message}");
 }
 
 /// Writes an error to `errors`, which stands for standard error.

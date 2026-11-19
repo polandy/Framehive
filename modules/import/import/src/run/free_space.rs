@@ -121,7 +121,8 @@ impl ImportRun<'_> {
 }
 
 /// The target of a file that is backed up, and whether it is also copied to the
-/// import destination; `None` for a file that is written nowhere.
+/// import destination; `None` for a file that is written nowhere, which includes a
+/// file whose target cannot be resolved, since its copy then fails the same way.
 fn written_target(
     resolver: &mut TargetResolver<'_>,
     file: &RunFile,

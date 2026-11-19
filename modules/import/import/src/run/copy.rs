@@ -155,7 +155,7 @@ impl ImportRun<'_> {
                 let copy = FileCopy::new(settings, file, &target, recognition);
                 let copied = self.copy_file(&copy, resolver, false);
                 // The resolver read the source to find it already imported, so its
-                // checksum is known without another read.
+                // checksum is cached; without one no copy is recorded (record_copies).
                 let checksum = copied
                     .source_checksum
                     .or_else(|| resolver.source_checksum(&file.path).ok());

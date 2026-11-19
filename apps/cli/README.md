@@ -33,7 +33,7 @@ framehive cameras
 framehive import-log [<run>|last] [--format text|json|csv]
 framehive config init
 framehive library keep-raw <file>... [--off]
-framehive library remove-raws <folder> [--dry-run]
+framehive library remove-raws <folder> [--dry-run] [--yes]
 framehive --help
 framehive --version
 ```
