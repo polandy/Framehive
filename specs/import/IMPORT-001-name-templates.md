@@ -8,13 +8,13 @@
 ## Purpose
 
 Photographers want imported files sorted into folders and named by when they were
-taken, so that a library stays ordered without manual work. A name template describes
-both the folders and the file name in one line of text.
+taken, so a library stays ordered without manual work. A name template describes the
+folders and the file name in one line of text.
 
 ## Behaviour
 
-A name template is text that is rendered once per asset file. Its result is a path
-relative to the import destination. `/` separates folders; the last segment is the
+A name template is rendered once per asset file into a path relative to the import
+destination. `/` separates folders; the last segment is the
 file name. Everything outside braces is literal text. `{{` and `}}` stand for a literal
 `{` and `}`.
 
@@ -32,15 +32,15 @@ Example: `{date:%Y}/{date:%Y-%m-%d}/{date:%Y%m%d}-{name}.{ext}`
 | `{job}` | Job code of the import (IMPORT-006); it takes no option |
 | `{camera}` | Camera model from the EXIF (IMPORT-021); it takes no option |
 
-**Date formats.** A format is literal text with these codes. They are independent of
-the language setting, so the same template gives the same names on every machine.
+**Date formats.** A format is literal text with these codes. They ignore the
+language setting, so a template gives the same names on every machine.
 
 | Code | Value | Example |
 |---|---|---|
 | `%Y` | Year, four digits | `2026` |
 | `%y` | Year, two digits | `26` |
 | `%m` | Month, two digits | `10` |
-| `%d` | Day of the month, two digits | `07` |
+| `%d` | Day, two digits | `07` |
 | `%j` | Day of the year, three digits | `280` |
 | `%H` | Hour, 00–23 | `14` |
 | `%M` | Minute | `05` |
@@ -49,21 +49,19 @@ the language setting, so the same template gives the same names on every machine
 
 A format must not contain `/`, `{` or `}`. Folders come from separate segments.
 
-**Capture time.** The capture time is the wall-clock time the camera recorded, without
-conversion to another time zone. Camera time correction (N15) is applied before the
-template is rendered. When a file has no capture time, its file modification time is
-used, and the import plan marks the file so the user can see it.
+**Capture time.** It is the wall-clock time the camera recorded, not converted to
+another time zone. Camera time correction (N15) is applied first. A file without one
+uses its modification time, and the import plan marks the file so the user sees it.
 
 **Assets.** All files of one asset (grouping, LIBRARY-001) are rendered from the same
 values: the same capture time, image number and sequence number. The capture time comes
 from the RAW file if it has one, otherwise from the first other file that has one. So a
 RAW and its JPEG always land in the same folder under the same base name. A sidecar
 keeps the suffix it had after the base name: `DSC_0042.RAF.xmp` follows the RAF file.
-When no file of the asset has a capture time, the same order picks the modification
-time: the RAW file's, or the first other file's if there is no RAW.
+Without any capture time, the same order picks the modification time.
 
-**Validation.** A template is checked when it is saved, before any file is rendered. A
-template is rejected, with the column of the error, when it has:
+**Validation.** A template is checked when it is saved, and rejected with the column
+of the error when it has:
 
 - an unknown token or an unknown token option,
 - an unknown date code, or a date format with `/`,
@@ -74,9 +72,9 @@ template is rejected, with the column of the error, when it has:
 - a leading `/`, an empty segment, or a segment that is `.` or `..`.
 
 **Per-file failures.** When `{number}` is used and the original base name does not end
-in a digit, that file cannot be named. The same holds when a rendered segment is empty,
-or becomes `.` or `..` (also after compatibility mode strips characters), because it
-would not stay inside the destination. The import plan marks the file with the reason;
+in a digit, that file cannot be named. The same holds for a rendered segment that is
+empty, `.` or `..`, also after compatibility mode, because it would leave the
+destination. The import plan marks the file with the reason;
 the other files are planned normally.
 
 **Compatibility mode.** On by default. It keeps names valid on memory cards (exFAT),
@@ -202,15 +200,21 @@ can never contain `/`.
 - **When** the user saves it
 - **Then** it is rejected, and the error names `{job:upper}`
 
+### IMPORT-001.21 – A damaged template never crashes
+- **Given** the valid templates here, cut off or with one of `{}:%/.` added
+- **When** each is saved, and rendered if accepted
+- **Then** it is rejected at a column inside it or accepted, never a crash; no rendered
+  segment is empty, `.` or `..`
+
 ## Out of scope
 
 - Sequence numbers: IMPORT-002.
-- A target name that already exists, or two files with the same target: IMPORT-003.
-- Metadata tokens: `{camera}` is IMPORT-021; others are later specs.
+- A target that already exists, or two files with one target: IMPORT-003.
+- Metadata tokens: `{camera}` is IMPORT-021, others come later.
 - What a valid job code is, and an import whose template needs one: IMPORT-006.
 - The live preview and block editor (N9, R10): a UI spec.
-- Where a profile stores its template: IMPORT-011. Compatibility mode stays on until a
-  profile key for it is specified.
+- Where a profile stores its template: IMPORT-011. Compatibility mode stays on until it
+  has a profile key.
 
 ## Open questions
 
@@ -226,3 +230,4 @@ can never contain `/`.
 | 2026-10-31 | Implemented: `ImportPlan` in the import module, on the naming service |
 | 2026-11-01 | Added the `{job}` token with IMPORT-001.19 and .20 (R9, IMPORT-006) |
 | 2026-11-09 | `{camera}` token (IMPORT-021); unknown-token example is `{colour}` |
+| 2026-11-19 | IMPORT-001.21 (review E21) |

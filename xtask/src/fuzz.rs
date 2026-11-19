@@ -37,7 +37,7 @@ struct Target {
     seeds: fn(&Path) -> Result<Vec<Seed>, String>,
 }
 
-const TARGETS: [Target; 2] = [
+const TARGETS: [Target; 4] = [
     Target {
         name: "capture_time",
         seeds: |_| Ok(capture_time_seeds()),
@@ -46,6 +46,52 @@ const TARGETS: [Target; 2] = [
         name: "xmp",
         seeds: xmp_seeds,
     },
+    Target {
+        name: "configuration",
+        seeds: |_| Ok(text_seeds("yaml", &CONFIGURATION_SEEDS)),
+    },
+    Target {
+        name: "name_template",
+        seeds: |_| Ok(text_seeds("template", &NAME_TEMPLATE_SEEDS)),
+    },
+];
+
+/// A file of every key kind of the `configuration` target, and the refused YAML
+/// constructs of CORE-006.
+const CONFIGURATION_SEEDS: [(&str, &str); 6] = [
+    (
+        "every-kind",
+        "schema_version: 1\ndestination: /a\njob_codes: [Smith, \"2026\"]\n\
+         minimum_free_space_gib: 20\nverify: true\non_conflict: skip\n\
+         backup:\n  destinations:\n    - /b\n",
+    ),
+    ("block-scalar", "schema_version: 1\ndestination: |\n  /a\n"),
+    (
+        "anchor",
+        "schema_version: 1\ndestination: &target /a\njob_codes: [*target]\n",
+    ),
+    (
+        "merge-key",
+        "schema_version: 1\nbackup:\n  <<: {destinations: [/b]}\n",
+    ),
+    ("tag", "schema_version: 1\ndestination: !!str /a\n"),
+    (
+        "two-documents",
+        "schema_version: 1\n---\nschema_version: 1\n",
+    ),
+];
+
+/// Every token and option of IMPORT-001 and IMPORT-002.
+const NAME_TEMPLATE_SEEDS: [(&str, &str); 6] = [
+    (
+        "dates",
+        "{date:%Y}/{date:%Y-%m-%d}/{imported:%H%M%S}-{name}.{ext}",
+    ),
+    ("cases", "{{draft}}_{name:lower}.{ext:upper}"),
+    ("image-number", "{number:6}-{number}.{ext}"),
+    ("sequence", "{seq_today:3}-{name}.{ext}"),
+    ("letters", "{seq_letters}-{name}.{ext}"),
+    ("job-and-camera", "{date:%Y}/{job}/{camera}/{name}.{ext}"),
 ];
 
 /// A valid input the fuzzer starts from.
@@ -198,6 +244,13 @@ fn add_xmp_seeds(directory: &Path, prefix: &str, seeds: &mut Vec<Seed>) -> Resul
     Ok(())
 }
 
+fn text_seeds(kind: &str, texts: &[(&str, &str)]) -> Vec<Seed> {
+    texts
+        .iter()
+        .map(|(name, text)| seed(kind, name, text.as_bytes().to_vec()))
+        .collect()
+}
+
 fn tiff(order: ByteOrder, detailed: bool) -> Vec<u8> {
     let tiff = Tiff::new(order).with_exif_text(DATE_TIME_ORIGINAL, "2026:10:17 14:05:09");
     if !detailed {
@@ -257,6 +310,16 @@ mod tests {
         for seed in capture_time_seeds() {
             let time = metadata::capture_time_from_bytes(&seed.content);
             assert!(time.is_ok(), "{}: {time:?}", seed.name);
+        }
+    }
+
+    #[test]
+    fn every_target_has_its_own_seed_names() {
+        for target in &TARGETS {
+            let seeds = (target.seeds)(&crate::repository_root()).unwrap();
+            let names: HashSet<&str> = seeds.iter().map(|seed| seed.name.as_str()).collect();
+            assert!(!seeds.is_empty(), "{}", target.name);
+            assert_eq!(names.len(), seeds.len(), "{}", target.name);
         }
     }
 
