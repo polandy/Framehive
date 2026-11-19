@@ -212,6 +212,7 @@ fn a_history_that_is_not_a_database_stops_the_import() {
 
 /// The destination is identified by its canonical path (IMPORT-009): a later run
 /// through a symbolic link to the library recognizes the files of the first run.
+/// spec: CLI-008.12
 #[test]
 fn a_destination_named_through_a_link_is_the_same_destination() {
     let folders = Folders::new();

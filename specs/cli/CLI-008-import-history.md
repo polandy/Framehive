@@ -135,7 +135,15 @@ the guided import.
 - **Then** the dry run shows the file as imported before, and the files of the state
   folder and the content of the history file are unchanged
 
+### CLI-008.12 – A destination named through a link
+- **Given** a run of CLI-001.1, its target deleted since, and a symbolic link to the
+  destination
+- **When** the same import runs with the link as the destination
+- **Then** the output has `imported before` for the file and the summary of a second run
+  (CLI-008.1), as the canonical path of the link is the destination of the first run
+
 ## Out of scope
+
 
 - Which files are imported before or backed up before: IMPORT-009.
 - Printing or exporting the history as an import log (N6): a later spec.
@@ -156,3 +164,4 @@ the guided import.
 | 2026-11-04 | CLI-008.10: `framehive import` always needs the state folder; owner decision |
 | 2026-11-07 | Examples name the destination with `--destination` (CLI-001, ADR 0036) |
 | 2026-11-07 | CLI-008.11: a dry run leaves the state folder as it was |
+| 2026-11-19 | CLI-008.12 for the test of a destination named through a link (E21) |

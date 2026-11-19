@@ -73,6 +73,7 @@ fn assert_has_line(output: &Output, line: &str) {
     );
 }
 
+/// spec: CLI-024.4
 #[test]
 fn a_memory_card_is_copied_once_and_left_unchanged() {
     let folders = Folders::new();
