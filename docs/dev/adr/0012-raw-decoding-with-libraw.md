@@ -60,3 +60,7 @@ therefore allows a library, but a native one needs its own ADR.
 - The version test needs the reference sets from `framehive-testdata` (ADR 0017).
 - New cameras need a LibRaw update. The reference-set test shows whether an update
   breaks existing files.
+- LibRaw parses files from foreign cards in the app's process. The adapter gives it at
+  most 512 MiB (PREVIEWS-001.9). `cargo deny` does not see LibRaw, so its security
+  fixes are watched by hand: each `flake.lock` update checks the LibRaw news and the
+  NVD for the pinned version, and a security release is taken with its own update.

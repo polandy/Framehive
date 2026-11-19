@@ -8,14 +8,13 @@
 ## Purpose
 
 Photographers want imported files sorted into folders and named by when they were
-taken, so a library stays ordered without manual work. A name template describes the
+taken, so a library stays in order. A name template describes the
 folders and the file name in one line of text.
 
 ## Behaviour
 
 A name template is rendered once per asset file into a path relative to the import
-destination. `/` separates folders; the last segment is the
-file name. Everything outside braces is literal text. `{{` and `}}` stand for a literal
+destination. `/` separates folders; the last segment is the file name. Everything outside braces is literal text. `{{` and `}}` stand for a literal
 `{` and `}`.
 
 Example: `{date:%Y}/{date:%Y-%m-%d}/{date:%Y%m%d}-{name}.{ext}`
@@ -73,15 +72,14 @@ of the error when it has:
 
 **Per-file failures.** When `{number}` is used and the original base name does not end
 in a digit, that file cannot be named. The same holds for a rendered segment that is
-empty, `.` or `..`, also after compatibility mode, because it would leave the
-destination. The import plan marks the file with the reason;
+empty, `.` or `..` (also after compatibility mode), or holds `/` or NUL: it would
+leave the destination. The import plan marks the file with the reason;
 the other files are planned normally.
 
 **Compatibility mode.** On by default. It keeps names valid on memory cards (exFAT),
 network shares (SMB) and macOS. In every rendered segment it replaces
-`< > : " \ | ? *` and control characters (U+0000–U+001F, U+007F) with `_`, and removes
-trailing dots and spaces. When it is off, values are used unchanged; an original name
-can never contain `/`.
+`< > : " \ | ? * /` and control characters (U+0000–U+001F, U+007F) with `_`, and removes
+trailing dots and spaces. When it is off, values are used unchanged.
 
 ## Acceptance criteria
 
@@ -184,7 +182,7 @@ can never contain `/`.
 
 ### IMPORT-001.18 – A rendered segment that would leave the destination cannot be named
 - **Given** a file whose rendered segment is empty, or becomes `.` or `..` (also after
-  compatibility mode strips characters)
+  compatibility mode strips characters), or holds `/` or NUL
 - **When** the import plan is made
 - **Then** that file cannot be named, and the plan marks it with the reason; the other
   files are planned normally
@@ -224,10 +222,9 @@ can never contain `/`.
 
 | Date | Change |
 |---|---|
-| 2026-10-19 | Initial draft |
-| 2026-10-19 | Accepted by the owner |
+| 2026-10-19 | Initial draft, accepted by the owner |
 | 2026-10-19 | Clarified the modification-time fallback order; added IMPORT-001.18 (review) |
 | 2026-10-31 | Implemented: `ImportPlan` in the import module, on the naming service |
 | 2026-11-01 | Added the `{job}` token with IMPORT-001.19 and .20 (R9, IMPORT-006) |
 | 2026-11-09 | `{camera}` token (IMPORT-021); unknown-token example is `{colour}` |
-| 2026-11-19 | IMPORT-001.21 (review E21) |
+| 2026-11-19 | IMPORT-001.21 (review E21); `/` and NUL in values (.18, E10) |

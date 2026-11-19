@@ -18,6 +18,10 @@ and restore what it trashes. Remove RAWs and deleting in the library use it on L
   goes to the trash at that file system's top folder: `.Trash/<uid>` if `.Trash` is a
   real folder with the sticky bit, else `.Trash-<uid>`. It is never copied across file
   systems; a trash that cannot be created is an error and the file stays.
+- **Private trash.** A `.Trash/<uid>` or `.Trash-<uid>` that exists already must be a
+  real folder owned by the user, else it is not used (`.Trash/<uid>` falls back to
+  `.Trash-<uid>`, which is an error). One the group or others can open is set to `0700`;
+  on exFAT and FAT, which have no modes per file, the mount options decide.
 - **Info file first.** `info/<name>.trashinfo` is created with `create_new`, which
   reserves the name, and synced before the file is renamed into `files/`. If the rename
   fails, the info file is removed again.
