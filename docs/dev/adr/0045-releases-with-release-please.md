@@ -65,7 +65,9 @@ binary links LibRaw and libgphoto2 dynamically, so a file outside the Nix store 
 need bundled native libraries and their licences. The documented install is
 `nix profile install github:polandy/Framehive/v<version>`. The same build also runs on
 a pull request that changes the flake, the Nix patches or the toolchain, so a broken
-release build shows before the tag. The release profile sets `strip = "symbols"`.
+release build shows before the tag. Like `fuzz.yml`, it is not a required check and
+runs `nix build` around the Nix shell, not inside it, so it stays outside
+`cargo xtask ci` (ADR 0018 §2). The release profile sets `strip = "symbols"`.
 
 ## Alternatives
 
