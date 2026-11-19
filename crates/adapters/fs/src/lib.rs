@@ -228,12 +228,10 @@ fn remove_old_name(from: &Path, to: &Path) -> io::Result<()> {
     })
 }
 
-/// File systems without hard links report `EPERM` (exFAT) or `EOPNOTSUPP`.
+/// File systems without hard links report `EPERM` (exFAT) or `EOPNOTSUPP`; `EACCES`,
+/// such as a read-only folder, is a real error.
 fn has_no_hard_links(error: &io::Error) -> bool {
-    matches!(
-        error.kind(),
-        io::ErrorKind::Unsupported | io::ErrorKind::PermissionDenied
-    )
+    error.kind() == io::ErrorKind::Unsupported || error.raw_os_error() == Some(libc::EPERM)
 }
 
 fn create_new(path: &Path) -> io::Result<File> {

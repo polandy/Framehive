@@ -5,6 +5,8 @@
 //! `files::FileSystem` port on the real file system, in a temporary folder (CLAUDE.md,
 //! "Adding things").
 
+#![allow(clippy::unwrap_used, reason = "test helpers may panic on bad fixtures")]
+
 use adapter_fs::StdFileSystem;
 use files::testing::{FileSystemUnderTest, MakeSymbolicLink, TempDir, check_file_system};
 
@@ -95,4 +97,105 @@ fn replace_file_keeps_permissions_and_refuses_a_read_only_file() {
     assert_eq!(fs::read(&target).unwrap(), b"ours");
     assert_eq!(mode(&target), 0o444);
     fs::set_permissions(&target, Permissions::from_mode(0o644)).unwrap();
+}
+
+/// A copy into a folder without write permission fails while it writes the `.part`
+/// file and leaves neither it nor the target. The superuser may write there; then the
+/// copy succeeds as `std::fs::write` does.
+/// spec: IMPORT-004.5
+#[cfg(unix)]
+#[test]
+fn a_copy_into_a_read_only_folder_leaves_nothing_behind() {
+    use std::fs;
+
+    use files::testing::FnvHasher;
+    use files::{CopyErrorKind, CopyStep, copy_verified};
+
+    let folder = TempDir::new().unwrap();
+    let source = folder.path().join("DSCF0001.RAF");
+    fs::write(&source, b"raw").unwrap();
+    let locked = read_only_folder(folder.path());
+    let target = locked.join("DSCF0001.RAF");
+
+    let copied = copy_verified(&StdFileSystem::new(), &FnvHasher, &source, &target);
+    let superuser = can_write_in(&locked);
+    let target_content = fs::read(&target).ok();
+    let part_left = locked.join("DSCF0001.RAF.part").exists();
+    unlock(&locked);
+
+    if superuser {
+        assert!(copied.is_ok(), "{copied:?}");
+        assert_eq!(target_content.as_deref(), Some(&b"raw"[..]));
+    } else {
+        let error = copied.unwrap_err();
+        assert_eq!(error.step, CopyStep::WritePart);
+        assert!(
+            matches!(&error.kind, CopyErrorKind::Io { error, .. } if error.kind() == std::io::ErrorKind::PermissionDenied),
+            "{error}"
+        );
+        assert_eq!(target_content, None);
+    }
+    assert!(!part_left);
+}
+
+/// A rename into a folder without write permission is refused and keeps the `.part`
+/// file; it does not take the path for file systems without hard links (ADR 0020 §3).
+#[cfg(unix)]
+#[test]
+fn a_rename_into_a_read_only_folder_keeps_the_part_file() {
+    use std::fs;
+
+    use files::FileSystem;
+
+    let folder = TempDir::new().unwrap();
+    let part = folder.path().join("DSCF0001.RAF.part");
+    fs::write(&part, b"raw").unwrap();
+    let locked = read_only_folder(folder.path());
+    let target = locked.join("DSCF0001.RAF");
+
+    let renamed = StdFileSystem::new().rename_no_replace(&part, &target);
+    let superuser = can_write_in(&locked);
+    unlock(&locked);
+
+    if superuser {
+        assert!(renamed.is_ok(), "{renamed:?}");
+        assert_eq!(fs::read(&target).unwrap(), b"raw");
+    } else {
+        assert_eq!(
+            renamed.map_err(|error| error.raw_os_error()),
+            Err(Some(libc::EACCES))
+        );
+        assert_eq!(fs::read(&part).unwrap(), b"raw");
+        assert!(!target.exists());
+    }
+}
+
+/// Creates `locked` in `parent` with read and search, but no write permission.
+#[cfg(unix)]
+fn read_only_folder(parent: &std::path::Path) -> std::path::PathBuf {
+    use std::fs::{self, Permissions};
+    use std::os::unix::fs::PermissionsExt;
+
+    let locked = parent.join("locked");
+    fs::create_dir(&locked).unwrap();
+    fs::set_permissions(&locked, Permissions::from_mode(0o555)).unwrap();
+    locked
+}
+
+/// Whether `std::fs` may create a file in `folder`, which the superuser may always.
+#[cfg(unix)]
+fn can_write_in(folder: &std::path::Path) -> bool {
+    let probe = folder.join("probe");
+    let written = std::fs::write(&probe, b"").is_ok();
+    let _ = std::fs::remove_file(probe);
+    written
+}
+
+/// Gives the owner write permission again, so that the temporary folder can be removed.
+#[cfg(unix)]
+fn unlock(folder: &std::path::Path) {
+    use std::fs::{self, Permissions};
+    use std::os::unix::fs::PermissionsExt;
+
+    fs::set_permissions(folder, Permissions::from_mode(0o755)).unwrap();
 }
