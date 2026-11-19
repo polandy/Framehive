@@ -17,7 +17,10 @@ use history::{ImportHistory, RunId, RunLog};
 
 use crate::arguments::{ImportLogArguments, LogFormat, RunSelection};
 use crate::import_command::process_state_folder;
-use crate::{NOT_STARTED, report_error};
+use crate::{CommandError, NOT_STARTED, report_command_error};
+
+/// The hint after a run that does not exist (CLI-009).
+const LIST_RUNS_HINT: &str = "framehive import-log lists the recorded runs";
 
 /// Runs `framehive import-log` and returns its exit code: 0, or 2 with an error on
 /// standard error.
@@ -28,8 +31,8 @@ pub(crate) fn run_import_log(arguments: ImportLogArguments) -> ExitCode {
             let _ = io::stdout().lock().write_all(printed.as_bytes());
             ExitCode::SUCCESS
         }
-        Err(message) => {
-            report_error(&message);
+        Err(error) => {
+            report_command_error(&error);
             ExitCode::from(NOT_STARTED)
         }
     }
@@ -39,9 +42,9 @@ pub(crate) fn run_import_log(arguments: ImportLogArguments) -> ExitCode {
 ///
 /// # Errors
 ///
-/// Returns the message of CLI-009 for an unknown state folder, a history that cannot
+/// Returns the error of CLI-009 for an unknown state folder, a history that cannot
 /// be used, or a run that does not exist.
-fn import_log(arguments: ImportLogArguments) -> Result<String, String> {
+fn import_log(arguments: ImportLogArguments) -> Result<String, CommandError> {
     import_log_in(&process_state_folder()?, arguments)
 }
 
@@ -49,12 +52,12 @@ fn import_log(arguments: ImportLogArguments) -> Result<String, String> {
 ///
 /// # Errors
 ///
-/// Returns the message of CLI-009 for a history that cannot be used, or a run that
+/// Returns the error of CLI-009 for a history that cannot be used, or a run that
 /// does not exist.
 pub(crate) fn import_log_in(
     state_folder: &Path,
     arguments: ImportLogArguments,
-) -> Result<String, String> {
+) -> Result<String, CommandError> {
     let history = SqliteImportHistory::read_only(state_folder);
     let Some(selection) = arguments.run else {
         let runs = history.list_runs().map_err(|error| error.to_string())?;
@@ -72,8 +75,8 @@ pub(crate) fn import_log_in(
 ///
 /// # Errors
 ///
-/// Returns the message for a history that cannot be used or a run that does not exist.
-fn read_log(history: &dyn ImportHistory, selection: RunSelection) -> Result<RunLog, String> {
+/// Returns the error for a history that cannot be used or a run that does not exist.
+fn read_log(history: &dyn ImportHistory, selection: RunSelection) -> Result<RunLog, CommandError> {
     let run = match selection {
         RunSelection::Number(number) => RunId::new(number),
         RunSelection::Last => history
@@ -86,7 +89,10 @@ fn read_log(history: &dyn ImportHistory, selection: RunSelection) -> Result<RunL
     history
         .read_run_log(run)
         .map_err(|error| error.to_string())?
-        .ok_or_else(|| format!("no import run {}", run.number()))
+        .ok_or_else(|| CommandError {
+            message: format!("no import run {}", run.number()),
+            hint: Some(LIST_RUNS_HINT),
+        })
 }
 
 /// A path as the lines of CLI-001 print it: each byte that is not valid UTF-8 becomes

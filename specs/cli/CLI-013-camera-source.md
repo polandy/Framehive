@@ -35,7 +35,9 @@ port in byte order:
 <model>  <port>
 ```
 
-Without a camera, standard error gets `no camera is connected`, and the exit code is 0.
+Without a camera, standard error gets `no camera is connected` and then `hint: check the
+cable, switch the camera on, choose file transfer (MTP or PTP) on it, and check that your
+user may use USB devices`, and the exit code is 0.
 A failure to list the cameras goes to standard error with exit code 2.
 
 **Errors that stop the import** go to standard error, nothing is created, and the exit
@@ -85,8 +87,8 @@ folder.
 ### CLI-013.2 – Without a camera, the list is empty
 - **Given** no connected camera
 - **When** the user runs `framehive cameras`
-- **Then** standard output is empty, standard error is `no camera is connected`, and the
-  exit code is 0
+- **Then** standard output is empty, standard error is `no camera is connected` and then
+  the hint, and the exit code is 0
 
 ### CLI-013.3 – A camera given by its port is imported
 - **Given** a camera at the port `disk:<folder>` (the `directory` driver) whose storage
@@ -192,3 +194,4 @@ folder.
 | 2026-11-06 | Cross-reference to CLI-014 (cameras in the guided import) |
 | 2026-11-07 | Examples name the destination with `--destination` (CLI-001, ADR 0036) |
 | 2026-11-07 | A profile has no destination (CLI-016, ADR 0036, decision 8) |
+| 2026-11-19 | Without a camera, `framehive cameras` adds a hint (CLI-013.2) (review E26) |

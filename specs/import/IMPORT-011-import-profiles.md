@@ -164,7 +164,7 @@ The schema's descriptions are the "Meaning" column above.
 
 ### IMPORT-011.11 – Examples validate
 - **Given** every import profile shown in `docs/`, `specs/` and the output of
-  `framehive config init` (CLI-010)
+  `framehive config init` (CLI-020)
 - **When** each is read as an import profile
 - **Then** each is valid
 

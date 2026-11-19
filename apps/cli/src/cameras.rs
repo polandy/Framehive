@@ -12,7 +12,7 @@ use adapter_gphoto2::Gphoto2Cameras;
 use files::{Camera, CameraError, Cameras};
 use import::{ScanError, SourceScan, scan_camera};
 
-use crate::{NOT_STARTED, report_error};
+use crate::{NOT_STARTED, report_error, write_hint};
 
 mod shared;
 
@@ -23,6 +23,10 @@ const CAMERA_PREFIX: &str = "camera:";
 
 /// The line when no camera is connected.
 const NO_CAMERA: &str = "no camera is connected";
+
+/// The hint after `framehive cameras` finds no camera (CLI-013).
+const NO_CAMERA_HINT: &str = "check the cable, switch the camera on, choose file transfer \
+    (MTP or PTP) on it, and check that your user may use USB devices";
 
 /// Which camera a `camera:` source names (CLI-013, "Naming a camera").
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -257,7 +261,7 @@ pub(crate) fn run_cameras() -> ExitCode {
 }
 
 /// Writes one line `<model>  <port>` per connected camera to `output`, or
-/// `no camera is connected` to `errors`.
+/// `no camera is connected` and its hint to `errors`.
 ///
 /// # Errors
 ///
@@ -271,6 +275,7 @@ fn list_cameras(
     // Nothing more can be reported when standard output or standard error is gone.
     if listed.is_empty() {
         let _ = writeln!(errors, "{NO_CAMERA}");
+        write_hint(errors, NO_CAMERA_HINT);
     }
     for camera in &listed {
         let _ = writeln!(output, "{}  {}", camera.model, camera.port);
@@ -326,7 +331,11 @@ mod tests {
 
         assert_eq!(result, Ok(()));
         assert_eq!(output, "");
-        assert_eq!(errors, "no camera is connected\n");
+        assert_eq!(
+            errors,
+            "no camera is connected\nhint: check the cable, switch the camera on, choose file \
+             transfer (MTP or PTP) on it, and check that your user may use USB devices\n"
+        );
     }
 
     #[test]

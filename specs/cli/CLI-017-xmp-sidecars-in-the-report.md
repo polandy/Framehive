@@ -101,7 +101,7 @@ those value lines, and after the summary line the line `<n> sidecars written` ab
 ## Out of scope
 
 - Writing the sidecars and merging the values: IMPORT-019, IMPORT-020.
-- `framehive config init` and the `metadata` keys of the example: CLI-010.
+- `framehive config init` and the `metadata` keys of the example: CLI-020.
 - Showing the values of each sidecar, and keywords added by the union (IMPORT-020).
 
 ## Open questions

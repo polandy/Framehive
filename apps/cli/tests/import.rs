@@ -259,6 +259,30 @@ fn reports_a_folder_that_cannot_be_read() {
     assert_eq!(output.status.code(), Some(1));
 }
 
+/// spec: CLI-019.1
+#[test]
+fn a_reason_from_the_system_is_in_plain_words() {
+    let folders = Folders::new();
+    folders.add_raf();
+    let file = folders.destination().with_extension("txt");
+    fs::write(&file, b"not a folder").unwrap();
+    let destination = file.join("library");
+
+    let output = folders.import_into(&destination, &[]);
+
+    let expected = format!(
+        "error: the destination {} cannot be read: a part of the path is not a folder",
+        destination.display()
+    );
+    assert!(
+        stderr(&output).lines().any(|line| line == expected),
+        "{}",
+        stderr(&output)
+    );
+    assert!(!stderr(&output).contains("os error"), "{}", stderr(&output));
+    assert_eq!(output.status.code(), Some(2));
+}
+
 /// spec: IMPORT-004.14
 #[test]
 fn a_part_file_that_is_a_link_is_not_followed() {

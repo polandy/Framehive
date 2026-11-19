@@ -84,7 +84,7 @@ for example `framehive import-log 3 --format csv > import-3.csv`.
 
 | Case | Message |
 |---|---|
-| no run with that number | `error: no import run <run>` |
+| no run with that number | `error: no import run <run>`, then `hint: framehive import-log lists the recorded runs` |
 | `last` without any run | `error: no import runs recorded` |
 | a history that cannot be used | `error: the import history <path> cannot be used: <reason>` |
 | no state folder | `error: the home folder is unknown; set HOME` |
@@ -145,7 +145,8 @@ for example `framehive import-log 3 --format csv > import-3.csv`.
 ### CLI-009.10 – A run that does not exist
 - **Given** a history without run 7
 - **When** `framehive import-log 7` runs
-- **Then** standard error has `error: no import run 7`, and the exit code is 2
+- **Then** standard error is `error: no import run 7` and then
+  `hint: framehive import-log lists the recorded runs`, and the exit code is 2
 
 ### CLI-009.11 – A history that cannot be used
 - **Given** an `import-history.sqlite` in the state folder that is not a SQLite database
@@ -198,3 +199,4 @@ for example `framehive import-log 3 --format csv > import-3.csv`.
 | 2026-11-06 | The video destination of a run (CLI-012); accepted by the owner |
 | 2026-11-07 | CLI-009.14 for the error without a state folder, which the table above already defined |
 | 2026-11-07 | Control characters are escaped in the text format, so a name with a line break stays on one line (CLI-009.15, PR #40 review) |
+| 2026-11-19 | An unknown run gets a hint that lists the runs (CLI-009.10) (review E26) |

@@ -8,9 +8,12 @@ use std::ffi::OsStr;
 use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 
-use config::YamlParser;
+use config::{Problem, YamlParser};
 use files::{EntryKind, FileSystem};
 use import::ImportProfile;
+
+use crate::CommandError;
+use crate::system_reason::PlainReason;
 
 /// The longest profile name (ADR 0032).
 const MAX_NAME_LENGTH: usize = 64;
@@ -116,12 +119,17 @@ fn is_profile_name(name: &str) -> bool {
         })
 }
 
+/// The hint after an invalid profile (CLI-010).
+const PROFILE_KEYS_HINT: &str = "the keys are described in \
+    https://polandy.github.io/framehive/schemas/import-profile-v2.json \
+    and in the example of framehive config init";
+
 /// Reads the profile `name` from the folder `profiles`, with `home` for `~`. The name
 /// must have passed [`check_profile_name`].
 ///
 /// # Errors
 ///
-/// Returns the message of CLI-010 for a profile that is missing, cannot be read, is not
+/// Returns the error of CLI-010 for a profile that is missing, cannot be read, is not
 /// UTF-8 or is invalid.
 pub(crate) fn read_profile(
     file_system: &dyn FileSystem,
@@ -129,24 +137,30 @@ pub(crate) fn read_profile(
     profiles: &Path,
     name: &str,
     home: &Path,
-) -> Result<ImportProfile, String> {
+) -> Result<ImportProfile, CommandError> {
     let path = profile_path(profiles, name);
     let bytes = match read_bytes(file_system, &path) {
         Ok(bytes) => bytes,
         Err(error) if error.kind() == io::ErrorKind::NotFound => {
-            return Err(missing_profile_message(file_system, profiles, name));
+            return Err(missing_profile_message(file_system, profiles, name).into());
         }
         Err(error) => {
             return Err(format!(
-                "the profile {} cannot be read: {error}",
-                path.display()
-            ));
+                "the profile {} cannot be read: {}",
+                path.display(),
+                PlainReason(&error)
+            )
+            .into());
         }
     };
     let text = String::from_utf8(bytes)
         .map_err(|_| format!("the profile {} is not valid UTF-8", path.display()))?;
-    ImportProfile::read(parser, &path.display().to_string(), &text, home)
-        .map_err(|error| error.to_string())
+    ImportProfile::read(parser, &path.display().to_string(), &text, home).map_err(|error| {
+        CommandError {
+            message: error.to_string(),
+            hint: (!matches!(error.problem, Problem::Invalid(_))).then_some(PROFILE_KEYS_HINT),
+        }
+    })
 }
 
 /// The file of the profile `name` in the folder `profiles`.

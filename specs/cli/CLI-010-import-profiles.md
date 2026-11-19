@@ -45,7 +45,7 @@ with exit code 2 and one line on standard error:
 | No such file | `error: no profile <name> in <folder>; known profiles: <a>, <b>`, or `…; there are no profiles yet, see framehive config init` |
 | File cannot be read | `error: the profile <path> cannot be read: <reason>` |
 | Not UTF-8 | `error: the profile <path> is not valid UTF-8` |
-| Invalid profile | `error: ` followed by the message of CORE-006 or IMPORT-011, with the file's full path as the file |
+| Invalid profile | `error: ` followed by the message of CORE-006 or IMPORT-011, with the file's full path as the file; after one of CORE-006 `hint: the keys are described in https://polandy.github.io/framehive/schemas/import-profile-v2.json and in the example of framehive config init` |
 
 Known profiles are the files `*.yaml` in the profiles folder whose names are valid
 profile names, sorted, without `.yaml`. Symbolic links count as files. A profiles folder that does not exist or
@@ -69,14 +69,7 @@ job code that the template does not use is printed only for `--job-code`, not fo
 profile's job codes. In the report of CLI-005, a backup destination from the profile is
 shown as its path with `~` already replaced.
 
-**`framehive config init`.** Writes the example profile
-`<configuration folder>/profiles/example.yaml`, creating missing folders, prints
-`wrote <path>` and exits with 0. The example has every key of IMPORT-011 and IMPORT-019,
-each with a comment that explains it and names its default, and the
-`yaml-language-server` line of IMPORT-011. When the file exists, nothing is written, standard error gets `error: <path>
-exists already; nothing was written`, and the exit code is 1. A folder or the file that
-cannot be written gives exit code 1 and `error: the folder <path> cannot be created:
-<reason>` or `error: <path> cannot be written: <reason>`.
+**`framehive config init`** writes a commented example profile (CLI-020).
 
 ## Acceptance criteria
 
@@ -142,8 +135,8 @@ cannot be written gives exit code 1 and `error: the folder <path> cannot be crea
 - **Given** a profile `holiday.yaml` whose line 2 is `video_destinaton: /a`
 - **When** the command runs with `--profile holiday`
 - **Then** standard error has `error: <folder>/holiday.yaml:2:1: unknown key
-  video_destinaton; did you mean video_destination?`, nothing is scanned, and the exit
-  code is 2
+  video_destinaton; did you mean video_destination?` and the hint, nothing is scanned,
+  and the exit code is 2
 
 ### CLI-010.11 – A profile that is not UTF-8
 - **Given** a profile `holiday.yaml` with the byte `0xFF`
@@ -169,18 +162,11 @@ cannot be written gives exit code 1 and `error: the folder <path> cannot be crea
 - **Then** standard error has `error: the configuration folder is unknown: set HOME to
   an absolute path`, and the exit code is 2
 
-### CLI-010.15 – `config init` writes the example
-- **Given** an empty configuration folder
-- **When** `framehive config init` runs
-- **Then** `<folder>/profiles/example.yaml` exists, standard output has `wrote <path>`,
-  the file is a valid import profile with the defaults of IMPORT-011 and IMPORT-019,
-  every key of both appears in it, and the exit code is 0
+### CLI-010.15 – `config init` writes the example (removed)
+Moved to CLI-020.1.
 
-### CLI-010.16 – `config init` keeps an existing example
-- **Given** a `profiles/example.yaml` with the text `# mine`
-- **When** `framehive config init` runs
-- **Then** the file still holds `# mine`, standard error has `error: <path> exists
-  already; nothing was written`, and the exit code is 1
+### CLI-010.16 – `config init` keeps an existing example (removed)
+Moved to CLI-020.2.
 
 ### CLI-010.17 – A profile does not supply the destination
 - **Given** the source of CLI-001.1 and the profile of CLI-010.1
@@ -213,3 +199,4 @@ cannot be written gives exit code 1 and `error: the folder <path> cannot be crea
 | 2026-11-05 | Added CLI-010.18 (unknown home folder) |
 | 2026-11-07 | Profiles have no destination (CLI-016, ADR 0036); CLI-010.1, .2, .6, .10 and .17 changed |
 | 2026-11-08 | IMPORT-019 keys in the example |
+| 2026-11-19 | Schema hint after an invalid profile; `config init` moved to CLI-020 (review E26) |
