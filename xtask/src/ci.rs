@@ -235,3 +235,25 @@ fn missing_tool(step: &Step, error: &std::io::Error) -> String {
         step.program, step.title
     )
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{ADVISORY_STEPS, STEPS};
+
+    #[test]
+    fn advisory_steps_check_the_same_manifests_as_the_deny_steps_of_ci() {
+        let deny_steps: Vec<_> = STEPS
+            .iter()
+            .filter(|step| step.arguments.first() == Some(&"deny"))
+            .map(|step| step.arguments.to_vec())
+            .collect();
+        let advisory_steps: Vec<_> = ADVISORY_STEPS
+            .iter()
+            .map(|step| {
+                assert_eq!(step.arguments.last(), Some(&"advisories"));
+                step.arguments[..step.arguments.len() - 1].to_vec()
+            })
+            .collect();
+        assert_eq!(advisory_steps, deny_steps);
+    }
+}
