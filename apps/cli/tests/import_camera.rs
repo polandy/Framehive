@@ -194,6 +194,77 @@ fn an_unknown_model_stops() {
     assert_eq!(output.status.code(), Some(2));
 }
 
+/// spec: CLI-013.12
+#[test]
+fn the_import_log_names_the_camera() {
+    let folders = Folders::new();
+    folders.add("DCIM/100_FUJI/DSCF0001.RAF", &raf(&photo()));
+    let destination = folders.destination();
+    let import = import_from_virtual_camera(&folders, &iolib_folder("vusb"), &destination);
+    assert_eq!(import.status.code(), Some(0), "{}", stderr(&import));
+
+    let output = folders.import_log(&["1"]);
+
+    assert!(
+        has_line(&output, "source               camera:Nikon DSC D750"),
+        "{}{}",
+        stdout(&output),
+        stderr(&output)
+    );
+}
+
+/// spec: CLI-013.14
+#[test]
+fn a_camera_run_notes_that_only_dcim_was_checked() {
+    let folders = Folders::new();
+    folders.add("DCIM/100_FUJI/DSCF0001.RAF", &raf(&photo()));
+    let destination = folders.destination();
+
+    let output = import_from_virtual_camera(&folders, &iolib_folder("vusb"), &destination);
+
+    let lines = lines_of(&output);
+    assert_eq!(
+        lines.last().map(String::as_str),
+        Some(DCIM_NOTE),
+        "{lines:?}"
+    );
+    assert!(
+        lines[lines.len() - 2].starts_with("The source can be formatted: "),
+        "{lines:?}"
+    );
+}
+
+/// spec: CLI-013.14
+#[test]
+fn a_dry_run_of_a_camera_has_no_note() {
+    let folders = Folders::new();
+    folders.add("DCIM/100_FUJI/DSCF0001.RAF", &raf(&photo()));
+    let destination = folders.destination();
+
+    let output = folders
+        .framehive_command(&[
+            "import",
+            "camera:",
+            "--destination",
+            destination.to_str().unwrap(),
+            "--dry-run",
+        ])
+        .env("IOLIBS", iolib_folder("vusb"))
+        .env("VCAMERADIR", folders.source())
+        .current_dir(folders.root.path())
+        .output()
+        .unwrap();
+
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    assert!(!stdout(&output).contains(DCIM_NOTE), "{}", stdout(&output));
+}
+
+const DCIM_NOTE: &str = "Only the files below DCIM were checked. Files outside DCIM, such as a phone's other folders, are not backed up.";
+
+fn lines_of(output: &Output) -> Vec<String> {
+    stdout(output).lines().map(str::to_owned).collect()
+}
+
 /// Runs `framehive import camera:` with libgphoto2's port drivers loaded from `iolibs`
 /// only, so no real USB device is seen; `vusb` serves the source folder as a Nikon D750.
 fn import_from_virtual_camera(folders: &Folders, iolibs: &Path, destination: &Path) -> Output {
