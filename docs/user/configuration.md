@@ -32,8 +32,9 @@ metadata:
 | `metadata.keywords` | Keywords; `/` separates the levels, as in `Holiday/Beach` | none |
 | `metadata.sidecar_naming` | `original_with_extension` (`DSCF0042.RAF.xmp`) or `original_without_extension` (`DSCF0042.xmp`) | `original_with_extension` |
 
-A sidecar that a camera or another program already wrote keeps its values; the report
-names each file where a value was kept or replaced.
+A sidecar that a camera or another program already wrote keeps its creator and
+copyright, gets the configured keywords added to its own, and gets the import's job code
+in place of its own. The report names each file where a value was kept or replaced.
 
 ## Import profiles
 
