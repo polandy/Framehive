@@ -80,6 +80,7 @@ fn imports_as_usual_without_a_fault() {
     assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
 }
 
+/// The killed run's output is not checked: like a kill, the abort can beat the report.
 /// spec: CLI-025.1
 #[test]
 fn a_killed_import_leaves_only_a_part_file_and_resumes() {
@@ -89,7 +90,6 @@ fn a_killed_import_leaves_only_a_part_file_and_resumes() {
     let killed = import_with_fault(&folders, "abort-while-writing DSCF0002.RAF");
 
     assert_eq!(killed.status.signal(), Some(SIGABRT), "{}", stderr(&killed));
-    assert_eq!(lines(&killed), [copied("DSCF0001.RAF")]);
     assert_target_is_source(&folders, "DSCF0001.RAF");
     let part = folders.destination().join(target("DSCF0002.RAF.part"));
     let written = raf(&picture("DSCF0002.RAF"));

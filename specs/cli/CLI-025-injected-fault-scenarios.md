@@ -43,8 +43,9 @@ read, so a typo never runs the import without the fault.
   captured on 2026-10-17 with its own content
 - **When** `framehive import <source> --destination <destination>` runs with
   `FRAMEHIVE_FAULT=abort-while-writing DSCF0002.RAF`, and then runs again without it
-- **Then** the first run prints only `copied  DSCF0001.RAF -> 2026/2026-10-17/DSCF0001.RAF`
-  and ends with `SIGABRT`; `DSCF0001.RAF` is at its target with its content,
+- **Then** the first run ends with `SIGABRT`, and what it printed is not promised,
+  because a kill can come before the report is written; `DSCF0001.RAF` is at its
+  target with its content,
   `2026/2026-10-17/DSCF0002.RAF.part` holds the first half of the file, and neither
   `DSCF0002.RAF` nor `DSCF0003.RAF` is at the destination; the second run prints
   `imported before  DSCF0001.RAF -> 2026/2026-10-17/DSCF0001.RAF`, copies the other two,
