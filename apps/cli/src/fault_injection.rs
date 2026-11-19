@@ -25,15 +25,18 @@ enum Fault {
     AbortWhileWriting,
     /// Flips one bit of the first byte read back from the storage device.
     FlipBitAfterSync,
+    /// Blocks the read of the source during its copy, for good.
+    HangWhileReading,
     /// Fails the read of the source during its copy and every later call below its
     /// folder.
     UnplugWhileReading,
 }
 
 /// The name of each fault in [`VARIABLE`].
-const FAULTS: [(&str, Fault); 3] = [
+const FAULTS: [(&str, Fault); 4] = [
     ("abort-while-writing", Fault::AbortWhileWriting),
     ("flip-bit-after-sync", Fault::FlipBitAfterSync),
+    ("hang-while-reading", Fault::HangWhileReading),
     ("unplug-while-reading", Fault::UnplugWhileReading),
 ];
 
@@ -174,6 +177,12 @@ impl<F: FileSystem> ReadOnlyFileSystem for FaultyFileSystem<F> {
     fn open_read(&self, path: &Path) -> io::Result<Box<dyn ReadSeek>> {
         self.check_plugged(path)?;
         let reader = self.inner.open_read(path)?;
+        if self.is_due(Fault::HangWhileReading, path.file_name()) {
+            return Ok(Box::new(HangingReader {
+                inner: reader,
+                state: Arc::clone(&self.state),
+            }));
+        }
         if !self.is_due(Fault::UnplugWhileReading, path.file_name()) {
             return Ok(reader);
         }
@@ -289,6 +298,40 @@ impl Read for BitFlippingReader {
 impl Seek for BitFlippingReader {
     fn seek(&mut self, position: SeekFrom) -> io::Result<u64> {
         self.inner.seek(position)
+    }
+}
+
+/// Blocks its first read while a `.part` file is written and never returns from it, so
+/// reading the metadata or the checksum before the copy is not affected.
+struct HangingReader {
+    inner: Box<dyn ReadSeek>,
+    state: Arc<Mutex<State>>,
+}
+
+impl Read for HangingReader {
+    fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
+        let mut state = lock(&self.state);
+        if state.copying && !state.fired {
+            state.fired = true;
+            drop(state);
+            hang_forever();
+        }
+        drop(state);
+        self.inner.read(buffer)
+    }
+}
+
+impl Seek for HangingReader {
+    fn seek(&mut self, position: SeekFrom) -> io::Result<u64> {
+        self.inner.seek(position)
+    }
+}
+
+/// Blocks the calling thread until the process ends, as a device that stopped answering.
+fn hang_forever() -> ! {
+    loop {
+        // A spurious wake-up must not end the hang.
+        std::thread::park();
     }
 }
 
