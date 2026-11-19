@@ -23,6 +23,7 @@ use metadata::xmp::{SidecarFiles, SidecarNaming};
 
 use crate::arguments::{KeepRawArguments, RemoveRawsArguments};
 use crate::configuration_file::process_configuration;
+use crate::system_reason::PlainReason;
 use crate::{NOT_STARTED, report_error, write_warning};
 
 pub(crate) use keep_raw::keep_raw;
@@ -112,8 +113,9 @@ fn absolute_paths(paths: &[PathBuf]) -> Result<Vec<PathBuf>, String> {
     paths
         .iter()
         .map(|path| {
-            std::path::absolute(path)
-                .map_err(|error| format!("the current folder cannot be read: {error}"))
+            std::path::absolute(path).map_err(|error| {
+                format!("the current folder cannot be read: {}", PlainReason(&error))
+            })
         })
         .collect()
 }
@@ -181,6 +183,15 @@ fn read_library_folder(
         );
     }
     Ok(library_folder)
+}
+
+/// The error of CLI-018 for a folder or file that cannot be read.
+fn read_folder_message(error: &ReadFolderError) -> String {
+    format!(
+        "cannot read {}: {}",
+        error.path.display(),
+        PlainReason(&error.source)
+    )
 }
 
 /// How the lines name an asset: `<folder>/<base>`.

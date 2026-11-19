@@ -31,7 +31,7 @@ pub(crate) enum Invocation {
     Import(ImportArguments),
     /// `framehive import-log` (CLI-009).
     ImportLog(ImportLogArguments),
-    /// `framehive config init` (CLI-010).
+    /// `framehive config init` (CLI-020).
     ConfigInit,
     /// `framehive cameras` (CLI-013).
     Cameras,
@@ -146,7 +146,7 @@ fn command() -> Command {
         .subcommand(library_command())
 }
 
-/// `framehive config`; `init` is its only subcommand so far (CLI-010).
+/// `framehive config`; `init` is its only subcommand so far (CLI-020).
 fn config_command() -> Command {
     Command::new("config")
         .about("Manage the configuration files")

@@ -30,6 +30,7 @@ use super::folders::{Folders, backup_names, resolve_sources};
 use super::locations::Locations;
 use super::sources::{Enqueued, Streams};
 use super::{ChosenSettings, choose_settings};
+use crate::CommandError;
 use crate::arguments::ImportArguments;
 use crate::cameras::{OpenedCamera, camera_choice, open_camera};
 use crate::guided::space_text;
@@ -66,6 +67,15 @@ impl NotStarted {
         NotStarted {
             messages: vec![message],
             hint: Some(hint),
+        }
+    }
+}
+
+impl From<CommandError> for NotStarted {
+    fn from(error: CommandError) -> Self {
+        NotStarted {
+            messages: vec![error.message],
+            hint: error.hint.map(str::to_owned),
         }
     }
 }

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Framehive contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//! `framehive config init` (CLI-010): writes the example import profile.
+//! `framehive config init` (CLI-020): writes the example import profile.
 
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
@@ -12,6 +12,7 @@ use files::FileSystem;
 
 use crate::guided::create_folders;
 use crate::profiles::{process_configuration_folder, profiles_folder};
+use crate::system_reason::PlainReason;
 use crate::{FILES_FAILED, NOT_STARTED, report_error};
 
 /// The example profile: every key of IMPORT-011 and IMPORT-019 with a comment that
@@ -112,7 +113,7 @@ pub(crate) fn run_config_init() -> ExitCode {
 ///
 /// # Errors
 ///
-/// Returns the message of CLI-010 when the file exists or a folder or the file cannot
+/// Returns the message of CLI-020 when the file exists or a folder or the file cannot
 /// be written.
 fn write_example(
     file_system: &dyn FileSystem,
@@ -123,11 +124,18 @@ fn write_example(
     let exists = || format!("{} exists already; nothing was written", path.display());
     create_folders(file_system, profiles).map_err(|error| {
         format!(
-            "the folder {} cannot be created: {error}",
-            profiles.display()
+            "the folder {} cannot be created: {}",
+            profiles.display(),
+            PlainReason(&error)
         )
     })?;
-    let cannot_write = |error: io::Error| format!("{} cannot be written: {error}", path.display());
+    let cannot_write = |error: io::Error| {
+        format!(
+            "{} cannot be written: {}",
+            path.display(),
+            PlainReason(&error)
+        )
+    };
     if file_system.entry(&path).map_err(cannot_write)?.is_some() {
         return Err(exists());
     }

@@ -8,6 +8,8 @@ use std::fmt;
 use std::io;
 use std::path::{Component, Path, PathBuf};
 
+use crate::system_reason::PlainReason;
+
 /// The import destination, resolved; its folders need not exist yet.
 #[derive(Debug)]
 pub(crate) struct Destination {
@@ -46,34 +48,49 @@ pub(crate) enum PathError {
 
 impl fmt::Display for PathError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.write_message(formatter)?;
+        match self.reason() {
+            Some(error) => write!(formatter, ": {}", PlainReason(error)),
+            None => Ok(()),
+        }
+    }
+}
+
+impl PathError {
+    /// The reason from the operating system, which follows the message after a colon.
+    fn reason(&self) -> Option<&io::Error> {
+        match self {
+            PathError::SourceCannotBeRead(_, error)
+            | PathError::WorkingFolder(error)
+            | PathError::DestinationCannotBeRead(_, error)
+            | PathError::DestinationCannotBeCreated(_, error) => Some(error),
+            _ => None,
+        }
+    }
+
+    fn write_message(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             PathError::SourceMissing(path) => {
                 write!(formatter, "the source {} does not exist", path.display())
             }
-            PathError::SourceCannotBeRead(path, error) => {
-                write!(
-                    formatter,
-                    "the source {} cannot be read: {error}",
-                    path.display()
-                )
+            PathError::SourceCannotBeRead(path, _) => {
+                write!(formatter, "the source {} cannot be read", path.display())
             }
             PathError::SourceNotAFolder(path) => write!(
                 formatter,
                 "the source {} is not a folder; give the folder that holds it",
                 path.display()
             ),
-            PathError::WorkingFolder(error) => {
-                write!(formatter, "the working folder cannot be read: {error}")
-            }
+            PathError::WorkingFolder(_) => write!(formatter, "the working folder cannot be read"),
             PathError::ParentStepInDestination(path) => write!(
                 formatter,
                 "the destination {} steps up with .. below a folder that does not exist",
                 path.display()
             ),
-            PathError::DestinationCannotBeRead(path, error) => {
+            PathError::DestinationCannotBeRead(path, _) => {
                 write!(
                     formatter,
-                    "the destination {} cannot be read: {error}",
+                    "the destination {} cannot be read",
                     path.display()
                 )
             }
@@ -93,10 +110,10 @@ impl fmt::Display for PathError {
                 destination.display(),
                 source.display()
             ),
-            PathError::DestinationCannotBeCreated(path, error) => {
+            PathError::DestinationCannotBeCreated(path, _) => {
                 write!(
                     formatter,
-                    "the destination {} cannot be created: {error}",
+                    "the destination {} cannot be created",
                     path.display()
                 )
             }
