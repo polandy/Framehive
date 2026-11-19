@@ -1,6 +1,7 @@
 # LIBRARY-002 – Keep RAW and Remove RAWs
 
-- Status: accepted
+- Status: partial
+- Pending: 1, 2, 8, 13, 14
 - Module: library
 - Origin: B29, B30
 - Depends on: LIBRARY-001
@@ -206,3 +207,4 @@ that move are the RAW and the RAW's own sidecars as they are at that point.
 |---|---|
 | 2026-11-09 | Initial version, owner request; same rule as honeycomb (ADR 0042) |
 | 2026-11-19 | The run checks each asset again, LIBRARY-002.18 to .20 (review finding E5) |
+| 2026-11-19 | Status `partial`: GUI criteria pending (E38) |

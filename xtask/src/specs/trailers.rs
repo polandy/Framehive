@@ -5,7 +5,7 @@
 //!
 //! A commit that changes tests linked to a specification changes that specification too,
 //! or says why not with `Spec-Unchanged: <reason>` (Rule A). A commit that changes an
-//! implemented specification changes related code too, or says why not with
+//! implemented or partial specification changes related code too, or says why not with
 //! `Spec-Only: <reason>` (Rule B). This file holds the rules as pure functions; `git`
 //! reads the commits.
 
@@ -15,7 +15,8 @@ pub(crate) mod git;
 
 const SPEC_UNCHANGED: &str = "Spec-Unchanged";
 const SPEC_ONLY: &str = "Spec-Only";
-const IMPLEMENTED: &str = "implemented";
+/// Statuses whose behaviour is in the code, so rule B applies to them.
+const REACHABLE: [&str; 2] = ["partial", "implemented"];
 
 /// What the rules need to know about one commit.
 #[derive(Debug, Default)]
@@ -154,17 +155,17 @@ fn tests_without_spec(commit: &Commit) -> Vec<String> {
         .collect()
 }
 
-/// Rule B: an implemented spec changed, no related code did.
+/// Rule B: an implemented or partial spec changed, no related code did.
 fn spec_without_code(commit: &Commit) -> Vec<String> {
     commit
         .spec_statuses
         .iter()
-        .filter(|(_, status)| status.as_str() == IMPLEMENTED)
-        .filter_map(|(file, _)| Some((file, spec_id_of(file)?)))
-        .filter(|(_, spec_id)| !related_code_changed(commit, spec_id))
-        .map(|(file, spec_id)| {
+        .filter(|(_, status)| REACHABLE.contains(&status.as_str()))
+        .filter_map(|(file, status)| Some((file, status, spec_id_of(file)?)))
+        .filter(|(_, _, spec_id)| !related_code_changed(commit, spec_id))
+        .map(|(file, status, spec_id)| {
             format!(
-                "{}: changes the implemented spec {file}, but no code or test of {spec_id}; \
+                "{}: changes the {status} spec {file}, but no code or test of {spec_id}; \
                  change them or add `{SPEC_ONLY}: <reason>` (ADR 0010)",
                 commit.summary
             )
@@ -253,7 +254,7 @@ mod tests {
     fn implemented(mut commit: Commit) -> Commit {
         commit
             .spec_statuses
-            .insert(SPEC.to_owned(), IMPLEMENTED.to_owned());
+            .insert(SPEC.to_owned(), "implemented".to_owned());
         commit
     }
 
@@ -295,6 +296,15 @@ mod tests {
         assert!(violations(&changed).is_empty());
         let docs_only = implemented(commit(&[SPEC, "README.md"]));
         assert_eq!(violations(&docs_only).len(), 1);
+    }
+
+    #[test]
+    fn rule_b_applies_to_partial_specs() {
+        let mut changed = with_markers(commit(&[SPEC]));
+        changed
+            .spec_statuses
+            .insert(SPEC.to_owned(), "partial".to_owned());
+        assert_eq!(violations(&changed).len(), 1);
     }
 
     #[test]

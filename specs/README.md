@@ -36,6 +36,7 @@ File name: `<ID>-<short-name>.md`, e.g. `IMPORT-002-sequence-numbers.md`.
 |---|---|
 | `draft` | In progress, not yet binding |
 | `accepted` | Binding, not yet implemented, not reachable in the code |
+| `partial` | Binding, partly implemented; the criteria in `- Pending:` are not reachable in the code yet, every other one has at least one test |
 | `implemented` | Behaviour is implemented; every criterion has at least one test |
 | `removed` | Feature removed; justification in the "History" section |
 
@@ -58,7 +59,8 @@ File name: `<ID>-<short-name>.md`, e.g. `IMPORT-002-sequence-numbers.md`.
 ```markdown
 # <ID> – <Title>
 
-- Status: draft | accepted | implemented | removed
+- Status: draft | accepted | partial | implemented | removed
+- Pending: <only for `partial`: the criterion numbers not built yet, e.g. 1, 2, 8>
 - Module: <module>
 - Origin: <requirement IDs from docs/dev/requirements/, e.g. R4, R5>
 - Depends on: <other spec IDs or "–">

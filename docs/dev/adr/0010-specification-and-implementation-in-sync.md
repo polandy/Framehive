@@ -108,6 +108,16 @@ a step of `cargo xtask ci`, implements the diff check as follows.
   CI (`CI=true`) a base that cannot be resolved, as in a shallow clone, is an error, so
   the check never passes silently; CI therefore checks out the full history.
 
+**Amendment (2026-11-19): status `partial`.** A specification that is built only in
+part, such as a library feature whose CLI commands exist while its GUI waits, has status
+`partial` and names the criteria not built yet in the header field `- Pending: 1, 2, 8`.
+Splitting it instead would move criteria to new IDs, and criterion numbers are never
+reassigned (`specs/README.md`). The checks treat `partial` like `implemented` except
+for the pending criteria: every other criterion needs a test, a test on a pending
+criterion is an error (the field is then stale), open questions are not allowed, and
+rule B applies. Only a `partial` specification may have `- Pending:`, and it must have
+it.
+
 Example specification path: `specs/import/IMPORT-002-sequence-numbers.md`.
 
 ## Alternatives
