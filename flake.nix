@@ -60,8 +60,8 @@
           patches = (old.patches or [ ]) ++ [ ./nix/patches/libgphoto2-directory-read-file.patch ];
         });
       # The `framehive` command from `framehive-cli`. Cargo needs the manifests and
-      # sources of every workspace member, but nothing else, so a change to the
-      # documentation does not rebuild the package.
+      # sources of every workspace member; the tests also read the profiles shown in
+      # the Markdown under docs/ and specs/. Other files do not rebuild the package.
       framehive =
         pkgs:
         let
@@ -77,15 +77,19 @@
           version = (lib.importTOML ./Cargo.toml).workspace.package.version;
           src = lib.fileset.toSource {
             root = ./.;
-            fileset = lib.fileset.difference (lib.fileset.unions [
-              ./Cargo.toml
-              ./Cargo.lock
-              ./.cargo
-              ./apps
-              ./crates
-              ./modules
-              ./xtask
-            ]) markdown;
+            fileset = lib.fileset.unions [
+              (lib.fileset.difference (lib.fileset.unions [
+                ./Cargo.toml
+                ./Cargo.lock
+                ./.cargo
+                ./apps
+                ./crates
+                ./modules
+                ./xtask
+              ]) markdown)
+              (lib.fileset.intersection markdown ./docs)
+              (lib.fileset.intersection markdown ./specs)
+            ];
           };
           cargoLock.lockFile = ./Cargo.lock;
           cargoBuildFlags = [

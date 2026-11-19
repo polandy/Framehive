@@ -103,3 +103,4 @@ too_many_lines = "warn"
 [profile.release]
 codegen-units = 1
 lto = "thin"
+strip = "symbols"

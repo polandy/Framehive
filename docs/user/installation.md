@@ -3,9 +3,21 @@
 Framehive runs on Linux and macOS. It links two native libraries: LibRaw, to read RAW
 files, and libgphoto2, to import from cameras and phones over PTP or MTP. The Nix flake
 of the repository brings both, together with the pinned Rust toolchain, so Nix is the
-supported way to install and build it. There are no prebuilt downloads yet.
+supported way to install and build it. Releases have no prebuilt downloads; each
+release is built and tested with Nix on Linux and macOS instead.
 
 ## With Nix
+
+Install a release into your profile without a checkout, naming its version tag:
+
+```sh
+nix profile install github:polandy/Framehive/v<version>
+framehive --version
+```
+
+The tags are listed on the [releases page](https://github.com/polandy/Framehive/releases).
+To move to a newer release, remove the old entry with `nix profile remove <name>`
+(`nix profile list` shows the name), then install the new tag.
 
 Run it from a checkout without installing anything:
 
