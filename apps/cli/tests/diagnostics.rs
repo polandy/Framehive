@@ -7,6 +7,8 @@
 
 mod support;
 
+use std::fs;
+
 use support::{Folders, stderr, stdout};
 
 /// spec: CLI-021.1
@@ -31,7 +33,9 @@ fn a_verbose_import_names_the_job_and_each_file_on_standard_error() {
     let output = folders.import(&["--verbose"]);
 
     let diagnostics = stderr(&output);
-    let source = folders.source().display().to_string();
+    // The command resolves the source, which on macOS is below /private.
+    let source = fs::canonicalize(folders.source()).unwrap();
+    let source = source.display();
     assert_eq!(output.status.code(), Some(0));
     assert!(
         diagnostics.lines().any(|line| line.starts_with(" INFO ")
