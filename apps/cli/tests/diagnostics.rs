@@ -21,6 +21,7 @@ fn an_import_without_verbose_writes_no_diagnostic_lines() {
     assert!(!stderr(&output).contains(" INFO "), "{}", stderr(&output));
 }
 
+/// spec: CLI-021.3
 /// spec: CLI-021.4
 #[test]
 fn a_verbose_import_names_the_job_and_each_file_on_standard_error() {
