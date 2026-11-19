@@ -98,6 +98,37 @@ pub(crate) struct Environment {
     pub(crate) metadata: ImportMetadata,
 }
 
+/// The environment variable that names the mount table to read (ADR 0050).
+const MOUNTINFO_VARIABLE: &str = "FRAMEHIVE_MOUNTINFO";
+
+/// The environment variable that names the folders whose mounts are cards (ADR 0050).
+const MEDIA_FOLDERS_VARIABLE: &str = "FRAMEHIVE_MEDIA_FOLDERS";
+
+/// The memory cards of this system, or on Linux those of the mount table and media
+/// folders named in [`MOUNTINFO_VARIABLE`] and [`MEDIA_FOLDERS_VARIABLE`] (ADR 0050).
+///
+/// # Errors
+///
+/// Returns the message of a usage error when only one of the two is set.
+fn memory_cards() -> Result<MountsDeviceSource, String> {
+    if cfg!(target_os = "macos") {
+        return Ok(MountsDeviceSource::new());
+    }
+    match (
+        std::env::var_os(MOUNTINFO_VARIABLE),
+        std::env::var_os(MEDIA_FOLDERS_VARIABLE),
+    ) {
+        (None, None) => Ok(MountsDeviceSource::new()),
+        (Some(mountinfo), Some(folders)) => Ok(MountsDeviceSource::linux(
+            mountinfo,
+            std::env::split_paths(&folders).collect(),
+        )),
+        _ => Err(format!(
+            "{MOUNTINFO_VARIABLE} and {MEDIA_FOLDERS_VARIABLE} are set together or not at all"
+        )),
+    }
+}
+
 /// Runs the guided import on the terminal and returns its exit code (CLI-002, CLI-003).
 pub(crate) fn run_guided() -> ExitCode {
     if !io::stdin().is_terminal() || !io::stdout().is_terminal() {
@@ -113,7 +144,13 @@ pub(crate) fn run_guided() -> ExitCode {
             return ExitCode::from(NOT_STARTED);
         }
     };
-    let devices = MountsDeviceSource::new();
+    let devices = match memory_cards() {
+        Ok(devices) => devices,
+        Err(message) => {
+            report_error(&message);
+            return ExitCode::from(NOT_STARTED);
+        }
+    };
     let cameras = Gphoto2Cameras::new();
     let import = ImportPorts {
         file_system: import_file_system(),

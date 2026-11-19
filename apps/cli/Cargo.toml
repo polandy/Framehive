@@ -52,5 +52,8 @@ tracing-subscriber.workspace = true
 [dev-dependencies]
 files.workspace = true
 
+[target.'cfg(target_os = "linux")'.dev-dependencies]
+rustix.workspace = true
+
 [lints]
 workspace = true
