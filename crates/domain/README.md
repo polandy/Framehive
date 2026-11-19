@@ -20,6 +20,9 @@ time library is visible here (ADR 0022).
 | Item | Meaning |
 |---|---|
 | `AssetFileRole` | Role of one file of an asset: `Raw`, `Rendered`, `Video`, `Sidecar` |
+| `RAW_EXTENSIONS`, `VIDEO_EXTENSIONS` | Extensions of RAW and video files, in upper case (requirements 2.7) |
+| `XMP_SIDECAR_EXTENSION` | `xmp`, the extension of an XMP sidecar; it matches in any case (CORE-010) |
+| `CAMERA_PHOTO_FOLDER` | `DCIM`, the folder of a camera storage that holds its photos and videos (DCF) |
 | `Rating`, `RatingError` | Star rating of an asset, 0–5 |
 | `Timestamp` | An instant in UTC, to the nanosecond, since the Unix epoch |
 | `UtcOffset` | Offset of local time from UTC, in seconds, below a day |

@@ -73,6 +73,7 @@ name = "adapter-mounts"
 version = "0.1.0"
 dependencies = [
  "devices",
+ "domain",
  "tracing",
 ]
 

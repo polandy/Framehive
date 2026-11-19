@@ -21,6 +21,7 @@ mod dependencies;
 mod files;
 mod fuzz;
 mod json;
+mod lints;
 mod new_adapter;
 mod new_module;
 mod public_api;
@@ -39,7 +40,7 @@ const USAGE: &str = "usage: cargo xtask <command>
 commands:
   ci                   run every check, exactly as CI does
   advisories           only the security advisories of cargo deny, as the nightly run does
-  check-architecture   layers, unsafe code and crate READMEs (architecture §3)
+  check-architecture   layers, unsafe code, lints and crate READMEs (architecture §3)
   check-dependencies   dependencies.yaml allowlist (ADR 0009)
   check-specs          specifications and their tests (ADR 0010)
   check-spec-trailers  Spec-Unchanged/Spec-Only trailers of the commits since the base (ADR 0010)
@@ -112,7 +113,9 @@ fn repository_root() -> PathBuf {
 
 fn check_architecture(root: &Path) -> Result<(), String> {
     let packages = workspace::load(root)?;
-    finish("architecture", &architecture::check(&packages))
+    let mut problems = architecture::check(&packages);
+    problems.extend(lints::check(root, &packages)?);
+    finish("architecture", &problems)
 }
 
 /// Checks the main workspace and the fuzz crate, which is a workspace of its own

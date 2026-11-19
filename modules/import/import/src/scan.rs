@@ -8,7 +8,7 @@ use std::fmt;
 use std::io;
 use std::path::{Component, Path, PathBuf};
 
-use domain::{AssetFileRole, Timestamp};
+use domain::{AssetFileRole, CAMERA_PHOTO_FOLDER, Timestamp};
 use files::{EntryKind, FolderEntry, ReadOnlyFileSystem};
 
 use crate::roles::role_for_extension;
@@ -180,10 +180,6 @@ pub fn scan_folder(
     scanner.visit_entries(Path::new(""), entries);
     Ok(scanner.into_sorted_scan())
 }
-
-/// The folder of a camera storage that holds its photos and videos (DCF), the only
-/// folder the scan of a camera enters (ADR 0034 §4).
-const CAMERA_PHOTO_FOLDER: &str = "DCIM";
 
 /// Scans the camera whose file system has its root at `root` (IMPORT-014): the folder
 /// `DCIM` at the top of each storage, with its subfolders, by the rules of

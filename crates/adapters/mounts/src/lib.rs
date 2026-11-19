@@ -26,15 +26,13 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 use devices::{Device, DeviceSource, EjectError, ListError};
+use domain::CAMERA_PHOTO_FOLDER;
 
 pub use eject::{EjectCommand, run_command};
 
 /// Runs an eject command; [`run_command`] on the real system. A seam, so that tests
 /// never start the system's eject tools.
 pub type RunCommand = Box<dyn Fn(&EjectCommand) -> Result<(), String> + Send + Sync>;
-
-/// The folder at the top level of a mount that makes it a card (DCF).
-const DCIM: &str = "DCIM";
 
 /// A [`DeviceSource`] over mounted file systems: on Linux the mounts of
 /// `/proc/self/mountinfo` below `/run/media/` and `/media/`, on macOS the folders
@@ -219,7 +217,7 @@ fn macos_volumes(volumes: &Path) -> Result<Vec<Considered>, ListError> {
 
 /// Whether `mount_point` has a folder `DCIM`; one that cannot be examined has none.
 fn has_dcim_folder(mount_point: &Path) -> bool {
-    match fs::metadata(mount_point.join(DCIM)) {
+    match fs::metadata(mount_point.join(CAMERA_PHOTO_FOLDER)) {
         Ok(metadata) => metadata.is_dir(),
         Err(error) if error.kind() == io::ErrorKind::NotFound => false,
         Err(error) => {

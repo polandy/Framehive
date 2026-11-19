@@ -9,6 +9,7 @@
 #![forbid(unsafe_code)]
 
 mod asset_file;
+mod camera_storage;
 mod capture_time;
 mod checksum;
 mod clock;
@@ -17,7 +18,8 @@ mod rating;
 pub mod testing;
 mod time;
 
-pub use asset_file::{AssetFileRole, RAW_EXTENSIONS, VIDEO_EXTENSIONS};
+pub use asset_file::{AssetFileRole, RAW_EXTENSIONS, VIDEO_EXTENSIONS, XMP_SIDECAR_EXTENSION};
+pub use camera_storage::CAMERA_PHOTO_FOLDER;
 pub use capture_time::CaptureTime;
 pub use checksum::{Checksum, ChecksumError};
 pub use clock::Clock;

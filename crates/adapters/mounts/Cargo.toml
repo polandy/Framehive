@@ -16,6 +16,7 @@ port = "devices"
 
 [dependencies]
 devices.workspace = true
+domain.workspace = true
 tracing.workspace = true
 
 [lints]

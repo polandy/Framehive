@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use std::ffi::{OsStr, OsString};
 use std::path::{Path, PathBuf};
 
-use domain::AssetFileRole;
+use domain::{AssetFileRole, XMP_SIDECAR_EXTENSION};
 use metadata::xmp::SidecarNaming;
 
 use super::{FoundFile, LeftOut, LeftOutReason};
@@ -33,7 +33,7 @@ pub(super) struct Candidate {
 /// Whether `path` has the extension `xmp`, in any case.
 pub(super) fn is_xmp(path: &Path) -> bool {
     path.extension()
-        .is_some_and(|extension| extension.eq_ignore_ascii_case("xmp"))
+        .is_some_and(|extension| extension.eq_ignore_ascii_case(XMP_SIDECAR_EXTENSION))
 }
 
 /// Attaches each candidate, in the given order, to the file it names, and returns the

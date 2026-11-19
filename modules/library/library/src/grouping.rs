@@ -6,12 +6,11 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-use domain::{AssetFileRole, RAW_EXTENSIONS, VIDEO_EXTENSIONS};
+use domain::{AssetFileRole, RAW_EXTENSIONS, VIDEO_EXTENSIONS, XMP_SIDECAR_EXTENSION};
 
 /// The rendered extensions that pair with a RAW, in upper case (LIBRARY-001).
 const RENDERED_EXTENSIONS: [&str; 7] = ["JPG", "JPEG", "HEIF", "HEIC", "HIF", "TIF", "TIFF"];
 
-const XMP_EXTENSION: &str = "xmp";
 const THM_EXTENSION: &str = "THM";
 
 /// A file of a folder, as the grouping takes it.
@@ -250,7 +249,7 @@ fn shared_owner(base_name: &str, assets: &[Asset], fits: impl Fn(&Asset) -> bool
 fn described_name(name: &str) -> Option<&str> {
     let (described, extension) = name.rsplit_once('.')?;
     extension
-        .eq_ignore_ascii_case(XMP_EXTENSION)
+        .eq_ignore_ascii_case(XMP_SIDECAR_EXTENSION)
         .then_some(described)
 }
 
