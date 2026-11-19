@@ -1,0 +1,61 @@
+# SPDX-FileCopyrightText: 2026 Framehive contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+# Nightly check of the security advisories (ADR 0018 §7). A new RUSTSEC advisory
+# appears without any change to the repository, so it must not wait for the next pull
+# request. A finding opens an issue, or comments on the open one.
+name: Advisories
+
+on:
+  schedule:
+    - cron: "41 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: advisories
+  cancel-in-progress: false
+
+jobs:
+  advisories:
+    name: xtask advisories
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      # Actions are pinned to a commit, because a tag can be moved (ADR 0018).
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b # v31.11.3
+
+      # Same key as ci.yml, so the shell of main is restored; only ci.yml saves it.
+      - uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7.0.2
+        with:
+          primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.nix', 'flake.lock', 'rust-toolchain.toml') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-${{ runner.arch }}-
+          save: false
+
+      - name: cargo xtask advisories
+        run: nix develop --command cargo xtask advisories 2>&1 | tee advisories.log
+
+      - name: Report the finding as an issue
+        if: ${{ failure() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh label create advisory --color B60205 --description "Security advisory of a dependency" --force
+          body="$(printf 'The nightly advisory check failed: %s\n\n```\n%s\n```\n' "$RUN_URL" "$(tail -n 60 advisories.log)")"
+          open="$(gh issue list --label advisory --state open --limit 1 --json number --jq '.[0].number')"
+          if [ -n "$open" ]; then
+            gh issue comment "$open" --body "$body"
+          else
+            gh issue create --title "Security advisory of a dependency" --label advisory --body "$body"
+          fi

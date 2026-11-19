@@ -38,6 +38,7 @@ const USAGE: &str = "usage: cargo xtask <command>
 
 commands:
   ci                   run every check, exactly as CI does
+  advisories           only the security advisories of cargo deny, as the nightly run does
   check-architecture   layers, unsafe code and crate READMEs (architecture §3)
   check-dependencies   dependencies.yaml allowlist (ADR 0009)
   check-specs          specifications and their tests (ADR 0010)
@@ -63,6 +64,7 @@ fn main() -> ExitCode {
     let root = repository_root();
     let result = match arguments.first().map(String::as_str) {
         Some("ci") => ci::run(&root),
+        Some("advisories") => ci::run_advisories(&root),
         Some("fuzz") => fuzz::run(&root, &arguments[1..]),
         Some("ci-failures") => ci_failures::run(&root, arguments.get(1).map(String::as_str)),
         Some("check-architecture") => check_architecture(&root),

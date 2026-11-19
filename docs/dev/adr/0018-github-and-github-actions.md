@@ -25,7 +25,9 @@ owner already uses GitHub.
 5. **The workflow has read-only permissions** and does not keep the checkout token.
    The Cargo registry, `target/` and the Nix store are cached, keyed on `flake.lock`,
    `rust-toolchain.toml` and `Cargo.lock` (`flake.nix` for the store). A cache never
-   changes a result, only the time. CI builds without incremental data and with line
+   changes a result, only the time. Every run restores, but only a run of `ci.yml` on
+   `main` saves: a pull request can read the caches of `main`, while its own caches
+   would serve no one else and push the caches of `main` out of the 10 GB limit. CI builds without incremental data and with line
    tables only (`CARGO_INCREMENTAL=0`, `CARGO_PROFILE_DEV_DEBUG=line-tables-only`),
    because both made `target/` several times larger and slowed the restore on macOS.
 6. **The Nix store is cached with `nix-community/cache-nix-action`**, per OS and
@@ -33,6 +35,11 @@ owner already uses GitHub.
    libgphoto2 are overridden in `flake.nix`, so the public cache never has them and
    every run would build them. The shell is built in its own step and kept as a GC
    root, so a restored store holds it. No account or secret is needed.
+7. **Security advisories are also checked every night**, by `advisories.yml` running
+   `cargo xtask advisories` on `main`. A new RUSTSEC advisory appears without any change
+   to the repository; without this run it would turn up as a red check on an unrelated
+   pull request. A finding opens an issue with the label `advisory`, or comments on the
+   open one, so the workflow alone may write issues.
 
 ## Alternatives
 

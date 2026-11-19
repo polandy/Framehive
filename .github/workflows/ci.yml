@@ -47,12 +47,14 @@ jobs:
             keep-outputs = true
 
       # LibRaw and libgphoto2 are overridden in flake.nix, so cache.nixos.org never has
-      # them. The store is restored per OS and architecture and saved when the key is new.
-      # An older cache is a good start: Nix builds only what changed (ADR 0018).
+      # them. The store is restored per OS and architecture and saved when the key is new,
+      # only on main (ADR 0018 §5). An older cache is a good start: Nix builds only what
+      # changed.
       - uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7.0.2
         with:
           primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.nix', 'flake.lock', 'rust-toolchain.toml') }}
           restore-prefixes-first-match: nix-${{ runner.os }}-${{ runner.arch }}-
+          save: ${{ github.ref == 'refs/heads/main' }}
           # Bounds the saved store. The shell is a GC root (next step), so only older
           # paths go. GitHub also evicts the least recently used cache above 10 GB.
           gc-max-store-size: 4G
@@ -61,7 +63,10 @@ jobs:
       - name: Build the Nix shell
         run: nix develop --profile "$HOME/.nix-ci-shell" --command true
 
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      # Restored everywhere, saved only on main (below), so pull requests do not push the
+      # cache of main out of the 10 GB limit (ADR 0018 §5).
+      - id: cargo-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cargo/registry/index
@@ -88,6 +93,16 @@ jobs:
           PULL_REQUEST_TITLE: ${{ github.event.pull_request.title }}
           PULL_REQUEST_BODY: ${{ github.event.pull_request.body }}
         run: nix develop --command cargo xtask ci
+
+      - if: ${{ github.ref == 'refs/heads/main' && steps.cargo-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            target
+          key: ${{ steps.cargo-cache.outputs.cache-primary-key }}
 
       # `cargo xtask ci` writes the report, so a local run produces the same file (ADR 0010).
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

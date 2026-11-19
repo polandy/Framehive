@@ -47,7 +47,8 @@ jobs:
         with:
           primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.nix', 'flake.lock', 'rust-toolchain.toml') }}
           restore-prefixes-first-match: nix-${{ runner.os }}-${{ runner.arch }}-
-          gc-max-store-size: 4G
+          # A tag's cache is never restored anywhere else (ADR 0018 §5).
+          save: false
 
       - name: nix build
         run: nix build --print-build-logs

@@ -134,9 +134,39 @@ const STEPS: [Step; 18] = [
     },
 ];
 
+/// Only the advisory checks of `ci`, for the nightly run: a new advisory appears
+/// without any change to the repository (ADR 0018 §7).
+const ADVISORY_STEPS: [Step; 2] = [
+    Step {
+        title: "advisories",
+        program: CARGO,
+        arguments: &["deny", "check", "advisories"],
+    },
+    Step {
+        title: "advisories of fuzz",
+        program: CARGO,
+        arguments: &[
+            "deny",
+            "--manifest-path",
+            "fuzz/Cargo.toml",
+            "check",
+            "advisories",
+        ],
+    },
+];
+
 /// Runs all steps in `root`.
 pub(crate) fn run(root: &Path) -> Result<(), String> {
-    for step in &STEPS {
+    run_steps(root, &STEPS)
+}
+
+/// Runs only the advisory checks in `root`.
+pub(crate) fn run_advisories(root: &Path) -> Result<(), String> {
+    run_steps(root, &ADVISORY_STEPS)
+}
+
+fn run_steps(root: &Path, steps: &[Step]) -> Result<(), String> {
+    for step in steps {
         let output = Command::new(program(step))
             .args(step.arguments)
             .current_dir(root)
@@ -204,4 +234,26 @@ fn missing_tool(step: &Step, error: &std::io::Error) -> String {
          every tool CI uses",
         step.program, step.title
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{ADVISORY_STEPS, STEPS};
+
+    #[test]
+    fn advisory_steps_check_the_same_manifests_as_the_deny_steps_of_ci() {
+        let deny_steps: Vec<_> = STEPS
+            .iter()
+            .filter(|step| step.arguments.first() == Some(&"deny"))
+            .map(|step| step.arguments.to_vec())
+            .collect();
+        let advisory_steps: Vec<_> = ADVISORY_STEPS
+            .iter()
+            .map(|step| {
+                assert_eq!(step.arguments.last(), Some(&"advisories"));
+                step.arguments[..step.arguments.len() - 1].to_vec()
+            })
+            .collect();
+        assert_eq!(advisory_steps, deny_steps);
+    }
 }
