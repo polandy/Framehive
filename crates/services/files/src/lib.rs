@@ -9,7 +9,8 @@
 //! for a source it only reads (ADR 0034), and computes checksums only through the
 //! [`Hasher`] port; `adapter-fs` and `adapter-blake3` implement them. Files leave the
 //! library only through the [`Trash`] port (ADR 0043). It waits with a limit only
-//! through the [`Timer`] port (ADR 0049).
+//! through the [`Timer`] port, and gives
+//! each call to a source a stall limit with [`StallGuard`] (ADR 0049).
 
 #![forbid(unsafe_code)]
 
@@ -18,6 +19,7 @@ mod checksum;
 mod copy;
 mod copy_error;
 mod ports;
+mod stall_guard;
 pub mod testing;
 mod timer;
 mod trash;
@@ -30,5 +32,6 @@ pub use ports::{
     EntryKind, FileSystem, FileSystemId, FolderEntry, FreeSpace, HashState, Hasher,
     ReadOnlyFileSystem, ReadSeek, SpaceOnFileSystem, WriteFile,
 };
+pub use stall_guard::{SourceStall, StallGuard, source_stall};
 pub use timer::{AnswerSignal, Deadline, Timer, WaitOutcome};
 pub use trash::{Trash, not_a_file};

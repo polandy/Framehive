@@ -41,6 +41,11 @@ Boundaries:
   `WriteFile::sync` and folder entries on `FileSystem::sync_folder`; `crash` drops
   the rest. The `FileSystem` conformance suite holds the contract every adapter must
   meet, including "rename never replaces" and a synced rename surviving a crash.
+- **Stall limit.** `StallGuard` wraps a source: it makes every call on a source thread
+  of its own and stops waiting for a call that does not answer within the limit. Such
+  a call fails with `SourceStall::DidNotAnswer`, and every later call with
+  `SourceStall::StoppedAnswering` at once, without reaching the source; the blocked call
+  is left behind (ADR 0049 §1, §2).
 - **Cameras.** The `Cameras` port lists the cameras and phones connected over PTP or
   MTP and opens one as a `ReadOnlyFileSystem` with one folder per storage; dropping it
   releases the camera, and a camera another program holds is a `CameraError::InUse`
@@ -61,6 +66,7 @@ Boundaries:
 | `FreeSpace`, `SpaceOnFileSystem`, `FileSystemId` | Port for the free space and the identity of the file system a folder lies on; a missing folder is answered for its nearest existing parent (ADR 0033) |
 | `Trash`, `not_a_file` | Port for moving a file to the trash, and the `InvalidInput` error every implementation returns for a path that is not a file (ADR 0043) |
 | `Timer`, `Deadline`, `WaitOutcome`, `AnswerSignal` | Port for waiting until an answer is signalled or a deadline in monotonic time passes; an answer signalled before the wait wins (ADR 0049 §3) |
+| `StallGuard`, `SourceStall`, `source_stall` | `ReadOnlyFileSystem` that gives every call to a source, including each read and seek of an opened file, a stall limit, and the typed reason inside the `io::Error` of a call that hit it (ADR 0049) |
 | `Hasher`, `HashState` | Port for a hash function that yields a `domain::Checksum` with its algorithm id |
 | `checksum_file` | Reads a file in full and returns its checksum; used to compare content (IMPORT-003) and to read a copy back |
 | `copy_verified` | Copies one file through a `.part` file and verifies it (IMPORT-004) |
@@ -68,6 +74,7 @@ Boundaries:
 | `CopyError`, `CopyStep`, `CopyErrorKind`, `CleanupFailure` | The failed step, why, and a file that could not be removed |
 | `Cameras`, `Camera`, `CameraError` | Port for cameras and phones over PTP or MTP: lists them sorted by port, opens one as a `ReadOnlyFileSystem`, and tells a camera in use by another program from other failures (ADR 0034) |
 | `testing::MemoryFileSystem`, `testing::Fault` | `FileSystem` in memory with simulated crashes, symbolic links, read-only files, read, write, read-back, rename and listing faults, and stops after a number of operations |
+| `testing::Hang`, `testing::SlowReads` | Faults of `MemoryFileSystem` for the stall limit: a read or listing that signals it has begun and blocks until released, and reads that each advance a `ManualTimer` (ADR 0049 §4) |
 | `testing::MemoryCameras` | `Cameras` that serve `MemoryFileSystem`s as cameras, with cameras in use, cameras disconnected again, a failing list, and whether a camera is still open |
 | `testing::FnvHasher` | Non-cryptographic `Hasher` for tests; its checksums are written `fnv:<hex>` |
 | `testing::TempDir` | A temporary folder on the real file system, removed when dropped |

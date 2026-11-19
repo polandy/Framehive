@@ -31,7 +31,7 @@ pub use fnv::FnvHasher;
 pub use free_space_conformance::{FreeSpaceUnderTest, check_free_space};
 pub use hasher_conformance::{HasherUnderTest, check_hasher};
 pub use manual_timer::ManualTimer;
-pub use memory::{Fault, MemoryFileSystem};
+pub use memory::{Fault, Hang, MemoryFileSystem, SlowReads};
 pub use memory_cameras::MemoryCameras;
 pub use memory_free_space::MemoryFreeSpace;
 pub use memory_trash::MemoryTrash;

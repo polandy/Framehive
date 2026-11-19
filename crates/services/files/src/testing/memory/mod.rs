@@ -3,6 +3,7 @@
 
 //! A [`FileSystem`] in memory that can lose unsynced writes and inject faults.
 
+mod delays;
 mod handles;
 mod state;
 
@@ -14,6 +15,7 @@ use domain::Timestamp;
 
 use crate::{EntryKind, FileSystem, FolderEntry, ReadOnlyFileSystem, ReadSeek, WriteFile};
 
+pub use delays::{Hang, SlowReads};
 use handles::{MemoryReader, MemoryWriter};
 use state::{Entry, State, lock, reachable_entries, symbolic_link};
 
@@ -49,6 +51,12 @@ pub enum Fault {
     RenameFails,
     /// Removing the file fails with an I/O error; the file stays.
     RemoveFails,
+    /// Each read of the file, or listing the folder, signals that it has begun and
+    /// blocks until the [`Hang`] is released, then answers as usual.
+    Hangs(Hang),
+    /// Each read of the file lets time pass on a
+    /// [`ManualTimer`](crate::testing::ManualTimer) before it answers.
+    SlowReads(SlowReads),
 }
 
 /// A [`FileSystem`] in memory, for tests.
@@ -219,6 +227,10 @@ impl ReadOnlyFileSystem for MemoryFileSystem {
     }
 
     fn list_folder(&self, path: &Path) -> io::Result<Vec<FolderEntry>> {
+        let fault = self.lock().fault_for(path);
+        if let Some(Fault::Hangs(hang)) = fault {
+            hang.block();
+        }
         self.operate(|state| state.children(path))
     }
 
@@ -234,13 +246,14 @@ impl ReadOnlyFileSystem for MemoryFileSystem {
             let id = state.file_id(path)?;
             let mut content = state.file(id).content.clone();
             let mut readable = content.len();
-            match state.fault_for(path) {
+            let fault = state.fault_for(path);
+            match &fault {
                 Some(Fault::ReadReturnsDifferentBytes) => {
                     if let Some(last) = content.last_mut() {
                         *last = !*last;
                     }
                 }
-                Some(Fault::ReadFails { after_bytes }) => readable = after_bytes,
+                Some(Fault::ReadFails { after_bytes }) => readable = *after_bytes,
                 _ => {}
             }
             let reader = MemoryReader {
@@ -248,6 +261,7 @@ impl ReadOnlyFileSystem for MemoryFileSystem {
                 content,
                 position: 0,
                 readable,
+                delay: fault.filter(|f| matches!(f, Fault::Hangs(_) | Fault::SlowReads(_))),
             };
             Ok(Box::new(reader) as Box<dyn ReadSeek>)
         })
