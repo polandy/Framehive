@@ -112,8 +112,7 @@ Each check is an error at the value, in the form of CORE-006:
 ## Out of scope
 
 - How the import stops waiting for a call (a thread that makes the calls, and how tests
-  measure the limit without the wall clock) is decided in an ADR before this
-  specification is built (ADR 0048 §4).
+  measure the limit without the wall clock) is decided in ADR 0049.
 - The run of T5 against the binary, with the fault `hang-while-reading`, is a criterion
   of CLI-025.
 - Calls to the destination and to backup destinations, which have no limit.
@@ -123,3 +122,4 @@ Each check is an error at the value, in the form of CORE-006:
 | Date | Change |
 |---|---|
 | 2026-11-19 | Initial version, from the owner's decisions of 2026-11-19: a stall limit per call rather than per file, 30 seconds by default and set in the profile, and a source that exceeds it is stopped for the rest of the run |
+| 2026-11-19 | Out of scope points to ADR 0049, which decides how the import stops waiting |

@@ -15,6 +15,7 @@ Names in the code follow this glossary.
 | Library root | `LibraryRoot` | A root directory with a marker file and a UUID |
 | Volume | `Volume` | Physical or network storage medium on which library roots reside |
 | Source | `Source` | What is imported from: camera, card, phone, folder |
+| Stall limit | `StallGuard` | Time a source call may take (IMPORT-022, ADR 0049) |
 | Device | `Device` | A memory card mounted as a file system, identified by its mount point, or a camera connected over PTP or MTP, identified by its model and port, as it is offered for import |
 | Device source | `DeviceSource` | Port of the `devices` service that lists the cards that are present, sorted by mount point, and ejects one; implemented by `adapter-mounts` (DEVICES-001) |
 | Device watch | `DeviceWatch` | Polls the device source and the cameras, compares the device list with that of the last poll and reports removed, then added devices; a kind that cannot be listed keeps its last devices (DEVICES-001) |
