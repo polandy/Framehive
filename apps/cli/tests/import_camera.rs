@@ -17,6 +17,29 @@ use std::process::Output;
 use metadata::testing::raf;
 use support::{DEFAULT_TARGET, Folders, has_line, photo, stderr, stdout};
 
+/// spec: CLI-013.2
+#[test]
+fn without_a_camera_the_list_is_empty() {
+    let folders = Folders::new();
+    let iolibs = iolibs_without_a_camera(&folders);
+
+    let output = folders
+        .framehive_command(&["cameras"])
+        .env("IOLIBS", &iolibs)
+        .env("VCAMERADIR", folders.source())
+        .current_dir(folders.root.path())
+        .output()
+        .unwrap();
+
+    assert_eq!(stdout(&output), "");
+    assert!(
+        stderr(&output).starts_with("no camera is connected\nhint: "),
+        "{}",
+        stderr(&output)
+    );
+    assert_eq!(output.status.code(), Some(0));
+}
+
 /// spec: CLI-013.3
 #[test]
 fn a_camera_given_by_its_port_is_imported() {
@@ -103,13 +126,7 @@ fn camera_alone_takes_the_only_camera() {
 #[test]
 fn camera_alone_without_a_camera_stops() {
     let folders = Folders::new();
-    let iolibs = folders.root.path().join("iolibs");
-    fs::create_dir(&iolibs).unwrap();
-    std::os::unix::fs::symlink(
-        default_iolib_folder().join("ptpip.so"),
-        iolibs.join("ptpip.so"),
-    )
-    .unwrap();
+    let iolibs = iolibs_without_a_camera(&folders);
     let destination = folders.destination();
 
     let output = import_from_virtual_camera(&folders, &iolibs, &destination);
@@ -290,6 +307,18 @@ fn import_from(folders: &Folders, source: &str, iolibs: &Path, destination: &Pat
 /// A folder below the port drivers of the Nix shell's libgphoto2 (`flake.nix`).
 fn iolib_folder(name: &str) -> PathBuf {
     PathBuf::from(std::env::var_os("FRAMEHIVE_TEST_IOLIBS").unwrap()).join(name)
+}
+
+/// A port driver folder with only the network driver, so no camera is found.
+fn iolibs_without_a_camera(folders: &Folders) -> PathBuf {
+    let iolibs = folders.root.path().join("iolibs");
+    fs::create_dir(&iolibs).unwrap();
+    std::os::unix::fs::symlink(
+        default_iolib_folder().join("ptpip.so"),
+        iolibs.join("ptpip.so"),
+    )
+    .unwrap();
+    iolibs
 }
 
 /// The versioned folder libgphoto2 loads its port drivers from by default.

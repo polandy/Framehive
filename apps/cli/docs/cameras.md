@@ -28,7 +28,7 @@ Cameras are tested in the crate with `files::testing::MemoryCameras`, given to
 `import_with` through `Surroundings::cameras` (`src/import_command/camera_tests.rs`,
 `src/cameras.rs`). `tests/import_camera.rs` runs the binary against a folder that
 libgphoto2's `directory` driver serves as a camera on a `disk:` port, and runs
-`camera:` alone against libgphoto2's `vusb` virtual PTP camera, which serves a folder
+`camera:` alone and `framehive cameras` without a camera against libgphoto2's `vusb` virtual PTP camera, which serves a folder
 (`VCAMERADIR`) as a Nikon D750 at `usb:001,001`. `IOLIBS` makes libgphoto2 load only
 the port drivers in a folder below `FRAMEHIVE_TEST_IOLIBS`, which the Nix shell sets
 (ADR 0034, amendment of 2026-11-19), so a camera connected to the machine is not seen.
