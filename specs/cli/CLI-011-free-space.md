@@ -39,13 +39,22 @@ checks again when it starts; when that check cannot read the free space of a
 destination the first check did not warn about, the same line follows the job's
 summary on standard error. A destination is named at most once.
 
+A backup destination on the same file system as an earlier destination (IMPORT-012)
+gets this line on standard error, and the command goes on:
+
+```
+backup <backup> is on the same file system as <folder>; it does not protect against losing that disk
+```
+
 **The guided import.** When a file system is short, the plan summary says, for each
 short file system,
 `Not enough space at <folders>: needs 12.8 GB, 3.1 GB free; type d or b to change a folder.`,
 and Enter does not start. After `d` or `b`, the summary checks again. A warning about
 unknown free space is shown in the summary as on standard error, and Enter starts. A
 destination whose free space only the job's own check cannot read is named on standard
-error once the import ends, as in `framehive import`.
+error once the import ends, as in `framehive import`. A backup destination on the same
+file system as an earlier destination is warned about in the summary with the line of
+`framehive import`, and Enter starts.
 
 ## Acceptance criteria
 
@@ -115,6 +124,21 @@ error once the import ends, as in `framehive import`.
 - **Then** the file is copied, and standard error has
   `cannot tell the free space at <destination>: <reason>` once
 
+### CLI-011.11 – A backup on the same file system as the destination warns
+- **Given** the source of CLI-011.1, and a destination and a backup folder on one file
+  system with enough space
+- **When** the user runs `framehive import <source> --destination <destination> --backup <backup>`
+- **Then** standard error has
+  `backup <backup> is on the same file system as <destination>; it does not protect against losing that disk`
+  once, the file is copied and backed up, and the exit code is 0
+
+### CLI-011.12 – The guided import warns about a backup on the same file system
+- **Given** a card with `DSCF0001.RAF`, and a destination and a backup folder on one
+  file system with enough space
+- **When** the plan summary is shown and the person presses Enter
+- **Then** standard error has the line of CLI-011.11 once, and the file is copied and
+  backed up
+
 ## Out of scope
 
 - Which bytes count and how file systems are told apart: IMPORT-012.
@@ -134,3 +158,4 @@ error once the import ends, as in `framehive import`.
 | 2026-11-07 | Examples name the destination with `--destination` (CLI-001, ADR 0036) |
 | 2026-11-07 | Add CLI-011.8: a shortage found when the job starts creates no folder either |
 | 2026-11-08 | Add CLI-011.9 and CLI-011.10: unknown free space that only the job's check finds is named after the job; CLI-011.4 and CLI-011.7 name a destination once (owner decision, issue #70) |
+| 2026-11-19 | Warn about a backup destination on the same file system (review E8); add CLI-011.11 and CLI-011.12 |

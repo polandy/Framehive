@@ -16,9 +16,13 @@ mod history_support;
 use std::path::{Path, PathBuf};
 
 use files::testing::{Fault, MemoryFileSystem, MemoryFreeSpace};
-use import::{BackupOutcome, FileOutcome, ImportSummary, RunError, SpaceShortage};
+use import::{
+    BackupOutcome, FileOutcome, ImportSummary, RunError, SharedFileSystem, SpaceShortage,
+};
 
-use backup_support::{BACKUP, DESTINATION, FLAT, SOURCE, Setup, at, modified, paths_below};
+use backup_support::{
+    BACKUP, DESTINATION, FLAT, SECOND_BACKUP, SOURCE, Setup, at, modified, paths_below,
+};
 
 /// The files of IMPORT-012.1: 400 and 600 bytes, 1000 bytes together.
 const FILES: [(&str, usize); 2] = [("DSCF0001.RAF", 400), ("DSCF0002.RAF", 600)];
@@ -282,4 +286,26 @@ fn a_destination_that_cannot_be_created_stops_the_run() {
         paths_below(&file_system, DESTINATION),
         Vec::<PathBuf>::new()
     );
+}
+
+/// spec: IMPORT-012.13
+#[test]
+fn a_backup_on_the_same_file_system_is_named() {
+    let file_system = two_files(true);
+    let free_space = MemoryFreeSpace::new()
+        .with_file_system("/", 10_000)
+        .with_file_system(SECOND_BACKUP, 10_000);
+
+    let check = Setup::new(FLAT, &[BACKUP, SECOND_BACKUP])
+        .with_free_space(free_space)
+        .check_on(&file_system);
+
+    assert_eq!(
+        check.shared,
+        [SharedFileSystem {
+            backup_destination: PathBuf::from(BACKUP),
+            shared_with: PathBuf::from(DESTINATION),
+        }]
+    );
+    assert!(check.shortages.is_empty());
 }

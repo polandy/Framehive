@@ -20,8 +20,8 @@ use files::{Cameras, FreeSpace};
 use import::{
     CAMERA_FORMAT_READINESS_NOTE, Configuration, DryRunMemory, FreeSpaceUnknown, ImportJob,
     ImportJobSettings, ImportPorts, ImportProfile, ImportRun, ImportSettings, ImportSummary,
-    PlannedRun, ProgressSink, ReservedTargetNames, RunError, SessionSequence, SpaceShortage,
-    scan_source,
+    PlannedRun, ProgressSink, ReservedTargetNames, RunError, SessionSequence, SharedFileSystem,
+    SpaceShortage, scan_source,
 };
 use jobs::JobQueue;
 use naming::CompatibilityMode;
@@ -298,7 +298,8 @@ fn import_ports(state_folder: &Path, free_space: Arc<dyn FreeSpace + Send + Sync
 }
 
 /// Checks that each file system can hold what the run writes to it, before any folder
-/// is created, and warns about each destination whose free space is unknown (CLI-011);
+/// is created, and warns about each destination whose free space is unknown and each
+/// backup on the file system of an earlier destination (CLI-011);
 /// returns those destinations.
 ///
 /// # Errors
@@ -314,6 +315,9 @@ fn check_free_space(
     let check = run.check_free_space(settings, plan);
     for unknown in &check.unknown {
         write_warning(errors, &unknown_free_space_message(unknown, folders));
+    }
+    for shared in &check.shared {
+        write_warning(errors, &shared_file_system_message(shared, folders));
     }
     if check.shortages.is_empty() {
         return Ok(check
@@ -339,6 +343,16 @@ pub(super) fn unknown_free_space_message(unknown: &FreeSpaceUnknown, folders: &F
         folders.shown(&unknown.destination).display(),
         unknown.error
     )
+}
+
+/// `backup <folder> is on the same file system as <folder>; ...`, with the folders as
+/// given (CLI-011).
+fn shared_file_system_message(shared: &SharedFileSystem, folders: &Folders) -> String {
+    SharedFileSystem {
+        backup_destination: folders.shown(&shared.backup_destination).to_path_buf(),
+        shared_with: folders.shown(&shared.shared_with).to_path_buf(),
+    }
+    .to_string()
 }
 
 /// `not enough space at <folders as given>: needs 12.8 GB, 3.1 GB free` (CLI-011).

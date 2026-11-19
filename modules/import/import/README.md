@@ -93,7 +93,7 @@ Boundaries:
 | `BackupReport`, `BackupOutcome`, `BackupError`, `BackupCounts` | What happened to a file at each backup destination, and the counts per backup destination (IMPORT-007) |
 | `check_backup_destinations`, `BackupDestinationError`, `BackupDestinationProblem` | Refuses invalid backup destinations before a run starts (IMPORT-007.11) |
 | `check_video_destination`, `VideoDestinationError`, `VideoDestinationProblem`, `check_against_video_destination` | Refuses an invalid video destination, and backup destinations that clash with it, before a run starts (IMPORT-013.8) |
-| `FreeSpaceCheck`, `SpaceShortage`, `FreeSpaceUnknown`, `NotEnoughSpace` | What the free-space check before the first copy finds (IMPORT-012) |
+| `FreeSpaceCheck`, `SpaceShortage`, `FreeSpaceUnknown`, `SharedFileSystem`, `NotEnoughSpace` | What the free-space check before the first copy finds, including a backup on the file system of an earlier destination (IMPORT-012) |
 | `ImportProfile`, `IMPORT_PROFILE`, `IMPORT_PROFILE_V1`, `DEFAULT_NAME_TEMPLATE`, `import_profile_json_schema`, `import_profile_v1_json_schema`, `IMPORT_PROFILE_SCHEMA_ID`, `IMPORT_PROFILE_V1_SCHEMA_ID` | An import profile read through `config`, checked, with defaults; its JSON Schemas, versions 2 and 1 (IMPORT-011; tested end to end in `apps/cli`) |
 | `Configuration`, `CONFIGURATION`, `CONFIGURATION_FILE_NAME`, `configuration_json_schema`, `CONFIGURATION_SCHEMA_ID` | `config.yaml` and its JSON Schema (IMPORT-019) |
 | `MetadataKeys`, `ImportMetadata`, `Keyword`, `KeywordError` | The `metadata` keys, layered, and the values the import writes (IMPORT-019) |

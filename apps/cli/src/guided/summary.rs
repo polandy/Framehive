@@ -84,6 +84,9 @@ impl Dialog<'_> {
         for unknown in &space.unknown {
             self.warn(&unknown.to_string());
         }
+        for shared in &space.shared {
+            self.warn(&shared.to_string());
+        }
         let warned = space
             .unknown
             .into_iter()

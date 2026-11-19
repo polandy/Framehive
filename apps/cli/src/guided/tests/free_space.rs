@@ -107,6 +107,37 @@ fn unknown_free_space_warns_and_enter_starts() {
     );
 }
 
+/// spec: CLI-011.12
+#[test]
+fn a_backup_on_the_file_system_of_the_destination_warns_and_enter_starts() {
+    let mut harness = with_short_destination();
+    let backup = "/home/ada/Backup";
+    harness.remember_backups(&[backup]);
+    harness.free_space = Arc::new(MemoryFreeSpace::unlimited());
+
+    let transcript = harness.run(vec![Step::Line("")]);
+
+    assert_eq!(
+        transcript.warnings,
+        format!(
+            "warning: backup {backup} is on the same file system as {PICTURES}; \
+             it does not protect against losing that disk\n"
+        )
+    );
+    let target = "2026/2026-10-17/DSCF0001.RAF";
+    let paths = harness.memory.paths();
+    assert!(
+        paths.contains(&Path::new(PICTURES).join(target)),
+        "{}",
+        transcript.output
+    );
+    assert!(
+        paths.contains(&Path::new(backup).join(target)),
+        "{}",
+        transcript.output
+    );
+}
+
 /// spec: CLI-011.10
 #[test]
 fn unknown_free_space_found_when_the_job_starts_warns_after_the_import() {
