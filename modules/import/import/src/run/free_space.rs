@@ -6,6 +6,7 @@
 
 use std::path::{Path, PathBuf};
 
+use domain::AssetFileRole;
 use files::FileSystemId;
 
 use super::copy::Sidecars;
@@ -13,7 +14,7 @@ use super::resolvers::Resolvers;
 use super::{FilePlan, ImportRun, ImportSettings, PlannedRun, RunFile};
 use crate::backup::{BackupTarget, inspect_backup_target};
 use crate::conflicts::{ConflictOutcome, TargetRequest, TargetResolver};
-use crate::free_space::{FreeSpaceCheck, FreeSpaceUnknown, SpaceShortage};
+use crate::free_space::{FreeSpaceCheck, FreeSpaceUnknown, SharedFileSystem, SpaceShortage};
 
 /// The destinations of one file system and the bytes written to them.
 struct FileSystemUse {
@@ -27,7 +28,8 @@ impl ImportRun<'_> {
     /// Checks that each file system can hold the bytes the plan writes to all
     /// destinations on it (IMPORT-012). It resolves the conflicts of each file as the
     /// run would, and looks at each backup target, but writes nothing. A dry run is
-    /// counted as the import it previews.
+    /// counted as the import it previews. It also names each backup destination on the
+    /// same file system as an earlier destination.
     #[must_use]
     pub fn check_free_space(
         &self,
@@ -37,16 +39,20 @@ impl ImportRun<'_> {
         let destinations = settings.all_destinations();
         let bytes = self.bytes_to_write(settings, plan, &destinations);
         let mut uses: Vec<FileSystemUse> = Vec::new();
+        let mut known: Vec<(&Path, FileSystemId)> = Vec::new();
         let mut check = FreeSpaceCheck::default();
         for (destination, bytes) in destinations.into_iter().zip(bytes) {
             match self.free_space.free_space(destination) {
-                Ok(space) => add_use(
-                    &mut uses,
-                    space.file_system,
-                    space.available_bytes,
-                    destination,
-                    bytes,
-                ),
+                Ok(space) => {
+                    known.push((destination, space.file_system));
+                    add_use(
+                        &mut uses,
+                        space.file_system,
+                        space.available_bytes,
+                        destination,
+                        bytes,
+                    );
+                }
                 Err(error) => check.unknown.push(FreeSpaceUnknown {
                     destination: destination.to_path_buf(),
                     error,
@@ -62,6 +68,7 @@ impl ImportRun<'_> {
                 available_bytes: used.available_bytes,
             })
             .collect();
+        check.shared = shared_file_systems(settings, &known);
         check
     }
 
@@ -118,6 +125,44 @@ impl ImportRun<'_> {
                 BackupTarget::Free
             )
     }
+}
+
+/// The backup destinations on the same file system as an earlier destination of their
+/// files, photos first, then videos (IMPORT-012, "A backup on the same file system");
+/// `known` holds the file system of each destination whose free space was read.
+fn shared_file_systems(
+    settings: &ImportSettings<'_>,
+    known: &[(&Path, FileSystemId)],
+) -> Vec<SharedFileSystem> {
+    let file_system_of = |folder: &Path| {
+        known
+            .iter()
+            .find(|(destination, _)| *destination == folder)
+            .map(|(_, file_system)| *file_system)
+    };
+    let mut shared: Vec<SharedFileSystem> = Vec::new();
+    for role in [AssetFileRole::Raw, AssetFileRole::Video] {
+        let mut earlier = vec![settings.destination_of(role)];
+        for backup in settings.backup_destinations_of(role) {
+            let file_system = file_system_of(backup);
+            let first = earlier
+                .iter()
+                .find(|folder| file_system.is_some() && file_system_of(folder) == file_system);
+            let named = shared
+                .iter()
+                .any(|known| known.backup_destination == *backup);
+            if let Some(first) = first
+                && !named
+            {
+                shared.push(SharedFileSystem {
+                    backup_destination: backup.clone(),
+                    shared_with: first.to_path_buf(),
+                });
+            }
+            earlier.push(backup);
+        }
+    }
+    shared
 }
 
 /// The target of a file that is backed up, and whether it is also copied to the

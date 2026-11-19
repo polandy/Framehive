@@ -18,8 +18,8 @@ use domain::{Timestamp, UtcOffset};
 use files::testing::{FnvHasher, MemoryFileSystem, MemoryFreeSpace};
 use history::testing::MemoryImportHistory;
 use import::{
-    BackupError, BackupOutcome, ConflictPolicy, FileOutcome, FileReport, ImportRun, ImportSettings,
-    ImportSummary, NoProgress, PlannedRun, RunError, SessionSequence, scan_source,
+    BackupError, BackupOutcome, ConflictPolicy, FileOutcome, FileReport, FreeSpaceCheck, ImportRun,
+    ImportSettings, ImportSummary, NoProgress, PlannedRun, RunError, SessionSequence, scan_source,
 };
 use naming::testing::MemorySequenceCounters;
 use naming::{CompatibilityMode, NameTemplate};
@@ -116,6 +116,15 @@ impl<'a> Setup<'a> {
             let plan = run.plan(settings, &scan)?;
             before_start();
             run.start(settings, plan)
+        })
+    }
+
+    /// Plans the import and checks its free space, without starting it.
+    pub(crate) fn check_on(&self, file_system: &MemoryFileSystem) -> FreeSpaceCheck {
+        self.with_run(file_system, |run, settings| {
+            let scan = scan_source(file_system, settings.source, settings.destination).unwrap();
+            let plan = run.plan(settings, &scan).unwrap();
+            run.check_free_space(settings, &plan)
         })
     }
 

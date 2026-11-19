@@ -50,6 +50,31 @@ fn imports_to_the_destination_and_the_backup_destination() {
     assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
 }
 
+/// spec: CLI-011.11
+#[test]
+fn a_backup_on_the_file_system_of_the_destination_warns() {
+    let folders = Folders::new();
+    folders.add_raf();
+    let backup = text(&backup(&folders, "backup"));
+
+    let output = folders.import(&["--backup", &backup]);
+
+    assert_eq!(
+        stderr(&output),
+        format!(
+            "warning: backup {backup} is on the same file system as {}; \
+             it does not protect against losing that disk\n",
+            text(&folders.destination())
+        )
+    );
+    assert!(
+        has_line(&output, &format!("  backed up  {backup}")),
+        "{}",
+        stdout(&output)
+    );
+    assert_eq!(output.status.code(), Some(0));
+}
+
 /// spec: CLI-005.2
 #[test]
 fn a_rerun_fills_a_new_backup_destination() {

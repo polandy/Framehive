@@ -48,6 +48,14 @@ and the free space. Every file system that is short is reported, not only the fi
 **Free space unknown.** When the free space of a destination cannot be read, the run
 goes on, and the result has a warning that names the destination and the reason.
 
+**A backup on the same file system.** A backup destination on the same file system as
+the import destination, or as an earlier backup destination, does not survive the loss
+of that disk. The check names each such backup destination once, with the first
+destination before it on that file system: for a photo the import destination and the
+backup destinations, for a video (IMPORT-013) the video destination and the video
+backup destinations, in that order. It is a warning; the run goes on, and format
+readiness (IMPORT-008) still counts the backup destination as a location.
+
 **When.** The check runs after the plan and after the checks of the backup destinations
 (IMPORT-007), before the first file is copied. A dry run checks too.
 
@@ -143,6 +151,14 @@ created before it stay.
 - **Then** the result is "not enough space" with the import destination, 400 + S bytes
   to write and 399 + S bytes free, and nothing is copied
 
+### IMPORT-012.13 – A backup on the same file system is named
+- **Given** the files of IMPORT-012.1, an import destination and a first backup
+  destination on one file system, and a second backup destination on a file system of
+  its own
+- **When** the free space is checked
+- **Then** the check names the first backup destination with the import destination,
+  names nothing else, and the run is not stopped
+
 ## Out of scope
 
 - How the command line and the guided import report the shortage: CLI-011.
@@ -162,3 +178,4 @@ created before it stay.
 | 2026-11-05 | Implemented in `files`, `adapter-free-space`, `import` and `framehive-cli`; `implemented` |
 | 2026-11-07 | The run creates the missing destinations itself, after the free-space check; add IMPORT-012.10 and IMPORT-012.11 |
 | 2026-11-08 | Count the sidecars of written photos (IMPORT-019); add IMPORT-012.12 |
+| 2026-11-19 | Name a backup destination on the same file system as an earlier destination (review E8); add IMPORT-012.13 |

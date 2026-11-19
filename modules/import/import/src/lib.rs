@@ -45,7 +45,9 @@ pub use destinations::{
     DestinationNotCreated, VideoDestinationError, VideoDestinationProblem, check_video_destination,
 };
 pub use dry_run::DryRunMemory;
-pub use free_space::{FreeSpaceCheck, FreeSpaceUnknown, NotEnoughSpace, SpaceShortage};
+pub use free_space::{
+    FreeSpaceCheck, FreeSpaceUnknown, NotEnoughSpace, SharedFileSystem, SpaceShortage,
+};
 pub use job::{
     ImportJob, ImportJobEnd, ImportJobReports, ImportJobSettings, ImportPorts, OwnSource,
 };

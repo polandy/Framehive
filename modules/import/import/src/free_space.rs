@@ -51,6 +51,29 @@ pub struct FreeSpaceUnknown {
     pub error: io::Error,
 }
 
+/// A backup destination on the same file system as an earlier destination of the run,
+/// so it does not survive the loss of that disk (IMPORT-012, "A backup on the same file
+/// system"). It is a warning only.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SharedFileSystem {
+    /// The backup destination, as given in the settings.
+    pub backup_destination: PathBuf,
+    /// The first destination before it on the same file system, as given in the
+    /// settings.
+    pub shared_with: PathBuf,
+}
+
+impl fmt::Display for SharedFileSystem {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            formatter,
+            "backup {} is on the same file system as {}; it does not protect against losing that disk",
+            self.backup_destination.display(),
+            self.shared_with.display()
+        )
+    }
+}
+
 /// What the free-space check found for an import plan (IMPORT-012).
 #[derive(Debug, Default)]
 pub struct FreeSpaceCheck {
@@ -59,6 +82,9 @@ pub struct FreeSpaceCheck {
     pub shortages: Vec<SpaceShortage>,
     /// The destinations whose free space cannot be read, in the order of the settings.
     pub unknown: Vec<FreeSpaceUnknown>,
+    /// The backup destinations on the same file system as an earlier destination, in
+    /// the order of the settings, each once.
+    pub shared: Vec<SharedFileSystem>,
 }
 
 /// The import does not start: a file system cannot hold what the run writes to it

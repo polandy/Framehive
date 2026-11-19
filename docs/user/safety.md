@@ -31,6 +31,10 @@ a phone is not backed up.
 - **The disk itself.** The check reads the copy back after it has been written, but the
   operating system may answer from its memory cache rather than from the disk. A failing
   USB stick or network drive can still lose data later. Keep more than one backup.
+- **Whether two places are one disk.** A backup folder on the same file system as the
+  destination or as an earlier backup folder still counts as a place, but the import warns
+  `backup <folder> is on the same file system as <folder>` before it starts. Losing that
+  disk loses both copies.
 - **Places you did not name.** With no `--backup`, the destination is the only place, so
   "can be formatted" then means one copy.
 
