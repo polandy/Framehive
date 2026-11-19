@@ -95,3 +95,20 @@ dependencies:
     allowed_layers: [adapter]
     allowed_crates: [adapter-xmp]
     features: []
+
+  - name: tracing
+    purpose: Diagnostic events and spans per import job and file (architecture §6), in the crates that report them
+    rationale: A logging facade that any crate can emit to and only the app subscribes to is the de-facto standard architecture §6 and CLAUDE.md name; writing our own would duplicate it in every layer
+    review: By the Tokio project, version 0.1 with years of stable API, MIT; without the attributes feature, so no proc-macro crates; used across layers like thiserror because it is a facade, not an implementation (ADR 0046)
+    adr: "0046"
+    allowed_layers: [kernel, service, module, adapter, app]
+    features: [std]
+
+  - name: tracing-subscriber
+    purpose: Writes the diagnostic events of tracing to standard error in framehive-cli, filtered by --verbose (CLI-021)
+    rationale: Formatting spans and events with their fields and filtering them by level is the subscriber half of tracing; a hand-written subscriber would reimplement span storage
+    review: By the Tokio project, version 0.3, MIT; only the fmt feature, without ansi, env-filter, json or time formatting, so it adds sharded-slab and thread_local only (ADR 0046)
+    adr: "0046"
+    allowed_layers: [app]
+    allowed_crates: [framehive-cli]
+    features: [std, fmt]

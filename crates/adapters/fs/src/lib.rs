@@ -160,6 +160,7 @@ impl FileSystem for StdFileSystem {
         match (self.link)(from, to) {
             Ok(()) => remove_old_name(from, to),
             Err(error) if has_no_hard_links(&error) => {
+                tracing::debug!(to = %to.display(), %error, "renaming without a hard link");
                 StdFileSystem::rename_without_link(from, to, error)
             }
             Err(error) => Err(error),

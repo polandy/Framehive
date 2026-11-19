@@ -17,6 +17,7 @@ port = "files"
 [dependencies]
 domain.workspace = true
 files.workspace = true
+tracing.workspace = true
 
 [lints]
 workspace = true

@@ -22,6 +22,15 @@ const CONFLICT_POLICIES: [&str; 3] = ["add_suffix", "skip", "fail"];
 /// The values of `--format` of `framehive import-log` (CLI-009).
 const LOG_FORMATS: [&str; 3] = ["text", "json", "csv"];
 
+/// The parsed command line: what to do, and how much diagnostic output to show.
+#[derive(Debug)]
+pub(crate) struct CommandLine {
+    /// What the user asked `framehive` to do.
+    pub(crate) invocation: Invocation,
+    /// How often `--verbose` was given (CLI-021).
+    pub(crate) verbose: u8,
+}
+
 /// What the user asked `framehive` to do.
 #[derive(Debug)]
 pub(crate) enum Invocation {
@@ -120,23 +129,38 @@ pub(crate) enum OnConflict {
 /// `--version`, whose text the error carries.
 pub(crate) fn parse(
     arguments: impl IntoIterator<Item = OsString>,
-) -> Result<Invocation, clap::Error> {
+) -> Result<CommandLine, clap::Error> {
     let matches = command().try_get_matches_from(arguments)?;
+    Ok(CommandLine {
+        invocation: invocation(&matches),
+        verbose: matches.get_count("verbose"),
+    })
+}
+
+fn invocation(matches: &ArgMatches) -> Invocation {
     // clap rejects any other subcommand before this point.
-    Ok(match matches.subcommand() {
+    match matches.subcommand() {
         Some(("import", import)) => Invocation::Import(import_arguments(import)),
         Some(("config", _)) => Invocation::ConfigInit,
         Some(("cameras", _)) => Invocation::Cameras,
         Some(("library", library)) => library_invocation(library),
         Some((_, import_log)) => Invocation::ImportLog(import_log_arguments(import_log)),
         None => Invocation::Guided,
-    })
+    }
 }
 
 fn command() -> Command {
     Command::new("framehive")
         .version(env!("CARGO_PKG_VERSION"))
         .about("Framehive photo library; without a subcommand, the guided import of a memory card")
+        .arg(
+            Arg::new("verbose")
+                .short('v')
+                .long("verbose")
+                .action(ArgAction::Count)
+                .global(true)
+                .help("Show what the command does on standard error; twice for more detail"),
+        )
         .subcommand(import_command())
         .subcommand(import_log_command())
         .subcommand(config_command())

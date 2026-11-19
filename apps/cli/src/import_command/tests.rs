@@ -18,7 +18,7 @@ use import::{Configuration, ImportSummary};
 
 use super::sources::Streams;
 use super::{NotStarted, Surroundings, exit_code, import_with, locations};
-use crate::arguments::{Invocation, parse};
+use crate::arguments::{CommandLine, Invocation, parse};
 use crate::testing::{PanickingInTheJob, UnreadableInTheJob};
 
 /// A card with `DSCF0001.RAF` of 2.5 MB, and the folders of one test run.
@@ -80,7 +80,11 @@ impl Folders {
                 .iter()
                 .map(|argument| argument.as_os_str().to_owned()),
         );
-        let Ok(Invocation::Import(arguments)) = parse(line) else {
+        let Ok(CommandLine {
+            invocation: Invocation::Import(arguments),
+            ..
+        }) = parse(line)
+        else {
             panic!("not an import");
         };
         let mut output = Vec::new();

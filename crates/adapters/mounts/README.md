@@ -21,7 +21,7 @@ dependency, links no native code and has no `unsafe` code.
   the startup disk, are skipped.
 - **Only cards:** a considered mount is a device only if `<mount point>/DCIM` is a
   folder (DCF). A missing `DCIM`, a file named `DCIM`, or one that cannot be examined
-  is no device.
+  is no device; one that cannot be examined is logged as a warning (ADR 0046).
 - **Eject:** runs `udisksctl unmount --block-device <source> --no-user-interaction`
   on Linux or `diskutil eject <mount point>` on macOS with `std::process::Command`. A
   tool that cannot be started or exits with a failure gives `EjectError::Failed` with
@@ -57,3 +57,5 @@ use their own temporary folder in `tests/support/` instead of
 ## Dependencies
 
 - `devices`
+- `tracing` (ADR 0046): a warning for a volume or `DCIM` folder that cannot be
+  examined

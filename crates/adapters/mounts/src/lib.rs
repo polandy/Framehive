@@ -22,6 +22,7 @@ mod mountinfo;
 
 use std::ffi::OsString;
 use std::fs;
+use std::io;
 use std::path::{Path, PathBuf};
 
 use devices::{Device, DeviceSource, EjectError, ListError};
@@ -203,7 +204,11 @@ fn macos_volumes(volumes: &Path) -> Result<Vec<Considered>, ListError> {
     let entries = fs::read_dir(volumes)
         .map_err(|error| ListError::new(volumes.display().to_string(), error))?;
     Ok(entries
-        .filter_map(Result::ok)
+        .filter_map(|entry| {
+            entry
+                .inspect_err(|error| tracing::warn!(folder = %volumes.display(), %error, "a volume cannot be examined"))
+                .ok()
+        })
         .filter(|entry| entry.file_type().is_ok_and(|kind| kind.is_dir()))
         .map(|entry| Considered {
             mount_point: entry.path(),
@@ -214,7 +219,14 @@ fn macos_volumes(volumes: &Path) -> Result<Vec<Considered>, ListError> {
 
 /// Whether `mount_point` has a folder `DCIM`; one that cannot be examined has none.
 fn has_dcim_folder(mount_point: &Path) -> bool {
-    fs::metadata(mount_point.join(DCIM)).is_ok_and(|metadata| metadata.is_dir())
+    match fs::metadata(mount_point.join(DCIM)) {
+        Ok(metadata) => metadata.is_dir(),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => false,
+        Err(error) => {
+            tracing::warn!(mount_point = %mount_point.display(), %error, "the DCIM folder cannot be examined");
+            false
+        }
+    }
 }
 
 fn path_bytes(path: &Path) -> &[u8] {

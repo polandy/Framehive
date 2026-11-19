@@ -347,6 +347,7 @@ impl<'a> ImportRun<'a> {
                 stopped = true;
                 break;
             }
+            let _file = tracing::info_span!("file", path = %file.found.path.display()).entered();
             steps.file_started(&file.found.path);
             let (report, recorded) = self.execute_file(
                 settings,
@@ -358,6 +359,7 @@ impl<'a> ImportRun<'a> {
             for counts in &mut backups {
                 counts.count(report.backups.iter());
             }
+            tracing::info!(outcome = ?report.outcome, "file done");
             steps.file_finished(report);
             if let Err(error) = recorded {
                 history_error = Some(error);

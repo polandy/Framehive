@@ -41,6 +41,8 @@ import.workspace = true
 library.workspace = true
 metadata.workspace = true
 naming.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
 
 [dev-dependencies]
 files.workspace = true

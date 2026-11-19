@@ -51,3 +51,5 @@ a read-only file.
 ## Dependencies
 
 - `domain`, `files`
+- `tracing` (ADR 0046): a detail when a rename falls back to the path without hard
+  links

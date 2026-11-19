@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Framehive contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//! `framehive`, the command line of Framehive (CLI-001, CLI-002, CLI-003, CLI-009, CLI-010, CLI-013, CLI-018). See `README.md`.
+//! `framehive`, the command line of Framehive (CLI-001, CLI-002, CLI-003, CLI-009, CLI-010, CLI-013, CLI-018, CLI-021). See `README.md`.
 
 #![forbid(unsafe_code)]
 
@@ -9,6 +9,7 @@ mod arguments;
 mod cameras;
 mod config_init;
 mod configuration_file;
+mod diagnostics;
 mod format_readiness;
 mod guided;
 mod import_command;
@@ -38,7 +39,10 @@ const JOB_ENDED_UNEXPECTEDLY: &str = "the import stopped unexpectedly";
 
 fn main() -> ExitCode {
     match arguments::parse(std::env::args_os()) {
-        Ok(invocation) => run(&invocation),
+        Ok(command_line) => {
+            diagnostics::start(command_line.verbose);
+            run(&command_line.invocation)
+        }
         Err(error) => exit_for_argument_error(&error),
     }
 }

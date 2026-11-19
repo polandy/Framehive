@@ -5,7 +5,7 @@ Part of the [architecture](README.md).
 | Topic | Rule |
 |---|---|
 | Errors | Libraries: own error types with `thiserror`, every variant documented. `anyhow` only in apps and `xtask`. No panics in libraries (`unwrap`/`expect` forbidden by Clippy except in tests). |
-| Logging & diagnostics | `tracing` with structured fields; spans per job and file. No `println!`. Diagnostic export for error reports (N24). |
+| Logging & diagnostics | `tracing` with structured fields; spans per job and file. No `println!`. Only the app subscribes, on standard error, by `--verbose` (ADR 0046, CLI-021). Diagnostic export for error reports later. |
 | Concurrency | Standard-library threads and channels; an async runtime only when an adapter strictly needs one (ADR 0009). Business logic stays synchronous and pure. Cancellation via cancellation tokens, never by killing threads. |
 | Time | Only through the `Clock` port. Times are explicit `Timestamp` and `UtcOffset` values (`domain`), never implicitly the system time zone; only `adapter-clock` reads it (ADR 0022). |
 | IDs & randomness | Only through the `IdGenerator` and `Rng` ports (fixed seed in tests). |
