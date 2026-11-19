@@ -8,12 +8,12 @@ use std::io::{BufRead, Write};
 use std::path::Path;
 
 use files::Trash;
-use library::{LibraryAsset, RemoveRawsPlan, RemoveRawsTotals};
+use library::{ChangeReason, LibraryAsset, RemoveRawsPlan, RemoveRawsReport, RemoveRawsTotals};
 use metadata::xmp::SidecarFiles;
 
 use super::{read_folder_message, read_library_folder, write_line};
 use crate::guided::size_text;
-use crate::{FILES_FAILED, NOT_STARTED, write_error, write_hint};
+use crate::{FILES_FAILED, NOT_STARTED, write_error, write_hint, write_warning};
 
 /// The answers that confirm, in any case.
 const YES: [&str; 2] = ["y", "yes"];
@@ -86,21 +86,44 @@ pub(crate) fn remove_raws(
             return NOT_STARTED;
         }
     }
-    let report = plan.run(trash);
+    let report = plan.run(sidecars, trash);
+    write_report_problems(terminal.errors, &report);
+    let moved = totals_text(&report.moved);
+    write_line(terminal.output, &format!("Moved to the trash: {moved}"));
+    if report.not_moved.is_empty() && report.changed.is_empty() {
+        0
+    } else {
+        FILES_FAILED
+    }
+}
+
+/// The assets that changed since the summary, then the files that did not move.
+fn write_report_problems(errors: &mut dyn Write, report: &RemoveRawsReport) {
+    for changed in &report.changed {
+        let message = format!(
+            "{} changed since the summary: {}; its RAW stays",
+            changed.asset.display(),
+            change_text(changed.reason)
+        );
+        write_warning(errors, &message);
+    }
     for not_moved in &report.not_moved {
         let message = format!(
             "cannot move {} to the trash: {}",
             not_moved.path.display(),
             not_moved.reason
         );
-        write_error(terminal.errors, &message);
+        write_error(errors, &message);
     }
-    let moved = totals_text(&report.moved);
-    write_line(terminal.output, &format!("Moved to the trash: {moved}"));
-    if report.not_moved.is_empty() {
-        0
-    } else {
-        FILES_FAILED
+}
+
+pub(super) fn change_text(reason: ChangeReason) -> &'static str {
+    match reason {
+        ChangeReason::RawGone => "its RAW is gone",
+        ChangeReason::RenderedGone => "its rendered file is gone",
+        ChangeReason::MarkedKeepRaw => "it is marked Keep RAW",
+        ChangeReason::Rejected => "it is rejected",
+        ChangeReason::StateUnreadable => "its state cannot be read",
     }
 }
 

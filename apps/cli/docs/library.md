@@ -20,13 +20,13 @@ until the GUI has them. `src/library_command/` holds them:
   stops with exit code 2 before any change when a file is not part of one, and then
   calls `library::set_keep_raw` per asset.
 - `remove_raws.rs` prints the summary of `library::RemoveRawsPlan`, asks on standard
-  input unless `--yes` is given, runs the plan on the trash and reports each file that
-  did not move. It reads the answer from any input, not only a terminal, so a script
+  input unless `--yes` is given, runs the plan on the trash and reports each asset that
+  changed while the question was open and each file that did not move. It reads the answer from any input, not only a terminal, so a script
   may pipe `y`; only an input that ends without an answer is an error (exit code 2),
   so that a script with no input does not see `Nothing moved.` as a success.
 
 Both functions take the ports and the streams, so `src/library_command/tests.rs` runs
 them on a `MemoryFileSystem` with a `MemoryTrash` that can refuse a file (CLI-018.4,
-.6, .8, .10). `tests/library.rs` runs the binary with `XDG_DATA_HOME` below a temporary
+.6, .8, .10), and with an input that changes the folder before it answers (CLI-018.14). `tests/library.rs` and `tests/remove_raws_changed.rs` run the binary with `XDG_DATA_HOME` below a temporary
 folder; the confirmed run is not run against the binary on macOS, where it would use
 the Trash of the user who runs the tests.

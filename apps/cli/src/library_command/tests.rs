@@ -3,11 +3,13 @@
 
 #![allow(clippy::unwrap_used, reason = "tests may panic on bad fixtures")]
 
+use std::io::BufRead;
 use std::path::{Path, PathBuf};
 
 use adapter_xmp::QuickXml;
 use domain::testing::ManualClock;
 use domain::{Timestamp, UtcOffset};
+use files::FileSystem;
 use files::testing::{FnvHasher, MemoryFileSystem, MemoryTrash};
 use metadata::xmp::{SidecarFiles, SidecarNaming};
 
@@ -94,6 +96,10 @@ impl Library {
     }
 
     fn run_remove_raws(&self, answer: &str, yes: bool) -> Ran {
+        self.run_remove_raws_from(&mut answer.as_bytes(), yes)
+    }
+
+    fn run_remove_raws_from(&self, input: &mut dyn BufRead, yes: bool) -> Ran {
         let (mut output, mut errors) = (Vec::new(), Vec::new());
         let exit_code = remove_raws(
             self.sidecars(),
@@ -102,7 +108,7 @@ impl Library {
             false,
             yes,
             &mut Terminal {
-                input: &mut answer.as_bytes(),
+                input,
                 output: &mut output,
                 errors: &mut errors,
             },
@@ -194,6 +200,63 @@ fn yes_moves_without_asking() {
     assert!(!ran.output.contains("[y/N]"));
 }
 
+/// The answer `y`, given after `change` ran on the folder, as while the question is open.
+struct ChangeThenYes<'a> {
+    change: Option<Box<dyn FnOnce() + 'a>>,
+    answer: &'a [u8],
+}
+
+impl std::io::Read for ChangeThenYes<'_> {
+    fn read(&mut self, buffer: &mut [u8]) -> std::io::Result<usize> {
+        self.fill_buf()?;
+        let length = buffer.len().min(self.answer.len());
+        buffer[..length].copy_from_slice(&self.answer[..length]);
+        self.consume(length);
+        Ok(length)
+    }
+}
+
+impl BufRead for ChangeThenYes<'_> {
+    fn fill_buf(&mut self) -> std::io::Result<&[u8]> {
+        if let Some(change) = self.change.take() {
+            change();
+        }
+        Ok(self.answer)
+    }
+
+    fn consume(&mut self, amount: usize) {
+        self.answer = &self.answer[amount..];
+    }
+}
+
+/// spec: CLI-018.14
+#[test]
+fn an_asset_that_changed_since_the_summary_keeps_its_raw() {
+    let library = Library::new();
+    library.add_pair_with_sidecars("A");
+    library.add_pair_with_sidecars("B");
+    let mut input = ChangeThenYes {
+        change: Some(Box::new(|| {
+            library.files.remove_file(&path("A.JPG")).unwrap();
+        })),
+        answer: b"y\n",
+    };
+
+    let ran = library.run_remove_raws_from(&mut input, false);
+
+    assert_eq!(ran.exit_code, 1);
+    assert_eq!(
+        ran.errors,
+        "warning: /photos/A changed since the summary: its rendered file is gone; its RAW stays\n"
+    );
+    assert!(library.exists("A.RAF") && library.exists("A.RAF.xmp"));
+    assert_eq!(library.trash.moved(), paths(&["B.RAF", "B.RAF.xmp"]));
+    assert!(
+        ran.output
+            .ends_with("Moved to the trash: 1 asset, 2 files, 0.0 MB freed\n")
+    );
+}
+
 /// spec: CLI-018.8
 #[test]
 fn a_file_that_cannot_be_moved_is_reported() {
@@ -273,4 +336,29 @@ fn the_home_trash_follows_xdg_data_home_and_else_the_home_folder() {
         Some(PathBuf::from("/home/ada/.local/share/Trash"))
     );
     assert_eq!(home_trash(None, Some(OsStr::new("relative"))), None);
+}
+
+/// spec: CLI-018.14
+#[test]
+fn every_change_has_its_reason_text() {
+    use library::ChangeReason;
+    let texts = [
+        ChangeReason::RawGone,
+        ChangeReason::RenderedGone,
+        ChangeReason::MarkedKeepRaw,
+        ChangeReason::Rejected,
+        ChangeReason::StateUnreadable,
+    ]
+    .map(change_text);
+
+    assert_eq!(
+        texts,
+        [
+            "its RAW is gone",
+            "its rendered file is gone",
+            "it is marked Keep RAW",
+            "it is rejected",
+            "its state cannot be read",
+        ]
+    );
 }
