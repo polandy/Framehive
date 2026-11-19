@@ -127,6 +127,11 @@ fn a_second_run_asks_only_for_the_job_code() {
     );
     assert!(second.output.contains("  1  Harbour"), "{}", second.output);
     assert!(
+        second.output.contains("Choose 1 or type a job code [1]: "),
+        "{}",
+        second.output
+    );
+    assert!(
         second.output.contains("\n1 copied, 1 already imported"),
         "{}",
         second.output
@@ -213,7 +218,7 @@ fn the_report_shows_a_kept_creator_and_the_sidecar_count() {
         run.output
     );
     assert!(
-        run.output.contains("\n1 sidecars written\n"),
+        run.output.contains("0 left out\n1 sidecars written\n"),
         "{}",
         run.output
     );
@@ -223,21 +228,4 @@ fn the_report_shows_a_kept_creator_and_the_sidecar_count() {
             .join("2026/2026-10-17/DSCF0001.JPG.xmp")
             .is_file()
     );
-}
-
-/// Only one of the two variables is a usage error, so a typo never reads the real mount
-/// table (ADR 0050 §1).
-#[test]
-fn the_mount_table_without_media_folders_is_refused() {
-    let machine = Machine::new();
-    let mut command = machine.folders.framehive_command(&[]);
-    command.env("FRAMEHIVE_MOUNTINFO", machine.mountinfo());
-
-    let run = run_on_terminal(command, &[]);
-
-    assert_eq!(
-        run.errors,
-        "error: FRAMEHIVE_MOUNTINFO and FRAMEHIVE_MEDIA_FOLDERS are set together or not at all\n"
-    );
-    assert_eq!(run.status.code(), Some(2));
 }

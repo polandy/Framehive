@@ -20,7 +20,7 @@ mod template;
 #[cfg(test)]
 mod tests;
 
-use std::ffi::OsStr;
+use std::ffi::{OsStr, OsString};
 use std::io::{self, IsTerminal};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
@@ -114,10 +114,23 @@ fn memory_cards() -> Result<MountsDeviceSource, String> {
     if cfg!(target_os = "macos") {
         return Ok(MountsDeviceSource::new());
     }
-    match (
+    memory_cards_from(
         std::env::var_os(MOUNTINFO_VARIABLE),
         std::env::var_os(MEDIA_FOLDERS_VARIABLE),
-    ) {
+    )
+}
+
+/// The memory cards of the mount table `mountinfo` and the media `folders`, or of this
+/// system when neither is given.
+///
+/// # Errors
+///
+/// Returns the message of a usage error when only one of the two is given.
+fn memory_cards_from(
+    mountinfo: Option<OsString>,
+    folders: Option<OsString>,
+) -> Result<MountsDeviceSource, String> {
+    match (mountinfo, folders) {
         (None, None) => Ok(MountsDeviceSource::new()),
         (Some(mountinfo), Some(folders)) => Ok(MountsDeviceSource::linux(
             mountinfo,
