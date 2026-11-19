@@ -7,6 +7,7 @@
 #[cfg(test)]
 mod camera_tests;
 mod folders;
+mod free_space;
 mod locations;
 #[cfg(test)]
 mod metadata_tests;
@@ -160,14 +161,7 @@ fn choose_settings(
         ),
         None => (None, None, None, Vec::new()),
     };
-    let destination = locations.destination.clone();
-    let template = match (&arguments.template, profile_template) {
-        (Some(text), _) => NameTemplate::parse(text)
-            .map_err(|error| format!("invalid name template {text}: {error}"))?,
-        (None, Some(template)) => template,
-        (None, None) => NameTemplate::parse(DEFAULT_NAME_TEMPLATE)
-            .map_err(|error| format!("invalid name template {DEFAULT_NAME_TEMPLATE}: {error}"))?,
-    };
+    let template = name_template(arguments, profile_template)?;
     let job_code = job_code(
         arguments.job_code.as_deref(),
         profile_job_code,
@@ -185,7 +179,7 @@ fn choose_settings(
         arguments.backups.clone()
     };
     Ok(ChosenSettings {
-        destination,
+        destination: locations.destination.clone(),
         template,
         video_template,
         job_code,
@@ -195,6 +189,24 @@ fn choose_settings(
         video_backups,
         metadata,
     })
+}
+
+/// The name template from `--template`, else from the profile, else the default.
+///
+/// # Errors
+///
+/// Returns the message for an invalid `--template`.
+fn name_template(
+    arguments: &ImportArguments,
+    profile_template: Option<NameTemplate>,
+) -> Result<NameTemplate, String> {
+    match (&arguments.template, profile_template) {
+        (Some(text), _) => NameTemplate::parse(text)
+            .map_err(|error| format!("invalid name template {text}: {error}")),
+        (None, Some(template)) => Ok(template),
+        (None, None) => NameTemplate::parse(DEFAULT_NAME_TEMPLATE)
+            .map_err(|error| format!("invalid name template {DEFAULT_NAME_TEMPLATE}: {error}")),
+    }
 }
 
 /// The video name template from `--video-template`, else from `profile`, else none

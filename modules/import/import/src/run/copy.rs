@@ -43,31 +43,14 @@ impl ImportRun<'_> {
         let role = file.found.role;
         let resolver = resolvers.of(role);
         let recognition = file.recognition.as_ref();
-        let recorded_sidecars = recognition.map_or(&[][..], Recognition::recorded_sidecars);
-        let mut imported = match file.planned {
-            Ok(FilePlan::Named(planned)) => {
-                let mut imported =
-                    self.import_planned(settings, resolver, &file.found, &planned, recognition);
-                if let Some(sidecars) = sidecars {
-                    sidecars.add_to(&file.found, &planned, recorded_sidecars, &mut imported);
-                }
-                imported
-            }
-            Ok(FilePlan::ImportedBefore { target }) => {
-                let mut imported = self.back_up_imported_before(
-                    settings,
-                    resolver,
-                    &file.found,
-                    target,
-                    recognition,
-                );
-                if let Some(sidecars) = sidecars {
-                    sidecars.add_to_imported_before(&file.found, recorded_sidecars, &mut imported);
-                }
-                imported
-            }
-            Err(error) => Imported::without_backups(FileOutcome::Failed(error)),
-        };
+        let mut imported = self.import_file(
+            settings,
+            resolver,
+            sidecars,
+            file.planned,
+            &file.found,
+            recognition,
+        );
         let carried_sidecars = imported.carried_sidecars(&file.found);
         let report = FileReport {
             path: file.found.path,
@@ -95,6 +78,38 @@ impl ImportRun<'_> {
             _ => Ok(()),
         };
         (report, recorded)
+    }
+
+    /// Imports or backs up one file by its plan, with its sidecar (IMPORT-019).
+    fn import_file(
+        &self,
+        settings: &ImportSettings<'_>,
+        resolver: &mut TargetResolver<'_>,
+        sidecars: Option<&Sidecars<'_>>,
+        planned: Result<FilePlan, FileError>,
+        found: &FoundFile,
+        recognition: Option<&Recognition>,
+    ) -> Imported {
+        let recorded_sidecars = recognition.map_or(&[][..], Recognition::recorded_sidecars);
+        match planned {
+            Ok(FilePlan::Named(planned)) => {
+                let mut imported =
+                    self.import_planned(settings, resolver, found, &planned, recognition);
+                if let Some(sidecars) = sidecars {
+                    sidecars.add_to(found, &planned, recorded_sidecars, &mut imported);
+                }
+                imported
+            }
+            Ok(FilePlan::ImportedBefore { target }) => {
+                let mut imported =
+                    self.back_up_imported_before(settings, resolver, found, target, recognition);
+                if let Some(sidecars) = sidecars {
+                    sidecars.add_to_imported_before(found, recorded_sidecars, &mut imported);
+                }
+                imported
+            }
+            Err(error) => Imported::without_backups(FileOutcome::Failed(error)),
+        }
     }
 
     /// Backs up a file imported before, at the target of its recorded copy, to each
@@ -192,18 +207,7 @@ impl ImportRun<'_> {
         resolver: &mut TargetResolver<'_>,
         to_import_destination: bool,
     ) -> FileCopied {
-        let found: Vec<BackupTarget> = copy
-            .destinations
-            .iter()
-            .zip(&copy.backup_targets)
-            .map(|(destination, path)| {
-                if copy.is_backed_up_before(destination) {
-                    BackupTarget::BackedUpBefore
-                } else {
-                    inspect_backup_target(self.file_system, path, copy.size)
-                }
-            })
-            .collect();
+        let found = self.inspect_backup_targets(copy);
         let targets = targets_to_write(copy, &found, to_import_destination);
         let copies = copy_verified_to_all(
             self.source_file_system,
@@ -250,6 +254,22 @@ impl ImportRun<'_> {
             backups,
             source_checksum,
         }
+    }
+
+    /// Finds what is at each backup target of the copy, without looking at a
+    /// destination the file is backed up before at.
+    fn inspect_backup_targets(&self, copy: &FileCopy<'_>) -> Vec<BackupTarget> {
+        copy.destinations
+            .iter()
+            .zip(&copy.backup_targets)
+            .map(|(destination, path)| {
+                if copy.is_backed_up_before(destination) {
+                    BackupTarget::BackedUpBefore
+                } else {
+                    inspect_backup_target(self.file_system, path, copy.size)
+                }
+            })
+            .collect()
     }
 
     /// Compares a file of the source's size at the backup target `path` with the
