@@ -177,7 +177,7 @@ fn removed_criteria(id: &str, text: &str) -> Vec<u32> {
 /// Parses `- Pending: 1, 8`, which a `partial` spec needs and no other spec may have.
 fn pending_criteria(spec: &Spec, value: Option<&String>, problems: &mut Vec<String>) -> Vec<u32> {
     let file = &spec.file;
-    let Some(value) = value else {
+    let Some(value) = value.filter(|value| value.as_str() != NONE_MARKER) else {
         if spec.status == PARTIAL {
             problems.push(format!(
                 "{file}: a partial spec needs `- Pending: <criterion numbers>`"
@@ -285,6 +285,14 @@ mod tests {
     #[test]
     fn rejects_a_partial_spec_without_pending_criteria() {
         let text = VALID.replace("implemented\n", "partial\n");
+        let problems = parse_spec("specs/core/CORE-009-example.md", &text).unwrap_err();
+        assert_eq!(
+            problems,
+            [
+                "specs/core/CORE-009-example.md: a partial spec needs `- Pending: <criterion numbers>`"
+            ]
+        );
+        let text = VALID.replace("implemented\n", "partial\n- Pending: –\n");
         let problems = parse_spec("specs/core/CORE-009-example.md", &text).unwrap_err();
         assert_eq!(
             problems,
