@@ -42,13 +42,29 @@ fn imported_before(name: &str) -> String {
 /// Runs `framehive import <source> --destination <destination>` with `fault` in
 /// `FRAMEHIVE_FAULT`.
 fn import_with_fault(folders: &Folders, fault: &str) -> Output {
+    import_with_fault_and_options(folders, fault, &[])
+}
+
+/// As [`import_with_fault`], with `options` after the destination.
+fn import_with_fault_and_options(folders: &Folders, fault: &str, options: &[&str]) -> Output {
     let source = folders.source().display().to_string();
     let destination = folders.destination().display().to_string();
+    let mut arguments = vec!["import", &source, "--destination", &destination];
+    arguments.extend_from_slice(options);
     folders
-        .framehive_command(&["import", &source, "--destination", &destination])
+        .framehive_command(&arguments)
         .env("FRAMEHIVE_FAULT", fault)
         .output()
         .unwrap()
+}
+
+/// The line that reports `name` as failed, or an empty one.
+fn failed_line(output: &Output, name: &str) -> String {
+    let start = format!("failed  {name}: cannot read the source: ");
+    lines(output)
+        .into_iter()
+        .find(|line| line.starts_with(&start))
+        .unwrap_or_default()
 }
 
 fn assert_target_is_source(folders: &Folders, name: &str) {
@@ -175,10 +191,7 @@ fn an_unplugged_source_fails_the_remaining_files_and_a_rerun_copies_them() {
 
     assert!(has_line(&output, &copied("DSCF0001.RAF")));
     for name in ["DSCF0002.RAF", "DSCF0003.RAF"] {
-        let failed = lines(&output)
-            .into_iter()
-            .find(|line| line.starts_with(&format!("failed  {name}: cannot read the source: ")))
-            .unwrap_or_default();
+        let failed = failed_line(&output, name);
         assert!(
             failed.ends_with("Input/output error (os error 5)"),
             "{failed}"
@@ -222,6 +235,63 @@ fn an_unplugged_source_fails_the_remaining_files_and_a_rerun_copies_them() {
     assert_eq!(rerun.status.code(), Some(0), "{}", stderr(&rerun));
 }
 
+/// The limit is the shortest the profile allows; the outcome does not depend on it,
+/// because the hanging read never returns (ADR 0049 §4).
+/// spec: CLI-025.5
+#[test]
+fn a_hanging_source_fails_the_remaining_files_and_the_run_ends() {
+    let folders = Folders::new();
+    add_three_files(&folders);
+    folders.write_profile(
+        "slow",
+        b"schema_version: 3\nsource_stall_limit_seconds: 1\n",
+    );
+
+    let output = import_with_fault_and_options(
+        &folders,
+        "hang-while-reading DSCF0002.RAF",
+        &["--profile", "slow"],
+    );
+
+    assert!(has_line(&output, &copied("DSCF0001.RAF")));
+    let hanging = failed_line(&output, "DSCF0002.RAF");
+    assert!(
+        hanging.ends_with(": the source did not answer for 1 seconds"),
+        "{hanging}"
+    );
+    let stopped = failed_line(&output, "DSCF0003.RAF");
+    assert!(
+        stopped.ends_with(": the source stopped answering"),
+        "{stopped}"
+    );
+    for name in ["DSCF0002.RAF", "DSCF0003.RAF"] {
+        assert!(!folders.destination().join(target(name)).exists());
+        assert!(
+            !folders
+                .destination()
+                .join(target(&format!("{name}.part")))
+                .exists()
+        );
+    }
+    assert_eq!(
+        summary_line(&output),
+        "1 copied, 0 already imported, 0 duplicates, 0 skipped, 2 failed, 0 left out"
+    );
+    assert!(has_line(
+        &output,
+        "Do not format the source: not every file is verified in 1 location."
+    ));
+    assert_eq!(output.status.code(), Some(1), "{}", stderr(&output));
+
+    let rerun = folders.import(&[]);
+
+    assert!(has_line(&rerun, &imported_before("DSCF0001.RAF")));
+    for name in NAMES {
+        assert_target_is_source(&folders, name);
+    }
+    assert_eq!(rerun.status.code(), Some(0), "{}", stderr(&rerun));
+}
+
 /// spec: CLI-025.4
 #[test]
 fn an_unknown_fault_is_a_usage_error() {
@@ -233,7 +303,7 @@ fn an_unknown_fault_is_a_usage_error() {
     assert_eq!(
         stderr(&output),
         "error: FRAMEHIVE_FAULT: unknown fault `flip-bits`; the faults are \
-         abort-while-writing, flip-bit-after-sync, unplug-while-reading\n"
+         abort-while-writing, flip-bit-after-sync, hang-while-reading, unplug-while-reading\n"
     );
     assert!(!folders.destination().exists());
     assert_eq!(output.status.code(), Some(2));
