@@ -16,6 +16,8 @@ pub(crate) struct KeepRawArguments {
     pub(crate) files: Vec<PathBuf>,
     /// `--off`: unmark them.
     pub(crate) off: bool,
+    /// `--dry-run`: print what would change, change nothing.
+    pub(crate) dry_run: bool,
 }
 
 /// The arguments of `framehive library remove-raws` (CLI-018).
@@ -50,6 +52,12 @@ pub(super) fn library_command() -> Command {
                         .long("off")
                         .action(ArgAction::SetTrue)
                         .help("Unmark them instead"),
+                )
+                .arg(
+                    Arg::new("dry-run")
+                        .long("dry-run")
+                        .action(ArgAction::SetTrue)
+                        .help("Print what would change, change nothing"),
                 ),
         )
         .subcommand(
@@ -85,6 +93,7 @@ pub(super) fn library_invocation(matches: &ArgMatches) -> Invocation {
                 .map(|files| files.cloned().collect())
                 .unwrap_or_default(),
             off: keep_raw.get_flag("off"),
+            dry_run: keep_raw.get_flag("dry-run"),
         });
     }
     // clap requires a subcommand, so this is `remove-raws`.

@@ -4,6 +4,7 @@ Every command accepts `-v` / `--verbose`, before or after the command name. Once
 what the command does, such as each file of an import; twice adds details, such as a
 rename without a hard link. These diagnostic lines go to standard error only, so the
 report and the exit codes stay the same; attach them to an error report.
+`framehive --help` ends with examples, the folders Framehive uses and the exit codes.
 
 | Command | What it does |
 |---|---|
@@ -107,11 +108,12 @@ existing file is kept, and the exit code is then 1.
 ## `framehive library keep-raw`
 
 ```
-framehive library keep-raw [--off] <file>...
+framehive library keep-raw [--off] [--dry-run] <file>...
 ```
 
 Marks the asset of each file (a photo, its RAW, JPEG or sidecar) Keep RAW, or unmarks it
-with `--off`. The marker is stored in the asset's XMP sidecar. When a file is not part of
+with `--off`. The marker is stored in the asset's XMP sidecar. `--dry-run` prints what
+would change and writes nothing. When a file is not part of
 an asset, nothing changes and the exit code is 2.
 
 ## `framehive library remove-raws`

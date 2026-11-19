@@ -18,7 +18,8 @@ until the GUI has them. `src/library_command/` holds them:
   ambiguous base names that `library::read_folder` returns.
 - `keep_raw.rs` reads the folder of each named file once, finds each file's asset,
   stops with exit code 2 before any change when a file is not part of one, and then
-  calls `library::set_keep_raw` per asset.
+  calls `library::set_keep_raw` per asset; with `--dry-run` it prints the lines with
+  `would be` and writes nothing.
 - `remove_raws.rs` prints the summary of `library::RemoveRawsPlan`, asks on standard
   input unless `--yes` is given, runs the plan on the trash and reports each asset that
   changed while the question was open and each file that did not move. It reads the answer from any input, not only a terminal, so a script

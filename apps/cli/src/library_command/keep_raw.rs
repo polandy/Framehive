@@ -14,13 +14,22 @@ use metadata::xmp::{SidecarFiles, SidecarNaming};
 use super::{asset_name, read_folder_message, read_library_folder, write_line};
 use crate::{FILES_FAILED, NOT_STARTED, write_error};
 
-/// Sets the Keep RAW marker of the assets of `files`, which are absolute, to `marked`,
-/// and returns the exit code of CLI-018.
+/// What `framehive library keep-raw` changes (CLI-018).
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct KeepRawChange {
+    /// Mark the assets, or unmark them (`--off`).
+    pub(crate) marked: bool,
+    /// `--dry-run`: print the lines, write no sidecar.
+    pub(crate) dry_run: bool,
+}
+
+/// Sets the Keep RAW marker of the assets of `files`, which are absolute, as `change`
+/// says, and returns the exit code of CLI-018.
 pub(crate) fn keep_raw(
     sidecars: SidecarFiles<'_>,
     naming: SidecarNaming,
     files: &[PathBuf],
-    marked: bool,
+    change: KeepRawChange,
     output: &mut dyn Write,
     errors: &mut dyn Write,
 ) -> u8 {
@@ -28,10 +37,20 @@ pub(crate) fn keep_raw(
         Ok(assets) => assets,
         Err(exit_code) => return exit_code,
     };
-    let state = if marked { "on" } else { "off" };
+    let state = match (change.dry_run, change.marked) {
+        (false, true) => "on",
+        (false, false) => "off",
+        (true, true) => "would be on",
+        (true, false) => "would be off",
+    };
     let mut exit_code = 0;
     for asset in &assets {
-        match set_keep_raw(sidecars, naming, asset, marked) {
+        let set = if change.dry_run {
+            Ok(())
+        } else {
+            set_keep_raw(sidecars, naming, asset, change.marked)
+        };
+        match set {
             Ok(()) => write_line(output, &format!("Keep RAW {state}: {}", asset_name(asset))),
             Err(error) => {
                 let name = asset_name(asset);

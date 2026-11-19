@@ -52,6 +52,28 @@ fn help_describes_the_import_arguments() {
     assert_eq!(output.status.code(), Some(0));
 }
 
+/// spec: CLI-023.1
+#[test]
+fn help_shows_examples_folders_and_exit_codes() {
+    let output = framehive(&["--help"]);
+
+    let help = text(&output.stdout);
+    for line in [
+        "Examples:",
+        "framehive import /media/card ~/Pictures",
+        "Folders:",
+        "Configuration:",
+        "import history",
+        "Exit codes:",
+        "  0 ",
+        "  1 ",
+        "  2 ",
+    ] {
+        assert!(help.contains(line), "{line} missing in:\n{help}");
+    }
+    assert_eq!(output.status.code(), Some(0));
+}
+
 /// spec: CLI-001.11
 #[test]
 fn an_unknown_conflict_policy_is_rejected() {
