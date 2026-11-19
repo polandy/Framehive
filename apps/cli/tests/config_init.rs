@@ -43,7 +43,7 @@ fn read(text: &str) -> ImportProfile {
     .unwrap()
 }
 
-/// spec: CLI-010.15
+/// spec: CLI-020.1
 #[test]
 fn config_init_writes_the_example() {
     let folders = Folders::new();
@@ -65,7 +65,7 @@ fn config_init_writes_the_example() {
     )));
 }
 
-/// spec: CLI-010.16
+/// spec: CLI-020.2
 #[test]
 fn config_init_keeps_an_existing_example() {
     let folders = Folders::new();

@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 use library::{Asset, LibraryFolder, set_keep_raw};
 use metadata::xmp::{SidecarFiles, SidecarNaming};
 
-use super::{asset_name, read_library_folder, write_line};
+use super::{asset_name, read_folder_message, read_library_folder, write_line};
 use crate::{FILES_FAILED, NOT_STARTED, write_error};
 
 /// Sets the Keep RAW marker of the assets of `files`, which are absolute, to `marked`,
@@ -58,7 +58,7 @@ fn named_assets(
         if !folders.contains_key(folder) {
             let library_folder =
                 read_library_folder(sidecars, folder, errors).map_err(|error| {
-                    write_error(errors, &error.to_string());
+                    write_error(errors, &read_folder_message(&error));
                     NOT_STARTED
                 })?;
             folders.insert(folder.to_path_buf(), library_folder);

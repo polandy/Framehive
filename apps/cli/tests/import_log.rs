@@ -258,7 +258,10 @@ fn a_run_that_does_not_exist_is_an_error() {
 
     let output = folders.import_log(&["7"]);
 
-    assert_eq!(stderr(&output), "error: no import run 7\n");
+    assert_eq!(
+        stderr(&output),
+        "error: no import run 7\nhint: framehive import-log lists the recorded runs\n"
+    );
     assert_eq!(stdout(&output), "");
     assert_eq!(output.status.code(), Some(2));
 }

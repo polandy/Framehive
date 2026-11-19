@@ -13,6 +13,7 @@ use files::FileSystem;
 use import::{CONFIGURATION_FILE_NAME, Configuration};
 
 use crate::profiles::process_configuration_folder;
+use crate::system_reason::PlainReason;
 
 /// Reads `config.yaml` in `configuration_folder`; a file that does not exist sets
 /// nothing (IMPORT-019).
@@ -36,7 +37,11 @@ pub(crate) fn read_configuration(
             return Ok(Configuration::default());
         }
         Err(error) => {
-            return Err(format!("{} cannot be read: {error}", path.display()));
+            return Err(format!(
+                "{} cannot be read: {}",
+                path.display(),
+                PlainReason(&error)
+            ));
         }
     }
     let text =

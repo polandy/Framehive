@@ -17,6 +17,7 @@ mod library_command;
 mod paths;
 mod profiles;
 mod report;
+mod system_reason;
 #[cfg(test)]
 mod testing;
 
@@ -60,6 +61,33 @@ fn exit_for_argument_error(error: &clap::Error) -> ExitCode {
     // Nothing more can be reported when the terminal is gone.
     let _ = error.print();
     u8::try_from(error.exit_code()).map_or(ExitCode::from(NOT_STARTED), ExitCode::from)
+}
+
+/// An error that stops a command: its message, and the hint that may follow it
+/// (CLI-001).
+#[derive(Debug, PartialEq, Eq)]
+struct CommandError {
+    /// The message, without `error: `.
+    message: String,
+    /// The hint, without `hint: `.
+    hint: Option<&'static str>,
+}
+
+impl From<String> for CommandError {
+    fn from(message: String) -> Self {
+        CommandError {
+            message,
+            hint: None,
+        }
+    }
+}
+
+/// Reports `error` and its hint to standard error (CLI-001).
+fn report_command_error(error: &CommandError) {
+    report_error(&error.message);
+    if let Some(hint) = error.hint {
+        report_hint(hint);
+    }
 }
 
 /// Writes a warning that does not stop the command to standard error (CLI-001).

@@ -30,6 +30,7 @@ use import::{
 };
 use naming::NameTemplate;
 
+use crate::CommandError;
 use crate::arguments::{ImportArguments, OnConflict};
 use crate::configuration_file::process_configuration;
 use crate::guided::state_folder;
@@ -219,8 +220,8 @@ fn video_template(
 ///
 /// # Errors
 ///
-/// Returns the message of CLI-010 for each way this fails.
-fn load_profile(name: &str) -> Result<ImportProfile, String> {
+/// Returns the error of CLI-010 for each way this fails.
+fn load_profile(name: &str) -> Result<ImportProfile, CommandError> {
     check_profile_name(name)?;
     let folder = process_configuration_folder()?;
     let home = process_home_folder()?;

@@ -11,7 +11,7 @@ Layer: `app` (architecture §3). Binary: `framehive`.
 
 The command line of Framehive: `framehive import` (CLI-001, CLI-004, CLI-010, CLI-011,
 CLI-013), `framehive cameras` (CLI-013), `framehive import-log` (CLI-009),
-`framehive config init` (CLI-010), `framehive library keep-raw` and
+`framehive config init` (CLI-020), `framehive library keep-raw` and
 `framehive library remove-raws` (CLI-018) and, without a subcommand, the guided import
 (CLI-002, CLI-003, ADR 0024). It parses the arguments
 with `clap` (builder API, ADR 0020 §6) and is one of the two places, with
@@ -43,7 +43,7 @@ framehive --version
 - [The import command](docs/import-command.md): `framehive import`, from the arguments
   to the jobs of its sources (CLI-001, CLI-004, CLI-005, CLI-011, CLI-012, CLI-015, CLI-016)
 - [Import profiles](docs/import-profiles.md): `--profile` and `framehive config init`
-  (CLI-010)
+  (CLI-010, CLI-020)
 - [Cameras](docs/cameras.md): `camera:` sources and `framehive cameras` (CLI-013)
 - [Guided import](docs/guided-import.md): `framehive` without a subcommand (CLI-002,
   CLI-003, CLI-014)
@@ -64,7 +64,7 @@ framehive --version
 | `cameras` | `camera:` sources and `framehive cameras` (CLI-013): naming, finding and opening a camera |
 | `report` | The `ProgressSink` that prints the report lines and the summary |
 | `profiles` | The configuration folder, profile names, and reading the profile of `--profile` (CLI-010) |
-| `config_init` | `framehive config init`: the example profile (CLI-010) |
+| `config_init` | `framehive config init`: the example profile (CLI-020) |
 | `import_log` | `framehive import-log` (CLI-009): reading the history, and the `text`, `json` and `csv` writers |
 | `library_command` | `framehive library keep-raw` and `remove-raws` (CLI-018): the adapters and the trash of the system (`mod.rs`), marking (`keep_raw.rs`) and the summary, question and run (`remove_raws.rs`) |
 | `format_readiness` | The format readiness lines (CLI-007), shared by `framehive import` and the guided import |

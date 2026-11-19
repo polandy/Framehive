@@ -1,9 +1,8 @@
 // SPDX-FileCopyrightText: 2026 Framehive contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//! `framehive import --profile` (CLI-010) against the real binary, the real file system
-//! and a temporary folder that holds the home folder. The child process runs with
-//! `TZ=UTC`.
+//! `framehive import --profile` (CLI-010) against the real binary and file system, with
+//! a temporary home folder; the child process runs with `TZ=UTC`.
 
 #![allow(clippy::unwrap_used, reason = "test helpers may panic on bad fixtures")]
 
@@ -13,7 +12,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Output;
 
-use support::{DEFAULT_TARGET, Folders, stderr, stdout};
+use support::{DEFAULT_TARGET, Folders, PROFILE_KEYS_HINT, stderr, stdout};
 
 const DATED_TARGET: &str = "20261017-DSCF0001.RAF";
 
@@ -312,8 +311,9 @@ fn an_invalid_profile_names_the_file_and_the_position() {
     assert_not_started(
         &output,
         &format!(
-            "error: {}:2:1: unknown key video_destinaton; did you mean video_destination?",
-            text(&path)
+            "error: {}:2:1: unknown key video_destinaton; did you mean video_destination?\n{}",
+            text(&path),
+            PROFILE_KEYS_HINT
         ),
     );
     assert!(!folders.destination().exists());

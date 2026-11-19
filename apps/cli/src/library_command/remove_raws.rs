@@ -11,7 +11,7 @@ use files::Trash;
 use library::{LibraryAsset, RemoveRawsPlan, RemoveRawsTotals};
 use metadata::xmp::SidecarFiles;
 
-use super::{read_library_folder, write_line};
+use super::{read_folder_message, read_library_folder, write_line};
 use crate::guided::size_text;
 use crate::{FILES_FAILED, NOT_STARTED, write_error, write_hint};
 
@@ -49,7 +49,7 @@ pub(crate) fn remove_raws(
     let library_folder = match read_library_folder(sidecars, folder, terminal.errors) {
         Ok(library_folder) => library_folder,
         Err(error) => {
-            write_error(terminal.errors, &error.to_string());
+            write_error(terminal.errors, &read_folder_message(&error));
             return NOT_STARTED;
         }
     };

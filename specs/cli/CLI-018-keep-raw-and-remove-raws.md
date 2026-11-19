@@ -3,7 +3,7 @@
 - Status: implemented
 - Module: cli (`apps/cli`)
 - Origin: B29, B30
-- Depends on: LIBRARY-001, LIBRARY-002, CLI-001
+- Depends on: LIBRARY-001, LIBRARY-002, CLI-001, CLI-019
 
 ## Purpose
 
@@ -82,8 +82,9 @@ Moved to the trash: <assets> assets, <files> files, <size> freed
 ```
 
 counting only what moved. The exit code is 1 when a file did not move, else 0. A folder
-that cannot be read stops the command with `error: <message>` and exit code 2, as does
-an unknown home folder on Linux.
+that cannot be read stops the command with `error: cannot read <path>: <reason>` and
+exit code 2, the reason in the words of CLI-019, as does an unknown home folder on
+Linux.
 
 ## Acceptance criteria
 
@@ -169,6 +170,12 @@ an unknown home folder on Linux.
   output ends with `Moved to the trash: 1 asset, 2 files, <size> freed`, and the exit
   code is 0
 
+### CLI-018.13 – A folder that does not exist
+- **Given** no folder `<folder>`
+- **When** `framehive library remove-raws <folder>` runs
+- **Then** standard output is empty, standard error is exactly
+  `error: cannot read <folder>: it does not exist`, and the exit code is 2
+
 ## Out of scope
 
 - Key `R`, the filter, the index and the summary with thumbnails, which toggle the
@@ -185,3 +192,4 @@ an unknown home folder on Linux.
 |---|---|
 | 2026-11-10 | Initial version, owner decision A on #109 |
 | 2026-11-19 | `--yes`, and no answer stops with exit code 2 (review finding E25) |
+| 2026-11-19 | A folder that cannot be read names the reason in plain words, CLI-018.13 (review E26) |

@@ -276,6 +276,29 @@ fn yes_moves_without_asking() {
     );
 }
 
+/// spec: CLI-018.13
+#[test]
+fn a_folder_that_does_not_exist_is_named_in_plain_words() {
+    let folders = Folders::new();
+    let missing = folders.source().join("missing");
+
+    let output = library(
+        &folders,
+        &["remove-raws", &missing.display().to_string()],
+        b"",
+    );
+
+    assert_eq!(stdout(&output), "");
+    assert_eq!(
+        stderr(&output),
+        format!(
+            "error: cannot read {}: it does not exist\n",
+            missing.display()
+        )
+    );
+    assert_eq!(output.status.code(), Some(2));
+}
+
 /// spec: CLI-018.9
 #[test]
 fn nothing_to_remove_asks_nothing() {
