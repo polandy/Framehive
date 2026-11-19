@@ -78,8 +78,12 @@ folders by capture date, verifies every copy, and skips files that are already
 there:
 
 ```sh
-cargo run --locked -p framehive-cli -- import <source> <destination> [--dry-run]
+nix develop -c cargo run --locked -p framehive-cli -- import <source> <destination> [--dry-run]
 ```
+
+`cargo run` needs the Nix shell (`nix develop`): outside it, the build cannot find the
+native libraries LibRaw and libgphoto2. There are no prebuilt downloads yet; install
+with `nix profile install .` as below.
 
 `--template` sets the folders and names, `--on-conflict add_suffix|skip|fail` decides
 what happens when a name is taken, and `--dry-run` prints the plan without copying.
@@ -92,6 +96,9 @@ without installing, or install it into your profile:
 nix run . -- import <source> <destination> [--dry-run]
 nix profile install .
 ```
+
+The [user guide](docs/user/README.md) covers installation, every command, the
+configuration and when a memory card can be formatted.
 
 To work on the code:
 
