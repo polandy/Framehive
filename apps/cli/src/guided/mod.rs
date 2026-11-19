@@ -34,6 +34,7 @@ use adapter_gphoto2::Gphoto2Cameras;
 use adapter_mounts::MountsDeviceSource;
 use adapter_sequence_counters::FileSequenceCounters;
 use adapter_sqlite::SqliteImportHistory;
+use adapter_timer::StdTimer;
 use adapter_xmp::QuickXml;
 use devices::DeviceSource;
 use files::{Cameras, FileSystem};
@@ -124,6 +125,7 @@ pub(crate) fn run_guided() -> ExitCode {
         free_space: Arc::new(StatvfsFreeSpace::new()),
         reserved_names: Arc::new(ReservedTargetNames::new()),
         xml_syntax: Arc::new(QuickXml::new()),
+        timer: Arc::new(StdTimer::new()),
     };
     let ports = Ports {
         import: &import,

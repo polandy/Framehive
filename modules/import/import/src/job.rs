@@ -9,9 +9,10 @@ use std::fmt;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::mpsc::{self, Receiver, Sender};
+use std::time::Duration;
 
 use domain::Clock;
-use files::{FileSystem, FreeSpace, Hasher, ReadOnlyFileSystem};
+use files::{FileSystem, FreeSpace, Hasher, ReadOnlyFileSystem, Timer};
 use history::ImportHistory;
 use jobs::{Job, JobControl, JobEnd, ResourceKey};
 use metadata::xmp::XmlSyntax;
@@ -26,10 +27,13 @@ use crate::reserved_names::{ReservedNames, ReservedTargetNames};
 use crate::run::{ImportRun, ImportSettings, PlannedRun};
 use crate::scan::SourceScan;
 use crate::sequence::SessionSequence;
+use crate::source_guard::{DEFAULT_SOURCE_STALL_LIMIT, SourceGuard};
 
 mod enqueue;
+mod guarded;
 mod sending;
 
+use guarded::{GuardedSource, run_through};
 use sending::{Answer, SendingSteps};
 
 /// The ports an import job works through, owned so they can move to the worker
@@ -55,6 +59,8 @@ pub struct ImportPorts {
     pub reserved_names: Arc<ReservedTargetNames>,
     /// Reads and writes the XML of sidecars (IMPORT-019).
     pub xml_syntax: Arc<dyn XmlSyntax + Send + Sync>,
+    /// Measures the stall limit of the source (IMPORT-022).
+    pub timer: Arc<dyn Timer>,
 }
 
 impl ImportPorts {
@@ -110,6 +116,9 @@ pub struct ImportJobSettings {
     pub policy: ConflictPolicy,
     /// See [`ImportSettings::dry_run`].
     pub dry_run: bool,
+    /// How long the source may take to answer one call (IMPORT-022). It is not in
+    /// [`ImportSettings`], as only the job owns its source and can guard it.
+    pub source_stall_limit: Duration,
 }
 
 impl ImportJobSettings {
@@ -129,7 +138,15 @@ impl ImportJobSettings {
             mode: settings.mode,
             policy: settings.policy,
             dry_run: settings.dry_run,
+            source_stall_limit: DEFAULT_SOURCE_STALL_LIMIT,
         }
+    }
+
+    /// These settings with the stall limit `limit` (IMPORT-022).
+    #[must_use]
+    pub fn with_source_stall_limit(mut self, limit: Duration) -> Self {
+        self.source_stall_limit = limit;
+        self
     }
 
     /// These settings, borrowed as an import run takes them.
@@ -256,22 +273,28 @@ impl ImportJob {
             reserved,
             dry_run_memory,
         } = self;
+        let limit = settings.source_stall_limit;
         let settings = settings.settings();
         let _job = tracing::info_span!("import_job", source = %settings.source.display()).entered();
+        let (own, name) = source.unzip();
         let mut steps = SendingSteps::new(&reports, control, asks);
-        let result = {
-            let mut run = ports
-                .import_run()
-                .with_reserved_names(&ports.reserved_names, reserved.as_ref());
-            if let Some((file_system, name)) = &source {
-                run = run.with_source(&**file_system).with_source_name(name);
+        let (result, guard) = match ports.guard_source(own, limit) {
+            Ok(guard) => {
+                let source = GuardedSource {
+                    guard: &guard,
+                    name: name.as_deref(),
+                };
+                let result = run_through(
+                    &ports,
+                    source,
+                    &settings,
+                    plan,
+                    reserved.as_ref(),
+                    &mut steps,
+                );
+                (result, Some(guard))
             }
-            match plan {
-                Some(plan) => run
-                    .start(&settings, plan)
-                    .map(|plan| run.execute_steps(&settings, plan, &mut steps)),
-                None => run.run_steps(&settings, &mut steps),
-            }
+            Err(error) => (Err(RunError::SourceThread(error)), None),
         };
         let end = match &result {
             Ok(summary) if summary.stopped => JobEnd::Stopped,
@@ -279,7 +302,7 @@ impl ImportJob {
             Err(error) => JobEnd::Failed(error.to_string()),
         };
         tracing::info!(end = ?end, "import job done");
-        let source = source.map(|(file_system, _)| file_system);
+        let source = name.and(guard).map(SourceGuard::give_back);
         // Released before the enqueuer hears of the end, so a job it enqueues next
         // finds the names free; a dry run keeps them, as it created no file.
         match (dry_run_memory, reserved) {

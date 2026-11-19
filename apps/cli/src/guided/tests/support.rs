@@ -17,19 +17,18 @@ use adapter_xmp::QuickXml;
 use devices::testing::MemoryDeviceSource;
 use domain::testing::ManualClock;
 use domain::{Timestamp, UtcOffset};
-use files::testing::{FnvHasher, MemoryCameras, MemoryFileSystem, MemoryFreeSpace};
+use files::testing::{FnvHasher, ManualTimer, MemoryCameras, MemoryFileSystem, MemoryFreeSpace};
 use files::{
     EntryKind, FileSystem, FolderEntry, FreeSpace, ReadOnlyFileSystem, ReadSeek, WriteFile,
 };
+use history::{ImportHistory, testing::MemoryImportHistory};
 use import::{ImportMetadata, ImportPorts, RecentJobCodes, ReservedTargetNames, SessionSequence};
 use naming::{NameTemplate, testing::MemorySequenceCounters};
 
+use super::shared::{HarnessCameras, Shared};
 use crate::guided::dialog::Dialog;
 use crate::guided::events::{Event, EventSource};
 use crate::guided::state::{RememberedState, load_state, save_state, state_file};
-use history::{ImportHistory, testing::MemoryImportHistory};
-
-use super::shared::{HarnessCameras, Shared};
 use crate::guided::{Environment, Ports};
 use crate::paths::PathError;
 
@@ -226,6 +225,7 @@ impl Harness {
             free_space: Arc::clone(&self.free_space),
             reserved_names: Arc::new(ReservedTargetNames::new()),
             xml_syntax: Arc::new(QuickXml::new()),
+            timer: Arc::new(ManualTimer::new()),
         };
         let ports = Ports {
             import: &import,

@@ -21,7 +21,7 @@ use crate::{FILES_FAILED, NOT_STARTED, report_error};
 /// comments, so the file reads as the defaults; so is `metadata`, so the values of
 /// `config.yaml` hold. The folder to import into is given on the command line, never
 /// here (IMPORT-011).
-const EXAMPLE_PROFILE: &str = r#"# yaml-language-server: $schema=https://polandy.github.io/framehive/schemas/import-profile-v2.json
+const EXAMPLE_PROFILE: &str = r#"# yaml-language-server: $schema=https://polandy.github.io/framehive/schemas/import-profile-v3.json
 #
 # An import profile of Framehive. `framehive import --profile <name> <source> <destination>`
 # uses it, where <name> is the file name without .yaml: 1 to 64 of a-z, 0-9, - and _.
@@ -30,11 +30,16 @@ const EXAMPLE_PROFILE: &str = r#"# yaml-language-server: $schema=https://polandy
 # the value here, also for lists.
 
 # Version of the format. Required.
-schema_version: 2
+schema_version: 3
 
 # Folder to import videos into: an absolute path, ~, or a path that starts with ~/.
 # Default: the destination given on the command line.
 # video_destination: ~/Videos/Archive
+
+# Seconds the source may take to answer one read or listing: 1 to 3600. A file whose
+# read takes longer fails, and so do the remaining files of that source.
+# Default: 30
+# source_stall_limit_seconds: 30
 
 naming:
   # Name template for the folders and name of each imported file.

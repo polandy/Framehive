@@ -1,6 +1,6 @@
 # IMPORT-022 – Stall limit for a source
 
-- Status: accepted
+- Status: implemented
 - Module: import
 - Origin: T5, N26
 - Depends on: IMPORT-004, IMPORT-005, IMPORT-011
@@ -123,3 +123,4 @@ Each check is an error at the value, in the form of CORE-006:
 |---|---|
 | 2026-11-19 | Initial version, from the owner's decisions of 2026-11-19: a stall limit per call rather than per file, 30 seconds by default and set in the profile, and a source that exceeds it is stopped for the rest of the run |
 | 2026-11-19 | Out of scope points to ADR 0049, which decides how the import stops waiting |
+| 2026-11-19 | Implemented: the import job and `framehive import` read the source through a stall guard; profile `schema_version` 3. The scan and plan of the guided import before its job are not guarded yet (TODO.md) |

@@ -45,7 +45,7 @@ with exit code 2 and one line on standard error:
 | No such file | `error: no profile <name> in <folder>; known profiles: <a>, <b>`, or `…; there are no profiles yet, see framehive config init` |
 | File cannot be read | `error: the profile <path> cannot be read: <reason>` |
 | Not UTF-8 | `error: the profile <path> is not valid UTF-8` |
-| Invalid profile | `error: ` followed by the message of CORE-006 or IMPORT-011, with the file's full path as the file; after one of CORE-006 `hint: the keys are described in https://polandy.github.io/framehive/schemas/import-profile-v2.json and in the example of framehive config init` |
+| Invalid profile | `error: ` followed by the message of CORE-006 or IMPORT-011, with the file's full path as the file; after one of CORE-006 `hint: the keys are described in https://polandy.github.io/framehive/schemas/import-profile-v3.json and in the example of framehive config init` |
 
 Known profiles are the files `*.yaml` in the profiles folder whose names are valid
 profile names, sorted, without `.yaml`. Symbolic links count as files. A profiles folder that does not exist or

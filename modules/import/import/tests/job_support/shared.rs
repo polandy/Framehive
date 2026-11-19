@@ -11,7 +11,7 @@ use std::sync::mpsc::Receiver;
 
 use domain::testing::ManualClock;
 use domain::{Timestamp, UtcOffset};
-use files::testing::{FnvHasher, MemoryFileSystem, MemoryFreeSpace};
+use files::testing::{FnvHasher, ManualTimer, MemoryFileSystem, MemoryFreeSpace};
 use history::testing::MemoryImportHistory;
 use import::{
     ConflictPolicy, ImportJob, ImportJobReports, ImportJobSettings, ImportPorts, ImportSettings,
@@ -85,6 +85,7 @@ impl Shared {
             free_space: Arc::new(self.free_space.clone()),
             reserved_names: Arc::clone(&self.reserved_names),
             xml_syntax: Arc::new(RecordedXml::new()),
+            timer: Arc::new(ManualTimer::new()),
         }
     }
 

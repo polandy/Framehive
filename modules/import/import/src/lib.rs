@@ -26,6 +26,7 @@ mod roles;
 mod run;
 mod scan;
 mod sequence;
+mod source_guard;
 mod view_model;
 
 use kernel::{ModuleId, ModuleIdError};
@@ -60,7 +61,8 @@ pub use plan::{AssetFile, ImportPlan, PlannedFile};
 pub use profile::ImportProfile;
 pub use profile_file_type::{
     DEFAULT_NAME_TEMPLATE, IMPORT_PROFILE, IMPORT_PROFILE_SCHEMA_ID, IMPORT_PROFILE_V1,
-    IMPORT_PROFILE_V1_SCHEMA_ID, import_profile_json_schema, import_profile_v1_json_schema,
+    IMPORT_PROFILE_V1_SCHEMA_ID, IMPORT_PROFILE_V2, IMPORT_PROFILE_V2_SCHEMA_ID,
+    import_profile_json_schema, import_profile_v1_json_schema, import_profile_v2_json_schema,
 };
 pub use readiness::{CAMERA_FORMAT_READINESS_NOTE, FormatBlocker, FormatReadiness};
 pub use recent_job_codes::{MAX_RECENT_JOB_CODES, RecentJobCodes};
@@ -75,6 +77,7 @@ pub use scan::{
     scan_folder, scan_source,
 };
 pub use sequence::{MixedSequenceKinds, SessionSequence};
+pub use source_guard::{DEFAULT_SOURCE_STALL_LIMIT, SourceGuard};
 pub use view_model::ExampleViewModel;
 
 /// Stable, unique id of this module (architecture §4.2).

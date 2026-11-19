@@ -14,7 +14,7 @@ struct Schema {
     generate: fn() -> String,
 }
 
-const SCHEMAS: [Schema; 3] = [
+const SCHEMAS: [Schema; 4] = [
     Schema {
         path: "schemas/configuration-v1.json",
         generate: import::configuration_json_schema,
@@ -25,6 +25,10 @@ const SCHEMAS: [Schema; 3] = [
     },
     Schema {
         path: "schemas/import-profile-v2.json",
+        generate: import::import_profile_v2_json_schema,
+    },
+    Schema {
+        path: "schemas/import-profile-v3.json",
         generate: import::import_profile_json_schema,
     },
 ];

@@ -9,6 +9,7 @@
 //! backup destinations) and reports them at the value, in the same form.
 
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 
 use config::{
     ConfigError, ConfigFile, Located, Position, Problem, Values, YamlNode, YamlParser, YamlValue,
@@ -21,6 +22,9 @@ use crate::metadata_values::{METADATA_KEY, MetadataKeys};
 use crate::profile_file_type::{
     DEFAULT_NAME_TEMPLATE, FAIL, IMPORT_PROFILE, METADATA_VERSION, SKIP,
 };
+mod stall_limit;
+
+use stall_limit::{explain_stall_limit, source_stall_limit};
 
 /// The settings of one import profile, with every default applied.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -44,6 +48,8 @@ pub struct ImportProfile {
     /// The `metadata` keys the profile sets (IMPORT-019); each replaces the same key
     /// of `config.yaml`.
     pub metadata: MetadataKeys,
+    /// How long the source may take to answer one call (IMPORT-022).
+    pub source_stall_limit: Duration,
 }
 
 impl ImportProfile {
@@ -62,7 +68,8 @@ impl ImportProfile {
         home: &Path,
     ) -> Result<Self, ConfigError> {
         let config = config::read(parser, &IMPORT_PROFILE, file, text)
-            .map_err(|error| explain_destination(parser, text, error))?;
+            .map_err(|error| explain_destination(parser, text, error))
+            .map_err(|error| explain_stall_limit(parser, text, error))?;
         Self::from_config(&config, home)
     }
 
@@ -111,6 +118,7 @@ impl ImportProfile {
             None => Vec::new(),
         };
         let metadata = profile_metadata(config)?;
+        let source_stall_limit = source_stall_limit(config)?;
         Ok(ImportProfile {
             template,
             video_template,
@@ -120,6 +128,7 @@ impl ImportProfile {
             video_destination,
             video_backup_destinations,
             metadata,
+            source_stall_limit,
         })
     }
 }

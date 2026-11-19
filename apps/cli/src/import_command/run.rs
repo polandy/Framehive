@@ -9,18 +9,21 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::thread;
+use std::time::Duration;
 
 use adapter_blake3::Blake3Hasher;
 use adapter_clock::SystemClock;
 use adapter_fs::StdFileSystem;
 use adapter_sequence_counters::FileSequenceCounters;
 use adapter_sqlite::SqliteImportHistory;
+use adapter_timer::StdTimer;
 use adapter_xmp::QuickXml;
 use files::{Cameras, FileSystem, FreeSpace};
 use import::{
     CAMERA_FORMAT_READINESS_NOTE, Configuration, DryRunMemory, ImportJob, ImportJobReports,
-    ImportJobSettings, ImportPorts, ImportProfile, ImportSettings, ImportSummary, PlannedRun,
-    ProgressSink, ReservedTargetNames, RunError, SessionSequence, SourceScan, scan_source,
+    ImportJobSettings, ImportPorts, ImportProfile, ImportSettings, ImportSummary, OwnSource,
+    PlannedRun, ProgressSink, ReservedTargetNames, RunError, SessionSequence, SourceGuard,
+    SourceScan, scan_source,
 };
 use jobs::JobQueue;
 use naming::CompatibilityMode;
@@ -227,16 +230,20 @@ fn enqueue_source<'f>(
         (&backup_paths, &video_backup_paths),
         arguments.dry_run,
     );
-    let mut run = ports.import_run();
+    let own = camera
+        .as_ref()
+        .map(|camera| Box::new(camera.file_system.clone()) as OwnSource);
+    let guard = ports
+        .guard_source(own, chosen.source_stall_limit)
+        .map_err(|error| error.to_string())?;
+    let mut run = ports.import_run().reading_source_through(&guard);
     let mut printer =
         ReportPrinter::new(Vec::new(), arguments.dry_run).with_backup_names(backup_names(folders));
     if let Some(camera) = &camera {
-        run = run
-            .with_source(&camera.file_system)
-            .with_source_name(&camera.name);
+        run = run.with_source(&guard).with_source_name(&camera.name);
         printer = printer.with_format_readiness_note(CAMERA_FORMAT_READINESS_NOTE);
     }
-    let scan = scan_folders(ports, camera.as_ref(), folders)?;
+    let scan = scan_folders(&guard, camera.as_ref(), folders)?;
     printer.scan_finished(&scan);
     streams.print(&printer.take_written());
     let plan = run
@@ -256,7 +263,7 @@ fn enqueue_source<'f>(
     };
     let reports = enqueue_job(
         (ports, dry_run_memory),
-        &settings,
+        (&settings, chosen.source_stall_limit),
         plan,
         camera.as_ref(),
         queue,
@@ -271,37 +278,35 @@ fn enqueue_source<'f>(
     Ok((enqueued, camera))
 }
 
-/// Scans the source folder, on the camera when the source is one.
+/// Scans the source folder through `source`, which reads the camera when the source
+/// is one.
 ///
 /// # Errors
 ///
 /// Returns the message of the error that kept the scan from finishing.
 fn scan_folders(
-    ports: &ImportPorts,
+    source: &SourceGuard,
     camera: Option<&OpenedCamera>,
     folders: &Folders,
 ) -> Result<SourceScan, String> {
     match camera {
-        Some(camera) => camera.scan(&folders.source),
-        None => scan_source(
-            &*ports.file_system,
-            &folders.source,
-            &folders.destination.path,
-        )
-        .map_err(|error| error.to_string()),
+        Some(camera) => camera.scan_through(source, &folders.source),
+        None => scan_source(source, &folders.source, &folders.destination.path)
+            .map_err(|error| error.to_string()),
     }
 }
 
-/// Enqueues the job of `plan`, reading from `camera` when the source is one, in a dry
-/// run with the dry-run memory.
+/// Enqueues the job of `plan` with the stall limit `limit`, reading from `camera` when
+/// the source is one, in a dry run with the dry-run memory.
 fn enqueue_job(
     (ports, dry_run_memory): (&ImportPorts, Option<&Arc<DryRunMemory>>),
-    settings: &ImportSettings<'_>,
+    (settings, limit): (&ImportSettings<'_>, Duration),
     plan: PlannedRun,
     camera: Option<&OpenedCamera>,
     queue: &mut JobQueue,
 ) -> Result<ImportJobReports, RunError> {
-    let (job, reports) = ImportJob::new(ports.clone(), ImportJobSettings::of(settings));
+    let job_settings = ImportJobSettings::of(settings).with_source_stall_limit(limit);
+    let (job, reports) = ImportJob::new(ports.clone(), job_settings);
     let mut job = job.with_plan(plan);
     if let Some(memory) = dry_run_memory {
         job = job.with_dry_run_memory(Arc::clone(memory));
@@ -325,6 +330,7 @@ fn import_ports(state_folder: &Path, free_space: Arc<dyn FreeSpace + Send + Sync
         free_space,
         reserved_names: Arc::new(ReservedTargetNames::new()),
         xml_syntax: Arc::new(QuickXml::new()),
+        timer: Arc::new(StdTimer::new()),
     }
 }
 

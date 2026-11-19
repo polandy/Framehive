@@ -12,7 +12,8 @@ use std::path::Path;
 
 use import::{
     CONFIGURATION_SCHEMA_ID, IMPORT_PROFILE_SCHEMA_ID, IMPORT_PROFILE_V1_SCHEMA_ID,
-    configuration_json_schema, import_profile_json_schema, import_profile_v1_json_schema,
+    IMPORT_PROFILE_V2_SCHEMA_ID, configuration_json_schema, import_profile_json_schema,
+    import_profile_v1_json_schema, import_profile_v2_json_schema,
 };
 
 fn published(name: &str) -> String {
@@ -29,6 +30,10 @@ fn published(name: &str) -> String {
 fn the_published_schemas_are_the_generated_ones() {
     assert_eq!(
         IMPORT_PROFILE_SCHEMA_ID,
+        "https://polandy.github.io/framehive/schemas/import-profile-v3.json"
+    );
+    assert_eq!(
+        IMPORT_PROFILE_V2_SCHEMA_ID,
         "https://polandy.github.io/framehive/schemas/import-profile-v2.json"
     );
     assert_eq!(
@@ -43,16 +48,24 @@ fn the_published_schemas_are_the_generated_ones() {
         "job_codes",
         "backup",
         "metadata",
+        "source_stall_limit_seconds",
     ] {
         assert!(generated.contains(&format!("\n    \"{key}\": {{")), "{key}");
     }
     // The folder to import into is given on the command line (ADR 0036, decision 8).
     assert!(!generated.contains("\n    \"destination\": {"));
+    let version_2 = import_profile_v2_json_schema();
+    assert!(!version_2.contains("\n    \"source_stall_limit_seconds\": {"));
     let version_1 = import_profile_v1_json_schema();
     assert!(!version_1.contains("\n    \"metadata\": {"));
     assert_eq!(
-        published("import-profile-v2.json"),
+        published("import-profile-v3.json"),
         generated,
+        "run `cargo xtask schemas`"
+    );
+    assert_eq!(
+        published("import-profile-v2.json"),
+        version_2,
         "run `cargo xtask schemas`"
     );
     assert_eq!(

@@ -44,7 +44,7 @@ a name: `profiles/holiday.yaml` is used with `--profile holiday`. A name has 1 t
 every key and a comment for each.
 
 ```yaml
-schema_version: 2
+schema_version: 3
 naming:
   template: "{date:%Y}/{date:%Y-%m-%d}_{job}/{name}.{ext}"
   on_conflict: add_suffix
@@ -69,6 +69,7 @@ metadata:
 | `backup.video_destinations` | Backup folders for videos | `--video-backup` |
 | `video_destination` | Folder for videos | `--video-destination` |
 | `metadata.*` | As in `config.yaml`; a key set here replaces that key of `config.yaml` | none |
+| `source_stall_limit_seconds` | Seconds, 1 to 3600 (default 30), a source may take to answer one read or listing before that file and the rest of the source fail; needs `schema_version: 3` | none |
 
 An option on the command line replaces the profile's value; `--backup` and
 `--video-backup` replace the whole list. A profile never names the destination: that is

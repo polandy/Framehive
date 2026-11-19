@@ -21,7 +21,7 @@ pub(crate) const DEFAULT_TARGET: &str = "2026/2026-10-17/DSCF0001.RAF";
 pub(crate) const COPIED_LINE: &str = "copied  DSCF0001.RAF -> 2026/2026-10-17/DSCF0001.RAF";
 /// The hint after an invalid profile (CLI-010).
 pub(crate) const PROFILE_KEYS_HINT: &str = "hint: the keys are described in \
-    https://polandy.github.io/framehive/schemas/import-profile-v2.json \
+    https://polandy.github.io/framehive/schemas/import-profile-v3.json \
     and in the example of framehive config init";
 
 /// A temporary folder with a source folder and the path of a destination that does
