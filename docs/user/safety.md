@@ -52,7 +52,9 @@ For a RAW + JPEG pair in the folder, it moves the RAW and the RAW's own sidecar
 - every asset marked Keep RAW (`framehive library keep-raw <file>`);
 - every rejected asset;
 - a RAW without a JPEG, and a JPEG without a RAW;
-- the files in subfolders.
+- the files in subfolders;
+- every asset that changed while the question was open: its JPEG was deleted, or it was
+  marked Keep RAW or rejected meanwhile.
 
 Run it with `--dry-run` first to see the list. It always asks before moving anything,
 unless `--yes` is given.

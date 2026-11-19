@@ -125,4 +125,7 @@ and a rendered file (such as a JPEG) that is neither rejected nor marked Keep RA
 moves the RAW and the RAW's own sidecar to the trash; the JPEG and its metadata stay.
 It shows the totals first and asks `[y/N]`; `--yes` skips the question for scripts, and
 `--dry-run` lists the files and moves nothing. Without an answer (an input that ends),
-nothing moves and the exit code is 2. The exit code is 1 when a file did not move.
+nothing moves and the exit code is 2. Right before moving, it looks at the folder again:
+an asset whose JPEG or RAW is gone, or that was marked Keep RAW or rejected meanwhile,
+keeps its RAW and is named in a warning. The exit code is 1 when a file did not move or
+an asset changed since the summary.

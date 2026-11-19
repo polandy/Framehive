@@ -45,7 +45,7 @@ The module touches files only through the `files` ports and sidecars only throug
 | `group_files`, `Grouping`, `FolderFile`, `Asset`, `AssetFile`, `AmbiguousBaseName` | The grouping rule (LIBRARY-001) |
 | `read_folder`, `LibraryFolder`, `LibraryAsset`, `ReadFolderError` | A folder's assets with their Keep RAW marker and rejected state |
 | `set_keep_raw` | Writes the Keep RAW marker into every member's sidecar (LIBRARY-002.7) |
-| `RemoveRawsPlan`, `SkippedAssets`, `RemoveRawsTotals`, `RemoveRawsReport`, `NotMoved` | Remove RAWs: the plan, the toggle and the run (LIBRARY-002) |
+| `RemoveRawsPlan`, `SkippedAssets`, `RemoveRawsTotals`, `RemoveRawsReport`, `NotMoved`, `ChangedAsset`, `ChangeReason` | Remove RAWs: the plan, the toggle and the run, which reads the folders again and leaves out an asset that changed (LIBRARY-002) |
 | `ExampleViewModel` | Example ViewModel from the template; replace it |
 
 ## Events

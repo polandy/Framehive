@@ -10,7 +10,12 @@ mod support;
 
 use std::path::Path;
 
-use library::{LibraryAsset, RemoveRawsPlan, RemoveRawsTotals, SkippedAssets};
+use domain::Timestamp;
+use files::FileSystem;
+
+use library::{
+    ChangeReason, ChangedAsset, LibraryAsset, RemoveRawsPlan, RemoveRawsTotals, SkippedAssets,
+};
 use metadata::xmp::SidecarNaming;
 use support::{Library, marked, path, paths, rated, rating_name};
 
@@ -40,7 +45,7 @@ fn the_raw_and_its_own_sidecar_go_to_the_trash() {
     library.add_sidecar("DSCF1234.JPG.xmp", &rated("4"), 0);
     let jpeg_sidecar = library.files.content(&path("DSCF1234.JPG.xmp"));
 
-    let report = plan(&library).run(&library.trash);
+    let report = plan(&library).run(library.sidecars(), &library.trash);
 
     assert_eq!(
         library.trash.moved(),
@@ -74,7 +79,7 @@ fn a_shared_sidecar_stays() {
     library.add_sidecar("DSCF1234.xmp", &rated("4"), 0);
     let shared = library.files.content(&path("DSCF1234.xmp"));
 
-    let _report = plan(&library).run(&library.trash);
+    let _report = plan(&library).run(library.sidecars(), &library.trash);
 
     assert_eq!(library.trash.moved(), paths(&["DSCF1234.RAF"]));
     assert_eq!(library.files.content(&path("DSCF1234.xmp")), shared);
@@ -93,7 +98,7 @@ fn marked_rejected_and_single_member_assets_are_skipped() {
     add_asset(&library, "E", &["RAF", "JPG"], 30);
 
     let plan = plan(&library);
-    let _report = plan.run(&library.trash);
+    let _report = plan.run(library.sidecars(), &library.trash);
 
     assert_eq!(library.trash.moved(), paths(&["E.RAF"]));
     assert_eq!(
@@ -120,7 +125,7 @@ fn only_the_current_view() {
         .filter(|asset| asset.asset.base_name() == "B")
         .collect();
 
-    let _report = RemoveRawsPlan::new(&view).run(&library.trash);
+    let _report = RemoveRawsPlan::new(&view).run(library.sidecars(), &library.trash);
 
     assert_eq!(library.trash.moved(), paths(&["B.RAF"]));
 }
@@ -219,7 +224,7 @@ fn a_raw_that_cannot_be_moved_keeps_its_sidecar() {
     library.trash.refuse(&path("A.RAF"));
     let sidecar_bytes = library_size(&library, "B.RAF.xmp");
 
-    let report = plan(&library).run(&library.trash);
+    let report = plan(&library).run(library.sidecars(), &library.trash);
 
     assert!(library.exists("A.RAF"));
     assert!(library.exists("A.RAF.xmp"));
@@ -245,7 +250,7 @@ fn a_sidecar_that_cannot_be_moved_is_reported() {
     library.add_sidecar("A.RAF.xmp", &rated("3"), 0);
     library.trash.refuse(&path("A.RAF.xmp"));
 
-    let report = plan(&library).run(&library.trash);
+    let report = plan(&library).run(library.sidecars(), &library.trash);
 
     assert_eq!(library.trash.moved(), paths(&["A.RAF"]));
     assert!(library.exists("A.RAF.xmp"));
@@ -259,6 +264,98 @@ fn a_sidecar_that_cannot_be_moved_is_reported() {
             bytes: 30,
         }
     );
+}
+
+/// spec: LIBRARY-002.18
+#[test]
+fn a_rendered_member_that_is_gone_keeps_the_raw() {
+    let library = Library::new();
+    add_asset(&library, "A", &["RAF", "JPG"], 30);
+    let plan = plan(&library);
+    library.files.remove_file(&path("A.JPG")).unwrap();
+
+    let report = plan.run(library.sidecars(), &library.trash);
+
+    assert!(library.trash.moved().is_empty());
+    assert!(library.exists("A.RAF"));
+    assert_eq!(report.changed, [changed("A", ChangeReason::RenderedGone)]);
+    assert_eq!(report.moved, RemoveRawsTotals::default());
+}
+
+/// spec: LIBRARY-002.19
+#[test]
+fn a_marker_set_after_the_plan_keeps_the_raw() {
+    let library = Library::new();
+    for base in ["A", "B"] {
+        add_asset(&library, base, &["RAF", "JPG"], 30);
+    }
+    let plan = plan(&library);
+    library.add_sidecar("A.RAF.xmp", &marked(), 0);
+    library.add_sidecar("B.RAF.xmp", &rated("-1"), 0);
+
+    let report = plan.run(library.sidecars(), &library.trash);
+
+    assert!(library.trash.moved().is_empty());
+    assert_eq!(
+        report.changed,
+        [
+            changed("A", ChangeReason::MarkedKeepRaw),
+            changed("B", ChangeReason::Rejected),
+        ]
+    );
+}
+
+/// spec: LIBRARY-002.20
+#[test]
+fn a_state_that_cannot_be_read_keeps_the_raw() {
+    let library = Library::new();
+    add_asset(&library, "A", &["RAF", "JPG"], 30);
+    library.add_sidecar("A.RAF.xmp", &rated("3"), 0);
+    let plan = plan(&library);
+    library
+        .files
+        .add_file(&path("A.RAF.xmp"), b"<not xmp", Timestamp::UNIX_EPOCH);
+
+    let report = plan.run(library.sidecars(), &library.trash);
+
+    assert!(library.trash.moved().is_empty());
+    assert_eq!(
+        report.changed,
+        [changed("A", ChangeReason::StateUnreadable)]
+    );
+}
+
+#[test]
+fn a_raw_that_is_gone_is_reported() {
+    let library = Library::new();
+    add_asset(&library, "A", &["RAF", "JPG"], 30);
+    let plan = plan(&library);
+    library.files.remove_file(&path("A.RAF")).unwrap();
+
+    let report = plan.run(library.sidecars(), &library.trash);
+
+    assert!(library.trash.moved().is_empty());
+    assert_eq!(report.changed, [changed("A", ChangeReason::RawGone)]);
+}
+
+#[test]
+fn a_sidecar_added_after_the_plan_goes_with_its_raw() {
+    let library = Library::new();
+    add_asset(&library, "A", &["RAF", "JPG"], 30);
+    let plan = plan(&library);
+    library.add_sidecar("A.RAF.xmp", &rated("2"), 0);
+
+    let report = plan.run(library.sidecars(), &library.trash);
+
+    assert_eq!(library.trash.moved(), paths(&["A.RAF", "A.RAF.xmp"]));
+    assert!(report.changed.is_empty());
+}
+
+fn changed(base_name: &str, reason: ChangeReason) -> ChangedAsset {
+    ChangedAsset {
+        asset: path(base_name),
+        reason,
+    }
 }
 
 fn library_size(library: &Library, name: &str) -> u64 {

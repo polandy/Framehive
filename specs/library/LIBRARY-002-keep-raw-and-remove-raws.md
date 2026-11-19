@@ -63,6 +63,13 @@ and the asset stays complete. If the RAW moved but its sidecar cannot, the sidec
 where it is. Afterwards a report names every file that could not be moved, with the
 reason, and the totals count only what was moved.
 
+**Checked again at the run.** The folder can change while the summary is open. Right
+before the first file moves, the run reads the assets of the view again from their
+folders. An asset of *RAW will be removed* whose RAW or rendered member is gone, that is
+now marked Keep RAW or rejected, or whose state can no longer be read (its folder or a
+sidecar cannot be read) moves no file. The report names it with that reason. The files
+that move are the RAW and the RAW's own sidecars as they are at that point.
+
 ## Acceptance criteria
 
 ### LIBRARY-002.1 – R toggles the marker
@@ -163,6 +170,26 @@ reason, and the totals count only what was moved.
 - **Then** `A.RAF` is in the trash, `A.RAF.xmp` stays, the report names it with the
   reason, and the totals count one file
 
+### LIBRARY-002.18 – A rendered member that is gone keeps the RAW
+- **Given** the summary of an unmarked RAF+JPG asset `A`, and `A.JPG` is deleted
+  before the user confirms
+- **When** the user confirms
+- **Then** `A.RAF` stays, and the report names `A` as changed: its rendered member is
+  gone
+
+### LIBRARY-002.19 – A marker set after the summary keeps the RAW
+- **Given** the summary of unmarked RAF+JPG assets `A` and `B`, and before the user
+  confirms, `A` is marked Keep RAW and `B` is rejected elsewhere
+- **When** the user confirms
+- **Then** no file moves, and the report names `A` as marked Keep RAW and `B` as
+  rejected
+
+### LIBRARY-002.20 – A state that cannot be read keeps the RAW
+- **Given** the summary of an unmarked RAF+JPG asset `A`, and before the user confirms,
+  `A.RAF.xmp` no longer parses
+- **When** the user confirms
+- **Then** `A.RAF` stays, and the report names `A` as changed: its state cannot be read
+
 ## Out of scope
 
 - Undo of Remove RAWs: the trash is the way back.
@@ -178,3 +205,4 @@ reason, and the totals count only what was moved.
 | Date | Change |
 |---|---|
 | 2026-11-09 | Initial version, owner request; same rule as honeycomb (ADR 0042) |
+| 2026-11-19 | The run checks each asset again, LIBRARY-002.18 to .20 (review finding E5) |

@@ -18,7 +18,8 @@ pub use folder::{LibraryAsset, LibraryFolder, ReadFolderError, read_folder};
 pub use grouping::{AmbiguousBaseName, Asset, AssetFile, FolderFile, Grouping, group_files};
 pub use keep_raw::set_keep_raw;
 pub use remove_raws::{
-    NotMoved, RemoveRawsPlan, RemoveRawsReport, RemoveRawsTotals, SkippedAssets,
+    ChangeReason, ChangedAsset, NotMoved, RemoveRawsPlan, RemoveRawsReport, RemoveRawsTotals,
+    SkippedAssets,
 };
 pub use view_model::ExampleViewModel;
 
