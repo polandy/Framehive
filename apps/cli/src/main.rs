@@ -40,6 +40,11 @@ const NOT_STARTED: u8 = 2;
 const JOB_ENDED_UNEXPECTEDLY: &str = "the import stopped unexpectedly";
 
 fn main() -> ExitCode {
+    #[cfg(feature = "fault-injection")]
+    if let Err(message) = fault_injection::read_fault_from_environment() {
+        report_error(&message);
+        return ExitCode::from(NOT_STARTED);
+    }
     match arguments::parse(std::env::args_os()) {
         Ok(command_line) => {
             diagnostics::start(command_line.verbose);

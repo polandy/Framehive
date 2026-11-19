@@ -334,6 +334,7 @@ pub(crate) fn import_file_system() -> Arc<dyn FileSystem + Send + Sync> {
     #[cfg(feature = "fault-injection")]
     return Arc::new(crate::fault_injection::FaultyFileSystem::new(
         StdFileSystem::new(),
+        crate::fault_injection::configured_fault(),
     ));
     #[cfg(not(feature = "fault-injection"))]
     Arc::new(StdFileSystem::new())

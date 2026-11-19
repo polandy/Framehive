@@ -59,10 +59,14 @@ fault. Without the variable, the decorator passes everything through.
 
 | Fault | What the decorator does | Scenario |
 |---|---|---|
-| `abort-while-writing` | Writes half of the bytes of `<target>.part`, then calls `std::process::abort` | T1 |
+| `abort-while-writing` | Writes half of the first write to `<target>.part`, then calls `std::process::abort` | T1 |
 | `flip-bit-after-sync` | Flips one bit of the first byte that `open_read_from_medium` returns for the target | T3 |
 | `hang-while-reading` | Blocks the first read of the source file and never returns | T5 |
-| `unplug-while-reading` | Fails the read of the source file and every later call below the source folder with an I/O error | T6 |
+| `unplug-while-reading` | Fails the first read of the source file while a `.part` file is written, and every later call below the folder of that file, with `EIO` | T6 |
+
+The source is read for its metadata and its checksum before the copy, so the unplug
+waits for the copy's read, which comes after its `.part` file is created. Each fault
+happens once per run. CLI-025 has the exact messages.
 
 `std::process::abort` ends the process without running destructors or flushing
 buffers, as a kill does, and at a fixed byte instead of a moment the test guesses. The
