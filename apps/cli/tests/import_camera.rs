@@ -123,13 +123,40 @@ fn camera_alone_without_a_camera_stops() {
     assert_eq!(output.status.code(), Some(2));
 }
 
+/// spec: CLI-013.10
+#[test]
+fn a_port_that_cannot_be_opened_stops() {
+    let folders = Folders::new();
+    folders.add("DCIM/100_FUJI/DSCF0001.RAF", &raf(&photo()));
+    let destination = folders.destination();
+
+    let output = import_from(
+        &folders,
+        "camera:usb:009,009",
+        &iolib_folder("vusb"),
+        &destination,
+    );
+
+    assert!(
+        stderr(&output).contains("cannot open the camera at usb:009,009: "),
+        "{}",
+        stderr(&output)
+    );
+    assert_eq!(output.status.code(), Some(2));
+}
+
 /// Runs `framehive import camera:` with libgphoto2's port drivers loaded from `iolibs`
 /// only, so no real USB device is seen; `vusb` serves the source folder as a Nikon D750.
 fn import_from_virtual_camera(folders: &Folders, iolibs: &Path, destination: &Path) -> Output {
+    import_from(folders, "camera:", iolibs, destination)
+}
+
+/// Like [`import_from_virtual_camera`], with the camera source given.
+fn import_from(folders: &Folders, source: &str, iolibs: &Path, destination: &Path) -> Output {
     folders
         .framehive_command(&[
             "import",
-            "camera:",
+            source,
             "--destination",
             destination.to_str().unwrap(),
         ])
