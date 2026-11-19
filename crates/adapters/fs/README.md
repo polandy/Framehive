@@ -10,7 +10,8 @@ Layer: `adapter`, port `files` (architecture §3)
 ## Purpose
 
 Implements the `FileSystem` port of `files` over `std::fs`, for the verified copy and
-the source scan of the import (ADR 0020 §3, §4). It adds no dependency.
+the source scan of the import (ADR 0020 §3, §4). It is an FFI crate for one call
+(ADR 0047).
 
 - `entry` and `list_folder` do not follow symbolic links (`symlink_metadata`,
   `DirEntry::file_type`); a link is `EntryKind::SymbolicLink`, so a scan cannot loop
@@ -29,6 +30,12 @@ the source scan of the import (ADR 0020 §3, §4). It adds no dependency.
   creates `to` between the check and the rename gets its file replaced; ADR 0020 §3
   accepts this race, because these file systems offer no rename that refuses to
   replace.
+
+- `open_read_from_medium` opens like `open_read`, then on Linux drops the file's
+  cached pages with `posix_fadvise(POSIX_FADV_DONTNEED)`, so the read-back of a
+  verified copy comes from the device; on macOS it sets `F_NOCACHE`, which is best
+  effort because pages cached by the write may still be served (ADR 0047). The
+  `unsafe` calls live in `src/medium.rs`, one per platform.
 
 - `replace_file` refuses a file that is read-only by its mode bits, for the superuser
   too, and one the user cannot open for writing; it then copies the old file's
@@ -51,5 +58,6 @@ a read-only file.
 ## Dependencies
 
 - `domain`, `files`
+- `libc` (ADR 0047): `posix_fadvise` and `fcntl` for `open_read_from_medium`
 - `tracing` (ADR 0046): a detail when a rename falls back to the path without hard
   links

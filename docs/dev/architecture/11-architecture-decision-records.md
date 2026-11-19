@@ -53,3 +53,4 @@ acceptance (a change means a new ADR that supersedes the old one).
 | [0044](../adr/0044-rejected-pick-state-as-xmp-rating-minus-one.md) | Rejected pick state as `xmp:Rating` -1 | accepted |
 | [0045](../adr/0045-releases-with-release-please.md) | Releases with release-please | accepted |
 | [0046](../adr/0046-diagnostics-with-tracing.md) | Diagnostics with tracing | accepted |
+| [0047](../adr/0047-read-back-from-the-storage-device.md) | Read back from the storage device | accepted |

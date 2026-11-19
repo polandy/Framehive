@@ -6,7 +6,9 @@ When the last lines of the report say `The card can be formatted` (or `The sourc
 be formatted` for `framehive import`). That answer means every photo and video of the
 card is verified at every place this run was asked to save it: the destination and each
 backup folder. Verified means copied and then read back with a matching checksum, or
-found there already with the same content.
+found there already with the same content. On Linux the read-back comes from the disk
+itself, not from a copy still in memory, so a disk that stored the wrong bytes is
+caught. On macOS a recently written file may still be read from memory.
 
 When it says `Do not format the card`, the lines below it name each file that is not
 saved yet, and in how many of its places it is verified. Fix the cause and run the same

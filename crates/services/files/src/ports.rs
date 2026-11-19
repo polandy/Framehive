@@ -159,6 +159,20 @@ pub trait FileSystem: ReadOnlyFileSystem {
     ///
     /// Returns an error if the folder does not exist or cannot be synced.
     fn sync_folder(&self, path: &Path) -> io::Result<()>;
+
+    /// Opens the file `path` for reading like [`ReadOnlyFileSystem::open_read`], but
+    /// reads what the storage device holds rather than a copy the operating system
+    /// keeps in memory, so a read-back catches a device that stored other bytes
+    /// (IMPORT-004.15, ADR 0047).
+    ///
+    /// The default is `open_read`, for a file system without a cache of its own.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`io::ErrorKind::NotFound`] if no file exists at `path`.
+    fn open_read_from_medium(&self, path: &Path) -> io::Result<Box<dyn ReadSeek>> {
+        self.open_read(path)
+    }
 }
 
 /// A file opened for reading by [`ReadOnlyFileSystem::open_read`]: it reads and seeks.

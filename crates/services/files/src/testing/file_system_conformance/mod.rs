@@ -16,6 +16,8 @@ use super::read_only_file_system_conformance::{
 };
 use crate::{EntryKind, FileSystem};
 
+mod medium;
+
 /// What the [`FileSystem`] conformance suite runs against.
 pub struct FileSystemUnderTest<'a> {
     /// The implementation under test.
@@ -44,7 +46,7 @@ type CaseFn = fn(&Case<'_>) -> CaseResult;
 /// Each case works in its own folder below `root`.
 #[must_use]
 pub fn check_file_system(under_test: &FileSystemUnderTest<'_>) -> Vec<String> {
-    let cases: [(&str, CaseFn); 13] = [
+    let cases: [(&str, CaseFn); 14] = [
         ("create_folder_needs_a_parent_and_no_entry", create_folder),
         ("written_content_reads_back", written_content_reads_back),
         ("create_file_empties_an_existing_file", create_file_empties),
@@ -75,6 +77,10 @@ pub fn check_file_system(under_test: &FileSystemUnderTest<'_>) -> Vec<String> {
         (
             "synced_rename_survives_a_crash",
             synced_rename_survives_a_crash,
+        ),
+        (
+            "open_read_from_medium_reads_the_synced_file",
+            medium::open_read_from_medium,
         ),
     ];
     let mut failures = check_read_only_cases(under_test);

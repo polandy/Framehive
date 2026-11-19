@@ -24,8 +24,7 @@
 //! # Ok::<(), std::io::Error>(())
 //! ```
 
-#![forbid(unsafe_code)]
-
+mod medium;
 mod system_time;
 
 use std::fs::{self, File, OpenOptions};
@@ -190,6 +189,17 @@ impl FileSystem for StdFileSystem {
 
     fn sync_folder(&self, path: &Path) -> io::Result<()> {
         File::open(path)?.sync_all()
+    }
+
+    /// Drops the file's cached pages on Linux; on macOS it only stops caching new
+    /// reads (ADR 0047 §2).
+    fn open_read_from_medium(&self, path: &Path) -> io::Result<Box<dyn ReadSeek>> {
+        let file = File::open(path)?;
+        if file.metadata()?.is_dir() {
+            return Err(is_a_folder(path));
+        }
+        medium::bypass_cache(&file)?;
+        Ok(Box::new(file))
     }
 }
 
