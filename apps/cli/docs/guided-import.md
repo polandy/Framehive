@@ -7,7 +7,8 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 `framehive` without a subcommand runs the dialog of CLI-002 and CLI-003 in
 `src/guided/`: it waits for a memory card (`devices::DeviceWatch` over `adapter-mounts`, polled once a second
-while it waits for a line), reads the card with `import::scan_folder`, asks for the
+while it waits for a line; on Linux, `FRAMEHIVE_MOUNTINFO` and `FRAMEHIVE_MEDIA_FOLDERS`
+replace the mount table and its folders for the tests, ADR 0050), reads the card with `import::scan_folder`, asks for the
 template (with a preview from `ImportRun::plan_first`) and the job code, shows the plan
 summary, and on Enter (numbers that do not fit lead back to the template step)
 enqueues the plan as an `import::ImportJob` in the dialog's `jobs::JobQueue`

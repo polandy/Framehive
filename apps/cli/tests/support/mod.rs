@@ -14,6 +14,9 @@ use std::time::{Duration, SystemTime};
 use files::testing::TempDir;
 use metadata::testing::{ByteOrder, DATE_TIME_ORIGINAL, Tiff, jpeg, raf};
 
+#[cfg(target_os = "linux")]
+pub(crate) mod terminal;
+
 /// 2026-10-17 14:05:09 UTC.
 pub(crate) const MODIFIED: u64 = 1_792_245_909;
 pub(crate) const CAPTURE_TIME: &str = "2026:10:17 14:05:09";

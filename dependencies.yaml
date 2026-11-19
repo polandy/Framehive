@@ -78,6 +78,15 @@ dependencies:
     allowed_crates: [adapter-free-space, adapter-fs]
     features: []
 
+  - name: rustix
+    purpose: A pseudo-terminal in the tests that run the guided import of the framehive binary, in framehive-cli as a Linux dev-dependency (CLI-003, CLI-006, CLI-011, CLI-017; ADR 0050)
+    rationale: The guided import runs only on a terminal (CLI-002.1); opening one needs posix_openpt, grantpt, unlockpt and ptsname, and turning its echo off needs tcsetattr, which std lacks; libc would need unsafe, which the workspace forbids outside the FFI adapters, and rustix wraps these calls in a safe API
+    review: By the Bytecode Alliance, the system-call layer of std-adjacent crates such as tempfile, version 1, Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT; on Linux it makes the system calls itself through linux-raw-sys, without a build step or native code; a dev-dependency, never linked into the binary (ADR 0050)
+    adr: "0050"
+    allowed_layers: [app]
+    allowed_crates: [framehive-cli]
+    features: [std, pty, termios]
+
   - name: libfuzzer-sys
     purpose: Links LLVM's libFuzzer into the fuzz targets of our own parsers (EXIF, XMP, YAML configuration, name templates), in metadata-fuzz (ADR 0037)
     rationale: Coverage-guided fuzzing needs a fuzzing engine with compiler instrumentation, a deep problem ADR 0009 assigns to a tool; ADR 0009 accepts our own parser only when it is fuzzed

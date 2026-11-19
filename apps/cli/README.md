@@ -40,6 +40,8 @@ framehive --version
 
 `-v` or `--verbose`, before or after the subcommand, writes diagnostic lines to
 standard error; twice or three times for more detail (CLI-021, ADR 0046).
+- `rustix` with `std`, `pty` and `termios`, a Linux dev-dependency (ADR 0050): the
+  pseudo-terminal of `tests/guided_import_runs.rs`.
 `framehive --help` ends with examples, the folders and the exit codes (CLI-023).
 
 Flag conventions for every command (CLI-023):
@@ -97,3 +99,5 @@ Flag conventions for every command (CLI-023):
   `error-context`.
 - `tracing`, and `tracing-subscriber` with only `fmt` (ADR 0046): the diagnostic
   output of `--verbose`.
+- `rustix` with `std`, `pty` and `termios`, a Linux dev-dependency (ADR 0050): the
+  pseudo-terminal of `tests/guided_import_runs.rs`.

@@ -56,3 +56,4 @@ acceptance (a change means a new ADR that supersedes the old one).
 | [0047](../adr/0047-read-back-from-the-storage-device.md) | Read back from the storage device | accepted |
 | [0048](../adr/0048-fault-injection-point-in-the-binary.md) | A fault-injection point in the binary | accepted |
 | [0049](../adr/0049-a-thread-for-the-calls-to-a-source.md) | A thread for the calls to a source | accepted |
+| [0050](../adr/0050-mount-table-override-in-the-binary.md) | A mount table override in the binary | accepted |
