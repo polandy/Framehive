@@ -1,6 +1,7 @@
 pub mod files
 pub mod files::testing
 pub enum files::testing::Fault
+pub files::testing::Fault::Hangs(files::testing::Hang)
 pub files::testing::Fault::ListFails
 pub files::testing::Fault::OtherProgramCreates
 pub files::testing::Fault::OtherProgramCreates::content: alloc::vec::Vec<u8>
@@ -10,6 +11,7 @@ pub files::testing::Fault::ReadFails::after_bytes: usize
 pub files::testing::Fault::ReadReturnsDifferentBytes
 pub files::testing::Fault::RemoveFails
 pub files::testing::Fault::RenameFails
+pub files::testing::Fault::SlowReads(files::testing::SlowReads)
 pub files::testing::Fault::WriteFails
 pub files::testing::Fault::WriteFails::after_bytes: usize
 impl core::clone::Clone for files::testing::Fault
@@ -81,6 +83,27 @@ impl<'a> core::marker::Unpin for files::testing::FreeSpaceUnderTest<'a>
 impl<'a> core::marker::UnsafeUnpin for files::testing::FreeSpaceUnderTest<'a>
 impl<'a> !core::panic::unwind_safe::RefUnwindSafe for files::testing::FreeSpaceUnderTest<'a>
 impl<'a> !core::panic::unwind_safe::UnwindSafe for files::testing::FreeSpaceUnderTest<'a>
+pub struct files::testing::Hang
+impl files::testing::Hang
+pub fn files::testing::Hang::new() -> Self
+pub fn files::testing::Hang::release(&self)
+pub fn files::testing::Hang::wait_until_begun(&self)
+impl core::clone::Clone for files::testing::Hang
+pub fn files::testing::Hang::clone(&self) -> files::testing::Hang
+impl core::cmp::Eq for files::testing::Hang
+impl core::cmp::PartialEq for files::testing::Hang
+pub fn files::testing::Hang::eq(&self, &Self) -> bool
+impl core::default::Default for files::testing::Hang
+pub fn files::testing::Hang::default() -> files::testing::Hang
+impl core::fmt::Debug for files::testing::Hang
+pub fn files::testing::Hang::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for files::testing::Hang
+impl core::marker::Send for files::testing::Hang
+impl core::marker::Sync for files::testing::Hang
+impl core::marker::Unpin for files::testing::Hang
+impl core::marker::UnsafeUnpin for files::testing::Hang
+impl core::panic::unwind_safe::RefUnwindSafe for files::testing::Hang
+impl core::panic::unwind_safe::UnwindSafe for files::testing::Hang
 pub struct files::testing::HasherUnderTest<'a>
 pub files::testing::HasherUnderTest::algorithm: &'a str
 pub files::testing::HasherUnderTest::hasher: &'a dyn files::Hasher
@@ -230,6 +253,23 @@ impl<'a> core::marker::Unpin for files::testing::ReadOnlyFileSystemUnderTest<'a>
 impl<'a> core::marker::UnsafeUnpin for files::testing::ReadOnlyFileSystemUnderTest<'a>
 impl<'a> !core::panic::unwind_safe::RefUnwindSafe for files::testing::ReadOnlyFileSystemUnderTest<'a>
 impl<'a> !core::panic::unwind_safe::UnwindSafe for files::testing::ReadOnlyFileSystemUnderTest<'a>
+pub struct files::testing::SlowReads
+impl files::testing::SlowReads
+pub fn files::testing::SlowReads::new(alloc::sync::Arc<files::testing::ManualTimer>, core::time::Duration) -> Self
+impl core::clone::Clone for files::testing::SlowReads
+pub fn files::testing::SlowReads::clone(&self) -> files::testing::SlowReads
+impl core::cmp::Eq for files::testing::SlowReads
+impl core::cmp::PartialEq for files::testing::SlowReads
+pub fn files::testing::SlowReads::eq(&self, &Self) -> bool
+impl core::fmt::Debug for files::testing::SlowReads
+pub fn files::testing::SlowReads::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Freeze for files::testing::SlowReads
+impl core::marker::Send for files::testing::SlowReads
+impl core::marker::Sync for files::testing::SlowReads
+impl core::marker::Unpin for files::testing::SlowReads
+impl core::marker::UnsafeUnpin for files::testing::SlowReads
+impl core::panic::unwind_safe::RefUnwindSafe for files::testing::SlowReads
+impl core::panic::unwind_safe::UnwindSafe for files::testing::SlowReads
 pub struct files::testing::TempDir
 impl files::testing::TempDir
 pub fn files::testing::TempDir::new() -> core::io::error::Result<Self>
@@ -380,6 +420,29 @@ impl core::marker::Unpin for files::EntryKind
 impl core::marker::UnsafeUnpin for files::EntryKind
 impl core::panic::unwind_safe::RefUnwindSafe for files::EntryKind
 impl core::panic::unwind_safe::UnwindSafe for files::EntryKind
+pub enum files::SourceStall
+pub files::SourceStall::DidNotAnswer
+pub files::SourceStall::DidNotAnswer::limit_seconds: u64
+pub files::SourceStall::StoppedAnswering
+impl core::clone::Clone for files::SourceStall
+pub fn files::SourceStall::clone(&self) -> files::SourceStall
+impl core::cmp::Eq for files::SourceStall
+impl core::cmp::PartialEq for files::SourceStall
+pub fn files::SourceStall::eq(&self, &files::SourceStall) -> bool
+impl core::error::Error for files::SourceStall
+impl core::fmt::Debug for files::SourceStall
+pub fn files::SourceStall::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::fmt::Display for files::SourceStall
+pub fn files::SourceStall::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+impl core::marker::Copy for files::SourceStall
+impl core::marker::StructuralPartialEq for files::SourceStall
+impl core::marker::Freeze for files::SourceStall
+impl core::marker::Send for files::SourceStall
+impl core::marker::Sync for files::SourceStall
+impl core::marker::Unpin for files::SourceStall
+impl core::marker::UnsafeUnpin for files::SourceStall
+impl core::panic::unwind_safe::RefUnwindSafe for files::SourceStall
+impl core::panic::unwind_safe::UnwindSafe for files::SourceStall
 pub enum files::WaitOutcome
 pub files::WaitOutcome::Answered
 pub files::WaitOutcome::DeadlinePassed
@@ -566,6 +629,23 @@ impl core::marker::Unpin for files::SpaceOnFileSystem
 impl core::marker::UnsafeUnpin for files::SpaceOnFileSystem
 impl core::panic::unwind_safe::RefUnwindSafe for files::SpaceOnFileSystem
 impl core::panic::unwind_safe::UnwindSafe for files::SpaceOnFileSystem
+pub struct files::StallGuard
+impl files::StallGuard
+pub fn files::StallGuard::is_stopped(&self) -> bool
+pub fn files::StallGuard::new(alloc::boxed::Box<(dyn files::ReadOnlyFileSystem + core::marker::Send)>, alloc::sync::Arc<dyn files::Timer>, core::time::Duration) -> core::io::error::Result<Self>
+impl files::ReadOnlyFileSystem for files::StallGuard
+pub fn files::StallGuard::entry(&self, &std::path::Path) -> core::io::error::Result<core::option::Option<files::EntryKind>>
+pub fn files::StallGuard::file_size(&self, &std::path::Path) -> core::io::error::Result<u64>
+pub fn files::StallGuard::list_folder(&self, &std::path::Path) -> core::io::error::Result<alloc::vec::Vec<files::FolderEntry>>
+pub fn files::StallGuard::modification_time(&self, &std::path::Path) -> core::io::error::Result<domain::time::Timestamp>
+pub fn files::StallGuard::open_read(&self, &std::path::Path) -> core::io::error::Result<alloc::boxed::Box<dyn files::ReadSeek>>
+impl core::marker::Freeze for files::StallGuard
+impl core::marker::Send for files::StallGuard
+impl core::marker::Sync for files::StallGuard
+impl core::marker::Unpin for files::StallGuard
+impl core::marker::UnsafeUnpin for files::StallGuard
+impl !core::panic::unwind_safe::RefUnwindSafe for files::StallGuard
+impl !core::panic::unwind_safe::UnwindSafe for files::StallGuard
 pub struct files::VerifiedCopies
 pub files::VerifiedCopies::source_checksum: core::option::Option<domain::checksum::Checksum>
 pub files::VerifiedCopies::targets: alloc::vec::Vec<core::result::Result<domain::checksum::Checksum, files::CopyError>>
@@ -617,6 +697,12 @@ pub fn files::ReadOnlyFileSystem::file_size(&self, &std::path::Path) -> core::io
 pub fn files::ReadOnlyFileSystem::list_folder(&self, &std::path::Path) -> core::io::error::Result<alloc::vec::Vec<files::FolderEntry>>
 pub fn files::ReadOnlyFileSystem::modification_time(&self, &std::path::Path) -> core::io::error::Result<domain::time::Timestamp>
 pub fn files::ReadOnlyFileSystem::open_read(&self, &std::path::Path) -> core::io::error::Result<alloc::boxed::Box<dyn files::ReadSeek>>
+impl files::ReadOnlyFileSystem for files::StallGuard
+pub fn files::StallGuard::entry(&self, &std::path::Path) -> core::io::error::Result<core::option::Option<files::EntryKind>>
+pub fn files::StallGuard::file_size(&self, &std::path::Path) -> core::io::error::Result<u64>
+pub fn files::StallGuard::list_folder(&self, &std::path::Path) -> core::io::error::Result<alloc::vec::Vec<files::FolderEntry>>
+pub fn files::StallGuard::modification_time(&self, &std::path::Path) -> core::io::error::Result<domain::time::Timestamp>
+pub fn files::StallGuard::open_read(&self, &std::path::Path) -> core::io::error::Result<alloc::boxed::Box<dyn files::ReadSeek>>
 impl files::ReadOnlyFileSystem for files::testing::MemoryFileSystem
 pub fn files::testing::MemoryFileSystem::entry(&self, &std::path::Path) -> core::io::error::Result<core::option::Option<files::EntryKind>>
 pub fn files::testing::MemoryFileSystem::file_size(&self, &std::path::Path) -> core::io::error::Result<u64>
@@ -642,3 +728,4 @@ pub fn files::checksum_file(&dyn files::ReadOnlyFileSystem, &dyn files::Hasher, 
 pub fn files::copy_verified(&dyn files::FileSystem, &dyn files::Hasher, &std::path::Path, &std::path::Path) -> core::result::Result<domain::checksum::Checksum, files::CopyError>
 pub fn files::copy_verified_to_all(&dyn files::ReadOnlyFileSystem, &dyn files::FileSystem, &dyn files::Hasher, &std::path::Path, &[&std::path::Path]) -> files::VerifiedCopies
 pub fn files::not_a_file(&std::path::Path) -> core::io::error::Error
+pub fn files::source_stall(&core::io::error::Error) -> core::option::Option<&files::SourceStall>

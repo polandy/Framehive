@@ -18,10 +18,18 @@ pub(super) struct MemoryReader {
     pub(super) content: Vec<u8>,
     pub(super) position: usize,
     pub(super) readable: usize,
+    /// A [`Fault::Hangs`] or [`Fault::SlowReads`] of the file, applied to each read.
+    pub(super) delay: Option<Fault>,
 }
 
 impl Read for MemoryReader {
     fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
+        // Outside the lock, so a hanging read blocks no other call.
+        match &self.delay {
+            Some(Fault::Hangs(hang)) => hang.block(),
+            Some(Fault::SlowReads(slow)) => slow.pass_time(),
+            _ => {}
+        }
         lock(&self.state).count_operation()?;
         if self.position >= self.readable && self.position < self.content.len() {
             return Err(io::Error::other("injected read error"));

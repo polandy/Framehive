@@ -5,9 +5,12 @@
 
 use std::io::{self, Read, Write};
 use std::path::Path;
+use std::sync::Arc;
+use std::thread;
+use std::time::Duration;
 
 use domain::Timestamp;
-use files::testing::{Fault, MemoryFileSystem};
+use files::testing::{Fault, Hang, ManualTimer, MemoryFileSystem, SlowReads};
 use files::{EntryKind, FileSystem, ReadOnlyFileSystem};
 
 const FOLDER: &str = "/destination";
@@ -182,4 +185,54 @@ fn symbolic_links_are_listed_but_never_followed() {
     assert!(file_system.open_read(&path("all")).is_err());
     assert!(file_system.file_size(&path("all")).is_err());
     assert!(file_system.list_folder(&path("all")).is_err());
+}
+
+#[test]
+fn a_hanging_listing_answers_once_released() {
+    let file_system = file_system();
+    file_system.add_file(&path("photo.jpg"), b"jpeg", Timestamp::UNIX_EPOCH);
+    let hang = Hang::new();
+    file_system.inject_fault(Path::new(FOLDER), Fault::Hangs(hang.clone()));
+    let listing = {
+        let file_system = file_system.clone();
+        thread::spawn(move || file_system.list_folder(Path::new(FOLDER)))
+    };
+
+    hang.wait_until_begun();
+    hang.release();
+
+    assert_eq!(listing.join().unwrap().unwrap().len(), 1);
+}
+
+#[test]
+fn a_hanging_read_answers_once_released() {
+    let file_system = file_system();
+    file_system.add_file(&path("photo.jpg"), b"jpeg", Timestamp::UNIX_EPOCH);
+    let hang = Hang::new();
+    file_system.inject_fault(&path("photo.jpg"), Fault::Hangs(hang.clone()));
+    let reading = {
+        let file_system = file_system.clone();
+        thread::spawn(move || read(&file_system, &path("photo.jpg")))
+    };
+
+    hang.wait_until_begun();
+    hang.release();
+
+    assert_eq!(reading.join().unwrap().unwrap(), b"jpeg");
+}
+
+#[test]
+fn each_slow_read_lets_time_pass() {
+    let file_system = file_system();
+    file_system.add_file(&path("photo.jpg"), b"jpeg", Timestamp::UNIX_EPOCH);
+    let timer = Arc::new(ManualTimer::new());
+    let slow = SlowReads::new(Arc::clone(&timer), Duration::from_secs(20));
+    file_system.inject_fault(&path("photo.jpg"), Fault::SlowReads(slow));
+    let mut file = file_system.open_read(&path("photo.jpg")).unwrap();
+
+    let mut byte = [0; 1];
+    file.read_exact(&mut byte).unwrap();
+    file.read_exact(&mut byte).unwrap();
+
+    assert_eq!(timer.time_since_start(), Duration::from_secs(40));
 }
