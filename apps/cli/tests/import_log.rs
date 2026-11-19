@@ -267,6 +267,7 @@ fn a_run_that_does_not_exist_is_an_error() {
 }
 
 /// `last` without any run is an error (CLI-009, "Errors").
+/// spec: CLI-009.17
 #[test]
 fn last_without_runs_is_an_error() {
     let folders = Folders::new();

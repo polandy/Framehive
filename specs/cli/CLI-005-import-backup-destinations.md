@@ -67,8 +67,8 @@ be created, stops the command before any file is copied, with exit code 2.
   output has `  backup failed  <backup>: name conflict`, and the exit code is 1
 
 ### CLI-005.4 – An invalid backup destination stops the command
-- **Given** `--backup <destination>`, `--backup <source>/backup`, or the same
-  `--backup` folder twice
+- **Given** `--backup <destination>`, `--backup <source>/backup`, the same
+  `--backup` folder twice, or a `--backup` folder that cannot be created
 - **When** the user runs the command
 - **Then** standard error names the backup destination, no file or folder is created,
   and the exit code is 2

@@ -95,6 +95,7 @@ fn rejects_a_destination_inside_the_source() {
     assert_eq!(output.status.code(), Some(2));
 }
 
+/// spec: CLI-024.2
 #[test]
 fn rejects_a_destination_that_cannot_be_created() {
     let folders = Folders::new();
@@ -108,6 +109,7 @@ fn rejects_a_destination_that_cannot_be_created() {
     assert_eq!(output.status.code(), Some(2));
 }
 
+/// spec: CLI-024.3
 #[test]
 fn rejects_parent_folder_steps_in_a_missing_destination() {
     let folders = Folders::new();

@@ -179,6 +179,16 @@ for example `framehive import-log 3 --format csv > import-3.csv`.
 - **Then** the list has the line `… /media/a\nb -> /library` and the log has the line
   `  x\ny.jpg -> x\ry.jpg  blake3:01`, each on one line
 
+### CLI-009.16 – A path that is not valid UTF-8
+- **Given** a run from a source whose path has a byte that is not valid UTF-8
+- **When** `framehive import-log` runs, and again with `1`, in every format
+- **Then** each invalid byte is printed as U+FFFD
+
+### CLI-009.17 – `last` without runs
+- **Given** `XDG_STATE_HOME` set to an empty folder
+- **When** `framehive import-log last` runs
+- **Then** standard error is `error: no import runs recorded`, and the exit code is 2
+
 ## Out of scope
 
 - What the log holds: IMPORT-010.
@@ -200,3 +210,4 @@ for example `framehive import-log 3 --format csv > import-3.csv`.
 | 2026-11-07 | CLI-009.14 for the error without a state folder, which the table above already defined |
 | 2026-11-07 | Control characters are escaped in the text format, so a name with a line break stays on one line (CLI-009.15, PR #40 review) |
 | 2026-11-19 | An unknown run gets a hint that lists the runs (CLI-009.10) (review E26) |
+| 2026-11-19 | CLI-009.16 and CLI-009.17 for tests that had no criterion (E21) |
