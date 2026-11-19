@@ -17,6 +17,7 @@ mod naming;
 mod readiness;
 mod sequence;
 mod shared;
+mod stall;
 mod start;
 mod state;
 mod summary;

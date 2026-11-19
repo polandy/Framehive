@@ -20,11 +20,12 @@ impl Dialog<'_> {
         device: &Device,
     ) -> Result<Option<(Source, SourceScan)>, Stop> {
         loop {
-            let source = match device.kind() {
-                DeviceKind::Card { mount_point } => Source::card(device, mount_point),
+            let ports = self.ports;
+            let opened = match device.kind() {
+                DeviceKind::Card { mount_point } => Source::card(device, mount_point, &ports),
                 DeviceKind::Camera { port } => {
-                    match open_listed_camera(self.ports.cameras, device.name(), port) {
-                        Ok(camera) => Source::camera(device, camera),
+                    match open_listed_camera(ports.cameras, device.name(), port) {
+                        Ok(camera) => Source::camera(device, camera, &ports),
                         Err(OpenFailure::InUse(line)) => {
                             if self.try_again(&line, device)? {
                                 continue;
@@ -38,8 +39,15 @@ impl Dialog<'_> {
                     }
                 }
             };
+            let source = match opened {
+                Ok(source) => source,
+                Err(error) => {
+                    self.say(&format!("Could not open {}: {error}", device.name()));
+                    return Ok(None);
+                }
+            };
             self.say(&format!("Reading {}…", device.name()));
-            match source.scan(&self.ports) {
+            match source.scan() {
                 Ok(scan) => return Ok(Some((source, scan))),
                 Err(ScanError::NoStorage) => {
                     let line = source
