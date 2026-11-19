@@ -175,17 +175,35 @@ fn the_same_file_on_both_card_slots_is_copied_once() {
     let output = import_in_root(&folders, &["slot1", "slot2", "--destination", "library"]);
 
     assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    // The lines of the two jobs may interleave (CLI-015), so each summary is found by
+    // its source line.
     let printed = lines(&output);
-    let position = |wanted: &str| printed.iter().position(|line| line == wanted).unwrap();
-    let order = [
-        position(&format!("copied  DSCF0001.RAF -> {DAY}/DSCF0001.RAF")),
-        position("slot1:"),
-        position(&format!(
-            "already imported  DSCF0001.RAF -> {DAY}/DSCF0001.RAF"
-        )),
-        position("slot2:"),
-    ];
-    assert!(order.is_sorted(), "{printed:?}");
+    let summary_of = |source: &str| {
+        let index = printed.iter().position(|line| line == source).unwrap();
+        printed[index + 1].clone()
+    };
+    assert_eq!(
+        summary_of("slot1:"),
+        "1 copied, 0 already imported, 0 duplicates, 0 skipped, 0 failed, 0 left out"
+    );
+    assert_eq!(
+        summary_of("slot2:"),
+        "0 copied, 1 already imported, 0 duplicates, 0 skipped, 0 failed, 0 left out"
+    );
+    assert!(has_line(
+        &output,
+        &format!("copied  DSCF0001.RAF -> {DAY}/DSCF0001.RAF")
+    ));
+    assert!(
+        has_line(
+            &output,
+            &format!("already imported  DSCF0001.RAF -> {DAY}/DSCF0001.RAF")
+        ) || has_line(
+            &output,
+            &format!("imported before  DSCF0001.RAF -> {DAY}/DSCF0001.RAF")
+        ),
+        "{printed:?}"
+    );
     assert_eq!(
         file_names(&folders.root.path().join("library").join(DAY)),
         ["DSCF0001.RAF"]

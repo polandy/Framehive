@@ -20,7 +20,7 @@ new behaviour: they combine the rules of the specifications they depend on.
 |---|---|---|
 | T4 Corrupt or truncated RAW file, broken EXIF data | A file whose metadata cannot be read is dated by its modification time (CORE-005) and still copied | CLI-022.1 |
 | T7 Backup destination disappears | A backup destination that cannot be written fails per file (CLI-005), the card is not released (CLI-007), and a re-run completes the backup (IMPORT-009) | CLI-022.2, CLI-022.3 |
-| T8 Same file on both card slots | The second slot's file is already imported (CLI-015) | CLI-022.4 |
+| T8 Same file on both card slots | The second slot's file is already imported or imported before (CLI-015, IMPORT-009) | CLI-022.4 |
 | T8 Renamed file | A file renamed in the library is imported before | CLI-008.2 |
 | T8 FAT32 timezone change | The history recognizes a file by its content, not by its modification time (IMPORT-009) | CLI-022.5 |
 | T9 Camera file number overflows | Two files with the same name and date get distinct names (IMPORT-003) | CLI-022.6 |
@@ -64,8 +64,13 @@ binary (T1, T3, T5, T6) follow with their own ADR.
 ### CLI-022.4 – T8: the same file on both card slots
 - **Given** sources `slot1` and `slot2`, each with the same `DSCF0001.RAF`
 - **When** `framehive import slot1 slot2 --destination <destination>` runs
-- **Then** `slot1` reports `copied  DSCF0001.RAF -> 2026/2026-10-17/DSCF0001.RAF`,
-  `slot2` reports `already imported  DSCF0001.RAF -> 2026/2026-10-17/DSCF0001.RAF`, the
+- **Then** the output has `copied  DSCF0001.RAF -> 2026/2026-10-17/DSCF0001.RAF`, and
+  `already imported  DSCF0001.RAF -> 2026/2026-10-17/DSCF0001.RAF` or, when `slot2` is
+  planned after the copy of `slot1` is recorded, `imported before` with the same paths;
+  the summary after `slot1:` is
+  `1 copied, 0 already imported, 0 duplicates, 0 skipped, 0 failed, 0 left out`, the one
+  after `slot2:` is
+  `0 copied, 1 already imported, 0 duplicates, 0 skipped, 0 failed, 0 left out`, the
   destination has one file, each source can be formatted, and the exit code is 0
 
 ### CLI-022.5 – T8: a modification time shifted by a time zone change
