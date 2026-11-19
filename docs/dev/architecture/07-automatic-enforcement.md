@@ -8,6 +8,7 @@ Part of the [architecture](README.md).
 | Domain has no I/O | Clippy `disallowed_methods`/`disallowed_types` per layer (`SystemTime::now`, `Instant::now`, `std::fs`, `thread::sleep`, …) + dependency allowlist |
 | No accidental public API changes | `cargo xtask check-public-api`: a `cargo public-api` snapshot (`public-api.txt`) for `kernel` and every service; a change requires an updated snapshot and a `feat`, `fix` or breaking commit for the changelog (ADR 0038, ADR 0045) |
 | No `unsafe` outside FFI adapters | `#![forbid(unsafe_code)]` in all other crates, checked by `check-architecture` |
+| Same lints everywhere | `check-architecture`: every crate sets `[lints] workspace = true`; an FFI adapter, which cannot inherit `unsafe_code = "forbid"`, repeats the workspace lints exactly plus its three `unsafe` lints |
 | Documentation | `#![warn(missing_docs)]` treated as an error in CI; every crate has a README with mandatory sections (checked by `xtask`) |
 | Formatting & lints | `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings` with `clippy::pedantic` (justified exceptions in `clippy.toml`) |
 | Dependencies | `cargo xtask check-dependencies` against the allowlist `dependencies.yaml`, including permitted layers; count of transitive dependencies logged; `cargo deny` (licenses, duplicates, advisories, crates.io only); unused dependencies (ADR 0009). Both checks also cover the fuzz crate in `fuzz/`, a workspace of its own (ADR 0037) |

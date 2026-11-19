@@ -8,9 +8,8 @@ use std::ffi::OsStr;
 use std::io;
 use std::path::{Path, PathBuf};
 
+use domain::XMP_SIDECAR_EXTENSION;
 use files::{EntryKind, ReadOnlyFileSystem};
-
-const SIDECAR_EXTENSION: &str = ".xmp";
 
 /// How a sidecar is named after its file (ADR 0040 §1).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
@@ -41,10 +40,11 @@ impl SidecarNaming {
         match self {
             SidecarNaming::OriginalWithExtension => {
                 let mut name = file.as_os_str().to_owned();
-                name.push(SIDECAR_EXTENSION);
+                name.push(".");
+                name.push(XMP_SIDECAR_EXTENSION);
                 PathBuf::from(name)
             }
-            SidecarNaming::OriginalWithoutExtension => file.with_extension("xmp"),
+            SidecarNaming::OriginalWithoutExtension => file.with_extension(XMP_SIDECAR_EXTENSION),
         }
     }
 }
@@ -84,8 +84,10 @@ pub fn find_sidecars(files: &dyn ReadOnlyFileSystem, file: &Path) -> io::Result<
 /// The name of a sidecar without its extension, which matches in any case.
 fn sidecar_base(name: &OsStr) -> Option<&[u8]> {
     let bytes = name.as_encoded_bytes();
-    let (base, extension) = bytes.split_at(bytes.len().checked_sub(SIDECAR_EXTENSION.len())?);
+    let (base, extension) =
+        bytes.split_at(bytes.len().checked_sub(XMP_SIDECAR_EXTENSION.len() + 1)?);
     extension
-        .eq_ignore_ascii_case(SIDECAR_EXTENSION.as_bytes())
+        .strip_prefix(b".")
+        .is_some_and(|extension| extension.eq_ignore_ascii_case(XMP_SIDECAR_EXTENSION.as_bytes()))
         .then_some(base)
 }

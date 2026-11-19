@@ -57,5 +57,6 @@ use their own temporary folder in `tests/support/` instead of
 ## Dependencies
 
 - `devices`
+- `domain`: `CAMERA_PHOTO_FOLDER`, the `DCIM` folder name shared with the import
 - `tracing` (ADR 0046): a warning for a volume or `DCIM` folder that cannot be
   examined

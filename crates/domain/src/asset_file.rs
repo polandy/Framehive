@@ -31,6 +31,10 @@ pub const RAW_EXTENSIONS: [&str; 22] = [
     "NRW", "ORF", "PEF", "RAF", "RAW", "RW2", "SR2", "SRW", "X3F",
 ];
 
+/// The extension of an XMP sidecar, without the `.`; it matches in any case
+/// (CORE-010, ADR 0040 §1).
+pub const XMP_SIDECAR_EXTENSION: &str = "xmp";
+
 /// The extensions of video files, in upper case (requirements 2.7).
 pub const VIDEO_EXTENSIONS: [&str; 12] = [
     "3GP", "AVI", "M2T", "M2TS", "MOV", "MP4", "MPEG", "MPG", "MOD", "TOD", "MTS", "MKV",
