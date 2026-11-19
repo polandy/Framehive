@@ -32,6 +32,7 @@ fn keywords(texts: &[&str]) -> Vec<Keyword> {
         .collect()
 }
 
+/// spec: IMPORT-019.1
 #[test]
 fn config_yaml_sets_every_metadata_key() {
     let read = configuration(

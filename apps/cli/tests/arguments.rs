@@ -20,6 +20,7 @@ fn text(bytes: &[u8]) -> String {
     String::from_utf8_lossy(bytes).into_owned()
 }
 
+/// spec: CLI-024.1
 #[test]
 fn version_prints_the_program_name_and_version() {
     let output = framehive(&["--version"]);
@@ -31,6 +32,7 @@ fn version_prints_the_program_name_and_version() {
     assert_eq!(output.status.code(), Some(0));
 }
 
+/// spec: CLI-024.1
 #[test]
 fn help_describes_the_import_arguments() {
     let output = framehive(&["import", "--help"]);

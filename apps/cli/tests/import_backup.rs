@@ -159,6 +159,7 @@ fn an_invalid_backup_destination_stops_the_command() {
     }
 }
 
+/// spec: CLI-005.4
 #[test]
 fn a_backup_destination_that_cannot_be_created_stops_the_command() {
     let folders = Folders::new();

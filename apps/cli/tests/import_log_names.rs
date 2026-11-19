@@ -54,6 +54,7 @@ fn record_run(folders: &Folders, source: PathBuf, source_path: PathBuf, target: 
 
 /// Paths that are not valid UTF-8 are printed with U+FFFD in every format (CLI-009,
 /// "Paths").
+/// spec: CLI-009.16
 #[test]
 fn a_path_that_is_not_utf8_is_printed_with_replacement_characters() {
     use std::ffi::OsStr;

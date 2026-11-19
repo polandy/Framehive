@@ -182,8 +182,8 @@ fn the_dry_run_prints_the_summary_and_the_files() {
 }
 
 /// spec: CLI-018.6
-// On macOS the run would use the Trash of the user who runs the tests; the in-crate
-// test with a trash in memory covers it there.
+/// spec: CLI-018.6
+// On macOS the run would use the real Trash; an in-crate test with one in memory covers it.
 #[cfg(not(target_os = "macos"))]
 #[test]
 fn confirming_moves_the_raws_to_the_trash() {
@@ -249,8 +249,8 @@ fn no_answer_is_an_error() {
 }
 
 /// spec: CLI-018.12
-// On macOS the run would use the Trash of the user who runs the tests; the in-crate
-// test with a trash in memory covers it there.
+/// spec: CLI-018.12
+// On macOS the run would use the real Trash; an in-crate test with one in memory covers it.
 #[cfg(not(target_os = "macos"))]
 #[test]
 fn yes_moves_without_asking() {
@@ -324,6 +324,7 @@ fn nothing_to_remove_asks_nothing() {
     );
 }
 
+/// spec: CLI-018.13
 #[test]
 fn a_missing_folder_does_not_start() {
     let folders = Folders::new();
