@@ -15,7 +15,11 @@ use super::*;
 
 fn link_denied(_: &Path, _: &Path) -> io::Result<()> {
     // exFAT answers a hard link with EPERM.
-    Err(io::Error::from(io::ErrorKind::PermissionDenied))
+    Err(io::Error::from_raw_os_error(libc::EPERM))
+}
+
+fn link_access_denied(_: &Path, _: &Path) -> io::Result<()> {
+    Err(io::Error::from_raw_os_error(libc::EACCES))
 }
 
 fn link_unsupported(_: &Path, _: &Path) -> io::Result<()> {
@@ -105,6 +109,20 @@ fn other_link_errors_are_reported_without_renaming() {
         .rename_no_replace(&from, &to)
         .unwrap_err();
     assert_eq!(error.kind(), io::ErrorKind::CrossesDevices);
+    assert_eq!(fs::read(&from).unwrap(), b"raw");
+    assert!(!to.exists());
+}
+
+#[test]
+fn access_denied_is_reported_without_renaming() {
+    let folder = TempDir::new().unwrap();
+    let from = folder.path().join("photo.raf.part");
+    let to = folder.path().join("photo.raf");
+    fs::write(&from, b"raw").unwrap();
+    let error = without_links(link_access_denied)
+        .rename_no_replace(&from, &to)
+        .unwrap_err();
+    assert_eq!(error.raw_os_error(), Some(libc::EACCES));
     assert_eq!(fs::read(&from).unwrap(), b"raw");
     assert!(!to.exists());
 }

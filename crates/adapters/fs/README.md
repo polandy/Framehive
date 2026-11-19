@@ -25,11 +25,11 @@ the source scan of the import (ADR 0020 §3, §4). It is an FFI crate for one ca
   which fails with `AlreadyExists` if anything is there, then removes `from`. If
   removing `from` fails, it removes `to` again.
 - **Without hard links** (exFAT answers `EPERM`, others `EOPNOTSUPP`): only when the
-  link fails with `PermissionDenied` or `Unsupported` and `from` is a file, it checks
+  link fails with `EPERM` or `Unsupported` and `from` is a file, it checks
   that nothing exists at `to` and renames with `std::fs::rename`. Another program that
   creates `to` between the check and the rename gets its file replaced; ADR 0020 §3
   accepts this race, because these file systems offer no rename that refuses to
-  replace.
+  replace. `EACCES`, such as a folder without write permission, is reported as it is.
 
 - `open_read_from_medium` opens like `open_read`, then on Linux drops the file's
   cached pages with `posix_fadvise(POSIX_FADV_DONTNEED)`, so the read-back of a
@@ -53,7 +53,10 @@ the source scan of the import (ADR 0020 §3, §4). It is an FFI crate for one ca
 system in a `files::testing::TempDir`, with real symbolic links on Unix. The unit tests run the same suite with a hard
 link that fails as on exFAT, to cover the fallback, and check that it never replaces
 an existing file. A Unix test checks that `replace_file` keeps permissions and refuses
-a read-only file.
+a read-only file. Unix tests run a verified copy and a rename into a folder without
+write permission and check that no target and no stray `.part` file is left. A full
+device is covered only against `MemoryFileSystem`, because a small file system needs a
+mount, which tests cannot make without the superuser.
 
 ## Dependencies
 
