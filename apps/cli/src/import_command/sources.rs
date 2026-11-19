@@ -13,7 +13,8 @@ use std::thread::ScopedJoinHandle;
 use import::{FileReport, ImportJobReports, ImportSummary, ProgressSink, SourceScan};
 
 use super::folders::Folders;
-use super::run::{NotStarted, start_error, unknown_free_space_message};
+use super::free_space::unknown_free_space_message;
+use super::run::{NotStarted, start_error};
 use crate::report::ReportPrinter;
 use crate::{JOB_ENDED_UNEXPECTEDLY, write_error, write_warning};
 

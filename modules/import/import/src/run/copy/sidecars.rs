@@ -6,15 +6,13 @@
 //! target and at each backup that got the file, read back and compared (IMPORT-019,
 //! "Writing", IMPORT-020).
 
-use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 
 use domain::Checksum;
 use files::ReadOnlyFileSystem;
 use history::SidecarRecord;
 use metadata::xmp::{
-    FoundSidecar, SidecarError, SidecarErrorKind, SidecarFiles, SidecarStep, XmpPacket, parse_xmp,
-    serialize_xmp,
+    SidecarError, SidecarErrorKind, SidecarFiles, SidecarStep, XmpPacket, parse_xmp, serialize_xmp,
 };
 use naming::DateSource;
 
@@ -29,6 +27,7 @@ use crate::scan::FoundFile;
 
 mod content;
 mod kept;
+mod write;
 
 use content::merge_values;
 use kept::recorded_position;
@@ -162,16 +161,7 @@ impl<'s> Sidecars<'s> {
                 return carried;
             }
         };
-        let mut verified_at = 0;
-        match self.write_verified(&at_import, &prepared) {
-            Ok(()) => {
-                verified_at += 1;
-                if sidecar.holds_values {
-                    imported.sidecar = Some(name.clone());
-                }
-            }
-            Err(error) => imported.outcome = FileOutcome::Failed(FileError::Sidecar(error)),
-        }
+        let verified_at = self.write_at_import(sidecar, &at_import, &name, &prepared, imported);
         let kept = placement.keep_existing.then_some(expected.as_slice());
         let (at_backups, kept_at) = self.add_to_backups(&name, &prepared, kept, imported);
         if let Some(carried) = &mut carried {
@@ -350,38 +340,6 @@ impl<'s> Sidecars<'s> {
             sidecar_error(path, SidecarErrorKind::Io { step, source })
         })?;
         Ok(entry.is_none())
-    }
-
-    /// Writes `prepared` new at `path`, through a `.part` file and a rename, and
-    /// requires it to read back byte for byte and to parse to the same packet.
-    fn write_verified(&self, path: &Path, prepared: &Prepared) -> Result<(), SidecarError> {
-        let content = prepared.content.as_slice();
-        self.files.write(path, content, &FoundSidecar::nothing())?;
-        let back = self.read_back(path).map_err(|source| {
-            let step = SidecarStep::Read;
-            sidecar_error(path, SidecarErrorKind::Io { step, source })
-        })?;
-        if back != content {
-            return Err(sidecar_error(path, SidecarErrorKind::Differs));
-        }
-        let Some(model) = &prepared.model else {
-            return Ok(());
-        };
-        let parsed = parse_xmp(path, &back, self.files.xml)
-            .map_err(|error| sidecar_error(path, SidecarErrorKind::Unreadable(error.reason)))?;
-        if parsed != *model {
-            return Err(sidecar_error(path, SidecarErrorKind::Differs));
-        }
-        Ok(())
-    }
-
-    fn read_back(&self, path: &Path) -> io::Result<Vec<u8>> {
-        let mut content = Vec::new();
-        self.files
-            .files
-            .open_read(path)?
-            .read_to_end(&mut content)?;
-        Ok(content)
     }
 }
 

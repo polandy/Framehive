@@ -18,24 +18,22 @@ use adapter_sqlite::SqliteImportHistory;
 use adapter_xmp::QuickXml;
 use files::{Cameras, FreeSpace};
 use import::{
-    CAMERA_FORMAT_READINESS_NOTE, Configuration, DryRunMemory, FreeSpaceUnknown, ImportJob,
-    ImportJobSettings, ImportPorts, ImportProfile, ImportRun, ImportSettings, ImportSummary,
-    PlannedRun, ProgressSink, ReservedTargetNames, RunError, SessionSequence, SharedFileSystem,
-    SpaceShortage, scan_source,
+    CAMERA_FORMAT_READINESS_NOTE, Configuration, DryRunMemory, ImportJob, ImportJobReports,
+    ImportJobSettings, ImportPorts, ImportProfile, ImportSettings, ImportSummary, PlannedRun,
+    ProgressSink, ReservedTargetNames, RunError, SessionSequence, SourceScan, scan_source,
 };
 use jobs::JobQueue;
 use naming::CompatibilityMode;
 
 use super::folders::{Folders, backup_names, resolve_sources};
+use super::free_space::{check_free_space, shortage_message};
 use super::locations::Locations;
 use super::sources::{Enqueued, Streams};
 use super::{ChosenSettings, choose_settings};
 use crate::CommandError;
 use crate::arguments::ImportArguments;
 use crate::cameras::{OpenedCamera, camera_choice, open_camera};
-use crate::guided::space_text;
 use crate::report::ReportPrinter;
-use crate::write_warning;
 
 /// What the import takes from the process: the tests give their own.
 pub(super) struct Surroundings<'a> {
@@ -232,20 +230,13 @@ fn enqueue_source<'f>(
     let mut run = ports.import_run();
     let mut printer =
         ReportPrinter::new(Vec::new(), arguments.dry_run).with_backup_names(backup_names(folders));
-    let scan = if let Some(camera) = &camera {
+    if let Some(camera) = &camera {
         run = run
             .with_source(&camera.file_system)
             .with_source_name(&camera.name);
         printer = printer.with_format_readiness_note(CAMERA_FORMAT_READINESS_NOTE);
-        camera.scan(&folders.source)
-    } else {
-        scan_source(
-            &*ports.file_system,
-            &folders.source,
-            &folders.destination.path,
-        )
-        .map_err(|error| error.to_string())
-    }?;
+    }
+    let scan = scan_folders(ports, camera.as_ref(), folders)?;
     printer.scan_finished(&scan);
     streams.print(&printer.take_written());
     let plan = run
@@ -263,16 +254,14 @@ fn enqueue_source<'f>(
             return Err(shortages);
         }
     };
-    let (job, reports) = ImportJob::new(ports.clone(), ImportJobSettings::of(&settings));
-    let mut job = job.with_plan(plan);
-    if let Some(memory) = dry_run_memory {
-        job = job.with_dry_run_memory(Arc::clone(memory));
-    }
-    if let Some(camera) = &camera {
-        job = job.with_source(Box::new(camera.file_system.clone()), camera.name.clone());
-    }
-    job.enqueue(queue)
-        .map_err(|error| start_error(error, folders))?;
+    let reports = enqueue_job(
+        (ports, dry_run_memory),
+        &settings,
+        plan,
+        camera.as_ref(),
+        queue,
+    )
+    .map_err(|error| start_error(error, folders))?;
     let enqueued = Enqueued {
         reports,
         printer,
@@ -280,6 +269,48 @@ fn enqueue_source<'f>(
         warned,
     };
     Ok((enqueued, camera))
+}
+
+/// Scans the source folder, on the camera when the source is one.
+///
+/// # Errors
+///
+/// Returns the message of the error that kept the scan from finishing.
+fn scan_folders(
+    ports: &ImportPorts,
+    camera: Option<&OpenedCamera>,
+    folders: &Folders,
+) -> Result<SourceScan, String> {
+    match camera {
+        Some(camera) => camera.scan(&folders.source),
+        None => scan_source(
+            &*ports.file_system,
+            &folders.source,
+            &folders.destination.path,
+        )
+        .map_err(|error| error.to_string()),
+    }
+}
+
+/// Enqueues the job of `plan`, reading from `camera` when the source is one, in a dry
+/// run with the dry-run memory.
+fn enqueue_job(
+    (ports, dry_run_memory): (&ImportPorts, Option<&Arc<DryRunMemory>>),
+    settings: &ImportSettings<'_>,
+    plan: PlannedRun,
+    camera: Option<&OpenedCamera>,
+    queue: &mut JobQueue,
+) -> Result<ImportJobReports, RunError> {
+    let (job, reports) = ImportJob::new(ports.clone(), ImportJobSettings::of(settings));
+    let mut job = job.with_plan(plan);
+    if let Some(memory) = dry_run_memory {
+        job = job.with_dry_run_memory(Arc::clone(memory));
+    }
+    if let Some(camera) = camera {
+        job = job.with_source(Box::new(camera.file_system.clone()), camera.name.clone());
+    }
+    job.enqueue(queue)?;
+    Ok(reports)
 }
 
 /// The ports of the import: the library on this machine, the state in `state_folder`.
@@ -295,75 +326,6 @@ fn import_ports(state_folder: &Path, free_space: Arc<dyn FreeSpace + Send + Sync
         reserved_names: Arc::new(ReservedTargetNames::new()),
         xml_syntax: Arc::new(QuickXml::new()),
     }
-}
-
-/// Checks that each file system can hold what the run writes to it, before any folder
-/// is created, and warns about each destination whose free space is unknown and each
-/// backup on the file system of an earlier destination (CLI-011);
-/// returns those destinations.
-///
-/// # Errors
-///
-/// Returns one message per file system that is short.
-fn check_free_space(
-    run: &ImportRun<'_>,
-    settings: &ImportSettings<'_>,
-    folders: &Folders,
-    plan: &PlannedRun,
-    errors: &mut dyn Write,
-) -> Result<Vec<PathBuf>, NotStarted> {
-    let check = run.check_free_space(settings, plan);
-    for unknown in &check.unknown {
-        write_warning(errors, &unknown_free_space_message(unknown, folders));
-    }
-    for shared in &check.shared {
-        write_warning(errors, &shared_file_system_message(shared, folders));
-    }
-    if check.shortages.is_empty() {
-        return Ok(check
-            .unknown
-            .into_iter()
-            .map(|unknown| unknown.destination)
-            .collect());
-    }
-    Err(NotStarted {
-        messages: check
-            .shortages
-            .iter()
-            .map(|shortage| shortage_message(shortage, folders))
-            .collect(),
-        hint: None,
-    })
-}
-
-/// `cannot tell the free space at <folder as given>: <reason>` (CLI-011).
-pub(super) fn unknown_free_space_message(unknown: &FreeSpaceUnknown, folders: &Folders) -> String {
-    format!(
-        "cannot tell the free space at {}: {}",
-        folders.shown(&unknown.destination).display(),
-        unknown.error
-    )
-}
-
-/// `backup <folder> is on the same file system as <folder>; ...`, with the folders as
-/// given (CLI-011).
-fn shared_file_system_message(shared: &SharedFileSystem, folders: &Folders) -> String {
-    SharedFileSystem {
-        backup_destination: folders.shown(&shared.backup_destination).to_path_buf(),
-        shared_with: folders.shown(&shared.shared_with).to_path_buf(),
-    }
-    .to_string()
-}
-
-/// `not enough space at <folders as given>: needs 12.8 GB, 3.1 GB free` (CLI-011).
-fn shortage_message(shortage: &SpaceShortage, folders: &Folders) -> String {
-    let shown = shortage
-        .destinations
-        .iter()
-        .map(|destination| folders.shown(destination).display().to_string())
-        .collect::<Vec<_>>()
-        .join(", ");
-    format!("not enough space at {shown}: {}", space_text(shortage))
 }
 
 /// The messages for the run error of a job that did not start, naming the folders as
