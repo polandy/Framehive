@@ -59,7 +59,9 @@ the code.
 - Every specification has valid required fields; IDs are unique; origin IDs exist in
   `docs/dev/requirements/`.
 - Every criterion of a specification with status `implemented` has at least one test;
-  every `spec:` reference in a test points to an existing criterion.
+  every `spec:` reference in a test points to an existing criterion. A reference counts
+  only on a `#[test]` function, so a marker on a helper or a stray line fails the check
+  (amendment 2026-11-19).
 - No test references a specification with status `draft` or `removed` (otherwise the
   status would be wrong).
 - Diff check: if a commit changes tests with a `spec:` reference, the affected

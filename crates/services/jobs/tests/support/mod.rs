@@ -121,3 +121,17 @@ pub(crate) fn all_updates(queue: JobQueue, updates: &Receiver<JobUpdate>) -> Vec
 pub(crate) fn next(updates: &Receiver<JobUpdate>) -> JobUpdate {
     updates.recv().unwrap()
 }
+
+/// More updates than any test of these files reports.
+const MOST_UPDATES: usize = 64;
+
+/// The updates until `last`, `last` included; fails at once with what came instead of
+/// `last` once more updates arrived than any test reports.
+pub(crate) fn updates_until(updates: &Receiver<JobUpdate>, last: &JobUpdate) -> Vec<JobUpdate> {
+    let mut seen = Vec::new();
+    while seen.last() != Some(last) {
+        assert!(seen.len() < MOST_UPDATES, "no {last:?} in {seen:?}");
+        seen.push(next(updates));
+    }
+    seen
+}

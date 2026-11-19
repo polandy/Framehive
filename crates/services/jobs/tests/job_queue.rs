@@ -44,10 +44,7 @@ fn a_job_runs_only_after_the_one_before_it_ended() {
     queue.enqueue(finishes());
     queue.enqueue(finishes());
     handles.gate.send(()).unwrap();
-    let mut seen = Vec::new();
-    while seen.last() != Some(&update(3, JobState::Finished)) {
-        seen.push(next(&updates));
-    }
+    let seen = updates_until(&updates, &update(3, JobState::Finished));
 
     let running_and_ended: Vec<JobUpdate> = seen
         .into_iter()
@@ -96,7 +93,7 @@ fn a_running_job_is_stopped_where_it_can_stop() {
 
     queue.stop(first).unwrap();
     handles.gate.send(()).unwrap();
-    while next(&updates) != update(2, JobState::Finished) {}
+    updates_until(&updates, &update(2, JobState::Finished));
 
     assert!(handles.at_step.try_recv().is_err(), "no second step");
     let reported = all_updates(queue, &updates);
@@ -164,7 +161,7 @@ fn a_queued_job_is_removed_and_never_runs() {
 fn stopping_or_removing_an_ended_or_unknown_job_changes_nothing() {
     let (mut queue, updates) = JobQueue::start();
     let ended = queue.enqueue(finishes());
-    while next(&updates) != update(1, JobState::Finished) {}
+    updates_until(&updates, &update(1, JobState::Finished));
     let unknown = JobId::new(7);
 
     let answers = [
@@ -240,7 +237,7 @@ fn shutting_down_removes_the_queued_jobs_and_stops_the_running_one() {
     // The shutdown waits for the running job, so it runs on a thread of its own; the
     // gate opens only once the shutdown removed job 2 and asked job 1 to stop.
     let shutdown = std::thread::spawn(move || queue.shut_down());
-    while next(&updates) != update(2, JobState::Removed) {}
+    updates_until(&updates, &update(2, JobState::Removed));
     handles.gate.send(()).unwrap();
     shutdown.join().unwrap();
 

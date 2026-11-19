@@ -15,7 +15,7 @@ mod requirements;
 pub(crate) mod trailers;
 
 use document::{NONE_MARKER, Spec, parse_spec};
-use markers::{Marker, test_markers};
+use markers::{Marker, test_markers, unbound_markers};
 use requirements::requirement_ids;
 
 /// The requirements catalogue, one file per section.
@@ -37,6 +37,8 @@ struct Repository {
     requirements: BTreeSet<String>,
     specs: Vec<Spec>,
     markers: Vec<Marker>,
+    /// Markers that are not on a test function, one message each.
+    unbound: Vec<String>,
     /// Spec files that could not be parsed, one message per problem.
     problems: Vec<String>,
 }
@@ -54,6 +56,7 @@ pub(crate) fn check_repository(root: &Path) -> Result<Report, String> {
         &repository.markers,
     );
     report.errors.extend(checked.errors);
+    report.errors.extend(repository.unbound);
     report.warnings.extend(checked.warnings);
     Ok(report)
 }
@@ -91,15 +94,21 @@ fn load(root: &Path) -> Result<Repository, String> {
         }
     }
     let mut markers = Vec::new();
+    let mut unbound = Vec::new();
     for directory in SOURCE_DIRECTORIES {
         for path in files_with_extension(&root.join(directory), "rs")? {
-            markers.extend(test_markers(&relative(root, &path), &read(&path)?));
+            let (file, source) = (relative(root, &path), read(&path)?);
+            markers.extend(test_markers(&file, &source));
+            unbound.extend(unbound_markers(&file, &source).into_iter().map(|location| {
+                format!("{location}: a spec marker must sit on a #[test] function")
+            }));
         }
     }
     Ok(Repository {
         requirements: requirement_ids(&requirements),
         specs,
         markers,
+        unbound,
         problems,
     })
 }
