@@ -95,7 +95,7 @@ binary (T1, T3, T6) are in CLI-025 (ADR 0048).
 ## Out of scope
 
 - T1, T3 and T6: CLI-025 runs them through the fault-injection point of ADR 0048.
-- T5 (a slow or hanging device): it needs a per-file time limit that no spec defines yet.
+- T5 (a slow or hanging device): IMPORT-022 specifies its stall limit; CLI-025 is to run it.
 - T2 (destination fills up): it needs a small file system of its own.
 - T10 (cross-device staging): the import has no staging area; it copies into
   `<target>.part` beside the target (IMPORT-004).
@@ -105,3 +105,4 @@ binary (T1, T3, T6) are in CLI-025 (ADR 0048).
 | Date | Change |
 |---|---|
 | 2026-11-19 | Created (review E20) |
+| 2026-11-19 | T5 under Out of scope points to IMPORT-022, its stall limit |
