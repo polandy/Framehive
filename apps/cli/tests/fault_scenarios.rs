@@ -112,19 +112,22 @@ fn a_backup_that_cannot_be_written_keeps_the_card() {
         file_names(&folders.destination().join(DAY)),
         ["DSCF0001.RAF", "DSCF0002.RAF"]
     );
-    let failed = format!("  backup failed  {shown}: ");
-    let failures = lines(&output)
-        .iter()
-        .filter(|line| line.starts_with(&failed))
-        .count();
-    assert_eq!(failures, 2);
+    let printed = lines(&output);
+    for name in ["DSCF0001.RAF", "DSCF0002.RAF"] {
+        let copied = format!("copied  {name} -> {DAY}/{name}");
+        let index = printed.iter().position(|line| *line == copied).unwrap();
+        let next = &printed[index + 1];
+        assert!(
+            next.starts_with(&format!("  backup failed  {shown}: ")),
+            "{next}"
+        );
+    }
     assert!(has_line(
         &output,
         &format!("backup {shown}: 0 backed up, 0 already backed up, 2 failed")
     ));
-    let tail = lines(&output).split_off(lines(&output).len() - 3);
     assert_eq!(
-        tail,
+        printed[printed.len() - 3..],
         [
             "Do not format the source: not every file is verified in 2 locations.",
             "  DSCF0001.RAF: verified in 1 of 2 locations",
