@@ -309,6 +309,7 @@ dependencies = [
  "adapter-mounts",
  "adapter-sequence-counters",
  "adapter-sqlite",
+ "adapter-timer",
  "adapter-xmp",
  "adapter-yaml",
  "clap",

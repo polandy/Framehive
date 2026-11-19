@@ -12,11 +12,12 @@ mod support;
 
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 
 use adapter_yaml::SaphyrParser;
 use import::{
-    ConflictPolicy, DEFAULT_NAME_TEMPLATE, IMPORT_PROFILE_SCHEMA_ID, IMPORT_PROFILE_V1_SCHEMA_ID,
-    ImportProfile, JobCode,
+    ConflictPolicy, DEFAULT_NAME_TEMPLATE, DEFAULT_SOURCE_STALL_LIMIT, IMPORT_PROFILE_SCHEMA_ID,
+    IMPORT_PROFILE_V1_SCHEMA_ID, ImportProfile, JobCode,
 };
 use support::{Folders, stderr};
 
@@ -303,5 +304,33 @@ fn video_settings_are_read_and_an_empty_video_backup_list_is_an_error() {
     assert_eq!(
         located_message("schema_version: 1\nvideo_destination: Videos\n"),
         "2:20: video_destination must be an absolute path or start with ~/"
+    );
+}
+
+/// spec: IMPORT-022.6
+#[test]
+fn a_profile_sets_the_source_stall_limit() {
+    assert_eq!(
+        read("schema_version: 3\n").source_stall_limit,
+        DEFAULT_SOURCE_STALL_LIMIT
+    );
+    let profile = read("schema_version: 3\nsource_stall_limit_seconds: 5\n");
+    assert_eq!(profile.source_stall_limit, Duration::from_secs(5));
+}
+
+/// spec: IMPORT-022.7
+#[test]
+fn an_invalid_source_stall_limit_is_an_error_at_the_value() {
+    for value in ["0", "3601", "2.5"] {
+        assert_eq!(
+            located_message(&format!(
+                "schema_version: 3\nsource_stall_limit_seconds: {value}\n"
+            )),
+            format!("2:29: expected a whole number of seconds from 1 to 3600, found {value}")
+        );
+    }
+    assert_eq!(
+        located_message("schema_version: 2\nsource_stall_limit_seconds: 30\n"),
+        "2:29: source_stall_limit_seconds needs schema_version 3"
     );
 }

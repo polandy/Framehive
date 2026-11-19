@@ -9,7 +9,7 @@ use std::io;
 use std::path::{Component, Path, PathBuf};
 
 use domain::{AssetFileRole, CAMERA_PHOTO_FOLDER, Timestamp};
-use files::{EntryKind, FolderEntry, ReadOnlyFileSystem};
+use files::{EntryKind, FolderEntry, ReadOnlyFileSystem, SourceStall, source_stall};
 
 use crate::roles::role_for_extension;
 
@@ -130,6 +130,15 @@ pub enum ScanError {
          on the device, then try again"
     )]
     NoStorage,
+    /// A call to the source did not answer within the stall limit, so the source is
+    /// stopped and none of its files is imported (IMPORT-022.5).
+    #[error("{}: {stall}", path.display())]
+    SourceStalled {
+        /// The path whose call did not answer.
+        path: PathBuf,
+        /// Why the call failed.
+        stall: SourceStall,
+    },
 }
 
 /// Scans the folder `source` with all its subfolders (IMPORT-005).
@@ -171,14 +180,9 @@ pub fn scan_folder(
     source: &Path,
 ) -> Result<SourceScan, ScanError> {
     let entries = list_source(file_system, source)?;
-    let mut scanner = Scanner {
-        file_system,
-        source,
-        scan: SourceScan::default(),
-        sidecars: Vec::new(),
-    };
+    let mut scanner = Scanner::new(file_system, source);
     scanner.visit_entries(Path::new(""), entries);
-    Ok(scanner.into_sorted_scan())
+    scanner.into_sorted_scan()
 }
 
 /// Scans the camera whose file system has its root at `root` (IMPORT-014): the folder
@@ -209,16 +213,11 @@ pub fn scan_camera(
     if storages.is_empty() {
         return Err(ScanError::NoStorage);
     }
-    let mut scanner = Scanner {
-        file_system,
-        source: root,
-        scan: SourceScan::default(),
-        sidecars: Vec::new(),
-    };
+    let mut scanner = Scanner::new(file_system, root);
     for storage in storages {
         scanner.visit_photo_folder(Path::new(&storage.name).join(CAMERA_PHOTO_FOLDER));
     }
-    Ok(scanner.into_sorted_scan())
+    scanner.into_sorted_scan()
 }
 
 fn list_source(
@@ -230,11 +229,21 @@ fn list_source(
         Ok(Some(EntryKind::Folder)) => {}
         Ok(Some(_)) => return Err(ScanError::SourceNotAFolder { path }),
         Ok(None) => return Err(ScanError::SourceMissing { path }),
-        Err(source) => return Err(ScanError::SourceCannotBeRead { path, source }),
+        Err(error) => return Err(root_error(path, error)),
     }
     file_system
         .list_folder(source)
-        .map_err(|source| ScanError::SourceCannotBeRead { path, source })
+        .map_err(|error| root_error(path, error))
+}
+
+fn root_error(path: PathBuf, error: io::Error) -> ScanError {
+    match source_stall(&error) {
+        Some(&stall) => ScanError::SourceStalled { path, stall },
+        None => ScanError::SourceCannotBeRead {
+            path,
+            source: error,
+        },
+    }
 }
 
 /// Whether `inner` is `outer` or lies below it, compared by path components.
@@ -259,11 +268,26 @@ struct Scanner<'a> {
     source: &'a Path,
     scan: SourceScan,
     sidecars: Vec<Candidate>,
+    /// The first call that stalled; the scan then fails (IMPORT-022.5).
+    stall: Option<(PathBuf, SourceStall)>,
 }
 
-impl Scanner<'_> {
-    /// The scan, each list in byte order of its paths.
-    fn into_sorted_scan(self) -> SourceScan {
+impl<'a> Scanner<'a> {
+    fn new(file_system: &'a dyn ReadOnlyFileSystem, source: &'a Path) -> Self {
+        Scanner {
+            file_system,
+            source,
+            scan: SourceScan::default(),
+            sidecars: Vec::new(),
+            stall: None,
+        }
+    }
+
+    /// The scan, each list in byte order of its paths, or the stall that failed it.
+    fn into_sorted_scan(self) -> Result<SourceScan, ScanError> {
+        if let Some((path, stall)) = self.stall {
+            return Err(ScanError::SourceStalled { path, stall });
+        }
         let mut scan = self.scan;
         let mut sidecars = self.sidecars;
         scan.files.sort_by(|a, b| byte_order(&a.path, &b.path));
@@ -271,7 +295,7 @@ impl Scanner<'_> {
         let without_file = attach(&mut scan.files, sidecars);
         scan.left_out.extend(without_file);
         scan.left_out.sort_by(|a, b| byte_order(&a.path, &b.path));
-        scan
+        Ok(scan)
     }
 
     /// Scans the `DCIM` folder of a camera storage at `path`, if the storage has one.
@@ -279,7 +303,7 @@ impl Scanner<'_> {
         match self.file_system.entry(&self.source.join(&path)) {
             Ok(Some(EntryKind::Folder)) => self.visit_folder(path),
             Ok(_) => {}
-            Err(error) => self.leave_out(path, cannot_be_read(&error)),
+            Err(error) => self.cannot_read(path, &error),
         }
     }
 
@@ -291,6 +315,9 @@ impl Scanner<'_> {
     }
 
     fn visit(&mut self, path: PathBuf, kind: EntryKind) {
+        if self.stall.is_some() {
+            return;
+        }
         if is_hidden(&path) {
             return self.leave_out(path, LeftOutReason::Hidden);
         }
@@ -305,7 +332,7 @@ impl Scanner<'_> {
     fn visit_folder(&mut self, path: PathBuf) {
         match self.file_system.list_folder(&self.source.join(&path)) {
             Ok(entries) => self.visit_entries(&path, entries),
-            Err(error) => self.leave_out(path, cannot_be_read(&error)),
+            Err(error) => self.cannot_read(path, &error),
         }
     }
 
@@ -336,14 +363,25 @@ impl Scanner<'_> {
                 modification_time,
                 sidecars: Vec::new(),
             }),
-            (Err(error), _) | (_, Err(error)) => self.leave_out(path, cannot_be_read(&error)),
+            (Err(error), _) | (_, Err(error)) => self.cannot_read(path, &error),
         }
     }
 
     fn find_sidecar(&mut self, path: PathBuf) {
         match self.file_system.file_size(&self.source.join(&path)) {
             Ok(size) => self.sidecars.push(Candidate { path, size }),
-            Err(error) => self.leave_out(path, cannot_be_read(&error)),
+            Err(error) => self.cannot_read(path, &error),
+        }
+    }
+
+    /// Leaves out `path`, which cannot be read, or records the stall of the source.
+    fn cannot_read(&mut self, path: PathBuf, error: &io::Error) {
+        match source_stall(error) {
+            Some(&stall) => {
+                let absolute = self.source.join(path);
+                self.stall.get_or_insert((absolute, stall));
+            }
+            None => self.leave_out(path, cannot_be_read(error)),
         }
     }
 

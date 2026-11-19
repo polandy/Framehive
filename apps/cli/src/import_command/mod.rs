@@ -20,14 +20,15 @@ use std::io;
 use std::path::PathBuf;
 use std::process::ExitCode;
 use std::sync::Arc;
+use std::time::Duration;
 
 use adapter_free_space::StatvfsFreeSpace;
 use adapter_fs::StdFileSystem;
 use adapter_gphoto2::Gphoto2Cameras;
 use adapter_yaml::SaphyrParser;
 use import::{
-    ConflictPolicy, DEFAULT_NAME_TEMPLATE, ImportMetadata, ImportProfile, ImportSummary, JobCode,
-    MetadataKeys, require_job_code, require_video_job_code,
+    ConflictPolicy, DEFAULT_NAME_TEMPLATE, DEFAULT_SOURCE_STALL_LIMIT, ImportMetadata,
+    ImportProfile, ImportSummary, JobCode, MetadataKeys, require_job_code, require_video_job_code,
 };
 use naming::NameTemplate;
 
@@ -122,6 +123,8 @@ struct ChosenSettings {
     video_backups: Vec<PathBuf>,
     /// The profile's `metadata` over that of `config.yaml` (IMPORT-019).
     metadata: ImportMetadata,
+    /// The profile's stall limit of a source, else the default (IMPORT-022).
+    source_stall_limit: Duration,
 }
 
 /// Takes each setting from the command line, else from `profile`, else the default. An
@@ -153,6 +156,11 @@ fn choose_settings(
         None => Vec::new(),
     };
     let video_template = video_template(arguments, profile.as_ref())?;
+    let source_stall_limit = profile
+        .as_ref()
+        .map_or(DEFAULT_SOURCE_STALL_LIMIT, |profile| {
+            profile.source_stall_limit
+        });
     let (profile_template, profile_policy, profile_job_code, profile_backups) = match profile {
         Some(profile) => (
             Some(profile.template),
@@ -189,6 +197,7 @@ fn choose_settings(
         video_destination,
         video_backups,
         metadata,
+        source_stall_limit,
     })
 }
 
