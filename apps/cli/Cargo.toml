@@ -17,6 +17,10 @@ layer = "app"
 name = "framehive"
 path = "src/main.rs"
 
+[features]
+# A test seam that wraps the file system of the import (ADR 0048); never in a release.
+fault-injection = []
+
 [dependencies]
 adapter-blake3.workspace = true
 adapter-clock.workspace = true

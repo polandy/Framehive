@@ -24,7 +24,7 @@ Run them as `cargo xtask <command>`, inside `nix develop`.
 
 | Command | Checks |
 |---|---|
-| `ci` | Everything, in CI order: format, clippy, the seven checks below, `testdata check`, the spec report, `testdata fetch`, nextest, doc tests, `check-reproducible`, `cargo deny` for the main workspace and for `fuzz/`, `reuse lint`. Quiet: one `ok` line per step plus warnings from our own checks, and the full output of the failing step only |
+| `ci` | Everything, in CI order: format, clippy, the seven checks below, `testdata check`, the spec report, `testdata fetch`, nextest, clippy and nextest of `framehive-cli` with the feature `fault-injection` (ADR 0048), doc tests, `check-reproducible`, `cargo deny` for the main workspace and for `fuzz/`, `reuse lint`. Quiet: one `ok` line per step plus warnings from our own checks, and the full output of the failing step only |
 | `check-files` | Every file Git tracks or would track is UTF-8 text without NUL bytes and at most 256 KiB (ADR 0017); Rust files have at most 400 lines; Markdown outside `docs/dev/adr/` and `CHANGELOG.md` has at most 10 KiB (architecture §7) |
 | `check-schemas` | Every JSON Schema in `schemas/` is the one generated from its file type's description (ADR 0032, decision 6), such as `schemas/import-profile-v1.json` from the import profile |
 | `schemas` | Not a check: writes the JSON Schemas of the configuration files to `schemas/`; run it after changing a file type's description |

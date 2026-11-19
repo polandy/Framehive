@@ -16,7 +16,7 @@ use adapter_fs::StdFileSystem;
 use adapter_sequence_counters::FileSequenceCounters;
 use adapter_sqlite::SqliteImportHistory;
 use adapter_xmp::QuickXml;
-use files::{Cameras, FreeSpace};
+use files::{Cameras, FileSystem, FreeSpace};
 use import::{
     CAMERA_FORMAT_READINESS_NOTE, Configuration, DryRunMemory, ImportJob, ImportJobReports,
     ImportJobSettings, ImportPorts, ImportProfile, ImportSettings, ImportSummary, PlannedRun,
@@ -316,7 +316,7 @@ fn enqueue_job(
 /// The ports of the import: the library on this machine, the state in `state_folder`.
 fn import_ports(state_folder: &Path, free_space: Arc<dyn FreeSpace + Send + Sync>) -> ImportPorts {
     ImportPorts {
-        file_system: Arc::new(StdFileSystem::new()),
+        file_system: import_file_system(),
         hasher: Arc::new(Blake3Hasher),
         clock: Arc::new(SystemClock::new()),
         counters: Arc::new(FileSequenceCounters::new(state_folder.to_path_buf())),
@@ -326,6 +326,17 @@ fn import_ports(state_folder: &Path, free_space: Arc<dyn FreeSpace + Send + Sync
         reserved_names: Arc::new(ReservedTargetNames::new()),
         xml_syntax: Arc::new(QuickXml::new()),
     }
+}
+
+/// The file system of the import and the guided import; a build with the feature
+/// `fault-injection` wraps it in the fault-injection point (ADR 0048).
+pub(crate) fn import_file_system() -> Arc<dyn FileSystem + Send + Sync> {
+    #[cfg(feature = "fault-injection")]
+    return Arc::new(crate::fault_injection::FaultyFileSystem::new(
+        StdFileSystem::new(),
+    ));
+    #[cfg(not(feature = "fault-injection"))]
+    Arc::new(StdFileSystem::new())
 }
 
 /// The messages for the run error of a job that did not start, naming the folders as
