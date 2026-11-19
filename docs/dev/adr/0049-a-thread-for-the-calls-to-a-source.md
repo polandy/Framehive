@@ -47,10 +47,15 @@ The deadline of a call is fixed when its request is sent. When it passes before 
 answer, the call returns an `io::Error` of kind `TimedOut` whose message is
 `the source did not answer for <n> seconds`, and the guard marks the source stopped.
 From then on every call returns at once, without a request, an `io::Error` whose
-message is `the source stopped answering`. The import already reports a failed source
-call as `cannot read the source: <path>: <error>` and a failed scan as
-`<path>: <error>`, so it needs no new error of its own; only the run must stop calling
-a source once it reports the stopped error, which the guard ensures by itself.
+message is `the source stopped answering`. Both errors carry a typed inner error of the
+`files` service, so the import tells them from other errors of the source with one
+function of the service, not by their text.
+
+During the copy the import needs nothing new: a failed read already fails the file as
+`cannot read the source: <path>: <error>`, and the guard answers the remaining files
+without a call. The scan does need a change: today a folder or file it cannot read is
+left out and the scan goes on (IMPORT-005), so a stall error there gets a `ScanError`
+of its own that fails the scan of that source (IMPORT-022.5).
 
 The source thread of a stopped source stays blocked in its call. Nothing joins it:
 dropping the guard closes its request channel, and a thread that is not blocked ends,
@@ -119,5 +124,5 @@ process takes, only on the hang, which never returns.
   GUI holds one per source that ever hung.
 - The `files` service gets `StallGuard`, `Timer`, `ManualTimer` and two faults of
   `MemoryFileSystem`; the workspace gets `adapter-timer`, and the import gets the
-  timer among its ports. IMPORT-022 is built on this, then `hang-while-reading` of
-  ADR 0048 §3.
+  timer among its ports and a `ScanError` for a stalled source. IMPORT-022 is built
+  on this, then `hang-while-reading` of ADR 0048 §3.
