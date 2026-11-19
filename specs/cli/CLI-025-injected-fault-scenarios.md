@@ -93,8 +93,8 @@ read, so a typo never runs the import without the fault.
 
 ## Out of scope
 
-- T5 (a slow or hanging device): it needs a per-file time limit that no spec defines
-  yet (ADR 0048 §4), before `hang-while-reading` is built.
+- T5 (a slow or hanging device): its stall limit is IMPORT-022, which is built, with an
+  ADR, before `hang-while-reading` (ADR 0048 §4).
 - An unplugged camera: IMPORT-014.9 covers it in the services; the binary runs leave it
   to the virtual camera of libgphoto2 (requirements section 9.3).
 
@@ -103,3 +103,4 @@ read, so a typo never runs the import without the fault.
 | Date | Change |
 |---|---|
 | 2026-11-19 | Created (ADR 0048) |
+| 2026-11-19 | T5 under Out of scope points to IMPORT-022, its stall limit |
