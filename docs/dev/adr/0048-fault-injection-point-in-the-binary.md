@@ -45,7 +45,9 @@ The tests of these scenarios are in `apps/cli/tests/fault_injection.rs`, compile
 with the feature (`#![cfg(feature = "fault-injection")]`). `cargo xtask ci` gets a step
 `fault injection` that runs
 `cargo nextest run -p framehive-cli --features fault-injection --locked --profile ci`,
-so CI runs them on every commit; the step rebuilds only `framehive-cli`.
+so CI runs them on every commit; the step rebuilds only `framehive-cli`. A step
+`lint fault injection` before it runs clippy on `framehive-cli` with the feature, so the
+code behind it meets the same lints.
 
 ### 3. One fault per run, named in `FRAMEHIVE_FAULT`
 

@@ -10,6 +10,8 @@ mod cameras;
 mod config_init;
 mod configuration_file;
 mod diagnostics;
+#[cfg(feature = "fault-injection")]
+mod fault_injection;
 mod format_readiness;
 mod guided;
 mod import_command;

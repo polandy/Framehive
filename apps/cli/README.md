@@ -72,6 +72,7 @@ Flag conventions for every command (CLI-023):
 | Module | Meaning |
 |---|---|
 | `arguments` | The `clap` command line and the parsed `Invocation`; `framehive library` in `library.rs` |
+| `fault_injection` | Only with the feature `fault-injection` (ADR 0048): `FaultyFileSystem`, which wraps the file system of the import and the guided import; without a fault it passes every call through. Its tests are in `tests/fault_injection.rs`, run by the CI step `fault injection` |
 | `diagnostics` | The `tracing` subscriber on standard error, by `--verbose` (CLI-021, ADR 0046) |
 | `paths` | Source and destination resolution, the inside check, creating the destination |
 | `import_command` | Wires the adapters to the import job of each source (`run.rs`, tested in-crate with `MemoryFreeSpace` and `MemoryCameras`), follows the jobs on threads of their own (`sources.rs`) and maps the results to the exit code |

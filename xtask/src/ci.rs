@@ -20,7 +20,7 @@ struct Step {
 
 const CARGO: &str = "cargo";
 
-const STEPS: [Step; 18] = [
+const STEPS: [Step; 20] = [
     Step {
         title: "format",
         program: CARGO,
@@ -100,6 +100,38 @@ const STEPS: [Step; 18] = [
             "nextest",
             "run",
             "--workspace",
+            "--locked",
+            "--profile",
+            "ci",
+        ],
+    },
+    // Builds framehive-cli again with its test seam, which the release never has (ADR 0048).
+    Step {
+        title: "lint fault injection",
+        program: CARGO,
+        arguments: &[
+            "clippy",
+            "-p",
+            "framehive-cli",
+            "--all-targets",
+            "--features",
+            "fault-injection",
+            "--locked",
+            "--",
+            "-D",
+            "warnings",
+        ],
+    },
+    Step {
+        title: "fault injection",
+        program: CARGO,
+        arguments: &[
+            "nextest",
+            "run",
+            "-p",
+            "framehive-cli",
+            "--features",
+            "fault-injection",
             "--locked",
             "--profile",
             "ci",

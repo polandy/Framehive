@@ -42,6 +42,7 @@ use crate::profiles::{
 use crate::report::has_backup_failures;
 use crate::{FILES_FAILED, NOT_STARTED, report_error, report_hint, report_warning};
 use locations::{Locations, locations};
+pub(crate) use run::import_file_system;
 use run::{NotStarted, SourceResults, Surroundings, import_with};
 
 /// Runs the import of each source and returns the highest of their exit codes

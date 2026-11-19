@@ -30,7 +30,6 @@ use std::time::Duration;
 use adapter_blake3::Blake3Hasher;
 use adapter_clock::SystemClock;
 use adapter_free_space::StatvfsFreeSpace;
-use adapter_fs::StdFileSystem;
 use adapter_gphoto2::Gphoto2Cameras;
 use adapter_mounts::MountsDeviceSource;
 use adapter_sequence_counters::FileSequenceCounters;
@@ -41,6 +40,7 @@ use files::{Cameras, FileSystem};
 use import::{ImportMetadata, ImportPorts, ImportRun, ReservedTargetNames, SessionSequence};
 
 use crate::configuration_file::process_configuration;
+use crate::import_command::import_file_system;
 use crate::paths::{PathError, canonical_folder};
 use crate::{NOT_STARTED, report_error};
 use dialog::Dialog;
@@ -115,7 +115,7 @@ pub(crate) fn run_guided() -> ExitCode {
     let devices = MountsDeviceSource::new();
     let cameras = Gphoto2Cameras::new();
     let import = ImportPorts {
-        file_system: Arc::new(StdFileSystem::new()),
+        file_system: import_file_system(),
         hasher: Arc::new(Blake3Hasher),
         clock: Arc::new(SystemClock::new()),
         counters: Arc::new(FileSequenceCounters::new(environment.state_folder.clone())),
