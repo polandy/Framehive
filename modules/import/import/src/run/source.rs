@@ -21,6 +21,19 @@ impl<'a> ImportRun<'a> {
         self
     }
 
+    /// Reads the source through `source_file_system`, which reads the same files as
+    /// the file system of the destinations, such as a [`files::StallGuard`] around it
+    /// (IMPORT-022). Unlike [`ImportRun::with_source`], the destinations are still
+    /// checked against the source.
+    #[must_use]
+    pub fn reading_source_through(
+        mut self,
+        source_file_system: &'a dyn ReadOnlyFileSystem,
+    ) -> Self {
+        self.source_file_system = source_file_system;
+        self
+    }
+
     /// Names the source in the import history as `name` instead of `settings.source`,
     /// for a source whose path says little, such as the root `/` of a camera
     /// (CLI-013, `camera:<model>`).

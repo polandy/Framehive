@@ -121,7 +121,7 @@ fn is_profile_name(name: &str) -> bool {
 
 /// The hint after an invalid profile (CLI-010).
 const PROFILE_KEYS_HINT: &str = "the keys are described in \
-    https://polandy.github.io/framehive/schemas/import-profile-v2.json \
+    https://polandy.github.io/framehive/schemas/import-profile-v3.json \
     and in the example of framehive config init";
 
 /// Reads the profile `name` from the folder `profiles`, with `home` for `~`. The name

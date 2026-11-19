@@ -3,7 +3,7 @@
 - Status: implemented
 - Module: import
 - Origin: N8, N25, R9, R7, I4
-- Depends on: CORE-006, IMPORT-001, IMPORT-003, IMPORT-006, IMPORT-007, IMPORT-013
+- Depends on: CORE-006, IMPORT-001, IMPORT-003, IMPORT-006, IMPORT-007, IMPORT-013, IMPORT-022
 
 ## Purpose
 
@@ -15,11 +15,11 @@ repository.
 ## Behaviour
 
 An import profile is a configuration file (CORE-006) of the file type
-`import-profile`, highest `schema_version` 2. Its keys (ADR 0032, decision 4):
+`import-profile`, highest `schema_version` 3. Its keys (ADR 0032, decision 4):
 
 | Key | Kind | Default | Meaning |
 |---|---|---|---|
-| `schema_version` | whole number, required | – | Version of the format, `1` or `2` |
+| `schema_version` | whole number, required | – | Version of the format, `1`, `2` or `3`; 3 adds `source_stall_limit_seconds` (IMPORT-022) |
 | `video_destination` | path | the destination given on the command line | Folder to import videos into (IMPORT-013); left out, videos go to the destination given on the command line |
 | `naming.template` | text | `{date:%Y}/{date:%Y-%m-%d}/{name}.{ext}` | Name template (IMPORT-001) |
 | `naming.video_template` | text | `naming.template` | Name template for videos (IMPORT-018) |
@@ -38,8 +38,7 @@ A top-level key `destination` is therefore an error at the key, in the form of
 CORE-006, with a message that says where the folder goes instead:
 `destination is not read from a profile; give the folder to import into on the command
 line`. It replaces the message for an unknown key; `destination` inside `naming` or
-`backup` is an ordinary unknown key. The format had no release with the key, so the
-version stays 1.
+`backup` is an ordinary unknown key.
 
 **Paths.** A path is text that is absolute, or is `~`, or starts with `~/`. `~` means the
 home folder that the caller passes when it reads the profile, so `~/Pictures` becomes
@@ -63,9 +62,6 @@ that when it runs.
   backup.video_destinations out to back up videos to the backup destinations`, because
   videos without a backup are not offered (IMPORT-013).
 
-The keys for videos are optional, so every profile of `schema_version` 1 stays valid and
-the version stays 1.
-
 A version 1 profile is still read and sets no `metadata`; with the key it is an error
 at its value: `metadata needs schema_version 2`.
 
@@ -73,11 +69,11 @@ Reading a profile is pure: it depends only on the text, the file name for messag
 the home folder.
 
 **JSON Schema.** The schema of the file type is published as
-`schemas/import-profile-v2.json` with the `$id`
-`https://polandy.github.io/framehive/schemas/import-profile-v2.json`;
-`schemas/import-profile-v1.json` stays published for the files that name it. A file that
+`schemas/import-profile-v3.json` with the `$id`
+`https://polandy.github.io/framehive/schemas/import-profile-v3.json`;
+the older versions stay published for the files that name them. A file that
 starts with `# yaml-language-server: $schema=<that URL>` gets completion in an editor.
-The schema's descriptions are the "Meaning" column above.
+The schema's descriptions are the "Meaning" columns here and in IMPORT-022.
 
 ## Acceptance criteria
 
@@ -157,10 +153,10 @@ The schema's descriptions are the "Meaning" column above.
 ### IMPORT-011.10 – The published schema is the generated one
 - **Given** the file type `import-profile`
 - **When** its JSON Schema is generated
-- **Then** it is identical to `schemas/import-profile-v2.json`, has the `$id` above, and
-  lists `video_destination`, `naming`, `job_codes`, `backup` and `metadata`, and not
-  `destination`; the version 1 schema is identical to `schemas/import-profile-v1.json`
-  and does not list `metadata`
+- **Then** it is identical to `schemas/import-profile-v3.json`, has the `$id` above, and
+  lists `video_destination`, `naming`, `job_codes`, `backup`, `metadata` and
+  `source_stall_limit_seconds`, and not `destination`; versions 2 and 1 are identical to
+  their files; version 2 leaves out `source_stall_limit_seconds`, version 1 `metadata`
 
 ### IMPORT-011.11 – Examples validate
 - **Given** every import profile shown in `docs/`, `specs/` and the output of
@@ -195,3 +191,4 @@ The schema's descriptions are the "Meaning" column above.
 | 2026-11-08 | `naming.video_template` (IMPORT-018), optional in version 1; owner decision #72 |
 | 2026-11-08 | The `metadata` keys point to IMPORT-019 (XMP milestone, owner decision D13) |
 | 2026-11-08 | `schema_version` 2 with the `metadata` keys (IMPORT-019); `schemas/import-profile-v2.json` |
+| 2026-11-19 | `schema_version` 3 (IMPORT-022) |

@@ -218,6 +218,9 @@ pub enum RunError {
     /// with (IMPORT-019).
     #[error("the import would write XMP sidecars but has no XML syntax to write them")]
     SidecarsWithoutXmlSyntax,
+    /// The thread that reads the source cannot be started (IMPORT-022, ADR 0049).
+    #[error("the thread that reads the source cannot be started: {0}")]
+    SourceThread(#[source] io::Error),
 }
 
 /// The result of a finished import run, in scan order.

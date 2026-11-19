@@ -16,9 +16,10 @@ use import::{IMPORT_PROFILE_SCHEMA_ID, ImportProfile};
 use support::{Folders, stderr, stdout};
 
 /// Every key of IMPORT-011 and IMPORT-019, as it is written in a file.
-const KEYS: [&str; 14] = [
+const KEYS: [&str; 15] = [
     "schema_version:",
     "video_destination:",
+    "source_stall_limit_seconds:",
     "naming:",
     "template:",
     "on_conflict:",
@@ -54,7 +55,7 @@ fn config_init_writes_the_example() {
     assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
     assert_eq!(stdout(&output), format!("wrote {}\n", example.display()));
     let text = fs::read_to_string(&example).unwrap();
-    assert_eq!(read(&text), read("schema_version: 2\n"));
+    assert_eq!(read(&text), read("schema_version: 3\n"));
     for key in KEYS {
         assert!(text.contains(key), "{key} is missing:\n{text}");
     }

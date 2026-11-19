@@ -32,6 +32,7 @@ adapter-macos-trash.workspace = true
 adapter-mounts.workspace = true
 adapter-sequence-counters.workspace = true
 adapter-sqlite.workspace = true
+adapter-timer.workspace = true
 adapter-xmp.workspace = true
 adapter-yaml.workspace = true
 clap.workspace = true

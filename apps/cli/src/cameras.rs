@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use adapter_gphoto2::Gphoto2Cameras;
-use files::{Camera, CameraError, Cameras};
+use files::{Camera, CameraError, Cameras, ReadOnlyFileSystem};
 use import::{ScanError, SourceScan, scan_camera};
 
 use crate::{NOT_STARTED, report_error, write_hint};
@@ -53,14 +53,19 @@ pub(crate) struct OpenedCamera {
 }
 
 impl OpenedCamera {
-    /// Scans the camera from its root `root` (IMPORT-014).
+    /// Scans the camera from its root `root` through `file_system`, which reads this
+    /// camera, such as a guard around it (IMPORT-014, IMPORT-022).
     ///
     /// # Errors
     ///
     /// Returns the message of the scan error; for a camera without a storage, the
     /// line of CLI-013.15 that names the camera.
-    pub(crate) fn scan(&self, root: &Path) -> Result<SourceScan, String> {
-        scan_camera(&self.file_system, root).map_err(|error| match error {
+    pub(crate) fn scan_through(
+        &self,
+        file_system: &dyn ReadOnlyFileSystem,
+        root: &Path,
+    ) -> Result<SourceScan, String> {
+        scan_camera(file_system, root).map_err(|error| match error {
             ScanError::NoStorage => self.no_storage_message(),
             error => error.to_string(),
         })
