@@ -134,9 +134,39 @@ const STEPS: [Step; 18] = [
     },
 ];
 
+/// Only the advisory checks of `ci`, for the nightly run: a new advisory appears
+/// without any change to the repository (ADR 0018 §7).
+const ADVISORY_STEPS: [Step; 2] = [
+    Step {
+        title: "advisories",
+        program: CARGO,
+        arguments: &["deny", "check", "advisories"],
+    },
+    Step {
+        title: "advisories of fuzz",
+        program: CARGO,
+        arguments: &[
+            "deny",
+            "--manifest-path",
+            "fuzz/Cargo.toml",
+            "check",
+            "advisories",
+        ],
+    },
+];
+
 /// Runs all steps in `root`.
 pub(crate) fn run(root: &Path) -> Result<(), String> {
-    for step in &STEPS {
+    run_steps(root, &STEPS)
+}
+
+/// Runs only the advisory checks in `root`.
+pub(crate) fn run_advisories(root: &Path) -> Result<(), String> {
+    run_steps(root, &ADVISORY_STEPS)
+}
+
+fn run_steps(root: &Path, steps: &[Step]) -> Result<(), String> {
+    for step in steps {
         let output = Command::new(program(step))
             .args(step.arguments)
             .current_dir(root)
