@@ -53,11 +53,20 @@
         });
       # libgphoto2 for adapter-gphoto2. The patch lets its `directory` driver read part
       # of a file, so the adapter's tests on a `disk:` port take the same chunked read
-      # path as a PTP camera (ADR 0034 §3).
+      # path as a PTP camera (ADR 0034 §3). The `vusb` virtual camera is moved out of
+      # the default iolib folder, so only tests that point IOLIBS at it see it.
       libgphoto2 =
         pkgs:
         pkgs.libgphoto2.overrideAttrs (old: {
-          patches = (old.patches or [ ]) ++ [ ./nix/patches/libgphoto2-directory-read-file.patch ];
+          patches = (old.patches or [ ]) ++ [
+            ./nix/patches/libgphoto2-directory-read-file.patch
+            ./nix/patches/libgphoto2-vusb-partial-object.patch
+          ];
+          configureFlags = (old.configureFlags or [ ]) ++ [ "--enable-vusb" ];
+          postInstall = (old.postInstall or "") + ''
+            mkdir -p $out/lib/libgphoto2_port/vusb
+            mv $out/lib/libgphoto2_port/*/vusb.* $out/lib/libgphoto2_port/vusb/
+          '';
         });
       # The `framehive` command from `framehive-cli`. Cargo needs the manifests and
       # sources of every workspace member; the tests also read the profiles shown in
@@ -103,6 +112,8 @@
           # `framehive import camera:` reads cameras through adapter-gphoto2 (ADR 0034).
           # The patched library also lets the package's tests read a `disk:` port.
           buildInputs = [ (libgphoto2 pkgs) ];
+          # The CLI tests load libgphoto2's port drivers from here (apps/cli/tests/import_camera.rs).
+          FRAMEHIVE_TEST_IOLIBS = "${libgphoto2 pkgs}/lib/libgphoto2_port";
           meta = {
             description = "Modular photo library: imports photos and videos from the command line";
             license = lib.licenses.gpl3Plus;
@@ -115,6 +126,7 @@
         default = pkgs.mkShell {
           # Otherwise binaries get the runpath $PWD/outputs/out/lib, which breaks reproducibility.
           NIX_NO_SELF_RPATH = true;
+          FRAMEHIVE_TEST_IOLIBS = "${libgphoto2 pkgs}/lib/libgphoto2_port";
           buildInputs = [
             (libraw pkgs)
             (libgphoto2 pkgs)

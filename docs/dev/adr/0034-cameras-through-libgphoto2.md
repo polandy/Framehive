@@ -101,6 +101,27 @@ therefore use only names it lists. That the scan of a camera leaves out hidden f
 files of an unsupported type with their reasons (IMPORT-014.5) is tested through
 `testing::MemoryCameras` only.
 
+**Amendment (2026-11-19): the `vusb` virtual camera for the CLI tests.** The `directory`
+driver is reached only by its port, because `Cameras::list` leaves out `disk:` ports, so
+`camera:` alone, which takes the only listed camera, could not be driven through
+libgphoto2 in CI. libgphoto2 ships a virtual PTP camera for its own tests in the `vusb`
+port driver (configure `--enable-vusb`): it answers on `usb:001,001` as a Nikon D750 and
+serves the folder named by `VCAMERADIR`. The flake builds libgphoto2 with it and moves
+`vusb.so` from the iolib folder that the library loads by default into a folder `vusb`
+beside it, so a person's `framehive` never lists it. The CLI tests set `IOLIBS` to that
+folder, so autodetection sees the virtual camera only and no camera connected to the
+machine; `FRAMEHIVE_TEST_IOLIBS` names the folder of the port drivers. The virtual camera
+answers GetObject but not GetPartialObject, which `gp_camera_file_read` needs on ptp2, so
+the flake also applies `nix/patches/libgphoto2-vusb-partial-object.patch`, which adds
+it in about forty lines, written like GetObject and so that it can be offered upstream.
+A read in these tests therefore takes the ptp2 path of a real camera. Options not taken:
+
+- **Let a test list `disk:` ports through an environment variable of the binary:** no
+  library change, but a seam in the binary for the tests only, and the ptp2 driver would
+  stay untested.
+- **Install `vusb` beside the other port drivers:** no move, but every user would see a
+  virtual Nikon D750 next to their real cameras.
+
 ### 4. Only `DCIM` is scanned on a camera
 
 Unlike a card folder (IMPORT-005), a camera source is scanned only below the `DCIM`
@@ -148,7 +169,8 @@ process.
 ## Consequences
 
 - The Nix shell and every build link libgphoto2 and its libusb; a release bundles them.
-- Cameras are tested in CI only through the `directory` driver. PTP and MTP themselves
+- Cameras are tested in CI through the `directory` driver and libgphoto2's virtual PTP
+  camera (amendment of 2026-11-19). Real PTP and MTP cameras
   are covered by a manual hardware check before release (requirements §9): Fujifilm
   X-T2 and X-T5, and an Android phone.
 - The modification time of a file on a camera is what the driver reports; PTP stores
