@@ -232,3 +232,59 @@ pub(crate) fn io_error(operation: &str, path: &Path, error: GpError) -> io::Erro
         ),
     )
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn each_libgphoto2_code_maps_to_an_io_error_kind() {
+        let table = [
+            (-107, ErrorKind::NotFound),
+            (-108, ErrorKind::NotFound),
+            (-53, ErrorKind::ResourceBusy),
+            (-60, ErrorKind::ResourceBusy),
+            (-110, ErrorKind::ResourceBusy),
+            (-6, ErrorKind::Unsupported),
+            (-1, ErrorKind::Other),
+            (-7, ErrorKind::Other),
+            (-10, ErrorKind::Other),
+            (-52, ErrorKind::Other),
+        ];
+        for (code, kind) in table {
+            assert_eq!(
+                io_error("read", Path::new("/a"), GpError(code)).kind(),
+                kind,
+                "{code}"
+            );
+        }
+    }
+
+    #[test]
+    fn an_io_error_names_the_operation_the_path_and_the_code() {
+        let message = io_error("read", Path::new("/store/DCIM/A.RAF"), GpError(-7)).to_string();
+        assert!(
+            message.starts_with("cannot read /store/DCIM/A.RAF on the camera: "),
+            "{message}"
+        );
+        assert!(message.ends_with("(-7)"), "{message}");
+    }
+
+    #[test]
+    fn a_path_splits_into_its_folder_and_its_name() {
+        let (folder, name) = split(Path::new("/store/DCIM/A.RAF")).unwrap().unwrap();
+        assert_eq!(
+            (folder.as_bytes(), name.as_bytes()),
+            (&b"/store/DCIM"[..], &b"A.RAF"[..])
+        );
+        assert!(split(Path::new("/")).unwrap().is_none());
+    }
+
+    #[test]
+    fn a_relative_path_or_a_nul_byte_is_invalid_input() {
+        for path in ["DCIM/A.RAF", "/DCIM/A\0.RAF"] {
+            let error = split(Path::new(path)).unwrap_err();
+            assert_eq!(error.kind(), ErrorKind::InvalidInput, "{path}");
+        }
+    }
+}

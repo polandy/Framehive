@@ -42,7 +42,7 @@ libgphoto2. The DCIM scan of a camera is left to the import.
 `tests/conformance.rs` runs `files::testing::check_cameras`, and with it the
 `ReadOnlyFileSystem` suite, on a temporary folder served by the `directory` driver at
 `disk:<folder>`. `tests/disk_port.rs` covers a missing folder and reads across chunks;
-unit tests cover the `disk:` filter of `list` and the busy errors. The `directory` driver hides dotfiles and files with
+unit tests cover the `disk:` filter of `list`, the busy errors and a table of libgphoto2 codes against their error class and `io::ErrorKind`. The `directory` driver hides dotfiles and files with
 unknown extensions, so hidden files on a camera (IMPORT-014.5) are tested with
 `files::testing::MemoryCameras` only (ADR 0034 §3).
 

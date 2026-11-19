@@ -198,4 +198,41 @@ mod tests {
     fn a_message_names_the_code() {
         assert!(GpError(-108).message().ends_with("(-108)"));
     }
+
+    #[test]
+    fn negative_result_codes_are_errors() {
+        assert_eq!(check(0), Ok(0));
+        assert_eq!(check(3), Ok(3));
+        assert_eq!(check(-1), Err(GpError(-1)));
+    }
+
+    #[test]
+    fn each_code_falls_into_at_most_one_class() {
+        // (code from gphoto2.h, busy, not found, not supported)
+        let table = [
+            (-53, true, false, false),   // GP_ERROR_IO_USB_CLAIM
+            (-60, true, false, false),   // GP_ERROR_IO_LOCK
+            (-110, true, false, false),  // GP_ERROR_CAMERA_BUSY
+            (-107, false, true, false),  // GP_ERROR_DIRECTORY_NOT_FOUND
+            (-108, false, true, false),  // GP_ERROR_FILE_NOT_FOUND
+            (-6, false, false, true),    // GP_ERROR_NOT_SUPPORTED
+            (-1, false, false, false),   // GP_ERROR
+            (-7, false, false, false),   // GP_ERROR_IO
+            (-10, false, false, false),  // GP_ERROR_TIMEOUT
+            (-52, false, false, false),  // GP_ERROR_IO_USB_FIND
+            (-105, false, false, false), // GP_ERROR_MODEL_NOT_FOUND
+        ];
+        for (code, busy, not_found, not_supported) in table {
+            let error = GpError(code);
+            assert_eq!(
+                (
+                    error.is_busy(),
+                    error.is_not_found(),
+                    error.is_not_supported()
+                ),
+                (busy, not_found, not_supported),
+                "{code}"
+            );
+        }
+    }
 }
