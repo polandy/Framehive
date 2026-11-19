@@ -13,15 +13,6 @@ use std::sync::mpsc::{self, Receiver, Sender};
 use jobs::{Job, JobControl, JobEnd, JobQueue, JobState, JobUpdate};
 use support::*;
 
-/// The updates until `last`, `last` included.
-fn updates_until(updates: &Receiver<JobUpdate>, last: &JobUpdate) -> Vec<JobUpdate> {
-    let mut seen = Vec::new();
-    while seen.last() != Some(last) {
-        seen.push(next(updates));
-    }
-    seen
-}
-
 /// Where `wanted` is in `reported`.
 fn position(reported: &[JobUpdate], wanted: &JobUpdate) -> usize {
     reported
@@ -118,7 +109,7 @@ fn shutting_down_stops_every_running_job() {
     queue.enqueue(on(&["a", "b"], Ends(JobEnd::Finished)));
 
     let shutdown = std::thread::spawn(move || queue.shut_down());
-    while next(&updates) != update(3, JobState::Removed) {}
+    updates_until(&updates, &update(3, JobState::Removed));
     first_handles.gate.send(()).unwrap();
     second_handles.gate.send(()).unwrap();
     shutdown.join().unwrap();

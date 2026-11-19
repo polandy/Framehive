@@ -48,7 +48,8 @@ File name: `<ID>-<short-name>.md`, e.g. `IMPORT-002-sequence-numbers.md`.
 3. Use terms from the glossary (`docs/dev/architecture/10-glossary.md`).
 4. Edge cases and error behaviour are their own criteria.
 5. One feature per file; prefer several small specifications over one large one.
-6. Tests reference the criterion they verify with `/// spec: <ID>.<n>`.
+6. Tests reference the criterion they verify with `/// spec: <ID>.<n>`, written on the
+   `#[test]` function itself.
 7. If the specification changes, tests and code change in the same commit, and vice
    versa.
 
