@@ -1,0 +1,84 @@
+SPDX-FileCopyrightText: 2026 Framehive contributors
+SPDX-License-Identifier: LGPL-2.1-or-later
+
+libgphoto2_port/vusb: answer GetPartialObject in the virtual camera
+
+The virtual PTP camera of the `vusb` port driver (configure --enable-vusb)
+answers GetObject but not GetPartialObject, so ptp2's read_file_func, and with
+it gp_camera_file_read(), returns GP_ERROR_NOT_SUPPORTED on it. Framehive reads
+camera files only through gp_camera_file_read(), in chunks from the offset a
+metadata reader seeks to (ADR 0034 §3), and drives its `camera:` commands in CI
+through this virtual camera. This patch adds GetPartialObject (0x101B) to the
+generic operations, written like GetObject, so a read takes the same path as on
+a real PTP camera.
+
+It changes only the `vusb` driver, which Framehive installs outside the iolib
+folder that the library loads by default. It is written to be offered upstream.
+
+Applied by flake.nix to nixpkgs' libgphoto2.
+
+--- a/libgphoto2_port/vusb/vcamera.c
++++ b/libgphoto2_port/vusb/vcamera.c
+@@ -247,6 +247,7 @@
+ static int ptp_getobjectinfo_write(vcamera *cam, ptpcontainer *ptp);
+ static int ptp_getobject_write(vcamera *cam, ptpcontainer *ptp);
+ static int ptp_getthumb_write(vcamera *cam, ptpcontainer *ptp);
++static int ptp_getpartialobject_write(vcamera *cam, ptpcontainer *ptp);
+ static int ptp_deleteobject_write(vcamera *cam, ptpcontainer *ptp);
+ static int ptp_getdevicepropdesc_write(vcamera *cam, ptpcontainer *ptp);
+ static int ptp_getdevicepropvalue_write(vcamera *cam, ptpcontainer *ptp);
+@@ -276,6 +277,7 @@
+ 	{0x1014,	ptp_getdevicepropdesc_write, 	NULL			},
+ 	{0x1015,	ptp_getdevicepropvalue_write, 	NULL			},
+ 	{0x1016,	ptp_setdevicepropvalue_write, 	ptp_setdevicepropvalue_write_data	},
++	{0x101B,	ptp_getpartialobject_write, 	NULL			},
+ 	{0x9999,	ptp_vusb_write, 		NULL			},
+ };
+ 
+@@ -1028,6 +1030,46 @@
+ 	return 1;
+ }
+ 
++static int
++ptp_getpartialobject_write(vcamera *cam, ptpcontainer *ptp) {
++	unsigned char 		*data;
++	struct ptp_dirent	*cur;
++	uint32_t		offset, bytes;
++
++	CHECK_SEQUENCE_NUMBER();
++	CHECK_SESSION();
++	CHECK_PARAM_COUNT(3);
++
++	cur = first_dirent;
++	while (cur) {
++		if (cur->id == ptp->params[0]) break;
++		cur = cur->next;
++	}
++	if (!cur) {
++		gp_log (GP_LOG_ERROR,__FUNCTION__, "invalid object handle 0x%08x", ptp->params[0]);
++		ptp_response(cam,PTP_RC_InvalidObjectHandle,0);
++		return 1;
++	}
++	offset = ptp->params[1];
++	if (offset > cur->stbuf.st_size) {
++		ptp_response(cam,PTP_RC_InvalidParameter,0);
++		return 1;
++	}
++	bytes = cur->stbuf.st_size - offset;
++	if (bytes > ptp->params[2])
++		bytes = ptp->params[2];
++	data = read_file(cur);
++	if (!data) {
++		ptp_response(cam,PTP_RC_GeneralError,0);
++		return 1;
++	}
++
++	ptp_senddata (cam, 0x101B, data + offset, bytes);
++	free (data);
++	ptp_response (cam, PTP_RC_OK, 1, bytes);
++	return 1;
++}
++
+ static int
+ ptp_getthumb_write(vcamera *cam, ptpcontainer *ptp) {
+ 	unsigned char 		*data;
