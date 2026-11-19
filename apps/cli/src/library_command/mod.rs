@@ -27,6 +27,8 @@ use crate::system_reason::PlainReason;
 use crate::{NOT_STARTED, report_error, write_warning};
 
 pub(crate) use keep_raw::keep_raw;
+#[cfg(test)]
+use remove_raws::change_text;
 pub(crate) use remove_raws::{Terminal, remove_raws};
 
 /// Runs `framehive library keep-raw` (CLI-018).

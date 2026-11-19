@@ -74,14 +74,19 @@ The files move asset by asset to the trash of the system: on Linux the freedeskt
 trash, with the home trash in `$XDG_DATA_HOME/Trash`, or `~/.local/share/Trash` when it
 is not set or not absolute; on macOS the Trash, through Finder's call (ADR 0043). A file
 that cannot be moved gets `error: cannot move <file> to the trash: <reason>` on
-standard error, with the failure rules of LIBRARY-002.16 and .17. Then standard output
-gets:
+standard error, with the failure rules of LIBRARY-002.16 and .17. An asset that
+changed since the summary (LIBRARY-002.18 to .20) moves no file and gets
+`warning: <folder>/<base> changed since the summary: <reason>; its RAW stays` on
+standard error, the reason one of `its RAW is gone`, `its rendered file is gone`, `it
+is marked Keep RAW`, `it is rejected` and `its state cannot be read`. Then standard
+output gets:
 
 ```
 Moved to the trash: <assets> assets, <files> files, <size> freed
 ```
 
-counting only what moved. The exit code is 1 when a file did not move, else 0. A folder
+counting only what moved. The exit code is 1 when a file did not move or an asset
+changed since the summary, else 0. A folder
 that cannot be read stops the command with `error: cannot read <path>: <reason>` and
 exit code 2, the reason in the words of CLI-019, as does an unknown home folder on
 Linux.
@@ -176,6 +181,15 @@ Linux.
 - **Then** standard output is empty, standard error is exactly
   `error: cannot read <folder>: it does not exist`, and the exit code is 2
 
+### CLI-018.14 – An asset that changed since the summary keeps its RAW
+- **Given** unmarked RAF+JPG assets `A` and `B` with own sidecars, and `A.JPG` is
+  deleted while the question is open
+- **When** the user answers `y`
+- **Then** standard error is exactly `warning: <folder>/A changed since the summary: its
+  rendered file is gone; its RAW stays`, `A.RAF` and `A.RAF.xmp` stay, `B`'s two files
+  are in the trash, standard output ends with `Moved to the trash: 1 asset, 2 files,
+  <size> freed`, and the exit code is 1
+
 ## Out of scope
 
 - Key `R`, the filter, the index and the summary with thumbnails, which toggle the
@@ -193,3 +207,4 @@ Linux.
 | 2026-11-10 | Initial version, owner decision A on #109 |
 | 2026-11-19 | `--yes`, and no answer stops with exit code 2 (review finding E25) |
 | 2026-11-19 | A folder that cannot be read names the reason in plain words, CLI-018.13 (review E26) |
+| 2026-11-19 | An asset that changed since the summary keeps its RAW, CLI-018.14 (review E5) |

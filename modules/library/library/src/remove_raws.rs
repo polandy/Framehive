@@ -4,6 +4,7 @@
 //! Remove RAWs: the plan with its two groups, skip counts and totals, and the run
 //! that moves the RAWs to the trash asset by asset (LIBRARY-002).
 
+use std::collections::BTreeMap;
 use std::io;
 use std::iter;
 use std::path::{Path, PathBuf};
@@ -12,7 +13,7 @@ use domain::AssetFileRole;
 use files::Trash;
 use metadata::xmp::{SidecarError, SidecarFiles, SidecarNaming};
 
-use crate::folder::LibraryAsset;
+use crate::folder::{LibraryAsset, LibraryFolder, read_folder};
 use crate::grouping::AssetFile;
 use crate::keep_raw::set_keep_raw;
 
@@ -140,12 +141,22 @@ impl RemoveRawsPlan {
 
     /// Moves the files of [`RemoveRawsPlan::files`] to `trash`, asset by asset.
     ///
-    /// A failure stops only its own asset: a RAW that cannot be moved keeps its
-    /// sidecars, and a sidecar that cannot be moved stays where it is.
+    /// The folders are read again first, and an asset that changed since the plan
+    /// moves no file (LIBRARY-002.18 to .20). A failure stops only its own asset: a
+    /// RAW that cannot be moved keeps its sidecars, and a sidecar that cannot be moved
+    /// stays where it is.
     #[must_use]
-    pub fn run(&self, trash: &dyn Trash) -> RemoveRawsReport {
+    pub fn run(&self, sidecars: SidecarFiles<'_>, trash: &dyn Trash) -> RemoveRawsReport {
         let mut report = RemoveRawsReport::default();
+        let mut folders = BTreeMap::new();
+        let mut current = Vec::new();
         for asset in self.removed() {
+            match current_asset(sidecars, &mut folders, asset) {
+                Ok(fresh) => current.push(fresh),
+                Err(changed) => report.changed.push(changed),
+            }
+        }
+        for asset in &current {
             let files = files_to_trash(asset);
             let Some((raw, own_sidecars)) = files.split_first() else {
                 continue;
@@ -159,6 +170,75 @@ impl RemoveRawsPlan {
             }
         }
         report
+    }
+}
+
+/// Why an asset of *RAW will be removed* moved no file at the run.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ChangeReason {
+    /// Its RAW is no longer there.
+    RawGone,
+    /// Its rendered member is no longer there.
+    RenderedGone,
+    /// It is now marked Keep RAW.
+    MarkedKeepRaw,
+    /// It is now rejected.
+    Rejected,
+    /// Its folder or one of its sidecars can no longer be read.
+    StateUnreadable,
+}
+
+/// An asset that changed since the plan, so its RAW stays.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ChangedAsset {
+    /// The asset as `<folder>/<base>`.
+    pub asset: PathBuf,
+    /// What changed.
+    pub reason: ChangeReason,
+}
+
+/// The asset of `planned` as its folder holds it now, or what changed.
+fn current_asset(
+    sidecars: SidecarFiles<'_>,
+    folders: &mut BTreeMap<PathBuf, Option<LibraryFolder>>,
+    planned: &LibraryAsset,
+) -> Result<LibraryAsset, ChangedAsset> {
+    let raw = planned
+        .asset
+        .file(AssetFileRole::Raw)
+        .map_or_else(|| Path::new(""), |raw| raw.path.as_path());
+    let folder = raw.parent().unwrap_or_else(|| Path::new(""));
+    let changed = |reason| ChangedAsset {
+        asset: folder.join(planned.asset.base_name()),
+        reason,
+    };
+    let library_folder = folders
+        .entry(folder.to_path_buf())
+        .or_insert_with(|| read_folder(sidecars, folder).ok());
+    let Some(library_folder) = library_folder else {
+        return Err(changed(ChangeReason::StateUnreadable));
+    };
+    let fresh = library_folder.assets.iter().find(|asset| {
+        asset
+            .asset
+            .file(AssetFileRole::Raw)
+            .is_some_and(|file| file.path == raw)
+    });
+    let Some(fresh) = fresh else {
+        // A RAW that is still there belongs to an asset left out as unreadable.
+        return Err(match sidecars.files.entry(raw) {
+            Ok(None) => changed(ChangeReason::RawGone),
+            Ok(Some(_)) | Err(_) => changed(ChangeReason::StateUnreadable),
+        });
+    };
+    if fresh.asset.file(AssetFileRole::Rendered).is_none() {
+        Err(changed(ChangeReason::RenderedGone))
+    } else if fresh.rejected {
+        Err(changed(ChangeReason::Rejected))
+    } else if fresh.keep_raw {
+        Err(changed(ChangeReason::MarkedKeepRaw))
+    } else {
+        Ok(fresh.clone())
     }
 }
 
@@ -178,6 +258,8 @@ pub struct RemoveRawsReport {
     pub moved: RemoveRawsTotals,
     /// The files that stayed, in the order they were tried.
     pub not_moved: Vec<NotMoved>,
+    /// The assets that changed since the plan and moved no file, in plan order.
+    pub changed: Vec<ChangedAsset>,
 }
 
 impl RemoveRawsReport {
