@@ -11,10 +11,10 @@
 mod support;
 
 use std::fs;
-use std::path::{Path, PathBuf};
 use std::process::Output;
 
 use metadata::testing::raf;
+use support::cameras::{import_from, import_from_virtual_camera, iolibs_without_a_camera};
 use support::{DEFAULT_TARGET, Folders, has_line, iolib_folder, photo, stderr, stdout};
 
 /// spec: CLI-013.1
@@ -166,65 +166,6 @@ fn camera_alone_takes_the_only_camera() {
     assert_eq!(output.status.code(), Some(0));
 }
 
-/// spec: CLI-013.5
-#[test]
-fn camera_alone_without_a_camera_stops() {
-    let folders = Folders::new();
-    let iolibs = iolibs_without_a_camera(&folders);
-    let destination = folders.destination();
-
-    let output = import_from_virtual_camera(&folders, &iolibs, &destination);
-
-    assert!(
-        stderr(&output).contains("no camera is connected"),
-        "{}",
-        stderr(&output)
-    );
-    assert!(!destination.exists());
-    assert_eq!(output.status.code(), Some(2));
-}
-
-/// spec: CLI-013.9
-#[test]
-fn a_camera_in_use_stops_with_a_remedy() {
-    let folders = Folders::new();
-    folders.add("DCIM/100_FUJI/DSCF0001.RAF", &raf(&photo()));
-    let destination = folders.destination();
-    // The patched `vusb` driver reports its camera as claimed while the folder is locked.
-    let holder = fs::File::open(folders.source()).unwrap();
-    holder.try_lock().unwrap();
-
-    let output = import_from_virtual_camera(&folders, &iolib_folder("vusb"), &destination);
-
-    assert!(stderr(&output).contains(IN_USE), "{}", stderr(&output));
-    assert!(!destination.exists());
-    assert_eq!(output.status.code(), Some(2));
-}
-
-const IN_USE: &str = "the camera Nikon DSC D750 at usb:001,001 is in use by another program; close it (the file manager on Linux, ptpcamerad on macOS) and try again";
-
-/// spec: CLI-013.10
-#[test]
-fn a_port_that_cannot_be_opened_stops() {
-    let folders = Folders::new();
-    folders.add("DCIM/100_FUJI/DSCF0001.RAF", &raf(&photo()));
-    let destination = folders.destination();
-
-    let output = import_from(
-        &folders,
-        "camera:usb:009,009",
-        &iolib_folder("vusb"),
-        &destination,
-    );
-
-    assert!(
-        stderr(&output).contains("cannot open the camera at usb:009,009: "),
-        "{}",
-        stderr(&output)
-    );
-    assert_eq!(output.status.code(), Some(2));
-}
-
 /// spec: CLI-013.7
 #[test]
 fn a_camera_is_chosen_by_its_model_ignoring_case() {
@@ -249,29 +190,6 @@ fn a_camera_is_chosen_by_its_model_ignoring_case() {
         stderr(&output)
     );
     assert_eq!(output.status.code(), Some(0));
-}
-
-/// spec: CLI-013.8
-#[test]
-fn an_unknown_model_stops() {
-    let folders = Folders::new();
-    folders.add("DCIM/100_FUJI/DSCF0001.RAF", &raf(&photo()));
-    let destination = folders.destination();
-
-    let output = import_from(
-        &folders,
-        "camera:Canon",
-        &iolib_folder("vusb"),
-        &destination,
-    );
-
-    assert!(
-        stderr(&output).contains("no camera Canon is connected"),
-        "{}",
-        stderr(&output)
-    );
-    assert!(!destination.exists());
-    assert_eq!(output.status.code(), Some(2));
 }
 
 /// spec: CLI-013.12
@@ -343,48 +261,4 @@ const DCIM_NOTE: &str = "Only the files below DCIM were checked. Files outside D
 
 fn lines_of(output: &Output) -> Vec<String> {
     stdout(output).lines().map(str::to_owned).collect()
-}
-
-/// Runs `framehive import camera:` with libgphoto2's port drivers loaded from `iolibs`
-/// only, so no real USB device is seen; `vusb` serves the source folder as a Nikon D750.
-fn import_from_virtual_camera(folders: &Folders, iolibs: &Path, destination: &Path) -> Output {
-    import_from(folders, "camera:", iolibs, destination)
-}
-
-/// Like [`import_from_virtual_camera`], with the camera source given.
-fn import_from(folders: &Folders, source: &str, iolibs: &Path, destination: &Path) -> Output {
-    folders
-        .framehive_command(&[
-            "import",
-            source,
-            "--destination",
-            destination.to_str().unwrap(),
-        ])
-        .env("IOLIBS", iolibs)
-        .env("VCAMERADIR", folders.source())
-        .current_dir(folders.root.path())
-        .output()
-        .unwrap()
-}
-
-/// A port driver folder with only the network driver, so no camera is found.
-fn iolibs_without_a_camera(folders: &Folders) -> PathBuf {
-    let iolibs = folders.root.path().join("iolibs");
-    fs::create_dir(&iolibs).unwrap();
-    std::os::unix::fs::symlink(
-        default_iolib_folder().join("ptpip.so"),
-        iolibs.join("ptpip.so"),
-    )
-    .unwrap();
-    iolibs
-}
-
-/// The versioned folder libgphoto2 loads its port drivers from by default.
-fn default_iolib_folder() -> PathBuf {
-    let root = iolib_folder("");
-    fs::read_dir(&root)
-        .unwrap()
-        .map(|entry| entry.unwrap().path())
-        .find(|path| path.file_name().is_some_and(|name| name != "vusb"))
-        .unwrap()
 }

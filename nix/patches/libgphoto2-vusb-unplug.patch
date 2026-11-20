@@ -1,0 +1,62 @@
+SPDX-FileCopyrightText: 2026 Framehive contributors
+SPDX-License-Identifier: LGPL-2.1-or-later
+
+libgphoto2_port/vusb: unplug the virtual camera once a given file exists
+
+A real camera whose cable is pulled during an import fails every later
+transfer, and Framehive then reports each remaining file as failed (CLI-013.11).
+The virtual PTP camera of the `vusb` port driver (configure --enable-vusb)
+always answers. With this patch, once the file that VCAMERA_UNPLUG_WHEN names
+exists, every later read or write on the port fails with GP_ERROR_IO and keeps
+failing, so a test can let the camera go away when the host has written a
+known file, for example the copy of the first file of an import. Without
+VCAMERA_UNPLUG_WHEN nothing changes.
+
+It changes only the `vusb` driver, which Framehive installs outside the iolib
+folder that the library loads by default. It is written to be offered upstream.
+
+Applied by flake.nix to nixpkgs' libgphoto2.
+
+--- a/libgphoto2_port/vusb/vcamera.c
++++ b/libgphoto2_port/vusb/vcamera.c
+@@ -420,6 +420,22 @@
+ static struct ptp_dirent *first_dirent = NULL;
+ static uint32_t	ptp_objectid = 0;
+ 
++/* Like pulling the cable of a real camera: once the file VCAMERA_UNPLUG_WHEN
++ * names exists, every later transfer fails.
++ */
++static int
++unplugged (void) {
++	static int	gone = 0;
++	const char	*path = getenv ("VCAMERA_UNPLUG_WHEN");
++	struct stat	stbuf;
++
++	if (!gone && path && !stat (path, &stbuf)) {
++		gp_log (GP_LOG_DEBUG,__FUNCTION__, "%s exists, unplugging the virtual camera", path);
++		gone = 1;
++	}
++	return gone;
++}
++
+ static void *read_file(struct ptp_dirent *cur) {
+ 	FILE *file = fopen(cur->fsname, "rb");
+ 	if (!file) {
+@@ -2030,6 +2046,8 @@
+ 
+ 	/* Emulated PTP camera stuff */
+ 
++	if (unplugged ())
++		return GP_ERROR_IO;
+ 	if (toread > cam->nrinbulk)
+ 		toread = cam->nrinbulk;
+ 
+@@ -2041,6 +2059,8 @@
+ 
+ static int vcam_write(vcamera*cam, int ep, const unsigned char *data, int bytes) {
+ 	/*gp_log_data("vusb", data, bytes, "data, vcam_write");*/
++	if (unplugged ())
++		return GP_ERROR_IO;
+ 	if (!cam->outbulk) {
+ 		cam->outbulk = malloc(bytes);
+ 	} else {

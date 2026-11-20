@@ -134,6 +134,29 @@ folder and so holds the camera. Option not taken:
   change, but a seam in the binary for the tests only, and the mapping of libgphoto2's
   busy codes would stay untested through the binary.
 
+**Amendment (2026-11-20): an unplugged virtual camera.** The virtual camera always
+answers, so a camera that goes away during a run (CLI-013.11) could not be driven
+through libgphoto2 in CI. The flake also applies `nix/patches/libgphoto2-vusb-unplug.patch`:
+once the file `VCAMERA_UNPLUG_WHEN` names exists, every later read or write on the
+`vusb` port fails with `GP_ERROR_IO`, as on a real camera whose cable is pulled. A CLI
+test names the target of the first file; a copy appears there only after its `.part`
+file is complete and renamed, so the camera goes away after the first copy and before
+the second file is read, while the scan has already read the metadata of both. Options
+not taken:
+
+- **Unplug when the camera is asked to read a given file:** simpler, but the scan reads
+  every file's metadata before the first copy, so the camera would go away too early.
+- **Unplug after a number of transfers:** what `testing::MemoryCameras` does, but the
+  test would have to search the number over many runs of the binary, and it would
+  change with every change in libgphoto2's or Framehive's reads.
+
+**Amendment (2026-11-20): several cameras stay at the unit level.** `vusb` serves one
+camera only. Listing several cameras (CLI-013.1 with two cameras), `camera:` with
+several cameras (CLI-013.6) and an ambiguous model (the second case of CLI-013.8) stay
+tested against `testing::MemoryCameras` only (owner decision in issue #176). They depend
+on Framehive's choice among the listed cameras, which these tests cover; a patch that
+lets `vusb` serve several cameras would test libgphoto2's listing more than Framehive.
+
 ### 4. Only `DCIM` is scanned on a camera
 
 Unlike a card folder (IMPORT-005), a camera source is scanned only below the `DCIM`
