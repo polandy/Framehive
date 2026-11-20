@@ -1,0 +1,105 @@
+SPDX-FileCopyrightText: 2026 Framehive contributors
+SPDX-License-Identifier: LGPL-2.1-or-later
+
+libgphoto2_port/vusb: report the virtual camera as claimed while another process holds it
+
+A real USB camera that another program has claimed fails gp_port_open() with
+GP_ERROR_IO_USB_CLAIM, and Framehive reports it as in use (ADR 0034 §6). The
+virtual PTP camera of the `vusb` port driver (configure --enable-vusb) can
+always be opened. With this patch, opening it takes a non-blocking exclusive
+flock() on the folder VCAMERADIR names and fails with GP_ERROR_IO_USB_CLAIM
+while another process holds one, so a test can hold the camera by locking the
+folder. Closing the port releases the lock. Without VCAMERADIR, or when the
+folder cannot be opened, nothing changes.
+
+It changes only the `vusb` driver, which Framehive installs outside the iolib
+folder that the library loads by default. It is written to be offered upstream.
+
+Applied by flake.nix to nixpkgs' libgphoto2.
+
+--- a/libgphoto2_port/vusb/vusb.c
++++ b/libgphoto2_port/vusb/vusb.c
+@@ -29,6 +29,8 @@
+ #include <fcntl.h>
+ #include <errno.h>
+ #include <sys/time.h>
++#include <sys/file.h>
++#include <unistd.h>
+ #ifdef HAVE_SYS_PARAM_H
+ #include <sys/param.h>
+ #endif
+@@ -45,6 +47,7 @@
+ 
+ struct _GPPortPrivateLibrary {
+ 	int	isopen;
++	int	lockfd;
+ 	vcamera	*vcamera;
+ };
+ 
+@@ -94,10 +97,42 @@
+ 	return GP_OK;
+ }
+ 
++/* Like claiming the interface of a real USB camera: the camera is the folder
++ * VCAMERADIR, and another process that holds a lock on it holds the camera.
++ */
++static int
++gp_port_vusb_claim (GPPort *port)
++{
++	const char *dir = getenv ("VCAMERADIR");
++
++	if (!dir)
++		return GP_OK;
++	port->pl->lockfd = open (dir, O_RDONLY);
++	if (port->pl->lockfd < 0)
++		return GP_OK;
++	if (flock (port->pl->lockfd, LOCK_EX | LOCK_NB) < 0) {
++		close (port->pl->lockfd);
++		port->pl->lockfd = -1;
++		gp_port_set_error (port, "Could not claim the virtual camera at %s, another process holds it", dir);
++		return GP_ERROR_IO_USB_CLAIM;
++	}
++	return GP_OK;
++}
++
++static void
++gp_port_vusb_release (GPPort *port)
++{
++	if (port->pl->lockfd < 0)
++		return;
++	close (port->pl->lockfd);
++	port->pl->lockfd = -1;
++}
++
+ static int gp_port_vusb_init (GPPort *dev)
+ {
+ 	gp_log(GP_LOG_DEBUG,__FUNCTION__,"()");
+ 	C_MEM (dev->pl = calloc (1, sizeof (GPPortPrivateLibrary)));
++	dev->pl->lockfd = -1;
+ 
+ 	dev->pl->vcamera = vcamera_new(NIKON_D750);
+ 	dev->pl->vcamera->init(dev->pl->vcamera);
+@@ -109,6 +144,7 @@
+ gp_port_vusb_exit (GPPort *port)
+ {
+ 	gp_log(GP_LOG_DEBUG,__FUNCTION__,"()");
++	gp_port_vusb_release (port);
+ 	port->pl->vcamera->exit(port->pl->vcamera);
+ 	free (port->pl->vcamera);
+ 	port->pl->vcamera = NULL;
+@@ -125,6 +161,7 @@
+ 	gp_log(GP_LOG_DEBUG,__FUNCTION__,"(%s)", port->settings.usb.port);
+ 	if (port->pl->isopen)
+ 		return GP_ERROR;
++	CHECK (gp_port_vusb_claim (port));
+ 	port->pl->vcamera->open(port->pl->vcamera, port->settings.usb.port);
+ 	port->pl->isopen = 1;
+ 	return GP_OK;
+@@ -137,6 +174,7 @@
+ 	if (!port->pl->isopen)
+ 		return GP_ERROR;
+ 	port->pl->vcamera->close(port->pl->vcamera);
++	gp_port_vusb_release (port);
+ 	port->pl->isopen = 0;
+ 	return GP_OK;
+ }

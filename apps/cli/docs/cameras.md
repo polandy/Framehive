@@ -32,4 +32,6 @@ libgphoto2's `directory` driver serves as a camera on a `disk:` port, and runs
 (`VCAMERADIR`) as a Nikon D750 at `usb:001,001`. `IOLIBS` makes libgphoto2 load only
 the port drivers in a folder below `FRAMEHIVE_TEST_IOLIBS`, which the Nix shell sets
 (ADR 0034, amendment of 2026-11-19), so a camera connected to the machine is not seen.
+A test that locks the folder with `flock` holds the virtual camera, which the patched
+`vusb` driver then reports as claimed (amendment of 2026-11-20).
 Real PTP and MTP cameras need the manual hardware check (ADR 0034).

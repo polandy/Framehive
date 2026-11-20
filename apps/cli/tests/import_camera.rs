@@ -184,6 +184,25 @@ fn camera_alone_without_a_camera_stops() {
     assert_eq!(output.status.code(), Some(2));
 }
 
+/// spec: CLI-013.9
+#[test]
+fn a_camera_in_use_stops_with_a_remedy() {
+    let folders = Folders::new();
+    folders.add("DCIM/100_FUJI/DSCF0001.RAF", &raf(&photo()));
+    let destination = folders.destination();
+    // The patched `vusb` driver reports its camera as claimed while the folder is locked.
+    let holder = fs::File::open(folders.source()).unwrap();
+    holder.try_lock().unwrap();
+
+    let output = import_from_virtual_camera(&folders, &iolib_folder("vusb"), &destination);
+
+    assert!(stderr(&output).contains(IN_USE), "{}", stderr(&output));
+    assert!(!destination.exists());
+    assert_eq!(output.status.code(), Some(2));
+}
+
+const IN_USE: &str = "the camera Nikon DSC D750 at usb:001,001 is in use by another program; close it (the file manager on Linux, ptpcamerad on macOS) and try again";
+
 /// spec: CLI-013.10
 #[test]
 fn a_port_that_cannot_be_opened_stops() {
