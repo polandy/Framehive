@@ -8,6 +8,7 @@ use std::fs::File;
 use std::io::{Read, Write};
 use std::os::fd::OwnedFd;
 use std::process::{Command, ExitStatus, Stdio};
+use std::sync::{Arc, Condvar, Mutex};
 use std::thread;
 
 use rustix::pty::{OpenptFlags, grantpt, openpt, ptsname, unlockpt};
@@ -24,7 +25,48 @@ pub(crate) struct Transcript {
 
 /// Runs `command` with a terminal as standard input and output, types each line of
 /// `script` and then Ctrl+D, and waits until it exits.
-pub(crate) fn run_on_terminal(mut command: Command, script: &[&str]) -> Transcript {
+pub(crate) fn run_on_terminal(command: Command, script: &[&str]) -> Transcript {
+    run_on_terminal_with(command, |terminal| {
+        for line in script {
+            terminal.type_line(line);
+        }
+    })
+}
+
+/// What the binary has written so far, shared with the thread that reads it.
+type Shown = Arc<(Mutex<String>, Condvar)>;
+
+/// The keyboard of a run on the terminal, which can also wait for what the binary shows.
+pub(crate) struct Terminal {
+    input: File,
+    shown: Shown,
+    waited_until: usize,
+}
+
+impl Terminal {
+    pub(crate) fn type_line(&mut self, line: &str) {
+        self.input.write_all(format!("{line}\n").as_bytes()).unwrap();
+    }
+
+    /// Blocks until the output has `text` after what an earlier wait has seen.
+    pub(crate) fn wait_for(&mut self, text: &str) {
+        let (output, changed) = &*self.shown;
+        let mut output = output.lock().unwrap();
+        loop {
+            if let Some(found) = output[self.waited_until..].find(text) {
+                self.waited_until += found + text.len();
+                return;
+            }
+            output = changed.wait(output).unwrap();
+        }
+    }
+}
+
+/// Like [`run_on_terminal`], with `act` typing on the [`Terminal`]; then Ctrl+D.
+pub(crate) fn run_on_terminal_with(
+    mut command: Command,
+    act: impl FnOnce(&mut Terminal),
+) -> Transcript {
     let master = openpt(OpenptFlags::RDWR | OpenptFlags::NOCTTY).unwrap();
     grantpt(&master).unwrap();
     unlockpt(&master).unwrap();
@@ -42,14 +84,15 @@ pub(crate) fn run_on_terminal(mut command: Command, script: &[&str]) -> Transcri
     let child = command.spawn().unwrap();
     // The command holds the terminal's files; the output ends only when all are closed.
     drop(command);
-    let reader = read_until_closed(master.try_clone().unwrap());
-    let mut input = File::from(master);
-    let mut typed = script.join("\n");
-    if !script.is_empty() {
-        typed.push('\n');
-    }
-    typed.push('\u{4}');
-    input.write_all(typed.as_bytes()).unwrap();
+    let shown = Shown::default();
+    let reader = read_until_closed(master.try_clone().unwrap(), Arc::clone(&shown));
+    let mut terminal = Terminal {
+        input: File::from(master),
+        shown,
+        waited_until: 0,
+    };
+    act(&mut terminal);
+    terminal.input.write_all(b"\x04").unwrap();
     let finished = child.wait_with_output().unwrap();
     Transcript {
         output: reader.join().unwrap(),
@@ -69,7 +112,7 @@ fn plain_mode(terminal: &File) {
 
 /// Reads the terminal's output on a thread until the binary closes it; Linux then
 /// fails the read with `EIO`.
-fn read_until_closed(master: OwnedFd) -> thread::JoinHandle<String> {
+fn read_until_closed(master: OwnedFd, shown: Shown) -> thread::JoinHandle<String> {
     thread::spawn(move || {
         let mut output = Vec::new();
         let mut buffer = [0; 4096];
@@ -79,6 +122,9 @@ fn read_until_closed(master: OwnedFd) -> thread::JoinHandle<String> {
                 break;
             }
             output.extend_from_slice(&buffer[..count]);
+            let (text, changed) = &*shown;
+            *text.lock().unwrap() = String::from_utf8_lossy(&output).into_owned();
+            changed.notify_all();
         }
         String::from_utf8(output).unwrap()
     })
