@@ -76,6 +76,21 @@ impl Machine {
         fs::write(file, text).unwrap();
     }
 
+    /// Writes the remembered destination, the template `By day` and the backup
+    /// destinations (ADR 0030).
+    pub(crate) fn remember_backups(&self, destination: &str, backups: &[&str]) {
+        let mut text = format!(
+            "format_version=2\ndestination={destination}\n\
+             template={{date:%Y}}/{{date:%Y-%m-%d}}/{{name}}.{{ext}}\n"
+        );
+        for backup in backups {
+            writeln!(text, "backup={backup}").unwrap();
+        }
+        let file = self.state_file();
+        fs::create_dir_all(file.parent().unwrap()).unwrap();
+        fs::write(file, text).unwrap();
+    }
+
     pub(crate) fn state_file(&self) -> PathBuf {
         self.root().join("state/framehive/guided-import.txt")
     }
