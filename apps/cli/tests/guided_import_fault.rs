@@ -12,7 +12,7 @@ mod support;
 use std::fs;
 
 use support::guided_card::{Machine, text};
-use support::terminal::run_on_terminal;
+use support::terminal::{run_on_terminal, run_on_terminal_with};
 
 const PRESET_1: &str = "{date:%Y}/{date:%Y-%m-%d}/{name}.{ext}";
 
@@ -49,5 +49,40 @@ fn an_import_that_stops_unexpectedly_shows_the_summary_again() {
             .library()
             .join("2026/2026-10-17/DSCF0001.RAF")
             .exists()
+    );
+}
+
+/// spec: CLI-007.10
+#[test]
+fn a_card_pulled_during_the_import_gets_one_format_readiness_for_the_whole_card() {
+    let machine = Machine::new();
+    machine.remember(&text(&machine.library()), Some(PRESET_1), &[]);
+    machine.add_pictures(&["DSCF0001.RAF", "DSCF0002.RAF", "DSCF0003.RAF"]);
+    let mut command = machine.command();
+    command.env("FRAMEHIVE_FAULT", "pull-card-after DSCF0001.RAF");
+
+    let run = run_on_terminal_with(command, |terminal| {
+        terminal.type_line("");
+        terminal.wait_for("Insert it again to go on.\n");
+        machine.set_cards(&["EOS_DIGITAL"]);
+        terminal.wait_for("Eject EOS_DIGITAL? [Y/n]: ");
+        terminal.type_line("n");
+    });
+
+    assert_eq!(run.status.code(), Some(0), "{}", run.errors);
+    let output = &run.output;
+    let readiness = "The card can be formatted: every file is verified in 1 location.\n";
+    assert_eq!(output.matches(readiness).count(), 1, "{output}");
+    assert!(!output.contains("Do not format"), "{output}");
+    let pulled = output
+        .find("EOS_DIGITAL was removed during the import. Insert it again to go on.\n")
+        .unwrap_or_else(|| panic!("{output}"));
+    assert!(output[..pulled].find("The card can be formatted").is_none());
+    assert!(
+        output[pulled..].contains(&format!(
+            "\n2 copied, 1 already imported, 0 duplicates, 0 skipped, 0 failed, 0 left out\n\
+             {readiness}Eject EOS_DIGITAL? [Y/n]: "
+        )),
+        "{output}"
     );
 }

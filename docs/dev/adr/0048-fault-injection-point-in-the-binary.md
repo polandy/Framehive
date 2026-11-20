@@ -1,7 +1,7 @@
 # 0048 – A fault-injection point in the binary
 
 - Status: accepted
-- Date: 2026-11-19 (amended 2026-11-20: `panic-while-writing`)
+- Date: 2026-11-19 (amended 2026-11-20: `panic-while-writing`, `pull-card-after`)
 
 ## Context
 
@@ -63,6 +63,7 @@ fault. Without the variable, the decorator passes everything through.
 | `flip-bit-after-sync` | Flips one bit of the first byte that `open_read_from_medium` returns for the target | T3 |
 | `hang-while-reading` | Blocks the first read of the source file during its copy and never returns | T5 |
 | `panic-while-writing` | Panics when the `.part` file of the target is created, in the import job | CLI-003.15 |
+| `pull-card-after` | After the target is complete, replaces the mount table of `FRAMEHIVE_MOUNTINFO` (ADR 0050) with an empty one and makes the guided import poll the devices at once | CLI-003.8 |
 | `unplug-while-reading` | Fails the first read of the source file while a `.part` file is written, and every later call below the folder of that file, with `EIO` | T6 |
 
 The source is read for its metadata and its checksum before the copy, so the hang and

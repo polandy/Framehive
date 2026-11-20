@@ -5,8 +5,9 @@
 //! one of the import, compiled only with the cargo feature `fault-injection`.
 
 use std::ffi::{OsStr, OsString};
-use std::io::{self, Read, Seek, SeekFrom, Write};
+use std::io;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard, OnceLock, PoisonError};
 
 use domain::Timestamp;
@@ -17,6 +18,12 @@ const VARIABLE: &str = "FRAMEHIVE_FAULT";
 
 /// The fault of this run, read once at start by [`read_fault_from_environment`].
 static FAULT: OnceLock<Option<FileFault>> = OnceLock::new();
+
+/// The environment variable of the mount table the guided import reads (ADR 0050).
+const MOUNT_TABLE_VARIABLE: &str = "FRAMEHIVE_MOUNTINFO";
+
+/// Set when the card was pulled, so the guided import polls the devices at once.
+static POLL_FORCED: AtomicBool = AtomicBool::new(false);
 
 /// A fault the decorator causes (ADR 0048 §3).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -29,17 +36,21 @@ enum Fault {
     HangWhileReading,
     /// Panics when the `.part` file of the target is created, in the import job.
     PanicWhileWriting,
+    /// Empties the mount table once the target is complete, and makes the guided import
+    /// poll the devices at once.
+    PullCardAfter,
     /// Fails the read of the source during its copy and every later call below its
     /// folder.
     UnplugWhileReading,
 }
 
 /// The name of each fault in [`VARIABLE`].
-const FAULTS: [(&str, Fault); 5] = [
+const FAULTS: [(&str, Fault); 6] = [
     ("abort-while-writing", Fault::AbortWhileWriting),
     ("flip-bit-after-sync", Fault::FlipBitAfterSync),
     ("hang-while-reading", Fault::HangWhileReading),
     ("panic-while-writing", Fault::PanicWhileWriting),
+    ("pull-card-after", Fault::PullCardAfter),
     ("unplug-while-reading", Fault::UnplugWhileReading),
 ];
 
@@ -93,6 +104,25 @@ fn parse_fault(value: &str) -> Result<FileFault, String> {
         fault,
         file_name: OsString::from(file_name),
     })
+}
+
+/// Whether the card was pulled since the last call; the guided import then polls the
+/// devices without waiting for its interval.
+pub(crate) fn take_forced_poll() -> bool {
+    POLL_FORCED.swap(false, Ordering::SeqCst)
+}
+
+/// Replaces the mount table whole with an empty one, as a poll must not see it half
+/// written, and forces the next poll. Without a mount table nothing is pulled.
+fn pull_card() {
+    let Some(table) = std::env::var_os(MOUNT_TABLE_VARIABLE).map(PathBuf::from) else {
+        return;
+    };
+    let next = table.with_extension("pulled");
+    // A fault that cannot be set up must not look like a pulled card.
+    if std::fs::write(&next, "").is_ok() && std::fs::rename(&next, &table).is_ok() {
+        POLL_FORCED.store(true, Ordering::SeqCst);
+    }
 }
 
 /// What the decorator has seen of the run so far.
@@ -228,7 +258,12 @@ impl<F: FileSystem> FileSystem for FaultyFileSystem<F> {
     fn rename_no_replace(&self, from: &Path, to: &Path) -> io::Result<()> {
         self.check_plugged(from)?;
         self.set_copying(from, false);
-        self.inner.rename_no_replace(from, to)
+        self.inner.rename_no_replace(from, to)?;
+        if self.is_due(Fault::PullCardAfter, to.file_name()) {
+            lock(&self.state).fired = true;
+            pull_card();
+        }
+        Ok(())
     }
 
     fn replace_file(&self, from: &Path, to: &Path) -> io::Result<()> {
@@ -261,119 +296,8 @@ impl<F: FileSystem> FileSystem for FaultyFileSystem<F> {
     }
 }
 
-/// Writes half of its first write, then ends the process as a kill does.
-struct AbortingWriter {
-    inner: Box<dyn WriteFile>,
-}
-
-impl Write for AbortingWriter {
-    fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
-        // The process ends here, so a failed write has no one to report to.
-        let _ = self.inner.write_all(&bytes[..bytes.len() / 2]);
-        std::process::abort()
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        self.inner.flush()
-    }
-}
-
-impl WriteFile for AbortingWriter {
-    fn set_modification_time(&mut self, time: Timestamp) -> io::Result<()> {
-        self.inner.set_modification_time(time)
-    }
-
-    fn sync(&mut self) -> io::Result<()> {
-        self.inner.sync()
-    }
-}
-
-/// Flips the lowest bit of the first byte it returns.
-struct BitFlippingReader {
-    inner: Box<dyn ReadSeek>,
-    flipped: bool,
-}
-
-impl Read for BitFlippingReader {
-    fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
-        let count = self.inner.read(buffer)?;
-        if let Some(first) = buffer[..count].first_mut().filter(|_| !self.flipped) {
-            *first ^= 1;
-            self.flipped = true;
-        }
-        Ok(count)
-    }
-}
-
-impl Seek for BitFlippingReader {
-    fn seek(&mut self, position: SeekFrom) -> io::Result<u64> {
-        self.inner.seek(position)
-    }
-}
-
-/// Blocks its first read while a `.part` file is written and never returns from it, so
-/// reading the metadata or the checksum before the copy is not affected.
-struct HangingReader {
-    inner: Box<dyn ReadSeek>,
-    state: Arc<Mutex<State>>,
-}
-
-impl Read for HangingReader {
-    fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
-        let mut state = lock(&self.state);
-        if state.copying && !state.fired {
-            state.fired = true;
-            drop(state);
-            hang_forever();
-        }
-        drop(state);
-        self.inner.read(buffer)
-    }
-}
-
-impl Seek for HangingReader {
-    fn seek(&mut self, position: SeekFrom) -> io::Result<u64> {
-        self.inner.seek(position)
-    }
-}
-
-/// Blocks the calling thread until the process ends, as a device that stopped answering.
-fn hang_forever() -> ! {
-    loop {
-        // A spurious wake-up must not end the hang.
-        std::thread::park();
-    }
-}
-
-/// Unplugs `folder` at its first read while a `.part` file is written, so reading the
-/// metadata or the checksum before the copy is not affected.
-struct UnpluggingReader {
-    inner: Box<dyn ReadSeek>,
-    folder: PathBuf,
-    state: Arc<Mutex<State>>,
-}
-
-impl Read for UnpluggingReader {
-    fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
-        let mut state = lock(&self.state);
-        if state.unplugged.is_some() {
-            return Err(device_gone());
-        }
-        if state.copying && !state.fired {
-            state.fired = true;
-            state.unplugged = Some(self.folder.clone());
-            return Err(device_gone());
-        }
-        drop(state);
-        self.inner.read(buffer)
-    }
-}
-
-impl Seek for UnpluggingReader {
-    fn seek(&mut self, position: SeekFrom) -> io::Result<u64> {
-        self.inner.seek(position)
-    }
-}
+mod doubles;
+use doubles::{AbortingWriter, BitFlippingReader, HangingReader, UnpluggingReader};
 
 #[cfg(test)]
 mod tests;
