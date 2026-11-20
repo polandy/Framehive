@@ -65,7 +65,7 @@ fn a_pulled_card_is_resumed_from_the_history() {
         ),
         "{output}"
     );
-    assert!(!resumed.contains("not recognized"), "{output}");
+    assert!(!output.contains("not recognized"), "{output}");
     assert!(machine.library().join("0001.RAF").is_file());
     assert_eq!(files_below(&machine.library()), 3);
 }
