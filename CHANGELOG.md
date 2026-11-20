@@ -11,6 +11,19 @@ file from the Conventional Commits on `main`; never edit it by hand (ADR 0045). 
 0.1.0 notes were written by hand in the
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
+## [0.1.2](https://github.com/polandy/Framehive/compare/v0.1.1...v0.1.2) (2026-11-20)
+
+
+### Features
+
+* **xtask:** require a system test for every CLI criterion and show test levels ([#192](https://github.com/polandy/Framehive/issues/192)) ([cf32a48](https://github.com/polandy/Framehive/commit/cf32a48df5023746effccb398f3ea3e7304d1a3b))
+
+
+### Bug Fixes
+
+* **files:** wait for a guarded file's close, so a released camera is free (CLI-014.7, .8) ([#183](https://github.com/polandy/Framehive/issues/183)) ([8d0c01f](https://github.com/polandy/Framehive/commit/8d0c01feca61429fdf066334dbe92877c7472f09))
+* **gphoto2:** ask a camera for its storages before listing its root, so one that stops answering is seen (CLI-014.10) ([#185](https://github.com/polandy/Framehive/issues/185)) ([0971dd6](https://github.com/polandy/Framehive/commit/0971dd64a7cc76dca4920a4e709efbc8212063b5))
+
 ## [0.1.1](https://github.com/polandy/Framehive/compare/v0.1.0...v0.1.1) (2026-11-19)
 
 
