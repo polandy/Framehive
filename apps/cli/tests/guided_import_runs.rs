@@ -14,7 +14,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use support::terminal::{Transcript, run_on_terminal};
+use support::terminal::{Transcript, run_on_terminal, run_on_terminal_with};
 use support::{Folders, iolib_folder, picture, stdout};
 
 const CARD: &str = "EOS_DIGITAL";
@@ -97,6 +97,29 @@ impl Machine {
             .env("IOLIBS", iolib_folder("vusb"))
             .env("VCAMERADIR", self.folders.source());
         finish(command, script)
+    }
+
+    /// Like [`Machine::run_with_camera`], with another program holding the camera until
+    /// the dialog asks to try again.
+    fn run_with_held_camera(&self, library: &str, rest: &[&str]) -> Transcript {
+        let mut command = self.command();
+        command
+            .env("IOLIBS", iolib_folder("vusb"))
+            .env("VCAMERADIR", self.folders.source());
+        // The patched `vusb` driver reports its camera as claimed while the folder is locked.
+        let holder = fs::File::open(self.folders.source()).unwrap();
+        holder.try_lock().unwrap();
+        let transcript = run_on_terminal_with(command, |terminal| {
+            terminal.type_line(library);
+            terminal.wait_for("Try again? [Y/n]: ");
+            drop(holder);
+            terminal.type_line("y");
+            for line in rest {
+                terminal.type_line(line);
+            }
+        });
+        assert_eq!(transcript.status.code(), Some(0), "{}", transcript.errors);
+        transcript
     }
 
     fn command(&self) -> Command {
@@ -308,4 +331,34 @@ fn a_camera_with_nothing_to_import_is_reported() {
         run.output
     );
     assert!(!machine.library().join("2026").exists(), "{}", run.output);
+}
+
+/// spec: CLI-014.4
+#[test]
+fn a_camera_in_use_is_tried_again() {
+    let machine = Machine::without_card();
+    machine
+        .folders
+        .add("DCIM/100_FUJI/DSCF0001.JPG", &picture("DSCF0001.JPG"));
+
+    let run = machine.run_with_held_camera(&text(&machine.library()), &["", "", "", "y"]);
+
+    assert!(
+        run.output.contains(
+            "The camera Nikon DSC D750 at usb:001,001 is in use by another program; close it \
+             (the file manager on Linux, ptpcamerad on macOS) and try again.\n\
+             Try again? [Y/n]: "
+        ),
+        "{}",
+        run.output
+    );
+    assert!(run.output.contains("1 copied"), "{}", run.output);
+    assert!(
+        machine
+            .library()
+            .join("2026/2026-10-17/DSCF0001.JPG")
+            .is_file(),
+        "{}",
+        run.output
+    );
 }
