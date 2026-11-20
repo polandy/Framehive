@@ -163,6 +163,21 @@ camera again on a new try, so it then sees the storage. Option not taken:
 - **List no storage ID at all:** libgphoto2 sees the same empty list, but a real
   locked phone does not answer that way, so the filter in libgphoto2 would stay untested.
 
+**Amendment (2026-11-20): a virtual camera that is connected and disconnected.** The
+virtual camera is always listed, so a camera that appears and goes while the guided
+import waits (CLI-014.1) could not be driven through libgphoto2 in CI. The flake also
+applies `nix/patches/libgphoto2-vusb-connected.patch`: when `VCAMERA_CONNECTED_WHILE`
+is set, the `vusb` driver lists its port `usb:001,001` only while the file it names
+exists. libgphoto2 loads its port list again on each autodetection, so a CLI test
+creates the file to connect the camera and removes it to disconnect it, and the
+dialog's poll sees the change. The port stays `usb:001,001`, unlike a replugged real
+camera, which the guided import does not depend on, as it keeps a camera's identity by
+its model (CLI-014). Option not taken:
+
+- **Fail every transfer while the file is missing, as the unplug patch does:** closer
+  to a pulled cable, but CLI-014.1 disconnects the camera only while the dialog waits
+  for an answer, when nothing is read, so it would add code that no test reaches.
+
 **Amendment (2026-11-20): several cameras stay at the unit level.** `vusb` serves one
 camera only. Listing several cameras (CLI-013.1 with two cameras), `camera:` with
 several cameras (CLI-013.6) and an ambiguous model (the second case of CLI-013.8) stay
