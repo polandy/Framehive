@@ -17,6 +17,23 @@ use std::process::Output;
 use metadata::testing::raf;
 use support::{DEFAULT_TARGET, Folders, has_line, photo, stderr, stdout};
 
+/// spec: CLI-013.1
+#[test]
+fn the_virtual_camera_is_listed() {
+    let folders = Folders::new();
+
+    let output = folders
+        .framehive_command(&["cameras"])
+        .env("IOLIBS", iolib_folder("vusb"))
+        .env("VCAMERADIR", folders.source())
+        .current_dir(folders.root.path())
+        .output()
+        .unwrap();
+
+    assert_eq!(stdout(&output), "Nikon DSC D750  usb:001,001\n");
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+}
+
 /// spec: CLI-013.2
 #[test]
 fn without_a_camera_the_list_is_empty() {
