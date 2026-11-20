@@ -117,6 +117,33 @@ fn a_folder_named_like_a_camera_is_imported_as_a_folder() {
     assert_eq!(output.status.code(), Some(0));
 }
 
+/// spec: CLI-013.3
+#[test]
+fn the_virtual_camera_is_imported_by_its_port() {
+    let folders = Folders::new();
+    folders.add("DCIM/100_FUJI/DSCF0001.RAF", &raf(&photo()));
+    let destination = folders.destination();
+
+    let output = import_from(
+        &folders,
+        "camera:usb:001,001",
+        &iolib_folder("vusb"),
+        &destination,
+    );
+
+    assert!(
+        has_line(
+            &output,
+            &format!("copied  store_00010001/DCIM/100_FUJI/DSCF0001.RAF -> {DEFAULT_TARGET}")
+        ),
+        "{}{}",
+        stdout(&output),
+        stderr(&output)
+    );
+    assert!(destination.join(DEFAULT_TARGET).is_file());
+    assert_eq!(output.status.code(), Some(0));
+}
+
 /// spec: CLI-013.4
 #[test]
 fn camera_alone_takes_the_only_camera() {
