@@ -40,8 +40,9 @@ A test then writes a mount table line whose mount point is a folder laid out lik
 card, below a folder it names in `FRAMEHIVE_MEDIA_FOLDERS`. The binary sees that folder
 as a card, with real files, a real history and the real free space.
 
-The eject runs `udisksctl` on the mount source of that line, as for a real card; the
-tests answer `n` to `Eject <name>? [Y/n]`, so they never start it.
+The eject runs `udisksctl` on the mount source of that line, as for a real card. The
+tests answer `n` to `Eject <name>? [Y/n]`, or put a stand-in `udisksctl` first on `PATH`
+(CLI-003.6, CLI-003.7), so they never start the real one.
 
 ### 2. Always compiled
 

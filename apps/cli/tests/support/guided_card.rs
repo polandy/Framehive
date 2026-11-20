@@ -6,6 +6,7 @@
 
 use std::fmt::Write;
 use std::fs;
+use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -129,6 +130,33 @@ impl Machine {
     /// Runs `framehive` on a terminal with the card's mount table, typing `script`.
     pub(crate) fn run(&self, script: &[&str]) -> Transcript {
         finish(self.command(), script)
+    }
+
+    /// Like [`Machine::run`], with a stand-in for `udisksctl` first on `PATH` that
+    /// records its arguments in [`Machine::eject_arguments`] and then runs `body`.
+    pub(crate) fn run_with_udisksctl(&self, body: &str, script: &[&str]) -> Transcript {
+        let tools = self.root().join("tools");
+        fs::create_dir_all(&tools).unwrap();
+        let udisksctl = tools.join("udisksctl");
+        let arguments = self.root().join("udisksctl-arguments");
+        fs::write(
+            &udisksctl,
+            format!(
+                "#!/bin/sh\nprintf '%s\\n' \"$*\" > '{}'\n{body}\n",
+                arguments.display()
+            ),
+        )
+        .unwrap();
+        fs::set_permissions(&udisksctl, fs::Permissions::from_mode(0o755)).unwrap();
+        let path = std::env::var("PATH").unwrap_or_default();
+        let mut command = self.command();
+        command.env("PATH", format!("{}:{path}", tools.display()));
+        finish(command, script)
+    }
+
+    /// The arguments the stand-in for `udisksctl` was started with, if it was.
+    pub(crate) fn eject_arguments(&self) -> String {
+        fs::read_to_string(self.root().join("udisksctl-arguments")).unwrap_or_default()
     }
 
     pub(crate) fn command(&self) -> Command {
