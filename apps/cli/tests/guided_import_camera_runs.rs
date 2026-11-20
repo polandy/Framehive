@@ -16,6 +16,10 @@ use support::guided_camera::{Machine, text};
 use support::terminal::{Transcript, run_on_terminal_with};
 use support::{picture, stdout};
 
+/// The choices below the plan summary of CLI-003.
+const SUMMARY_CHOICES: &str =
+    "[Enter] import  [l] list  [t] template  [d] destination  [b] backup  [q] quit: ";
+
 /// spec: CLI-014.1
 #[test]
 fn a_camera_appears_and_goes() {
@@ -33,7 +37,9 @@ fn a_camera_appears_and_goes() {
         terminal.wait_for("Waiting for a memory card or camera…\n");
         fs::write(&plug, "").unwrap();
         terminal.wait_for("Reading Nikon DSC D750…\n");
-        terminal.wait_for("]: ");
+        terminal.type_line("");
+        terminal.type_line("");
+        terminal.wait_for(SUMMARY_CHOICES);
         fs::remove_file(&plug).unwrap();
         terminal.wait_for("[REMOVED] Nikon DSC D750\n");
         terminal.wait_for("Waiting for a memory card or camera…\n");
@@ -47,8 +53,12 @@ fn a_camera_appears_and_goes() {
     let new = output
         .find("[NEW] Nikon DSC D750 (camera at usb:001,001)\nReading Nikon DSC D750…\n")
         .unwrap();
+    let summary = output.find(SUMMARY_CHOICES).unwrap();
     let removed = output.find("[REMOVED] Nikon DSC D750\n").unwrap();
-    assert!(waiting < new && new < removed, "{output}");
+    assert!(
+        waiting < new && new < summary && summary < removed,
+        "{output}"
+    );
     assert!(
         output[removed..].contains("Waiting for a memory card or camera…\n"),
         "{output}"
