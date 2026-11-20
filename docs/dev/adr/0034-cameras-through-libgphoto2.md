@@ -150,6 +150,19 @@ not taken:
   test would have to search the number over many runs of the binary, and it would
   change with every change in libgphoto2's or Framehive's reads.
 
+**Amendment (2026-11-20): a locked virtual camera.** The virtual camera always lists its
+storage, so a camera that shows no storage (CLI-013.15, CLI-014.6) could not be driven
+through libgphoto2 in CI. A locked phone, or one not set to file transfer, answers PTP
+but lists a storage ID whose logical part is 0, which libgphoto2's PTP driver leaves
+out, so the root holds no storage folder. The flake also applies
+`nix/patches/libgphoto2-vusb-locked.patch`: while the file `VCAMERA_LOCKED_WHILE` names
+exists, the `vusb` camera lists `0x00010000` instead of `0x00010001`. A CLI test creates
+the file to lock the camera and removes it to unlock it; the guided import opens the
+camera again on a new try, so it then sees the storage. Option not taken:
+
+- **List no storage ID at all:** libgphoto2 sees the same empty list, but a real
+  locked phone does not answer that way, so the filter in libgphoto2 would stay untested.
+
 **Amendment (2026-11-20): several cameras stay at the unit level.** `vusb` serves one
 camera only. Listing several cameras (CLI-013.1 with two cameras), `camera:` with
 several cameras (CLI-013.6) and an ambiguous model (the second case of CLI-013.8) stay

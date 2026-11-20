@@ -3,7 +3,8 @@
 
 //! `framehive import camera:…` against the real binary when the camera cannot be used
 //! (CLI-013): no camera, an unknown model, a camera in use, a port that cannot be
-//! opened, and a camera that goes away, through libgphoto2's `vusb` virtual PTP camera.
+//! opened, a camera without a storage, and a camera that goes away, through
+//! libgphoto2's `vusb` virtual PTP camera.
 
 #![allow(clippy::unwrap_used, reason = "test helpers may panic on bad fixtures")]
 
@@ -48,6 +49,33 @@ fn a_camera_in_use_stops_with_a_remedy() {
     let output = import_from_virtual_camera(&folders, &iolib_folder("vusb"), &destination);
 
     assert!(stderr(&output).contains(IN_USE), "{}", stderr(&output));
+    assert!(!destination.exists());
+    assert_eq!(output.status.code(), Some(2));
+}
+
+/// spec: CLI-013.15
+#[test]
+fn a_camera_without_a_storage_stops_with_a_remedy() {
+    let folders = Folders::new();
+    folders.add("DCIM/100_FUJI/DSCF0001.RAF", &raf(&photo()));
+    let destination = folders.destination();
+    // The patched `vusb` driver lists no storage while this file exists.
+    let lock = folders.root.path().join("locked");
+    fs::write(&lock, "").unwrap();
+
+    let output = import_command(&folders, "camera:", &iolib_folder("vusb"), &destination)
+        .env("VCAMERA_LOCKED_WHILE", &lock)
+        .output()
+        .unwrap();
+
+    assert!(
+        stderr(&output).contains(
+            "the camera Nikon DSC D750 at usb:001,001 shows no storage; unlock it and choose \
+             file transfer (MTP or PTP) on the device, then try again"
+        ),
+        "{}",
+        stderr(&output)
+    );
     assert!(!destination.exists());
     assert_eq!(output.status.code(), Some(2));
 }
