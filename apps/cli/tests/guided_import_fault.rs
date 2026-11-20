@@ -86,3 +86,51 @@ fn a_card_pulled_during_the_import_gets_one_format_readiness_for_the_whole_card(
         "{output}"
     );
 }
+
+/// spec: CLI-003.8
+#[test]
+fn a_card_pulled_during_the_import_is_imported_on_after_it_is_inserted_again() {
+    let machine = Machine::new();
+    machine.remember(&text(&machine.library()), Some(PRESET_1), &[]);
+    machine.add_pictures(&["DSCF0001.RAF", "DSCF0002.RAF", "DSCF0003.RAF"]);
+    let mut command = machine.command();
+    command.env("FRAMEHIVE_FAULT", "pull-card-after DSCF0001.RAF");
+
+    let run = run_on_terminal_with(command, |terminal| {
+        terminal.type_line("");
+        terminal.wait_for("Insert it again to go on.\n");
+        assert!(
+            !machine
+                .library()
+                .join("2026/2026-10-17/DSCF0003.RAF")
+                .exists(),
+            "the import went on after the card was pulled"
+        );
+        machine.set_cards(&["EOS_DIGITAL"]);
+        terminal.wait_for("Eject EOS_DIGITAL? [Y/n]: ");
+        terminal.type_line("n");
+    });
+
+    assert_eq!(run.status.code(), Some(0), "{}", run.errors);
+    let output = &run.output;
+    assert!(
+        output.contains("EOS_DIGITAL was removed during the import. Insert it again to go on.\n"),
+        "{output}"
+    );
+    assert!(
+        output.contains(
+            "2 copied, 1 already imported, 0 duplicates, 0 skipped, 0 failed, 0 left out\n"
+        ),
+        "{output}"
+    );
+    for name in ["DSCF0001.RAF", "DSCF0002.RAF", "DSCF0003.RAF"] {
+        assert!(
+            machine
+                .library()
+                .join("2026/2026-10-17")
+                .join(name)
+                .exists(),
+            "{name}"
+        );
+    }
+}
