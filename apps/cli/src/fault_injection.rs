@@ -27,16 +27,19 @@ enum Fault {
     FlipBitAfterSync,
     /// Blocks the read of the source during its copy, for good.
     HangWhileReading,
+    /// Panics when the `.part` file of the target is created, in the import job.
+    PanicWhileWriting,
     /// Fails the read of the source during its copy and every later call below its
     /// folder.
     UnplugWhileReading,
 }
 
 /// The name of each fault in [`VARIABLE`].
-const FAULTS: [(&str, Fault); 4] = [
+const FAULTS: [(&str, Fault); 5] = [
     ("abort-while-writing", Fault::AbortWhileWriting),
     ("flip-bit-after-sync", Fault::FlipBitAfterSync),
     ("hang-while-reading", Fault::HangWhileReading),
+    ("panic-while-writing", Fault::PanicWhileWriting),
     ("unplug-while-reading", Fault::UnplugWhileReading),
 ];
 
@@ -209,6 +212,13 @@ impl<F: FileSystem> FileSystem for FaultyFileSystem<F> {
         self.check_plugged(path)?;
         let file = self.inner.create_file(path)?;
         self.set_copying(path, true);
+        if is_part(path) && self.is_due(Fault::PanicWhileWriting, path.file_stem()) {
+            lock(&self.state).fired = true;
+            #[allow(clippy::panic, reason = "the fault is a panic in the import job")]
+            {
+                panic!("{VARIABLE}: panic-while-writing");
+            }
+        }
         if is_part(path) && self.is_due(Fault::AbortWhileWriting, path.file_stem()) {
             return Ok(Box::new(AbortingWriter { inner: file }));
         }
@@ -366,33 +376,4 @@ impl Seek for UnpluggingReader {
 }
 
 #[cfg(test)]
-mod tests {
-    use adapter_fs::StdFileSystem;
-    use files::testing::{FileSystemUnderTest, TempDir, check_file_system};
-
-    use super::{FaultyFileSystem, parse_fault};
-
-    /// Without a fault, the decorator conforms to the port as the file system it wraps.
-    /// spec: IMPORT-004.14
-    #[test]
-    fn conforms_to_the_file_system_port_without_a_fault() {
-        let folder = TempDir::new().unwrap();
-        let failures = check_file_system(&FileSystemUnderTest {
-            file_system: &FaultyFileSystem::new(StdFileSystem::new(), None),
-            root: folder.path(),
-            crash: None,
-            make_symbolic_link: Some(&|link, target| std::os::unix::fs::symlink(target, link)),
-        });
-        assert!(failures.is_empty(), "{failures:#?}");
-    }
-
-    /// A fault without a file name is refused, so a typo never runs without the fault.
-    /// spec: CLI-025.4
-    #[test]
-    fn refuses_a_fault_without_a_file_name() {
-        assert_eq!(
-            parse_fault("flip-bit-after-sync"),
-            Err("FRAMEHIVE_FAULT: `flip-bit-after-sync` needs a file name".to_owned())
-        );
-    }
-}
+mod tests;
