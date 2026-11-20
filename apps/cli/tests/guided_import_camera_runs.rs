@@ -216,6 +216,48 @@ fn a_camera_is_kept_open_on_no() {
     assert!(!free, "{}", run.output);
 }
 
+/// spec: CLI-014.8
+#[test]
+fn a_camera_kept_open_is_released_once_it_is_disconnected() {
+    let machine = Machine::without_card();
+    machine
+        .folders
+        .add("DCIM/100_FUJI/DSCF0001.JPG", &picture("DSCF0001.JPG"));
+    let plug = machine.folders.root.path().join("plugged");
+    fs::write(&plug, "").unwrap();
+    let mut command = machine.camera_command();
+    command.env("VCAMERA_CONNECTED_WHILE", &plug);
+    let mut free = Vec::new();
+
+    let run = run_on_terminal_with(command, |terminal| {
+        for line in [text(&machine.library()).as_str(), "", "", ""] {
+            terminal.type_line(line);
+        }
+        terminal.wait_for("Release Nikon DSC D750? [Y/n]: ");
+        terminal.type_line("n");
+        terminal.wait_for("Waiting for a memory card or camera…\n");
+        let is_free = || {
+            fs::File::open(machine.folders.source())
+                .unwrap()
+                .try_lock()
+                .is_ok()
+        };
+        free.push(is_free());
+        fs::remove_file(&plug).unwrap();
+        terminal.wait_for("[REMOVED] Nikon DSC D750\n");
+        free.push(is_free());
+    });
+
+    assert_eq!(run.status.code(), Some(0), "{}", run.errors);
+    assert_eq!(free, [false, true], "{}", run.output);
+    assert_eq!(
+        run.output.matches("Reading Nikon").count(),
+        1,
+        "{}",
+        run.output
+    );
+}
+
 /// spec: CLI-014.9
 #[test]
 fn a_camera_disconnected_during_the_import_is_resumed() {
