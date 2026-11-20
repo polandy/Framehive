@@ -14,6 +14,7 @@ use std::time::{Duration, SystemTime};
 use files::testing::TempDir;
 use metadata::testing::{ByteOrder, DATE_TIME_ORIGINAL, Tiff, jpeg, raf};
 
+pub(crate) mod cameras;
 #[cfg(target_os = "linux")]
 pub(crate) mod terminal;
 
