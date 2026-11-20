@@ -1,7 +1,7 @@
 # CLI-003 – Guided import run
 
 - Status: implemented
-- E2e-owed: 1–8, 10–15
+- E2e-owed: 4–8, 10–15
 - Module: cli (`apps/cli`)
 - Origin: Q1, A3, R9, N9, X1
 - Depends on: CLI-002, CLI-001, DEVICES-001, IMPORT-003, IMPORT-004, IMPORT-006
