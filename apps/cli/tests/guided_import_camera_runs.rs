@@ -16,8 +16,8 @@ use std::process::Command;
 use support::terminal::{Terminal, Transcript, run_on_terminal, run_on_terminal_with};
 use support::{Folders, iolib_folder, picture, stdout};
 
-/// The source folder served as the only camera, and the folders of the runs, all below
-/// a temporary root.
+/// The source folder served as the only camera, optionally the card `EOS_DIGITAL`, and
+/// the folders of the runs, all below a temporary root.
 struct Machine {
     folders: Folders,
 }
@@ -29,6 +29,21 @@ impl Machine {
         };
         fs::write(machine.mountinfo(), "").unwrap();
         machine
+    }
+
+    fn with_card() -> Self {
+        let machine = Machine::without_card();
+        fs::create_dir_all(machine.card().join("DCIM")).unwrap();
+        let line = format!(
+            "100 1 8:17 / {} rw,relatime - vfat /dev/sdz1 rw\n",
+            machine.card().display()
+        );
+        fs::write(machine.mountinfo(), line).unwrap();
+        machine
+    }
+
+    fn card(&self) -> PathBuf {
+        self.folders.root.path().join("media/EOS_DIGITAL")
     }
 
     fn mountinfo(&self) -> PathBuf {
@@ -92,6 +107,37 @@ impl Machine {
 
 fn text(path: &Path) -> String {
     path.display().to_string()
+}
+
+/// spec: CLI-014.2
+#[test]
+fn a_card_and_a_camera_are_offered_to_choose_from() {
+    let machine = Machine::with_card();
+    machine
+        .folders
+        .add("DCIM/100_FUJI/DSCF0001.JPG", &picture("DSCF0001.JPG"));
+
+    let run = machine.run_with_camera(&[&text(&machine.library()), "2"]);
+
+    assert!(
+        run.output.contains(&format!(
+            "Which card or camera?\n  1  EOS_DIGITAL ({})\n  2  Nikon DSC D750 (camera at \
+             usb:001,001)\n",
+            text(&machine.card())
+        )),
+        "{}",
+        run.output
+    );
+    assert!(
+        run.output.contains("Reading Nikon DSC D750…\n"),
+        "{}",
+        run.output
+    );
+    assert!(
+        !run.output.contains("Reading EOS_DIGITAL"),
+        "{}",
+        run.output
+    );
 }
 
 /// spec: CLI-014.3
