@@ -216,6 +216,55 @@ fn a_camera_is_kept_open_on_no() {
     assert!(!free, "{}", run.output);
 }
 
+/// spec: CLI-014.9
+#[test]
+fn a_camera_disconnected_during_the_import_is_resumed() {
+    let machine = Machine::without_card();
+    for name in ["DSCF0001.JPG", "DSCF0002.JPG", "DSCF0003.JPG"] {
+        machine
+            .folders
+            .add(&format!("DCIM/100_FUJI/{name}"), &picture(name));
+    }
+    let day = machine.library().join("2026/2026-10-17");
+    let plug = machine.folders.root.path().join("plugged");
+    fs::write(&plug, "").unwrap();
+    let mut command = machine.camera_command();
+    // The patched `vusb` driver removes `plug` once the first copy exists, and answers again once it is back.
+    command
+        .env("VCAMERA_UNPLUG_WHEN", day.join("DSCF0001.JPG"))
+        .env("VCAMERA_CONNECTED_WHILE", &plug);
+
+    let run = run_on_terminal_with(command, |terminal| {
+        for line in [text(&machine.library()).as_str(), "", "", ""] {
+            terminal.type_line(line);
+        }
+        terminal.wait_for(
+            "[REMOVED] Nikon DSC D750\n\
+             Nikon DSC D750 was disconnected during the import. Connect it again to go on.\n",
+        );
+        // The dialog answers a line only after a poll that no longer lists the camera.
+        terminal.type_line("");
+        terminal.wait_for("Insert a memory card or connect a camera, or type q to quit.\n");
+        fs::write(&plug, "").unwrap();
+        terminal.wait_for("Release Nikon DSC D750? [Y/n]: ");
+        terminal.type_line("y");
+        terminal.wait_for("Waiting for a memory card or camera…\n");
+    });
+
+    assert_eq!(run.status.code(), Some(0), "{}", run.errors);
+    let output = &run.output;
+    let resumed = &output[output.find("[REMOVED] Nikon DSC D750\n").unwrap()..];
+    assert!(
+        resumed.contains("[NEW] Nikon DSC D750 (camera at usb:001,001)\nReading Nikon DSC D750…\n"),
+        "{output}"
+    );
+    assert!(resumed.contains("2 copied, 1 already imported"), "{output}");
+    assert!(!resumed.contains(SUMMARY_CHOICES), "{output}");
+    for name in ["DSCF0001.JPG", "DSCF0002.JPG", "DSCF0003.JPG"] {
+        assert_eq!(fs::read(day.join(name)).unwrap(), picture(name), "{output}");
+    }
+}
+
 /// spec: CLI-014.10
 #[test]
 fn a_camera_that_stops_answering_stops_the_import() {
