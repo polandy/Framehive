@@ -112,4 +112,5 @@ unsafe extern "C" {
         context: *mut Context,
     ) -> c_int;
     pub(crate) fn framehive_gp_forget_listings(camera: *mut Camera) -> c_int;
+    pub(crate) fn framehive_gp_ask_storages(camera: *mut Camera, context: *mut Context) -> c_int;
 }

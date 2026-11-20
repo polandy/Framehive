@@ -36,5 +36,6 @@ the port drivers in a folder below `FRAMEHIVE_TEST_IOLIBS`, which the Nix shell 
 A test that locks the folder with `flock` holds the virtual camera, which the patched
 `vusb` driver then reports as claimed (amendment of 2026-11-20).
 A test that sets `VCAMERA_UNPLUG_WHEN` to a path unplugs the virtual camera once that
-file exists (amendment of 2026-11-20).
+file exists; it stays listed, as a camera that stops answering (CLI-014.10) does
+(amendment of 2026-11-20).
 Real PTP and MTP cameras need the manual hardware check (ADR 0034).
