@@ -45,7 +45,9 @@ pub(crate) struct Terminal {
 
 impl Terminal {
     pub(crate) fn type_line(&mut self, line: &str) {
-        self.input.write_all(format!("{line}\n").as_bytes()).unwrap();
+        self.input
+            .write_all(format!("{line}\n").as_bytes())
+            .unwrap();
     }
 
     /// Blocks until the output has `text` after what an earlier wait has seen.
