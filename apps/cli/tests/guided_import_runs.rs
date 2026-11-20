@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 //! One run of the guided import per spec against the binary with its real adapters, on
-//! a pseudo-terminal, with a card listed in a mount table file (ADR 0050).
+//! a pseudo-terminal, with a card listed in a mount table file (ADR 0050) or libgphoto2's
+//! `vusb` virtual camera (ADR 0034).
 
 #![cfg(target_os = "linux")]
 #![allow(clippy::unwrap_used, reason = "test helpers may panic on bad fixtures")]
@@ -11,9 +12,10 @@ mod support;
 
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 use support::terminal::{Transcript, run_on_terminal};
-use support::{Folders, picture};
+use support::{Folders, iolib_folder, picture, stdout};
 
 const CARD: &str = "EOS_DIGITAL";
 
@@ -28,15 +30,21 @@ struct Machine {
 
 impl Machine {
     fn new() -> Self {
-        let machine = Machine {
-            folders: Folders::new(),
-        };
+        let machine = Machine::without_card();
         fs::create_dir_all(machine.card().join("DCIM")).unwrap();
         let line = format!(
             "100 1 8:17 / {} rw,relatime - vfat /dev/sdz1 rw\n",
             machine.card().display()
         );
         fs::write(machine.mountinfo(), line).unwrap();
+        machine
+    }
+
+    fn without_card() -> Self {
+        let machine = Machine {
+            folders: Folders::new(),
+        };
+        fs::write(machine.mountinfo(), "").unwrap();
         machine
     }
 
@@ -79,15 +87,32 @@ impl Machine {
 
     /// Runs `framehive` on a terminal with the card's mount table, typing `script`.
     fn run(&self, script: &[&str]) -> Transcript {
+        finish(self.command(), script)
+    }
+
+    /// Like [`Machine::run`], with `vusb` serving the source folder as the only camera.
+    fn run_with_camera(&self, script: &[&str]) -> Transcript {
+        let mut command = self.command();
+        command
+            .env("IOLIBS", iolib_folder("vusb"))
+            .env("VCAMERADIR", self.folders.source());
+        finish(command, script)
+    }
+
+    fn command(&self) -> Command {
         let mut command = self.folders.framehive_command(&[]);
         command
             .env("FRAMEHIVE_MOUNTINFO", self.mountinfo())
             .env("FRAMEHIVE_MEDIA_FOLDERS", self.media())
             .current_dir(self.root());
-        let transcript = run_on_terminal(command, script);
-        assert_eq!(transcript.status.code(), Some(0), "{}", transcript.errors);
-        transcript
+        command
     }
+}
+
+fn finish(command: Command, script: &[&str]) -> Transcript {
+    let transcript = run_on_terminal(command, script);
+    assert_eq!(transcript.status.code(), Some(0), "{}", transcript.errors);
+    transcript
 }
 
 fn text(path: &Path) -> String {
@@ -227,5 +252,40 @@ fn the_report_shows_a_kept_creator_and_the_sidecar_count() {
             .library()
             .join("2026/2026-10-17/DSCF0001.JPG.xmp")
             .is_file()
+    );
+}
+
+/// spec: CLI-014.3
+#[test]
+fn a_camera_is_imported() {
+    let machine = Machine::without_card();
+    for name in ["DSCF0001.JPG", "DSCF0002.JPG"] {
+        machine
+            .folders
+            .add(&format!("DCIM/100_FUJI/{name}"), &picture(name));
+    }
+
+    let run = machine.run_with_camera(&[&text(&machine.library()), "", "", "", "y"]);
+
+    assert!(
+        run.output.contains(
+            "2 copied, 0 already imported, 0 duplicates, 0 skipped, 0 failed, 0 left out\n\
+             The camera can be formatted: every file is verified in 1 location.\n\
+             Only the files below DCIM were checked. Files outside DCIM, such as a phone's \
+             other folders, are not backed up.\n"
+        ),
+        "{}",
+        run.output
+    );
+    assert!(!run.output.contains("on the card"), "{}", run.output);
+    for name in ["DSCF0001.JPG", "DSCF0002.JPG"] {
+        let target = Path::new("2026/2026-10-17").join(name);
+        assert!(machine.library().join(target).is_file(), "{}", run.output);
+    }
+    let log = machine.folders.import_log(&["1"]);
+    assert!(
+        stdout(&log).contains("source               camera:Nikon DSC D750\n"),
+        "{}",
+        stdout(&log)
     );
 }
