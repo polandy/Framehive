@@ -1,6 +1,7 @@
 # CLI-008 – Import history in the command line
 
 - Status: implemented
+- E2e-owed: 6–9
 - Module: cli (`apps/cli`)
 - Origin: N3, N4
 - Depends on: CLI-001, CLI-003, CLI-004, CLI-005, CLI-006, IMPORT-009

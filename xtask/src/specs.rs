@@ -9,7 +9,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 mod consistency;
+mod criterion_lists;
 mod document;
+mod levels;
 mod markers;
 mod report;
 mod requirements;

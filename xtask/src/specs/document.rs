@@ -5,6 +5,8 @@
 
 use std::collections::BTreeMap;
 
+use super::criterion_lists::{criterion_numbers, e2e_owed_criteria};
+
 /// Prefixes from `specs/README.md`.
 const PREFIXES: [&str; 11] = [
     "CORE",
@@ -39,6 +41,8 @@ pub(crate) struct Spec {
     pub(crate) removed: Vec<u32>,
     /// Criteria of a `partial` spec that are not reachable in the code yet; they need no test.
     pub(crate) pending: Vec<u32>,
+    /// Criteria of a `CLI-*` spec that still lack a test under `apps/cli/tests/`.
+    pub(crate) e2e_owed: Vec<u32>,
     pub(crate) has_open_questions: bool,
 }
 
@@ -69,14 +73,15 @@ pub(crate) fn parse_spec(file: &str, text: &str) -> Result<Spec, Vec<String>> {
     if !spec.status.is_empty() && !STATUSES.contains(&spec.status.as_str()) {
         problems.push(format!("{file}: unknown status {:?}", spec.status));
     }
-    spec.origin = list_field(fields.get("Origin"));
-    spec.depends_on = list_field(fields.get("Depends on"))
+    spec.origin = list_field(fields.get("Origin").map(String::as_str));
+    spec.depends_on = list_field(fields.get("Depends on").map(String::as_str))
         .iter()
         .filter_map(|entry| entry.split_whitespace().next().map(str::to_owned))
         .collect();
     spec.criteria = criteria(file, &spec.id, text, &mut problems);
     spec.removed = removed_criteria(&spec.id, text);
     spec.pending = pending_criteria(&spec, fields.get("Pending"), &mut problems);
+    spec.e2e_owed = e2e_owed_criteria(&spec, fields.get("E2e-owed"), &mut problems);
     spec.has_open_questions = has_open_questions(text);
     if problems.is_empty() {
         Ok(spec)
@@ -122,8 +127,8 @@ fn header_fields(text: &str) -> BTreeMap<String, String> {
 }
 
 /// Splits `A, B (note), C` at top-level commas; `–` means an empty list.
-fn list_field(value: Option<&String>) -> Vec<String> {
-    let Some(value) = value.filter(|value| value.as_str() != NONE_MARKER) else {
+pub(super) fn list_field(value: Option<&str>) -> Vec<String> {
+    let Some(value) = value.filter(|value| *value != NONE_MARKER) else {
         return Vec::new();
     };
     let mut entries = Vec::new();
@@ -189,25 +194,7 @@ fn pending_criteria(spec: &Spec, value: Option<&String>, problems: &mut Vec<Stri
         problems.push(format!("{file}: only a partial spec has `- Pending:`"));
         return Vec::new();
     }
-    let mut numbers = Vec::new();
-    for entry in list_field(Some(value)) {
-        let id = &spec.id;
-        match entry.parse::<u32>() {
-            Ok(number) if spec.removed.contains(&number) => {
-                problems.push(format!(
-                    "{file}: pending criterion {id}.{number} is removed"
-                ));
-            }
-            Ok(number) if !spec.criteria.contains(&number) => {
-                problems.push(format!(
-                    "{file}: pending criterion {id}.{number} does not exist"
-                ));
-            }
-            Ok(number) => numbers.push(number),
-            Err(_) => problems.push(format!("{file}: invalid pending criterion {entry:?}")),
-        }
-    }
-    numbers
+    criterion_numbers(spec, "pending", value, problems)
 }
 
 fn has_open_questions(text: &str) -> bool {

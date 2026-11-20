@@ -1,6 +1,7 @@
 # CLI-015 – Several sources in one import command
 
 - Status: implemented
+- E2e-owed: 11
 - Module: cli (`apps/cli`)
 - Origin: Q5, J3
 - Depends on: CLI-001, CLI-007, CLI-016, IMPORT-002, IMPORT-015

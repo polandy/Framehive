@@ -1,6 +1,7 @@
 # CLI-017 – XMP sidecars in the report
 
 - Status: implemented
+- E2e-owed: 1–5
 - Module: cli (`apps/cli`)
 - Origin: N16, R9, N18
 - Depends on: CLI-001, CLI-003, CLI-005, IMPORT-019, IMPORT-020

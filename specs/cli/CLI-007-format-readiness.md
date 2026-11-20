@@ -1,6 +1,7 @@
 # CLI-007 – Format readiness in the command line
 
 - Status: implemented
+- E2e-owed: 8–10
 - Module: cli (`apps/cli`)
 - Origin: N5, T7
 - Depends on: CLI-001, CLI-003, CLI-005, CLI-006, IMPORT-008

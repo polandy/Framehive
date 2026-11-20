@@ -8,6 +8,7 @@ use std::collections::BTreeMap;
 use std::fmt::Write;
 
 use super::document::{NONE_MARKER, Spec};
+use super::levels::{Level, level_of};
 use super::markers::Marker;
 
 /// Renders the report; specs and tests appear in ID order, so the output is stable.
@@ -114,26 +115,54 @@ fn push_spec(text: &mut String, spec: &Spec, tests: &BTreeMap<String, Vec<&str>>
         spec.status,
         spec.file
     );
-    text.push_str("| Criterion | Tests | Status |\n|---|---|---|\n");
-    for id in criterion_ids(spec) {
-        let (locations, status) = match tests.get(&id) {
-            Some(found) => (found.iter().map(|l| format!("`{l}`")).collect(), "tested"),
-            None => (Vec::new(), "no test"),
+    text.push_str("| Criterion | Tests | Level | Status |\n|---|---|---|---|\n");
+    for (number, id) in criterion_numbers(spec) {
+        let found = tests.get(&id).map(Vec::as_slice).unwrap_or_default();
+        let listed: Vec<String> = found.iter().map(|l| format!("`{l}`")).collect();
+        let status = match (found.is_empty(), spec.e2e_owed.contains(&number)) {
+            (true, _) => "no test",
+            (false, true) => "tested, e2e owed",
+            (false, false) => "tested",
         };
-        let listed = if locations.is_empty() {
-            NONE_MARKER.to_owned()
-        } else {
-            locations.join("<br>")
-        };
-        let _ = writeln!(text, "| {id} | {listed} | {status} |");
+        let _ = writeln!(
+            text,
+            "| {id} | {} | {} | {status} |",
+            or_none(listed.join("<br>")),
+            or_none(levels(found))
+        );
+    }
+}
+
+/// The distinct levels of the tests at `locations`, outermost first, such as `system, unit`.
+fn levels(locations: &[&str]) -> String {
+    let mut found: Vec<Level> = locations.iter().map(|l| level_of(l)).collect();
+    found.sort();
+    found.dedup();
+    let names: Vec<&str> = found.into_iter().map(Level::name).collect();
+    names.join(", ")
+}
+
+fn or_none(cell: String) -> String {
+    if cell.is_empty() {
+        NONE_MARKER.to_owned()
+    } else {
+        cell
     }
 }
 
 fn criterion_ids(spec: &Spec) -> Vec<String> {
+    criterion_numbers(spec)
+        .into_iter()
+        .map(|(_, id)| id)
+        .collect()
+}
+
+/// The criteria that are not removed, as number and ID, such as `(3, "CORE-001.3")`.
+fn criterion_numbers(spec: &Spec) -> Vec<(u32, String)> {
     spec.criteria
         .iter()
         .filter(|number| !spec.removed.contains(number))
-        .map(|number| format!("{}.{number}", spec.id))
+        .map(|number| (*number, format!("{}.{number}", spec.id)))
         .collect()
 }
 
@@ -202,13 +231,13 @@ mod tests {
             ## Specifications\n\n\
             ### CORE-001 – Title \\| with bar\n\n\
             Status: implemented · Origin: B19, 2.7 · File: `specs/core/CORE-001-x.md`\n\n\
-            | Criterion | Tests | Status |\n|---|---|---|\n\
-            | CORE-001.1 | `a.rs:3`<br>`b.rs:9` | tested |\n\
-            | CORE-001.2 | – | no test |\n\n\
+            | Criterion | Tests | Level | Status |\n|---|---|---|---|\n\
+            | CORE-001.1 | `a.rs:3`<br>`b.rs:9` | unit | tested |\n\
+            | CORE-001.2 | – | – | no test |\n\n\
             ### CORE-002 – Title \\| with bar\n\n\
             Status: accepted · Origin: – · File: `specs/core/CORE-002-x.md`\n\n\
-            | Criterion | Tests | Status |\n|---|---|---|\n\
-            | CORE-002.1 | – | no test |\n";
+            | Criterion | Tests | Level | Status |\n|---|---|---|---|\n\
+            | CORE-002.1 | – | – | no test |\n";
         assert_eq!(report, expected);
     }
 
@@ -219,5 +248,25 @@ mod tests {
         let report = render(&[core], &[marker("CORE-001", 1, "a.rs:3")]);
         assert!(report.contains("1 of 1 criteria have a test"), "{report}");
         assert!(!report.contains("CORE-001.2"), "{report}");
+    }
+
+    #[test]
+    fn shows_the_levels_and_an_owed_system_test() {
+        let mut cli = spec("CLI-001", "implemented", &[], &[1, 2]);
+        cli.e2e_owed.push(2);
+        let markers = [
+            marker("CLI-001", 1, "apps/cli/src/a.rs:3"),
+            marker("CLI-001", 1, "apps/cli/tests/b.rs:9"),
+            marker("CLI-001", 2, "apps/cli/src/a.rs:7"),
+        ];
+        let report = render(&[cli], &markers);
+        assert!(
+            report.contains("| CLI-001.1 | `apps/cli/src/a.rs:3`<br>`apps/cli/tests/b.rs:9` | system, unit | tested |"),
+            "{report}"
+        );
+        assert!(
+            report.contains("| CLI-001.2 | `apps/cli/src/a.rs:7` | unit | tested, e2e owed |"),
+            "{report}"
+        );
     }
 }

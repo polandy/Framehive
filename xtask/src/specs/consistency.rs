@@ -8,6 +8,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use super::Report;
 use super::document::{NONE_MARKER, Spec};
+use super::levels::check_cli_system_tests;
 use super::markers::Marker;
 
 /// Checks parsed specs against each other, the requirement IDs and the test markers.
@@ -21,6 +22,7 @@ pub(crate) fn check(specs: &[Spec], requirements: &BTreeSet<String>, markers: &[
     }
     check_markers(&by_id, markers, &mut report);
     check_coverage(specs, markers, &mut report);
+    check_cli_system_tests(specs, markers, &mut report);
     report
 }
 
