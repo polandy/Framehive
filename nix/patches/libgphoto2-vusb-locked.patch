@@ -1,0 +1,49 @@
+SPDX-FileCopyrightText: 2026 Framehive contributors
+SPDX-License-Identifier: LGPL-2.1-or-later
+
+libgphoto2_port/vusb: show the virtual camera without a storage while it is locked
+
+A locked phone, or one not set to file transfer, answers PTP but lists its
+storage without a medium: GetStorageIDs returns an ID whose logical part is 0,
+which ptp_getstorageids() filters out, so the root holds no storage folder and
+Framehive asks the person to unlock the device (CLI-013.15). The virtual PTP
+camera of the `vusb` port driver (configure --enable-vusb) always lists its
+storage 0x00010001. With this patch, while the file VCAMERA_LOCKED_WHILE names
+exists, it lists 0x00010000 instead, so a test can lock the camera by creating
+that file and unlock it by removing it. Without VCAMERA_LOCKED_WHILE nothing
+changes.
+
+It changes only the `vusb` driver, which Framehive installs outside the iolib
+folder that the library loads by default. It is written to be offered upstream.
+
+Applied by flake.nix to nixpkgs' libgphoto2.
+
+--- a/libgphoto2_port/vusb/vcamera.c
++++ b/libgphoto2_port/vusb/vcamera.c
+@@ -829,6 +829,17 @@
+ 	return 1;
+ }
+ 
++/* Like a locked phone: while the file VCAMERA_LOCKED_WHILE names exists, the
++ * storage is listed without a medium (logical storage ID 0).
++ */
++static int
++locked (void) {
++	const char	*path = getenv ("VCAMERA_LOCKED_WHILE");
++	struct stat	stbuf;
++
++	return path && !stat (path, &stbuf);
++}
++
+ static int
+ ptp_getstorageids_write(vcamera *cam, ptpcontainer *ptp) {
+ 	unsigned char 	*data;
+@@ -841,7 +852,7 @@
+ 
+ 	data = malloc(200);
+ 
+-	sids[0] = 0x00010001;
++	sids[0] = locked () ? 0x00010000 : 0x00010001;
+ 	x = put_32bit_le_array (data, sids, 1);
+ 
+ 	ptp_senddata (cam, 0x1004, data, x);

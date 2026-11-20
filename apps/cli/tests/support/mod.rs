@@ -16,6 +16,8 @@ use metadata::testing::{ByteOrder, DATE_TIME_ORIGINAL, Tiff, jpeg, raf};
 
 pub(crate) mod cameras;
 #[cfg(target_os = "linux")]
+pub(crate) mod guided_camera;
+#[cfg(target_os = "linux")]
 pub(crate) mod terminal;
 
 /// 2026-10-17 14:05:09 UTC.

@@ -10,104 +10,11 @@
 mod support;
 
 use std::fs;
-use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::path::Path;
 
-use support::terminal::{Terminal, Transcript, run_on_terminal, run_on_terminal_with};
-use support::{Folders, iolib_folder, picture, stdout};
-
-/// The source folder served as the only camera, optionally the card `EOS_DIGITAL`, and
-/// the folders of the runs, all below a temporary root.
-struct Machine {
-    folders: Folders,
-}
-
-impl Machine {
-    fn without_card() -> Self {
-        let machine = Machine {
-            folders: Folders::new(),
-        };
-        fs::write(machine.mountinfo(), "").unwrap();
-        machine
-    }
-
-    fn with_card() -> Self {
-        let machine = Machine::without_card();
-        fs::create_dir_all(machine.card().join("DCIM")).unwrap();
-        let line = format!(
-            "100 1 8:17 / {} rw,relatime - vfat /dev/sdz1 rw\n",
-            machine.card().display()
-        );
-        fs::write(machine.mountinfo(), line).unwrap();
-        machine
-    }
-
-    fn card(&self) -> PathBuf {
-        self.folders.root.path().join("media/EOS_DIGITAL")
-    }
-
-    fn mountinfo(&self) -> PathBuf {
-        self.folders.root.path().join("mountinfo")
-    }
-
-    fn library(&self) -> PathBuf {
-        self.folders.destination()
-    }
-
-    /// Runs `framehive` on a terminal with `vusb` serving the source folder, typing `script`.
-    fn run_with_camera(&self, script: &[&str]) -> Transcript {
-        run_on_terminal(self.camera_command(), script)
-    }
-
-    /// Like [`Machine::run_with_camera`], with another program holding the camera until
-    /// the dialog asks to try again.
-    fn run_with_held_camera(&self, library: &str, rest: &[&str]) -> Transcript {
-        self.run_with_holder(library, |terminal, holder| {
-            terminal.wait_for("Try again? [Y/n]: ");
-            drop(holder);
-            terminal.type_line("y");
-            for line in rest {
-                terminal.type_line(line);
-            }
-        })
-    }
-
-    /// Runs with another program holding the camera, which `act` types around and may
-    /// release by dropping the holder.
-    fn run_with_holder(
-        &self,
-        library: &str,
-        act: impl FnOnce(&mut Terminal, fs::File),
-    ) -> Transcript {
-        // The patched `vusb` driver reports its camera as claimed while the folder is locked.
-        let holder = fs::File::open(self.folders.source()).unwrap();
-        holder.try_lock().unwrap();
-        let transcript = run_on_terminal_with(self.camera_command(), |terminal| {
-            terminal.type_line(library);
-            act(terminal, holder);
-        });
-        assert_eq!(transcript.status.code(), Some(0), "{}", transcript.errors);
-        transcript
-    }
-
-    fn camera_command(&self) -> Command {
-        let mut command = self.folders.framehive_command(&[]);
-        command
-            .env("FRAMEHIVE_MOUNTINFO", self.mountinfo())
-            .env(
-                "FRAMEHIVE_MEDIA_FOLDERS",
-                self.folders.root.path().join("media"),
-            )
-            .env("IOLIBS", iolib_folder("vusb"))
-            .env("VCAMERADIR", self.folders.source())
-            .current_dir(self.folders.root.path());
-        command
-    }
-}
-
-fn text(path: &Path) -> String {
-    path.display().to_string()
-}
+use support::guided_camera::{Machine, text};
+use support::terminal::{Transcript, run_on_terminal_with};
+use support::{picture, stdout};
 
 /// spec: CLI-014.2
 #[test]
@@ -192,62 +99,6 @@ fn a_camera_with_nothing_to_import_is_reported() {
         "{}",
         run.output
     );
-    assert!(!machine.library().join("2026").exists(), "{}", run.output);
-}
-
-/// spec: CLI-014.4
-#[test]
-fn a_camera_in_use_is_tried_again() {
-    let machine = Machine::without_card();
-    machine
-        .folders
-        .add("DCIM/100_FUJI/DSCF0001.JPG", &picture("DSCF0001.JPG"));
-
-    let run = machine.run_with_held_camera(&text(&machine.library()), &["", "", "", "y"]);
-
-    assert!(
-        run.output.contains(
-            "The camera Nikon DSC D750 at usb:001,001 is in use by another program; close it \
-             (the file manager on Linux, ptpcamerad on macOS) and try again.\n\
-             Try again? [Y/n]: "
-        ),
-        "{}",
-        run.output
-    );
-    assert!(run.output.contains("1 copied"), "{}", run.output);
-    assert!(
-        machine
-            .library()
-            .join("2026/2026-10-17/DSCF0001.JPG")
-            .is_file(),
-        "{}",
-        run.output
-    );
-}
-
-/// spec: CLI-014.5
-#[test]
-fn a_camera_in_use_is_not_offered_again_while_it_stays_connected() {
-    let machine = Machine::without_card();
-    machine
-        .folders
-        .add("DCIM/100_FUJI/DSCF0001.JPG", &picture("DSCF0001.JPG"));
-
-    let run = machine.run_with_holder(&text(&machine.library()), |terminal, holder| {
-        terminal.wait_for("Try again? [Y/n]: ");
-        terminal.type_line("n");
-        terminal.wait_for("Waiting for a memory card or camera…\n");
-        // The camera is free now, but the dialog waits until it is connected again.
-        drop(holder);
-    });
-
-    assert_eq!(
-        run.output.matches("Try again?").count(),
-        1,
-        "{}",
-        run.output
-    );
-    assert!(!run.output.contains("Reading Nikon"), "{}", run.output);
     assert!(!machine.library().join("2026").exists(), "{}", run.output);
 }
 
