@@ -18,6 +18,7 @@ pub(crate) struct Machine {
 }
 
 impl Machine {
+    /// A machine with an empty mount table, so no card is present.
     pub(crate) fn without_card() -> Self {
         let machine = Machine {
             folders: Folders::new(),
@@ -26,6 +27,7 @@ impl Machine {
         machine
     }
 
+    /// A machine with the card `EOS_DIGITAL` mounted below `media`.
     pub(crate) fn with_card() -> Self {
         let machine = Machine::without_card();
         fs::create_dir_all(machine.card().join("DCIM")).unwrap();
@@ -37,14 +39,17 @@ impl Machine {
         machine
     }
 
+    /// The mount point of the card `EOS_DIGITAL`.
     pub(crate) fn card(&self) -> PathBuf {
         self.folders.root.path().join("media/EOS_DIGITAL")
     }
 
+    /// The mount table the binary reads instead of the system's.
     pub(crate) fn mountinfo(&self) -> PathBuf {
         self.folders.root.path().join("mountinfo")
     }
 
+    /// The destination the runs import into.
     pub(crate) fn library(&self) -> PathBuf {
         self.folders.destination()
     }
@@ -85,6 +90,7 @@ impl Machine {
         transcript
     }
 
+    /// The `framehive` command with the machine's mount table and `vusb` as the only port driver.
     pub(crate) fn camera_command(&self) -> Command {
         let mut command = self.folders.framehive_command(&[]);
         command
@@ -100,6 +106,7 @@ impl Machine {
     }
 }
 
+/// `path` as the text a person types.
 pub(crate) fn text(path: &Path) -> String {
     path.display().to_string()
 }
