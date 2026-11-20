@@ -101,6 +101,14 @@ The binary test of T5 (CLI-025) uses the real timer with the profile key set to 
 second, the shortest the spec allows: its outcome does not depend on how long the
 process takes, only on the hang, which never returns.
 
+**Amendment (2026-11-20): dropping a file waits for its close.** Dropping an opened
+file only sent its close to the source thread. A camera's file holds the camera's
+session, so the camera could still be open after the job had given the source back and
+the guided import had said it can be disconnected (CLI-014.7, seen against libgphoto2's
+`vusb` driver). Dropping a file is now a call like the others: it closes the file on
+the source thread and waits for that within the limit, and a stopped source does not
+wait. It costs one round trip per file.
+
 ## Alternatives considered
 
 - **A thread per call.** Spawning a thread for each read costs more than many reads

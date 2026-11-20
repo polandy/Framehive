@@ -45,7 +45,9 @@ Boundaries:
   of its own and stops waiting for a call that does not answer within the limit. Such
   a call fails with `SourceStall::DidNotAnswer`, and every later call with
   `SourceStall::StoppedAnswering` at once, without reaching the source; the blocked call
-  is left behind (ADR 0049 §1, §2).
+  is left behind (ADR 0049 §1, §2). Dropping an opened file closes it on the source
+  thread and waits for that, within the limit, so a camera is free once its files are
+  dropped.
 - **Cameras.** The `Cameras` port lists the cameras and phones connected over PTP or
   MTP and opens one as a `ReadOnlyFileSystem` with one folder per storage; dropping it
   releases the camera, and a camera another program holds is a `CameraError::InUse`
