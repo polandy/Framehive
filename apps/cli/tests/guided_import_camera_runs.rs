@@ -16,6 +16,56 @@ use support::guided_camera::{Machine, text};
 use support::terminal::{Transcript, run_on_terminal_with};
 use support::{picture, stdout};
 
+/// The choices below the plan summary of CLI-003.
+const SUMMARY_CHOICES: &str =
+    "[Enter] import  [l] list  [t] template  [d] destination  [b] backup  [q] quit: ";
+
+/// spec: CLI-014.1
+#[test]
+fn a_camera_appears_and_goes() {
+    let machine = Machine::without_card();
+    machine
+        .folders
+        .add("DCIM/100_FUJI/DSCF0001.JPG", &picture("DSCF0001.JPG"));
+    let plug = machine.folders.root.path().join("plugged");
+    let mut command = machine.camera_command();
+    // The patched `vusb` driver lists the camera only while this file exists.
+    command.env("VCAMERA_CONNECTED_WHILE", &plug);
+
+    let run = run_on_terminal_with(command, |terminal| {
+        terminal.type_line(&text(&machine.library()));
+        terminal.wait_for("Waiting for a memory card or camera…\n");
+        fs::write(&plug, "").unwrap();
+        terminal.wait_for("Reading Nikon DSC D750…\n");
+        terminal.type_line("");
+        terminal.type_line("");
+        terminal.wait_for(SUMMARY_CHOICES);
+        fs::remove_file(&plug).unwrap();
+        terminal.wait_for("[REMOVED] Nikon DSC D750\n");
+        terminal.wait_for("Waiting for a memory card or camera…\n");
+    });
+
+    assert_eq!(run.status.code(), Some(0), "{}", run.errors);
+    let output = &run.output;
+    let waiting = output
+        .find("Waiting for a memory card or camera…\n")
+        .unwrap();
+    let new = output
+        .find("[NEW] Nikon DSC D750 (camera at usb:001,001)\nReading Nikon DSC D750…\n")
+        .unwrap();
+    let summary = output.find(SUMMARY_CHOICES).unwrap();
+    let removed = output.find("[REMOVED] Nikon DSC D750\n").unwrap();
+    assert!(
+        waiting < new && new < summary && summary < removed,
+        "{output}"
+    );
+    assert!(
+        output[removed..].contains("Waiting for a memory card or camera…\n"),
+        "{output}"
+    );
+    assert!(!machine.library().join("2026").exists(), "{output}");
+}
+
 /// spec: CLI-014.2
 #[test]
 fn a_card_and_a_camera_are_offered_to_choose_from() {

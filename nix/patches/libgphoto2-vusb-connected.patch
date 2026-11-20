@@ -1,0 +1,65 @@
+SPDX-FileCopyrightText: 2026 Framehive contributors
+SPDX-License-Identifier: LGPL-2.1-or-later
+
+libgphoto2_port/vusb: list the virtual camera only while a given file exists
+
+A real camera appears on the bus when it is plugged in and goes when its cable
+is pulled, and Framehive's guided import shows it as new and as removed
+(CLI-014.1). The virtual PTP camera of the `vusb` port driver (configure
+--enable-vusb) is always listed at usb:001,001. With this patch, when
+VCAMERA_CONNECTED_WHILE is set, that port is listed only while the file it
+names exists, so a test can connect the camera by creating the file and
+disconnect it by removing it. Without VCAMERA_CONNECTED_WHILE nothing changes.
+
+It changes only the `vusb` driver, which Framehive installs outside the iolib
+folder that the library loads by default. It is written to be offered upstream.
+
+Applied by flake.nix to nixpkgs' libgphoto2.
+
+--- a/libgphoto2_port/vusb/vusb.c
++++ b/libgphoto2_port/vusb/vusb.c
+@@ -30,6 +30,7 @@
+ #include <errno.h>
+ #include <sys/time.h>
+ #include <sys/file.h>
++#include <sys/stat.h>
+ #include <unistd.h>
+ #ifdef HAVE_SYS_PARAM_H
+ #include <sys/param.h>
+@@ -58,6 +59,17 @@
+ 	return GP_PORT_USB;
+ }
+ 
++/* Like plugging in a real camera: when VCAMERA_CONNECTED_WHILE is set, the
++ * camera is listed only while the file it names exists.
++ */
++static int
++connected (void) {
++	const char	*path = getenv ("VCAMERA_CONNECTED_WHILE");
++	struct stat	stbuf;
++
++	return !path || !stat (path, &stbuf);
++}
++
+ int
+ gp_port_library_list (GPPortInfoList *list)
+ {
+@@ -77,11 +89,13 @@
+ 	gp_port_info_set_path (info, "^vusb:");
+ 	gp_port_info_list_append (list, info); /* do not check, might be -1 */
+ 
+-	gp_port_info_new (&info);
+-	gp_port_info_set_type (info, GP_PORT_USB);
+-	gp_port_info_set_name (info, "Universal Serial Bus");
+-	gp_port_info_set_path (info, "usb:001,001");
+-	CHECK (gp_port_info_list_append (list, info));
++	if (connected ()) {
++		gp_port_info_new (&info);
++		gp_port_info_set_type (info, GP_PORT_USB);
++		gp_port_info_set_name (info, "Universal Serial Bus");
++		gp_port_info_set_path (info, "usb:001,001");
++		CHECK (gp_port_info_list_append (list, info));
++	}
+ 
+ 	gp_port_info_new (&info);
+ 	gp_port_info_set_type (info, GP_PORT_USB_SCSI);

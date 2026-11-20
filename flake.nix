@@ -64,6 +64,7 @@
             ./nix/patches/libgphoto2-vusb-claim.patch
             ./nix/patches/libgphoto2-vusb-unplug.patch
             ./nix/patches/libgphoto2-vusb-locked.patch
+            ./nix/patches/libgphoto2-vusb-connected.patch
           ];
           configureFlags = (old.configureFlags or [ ]) ++ [ "--enable-vusb" ];
           postInstall = (old.postInstall or "") + ''
