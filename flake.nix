@@ -61,6 +61,7 @@
           patches = (old.patches or [ ]) ++ [
             ./nix/patches/libgphoto2-directory-read-file.patch
             ./nix/patches/libgphoto2-vusb-partial-object.patch
+            ./nix/patches/libgphoto2-vusb-claim.patch
           ];
           configureFlags = (old.configureFlags or [ ]) ++ [ "--enable-vusb" ];
           postInstall = (old.postInstall or "") + ''

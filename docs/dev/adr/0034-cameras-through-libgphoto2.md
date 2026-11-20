@@ -122,6 +122,18 @@ A read in these tests therefore takes the ptp2 path of a real camera. Options no
 - **Install `vusb` beside the other port drivers:** no move, but every user would see a
   virtual Nikon D750 next to their real cameras.
 
+**Amendment (2026-11-20): a held virtual camera.** The virtual camera can always be
+opened, so a camera that another program holds (§6) could not be driven through
+libgphoto2 in CI. The flake also applies `nix/patches/libgphoto2-vusb-claim.patch`:
+opening the `vusb` port takes a non-blocking exclusive `flock` on the folder
+`VCAMERADIR` names and fails with `GP_ERROR_IO_USB_CLAIM`, the code of a real USB camera
+that another program has claimed, while another process holds one. A CLI test locks the
+folder and so holds the camera. Option not taken:
+
+- **Let the binary report a camera as busy through an environment variable:** no library
+  change, but a seam in the binary for the tests only, and the mapping of libgphoto2's
+  busy codes would stay untested through the binary.
+
 ### 4. Only `DCIM` is scanned on a camera
 
 Unlike a card folder (IMPORT-005), a camera source is scanned only below the `DCIM`
@@ -170,7 +182,7 @@ process.
 
 - The Nix shell and every build link libgphoto2 and its libusb; a release bundles them.
 - Cameras are tested in CI through the `directory` driver and libgphoto2's virtual PTP
-  camera (amendment of 2026-11-19). Real PTP and MTP cameras
+  camera (amendments of 2026-11-19 and 2026-11-20). Real PTP and MTP cameras
   are covered by a manual hardware check before release (requirements §9): Fujifilm
   X-T2 and X-T5, and an Android phone.
 - The modification time of a file on a camera is what the driver reports; PTP stores
