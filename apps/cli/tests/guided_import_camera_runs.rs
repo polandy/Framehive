@@ -204,3 +204,67 @@ fn a_camera_in_use_is_not_offered_again_while_it_stays_connected() {
     assert!(!run.output.contains("Reading Nikon"), "{}", run.output);
     assert!(!machine.library().join("2026").exists(), "{}", run.output);
 }
+
+/// Runs a camera import of one photo, answers `answer` to the release question and
+/// reports whether the camera is free once the dialog waits again.
+fn release_after_import(machine: &Machine, answer: &str) -> (Transcript, bool) {
+    machine
+        .folders
+        .add("DCIM/100_FUJI/DSCF0001.JPG", &picture("DSCF0001.JPG"));
+    let mut free = false;
+    let run = run_on_terminal_with(machine.camera_command(), |terminal| {
+        for line in [text(&machine.library()).as_str(), "", "", ""] {
+            terminal.type_line(line);
+        }
+        terminal.wait_for("Release Nikon DSC D750? [Y/n]: ");
+        terminal.type_line(answer);
+        terminal.wait_for("Waiting for a memory card or camera…\n");
+        // The patched `vusb` driver locks the folder while the camera is open.
+        free = fs::File::open(machine.folders.source())
+            .unwrap()
+            .try_lock()
+            .is_ok();
+    });
+    assert_eq!(run.status.code(), Some(0), "{}", run.errors);
+    assert_eq!(
+        run.output.matches("Reading Nikon").count(),
+        1,
+        "{}",
+        run.output
+    );
+    (run, free)
+}
+
+/// spec: CLI-014.7
+#[test]
+fn a_camera_is_released_on_yes() {
+    let machine = Machine::without_card();
+
+    let (run, free) = release_after_import(&machine, "y");
+
+    assert!(
+        run.output.contains(
+            "Release Nikon DSC D750? [Y/n]: Nikon DSC D750 can be disconnected now.\n\
+             Waiting for a memory card or camera…\n"
+        ),
+        "{}",
+        run.output
+    );
+    assert!(free, "{}", run.output);
+}
+
+/// spec: CLI-014.8
+#[test]
+fn a_camera_is_kept_open_on_no() {
+    let machine = Machine::without_card();
+
+    let (run, free) = release_after_import(&machine, "n");
+
+    assert!(
+        run.output
+            .contains("Release Nikon DSC D750? [Y/n]: Waiting for a memory card or camera…\n"),
+        "{}",
+        run.output
+    );
+    assert!(!free, "{}", run.output);
+}

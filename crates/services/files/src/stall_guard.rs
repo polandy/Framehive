@@ -281,12 +281,11 @@ impl Seek for GuardedFile {
 
 impl Drop for GuardedFile {
     fn drop(&mut self) {
-        if self.calls.is_stopped() {
-            return;
-        }
         let file = self.file;
-        let close: Request = Box::new(move |source| source.close(file));
-        // A source thread that ended has closed every file already.
-        let _ = self.calls.requests.send(close);
+        // Waits, so a source such as a camera is free once its files are dropped.
+        let _ = self.calls.call(move |source| {
+            source.close(file);
+            Ok(())
+        });
     }
 }

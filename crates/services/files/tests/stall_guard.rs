@@ -238,3 +238,67 @@ fn dropping_the_guard_and_its_files_drops_the_source() {
 
     assert_eq!(source_dropped.recv(), Err(mpsc::RecvError));
 }
+
+/// A file of a source that sends on a channel when it is dropped.
+struct DropSignallingFile {
+    dropped: Sender<()>,
+}
+
+impl Drop for DropSignallingFile {
+    fn drop(&mut self) {
+        let _ = self.dropped.send(());
+    }
+}
+
+impl Read for DropSignallingFile {
+    fn read(&mut self, _: &mut [u8]) -> io::Result<usize> {
+        Ok(0)
+    }
+}
+
+impl io::Seek for DropSignallingFile {
+    fn seek(&mut self, _: io::SeekFrom) -> io::Result<u64> {
+        Ok(0)
+    }
+}
+
+/// A source whose one file signals its drop.
+struct FileDropSignalling {
+    dropped: Sender<()>,
+}
+
+impl ReadOnlyFileSystem for FileDropSignalling {
+    fn entry(&self, _: &Path) -> io::Result<Option<EntryKind>> {
+        Ok(None)
+    }
+
+    fn list_folder(&self, _: &Path) -> io::Result<Vec<FolderEntry>> {
+        Ok(Vec::new())
+    }
+
+    fn file_size(&self, _: &Path) -> io::Result<u64> {
+        Ok(0)
+    }
+
+    fn open_read(&self, _: &Path) -> io::Result<Box<dyn ReadSeek>> {
+        Ok(Box::new(DropSignallingFile {
+            dropped: self.dropped.clone(),
+        }))
+    }
+
+    fn modification_time(&self, _: &Path) -> io::Result<Timestamp> {
+        Ok(Timestamp::UNIX_EPOCH)
+    }
+}
+
+#[test]
+fn dropping_a_file_closes_it_on_the_source_before_it_returns() {
+    let (dropped, file_dropped) = mpsc::channel();
+    let source = Box::new(FileDropSignalling { dropped });
+    let guard = StallGuard::new(source, Arc::new(ManualTimer::new()), LIMIT).unwrap();
+    let file = guard.open_read(&PathBuf::from(PHOTO)).unwrap();
+
+    drop(file);
+
+    assert_eq!(file_dropped.try_recv(), Ok(()));
+}
