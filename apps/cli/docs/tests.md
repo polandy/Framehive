@@ -20,10 +20,12 @@ the log after real imports, or of a history written with `adapter-sqlite`. `test
 folder, so the sources are named as given.
 
 `tests/guided_import_runs.rs` runs the guided import (CLI-003, CLI-006, CLI-011,
-CLI-017), on Linux only. `support/terminal.rs` opens a pseudo-terminal with `rustix`,
+CLI-014, CLI-017), on Linux only. `support/terminal.rs` opens a pseudo-terminal with `rustix`,
 turns its echo off, types a script of answers and then Ctrl+D, and collects what the
 terminal showed and standard error apart. `FRAMEHIVE_MOUNTINFO` and
 `FRAMEHIVE_MEDIA_FOLDERS` (ADR 0050) point the binary at a mount table file that lists a
 folder laid out like a card. The scripts answer `n` to the eject, so `udisksctl` never
 runs. A camera connected to the machine is offered as well and breaks the scripts;
-unplug it while the tests run.
+unplug it while the tests run. The camera runs load libgphoto2's `vusb` port driver
+only, as `tests/import_camera.rs` does (ADR 0034), so they see the virtual camera alone
+with an empty mount table.

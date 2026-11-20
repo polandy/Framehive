@@ -15,7 +15,7 @@ use std::path::{Path, PathBuf};
 use std::process::Output;
 
 use metadata::testing::raf;
-use support::{DEFAULT_TARGET, Folders, has_line, photo, stderr, stdout};
+use support::{DEFAULT_TARGET, Folders, has_line, iolib_folder, photo, stderr, stdout};
 
 /// spec: CLI-013.1
 #[test]
@@ -346,11 +346,6 @@ fn import_from(folders: &Folders, source: &str, iolibs: &Path, destination: &Pat
         .current_dir(folders.root.path())
         .output()
         .unwrap()
-}
-
-/// A folder below the port drivers of the Nix shell's libgphoto2 (`flake.nix`).
-fn iolib_folder(name: &str) -> PathBuf {
-    PathBuf::from(std::env::var_os("FRAMEHIVE_TEST_IOLIBS").unwrap()).join(name)
 }
 
 /// A port driver folder with only the network driver, so no camera is found.

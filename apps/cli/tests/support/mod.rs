@@ -203,6 +203,11 @@ pub(crate) fn card(folders: &Folders, card: &str, names: &[&str]) {
     }
 }
 
+/// A folder below the port drivers of the Nix shell's libgphoto2 (`flake.nix`).
+pub(crate) fn iolib_folder(name: &str) -> PathBuf {
+    PathBuf::from(std::env::var_os("FRAMEHIVE_TEST_IOLIBS").unwrap()).join(name)
+}
+
 /// A picture that differs from every other by `name`, after the end of its image.
 pub(crate) fn picture(name: &str) -> Vec<u8> {
     let mut bytes = photo();
