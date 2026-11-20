@@ -289,3 +289,23 @@ fn a_camera_is_imported() {
         stdout(&log)
     );
 }
+
+/// spec: CLI-014.11
+#[test]
+fn a_camera_with_nothing_to_import_is_reported() {
+    let machine = Machine::without_card();
+    fs::create_dir_all(machine.folders.source().join("DCIM")).unwrap();
+
+    let run = machine.run_with_camera(&[&text(&machine.library())]);
+
+    assert!(
+        run.output.contains(
+            "Reading Nikon DSC D750…\n\
+             Nikon DSC D750 has no photos or videos to import.\n\
+             Waiting for a memory card or camera…\n"
+        ),
+        "{}",
+        run.output
+    );
+    assert!(!machine.library().join("2026").exists(), "{}", run.output);
+}
