@@ -94,7 +94,8 @@ pub(crate) fn run_on_terminal_with(
         waited_until: 0,
     };
     act(&mut terminal);
-    terminal.input.write_all(b"\x04").unwrap();
+    // The binary may have quit already, which closes the terminal.
+    let _ = terminal.input.write_all(b"\x04");
     let finished = child.wait_with_output().unwrap();
     Transcript {
         output: reader.join().unwrap(),

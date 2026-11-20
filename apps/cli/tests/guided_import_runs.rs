@@ -10,104 +10,12 @@
 mod support;
 
 use std::fs;
-use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::path::Path;
 
-use support::terminal::{Transcript, run_on_terminal};
-use support::{Folders, picture};
-
-const CARD: &str = "EOS_DIGITAL";
+use support::guided_card::{Machine, text};
 
 /// A sidecar on the card with the creator `Camera Owner`.
 const CAMERA_SIDECAR: &str = r#"<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description rdf:about="" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:creator><rdf:Seq><rdf:li>Camera Owner</rdf:li></rdf:Seq></dc:creator></rdf:Description></rdf:RDF></x:xmpmeta>"#;
-
-/// The card `EOS_DIGITAL` below a media folder, listed in a mount table file, and the
-/// folders of the runs, all below a temporary root.
-struct Machine {
-    folders: Folders,
-}
-
-impl Machine {
-    fn new() -> Self {
-        let machine = Machine::without_card();
-        fs::create_dir_all(machine.card().join("DCIM")).unwrap();
-        let line = format!(
-            "100 1 8:17 / {} rw,relatime - vfat /dev/sdz1 rw\n",
-            machine.card().display()
-        );
-        fs::write(machine.mountinfo(), line).unwrap();
-        machine
-    }
-
-    fn without_card() -> Self {
-        let machine = Machine {
-            folders: Folders::new(),
-        };
-        fs::write(machine.mountinfo(), "").unwrap();
-        machine
-    }
-
-    fn root(&self) -> &Path {
-        self.folders.root.path()
-    }
-
-    fn media(&self) -> PathBuf {
-        self.root().join("media")
-    }
-
-    fn card(&self) -> PathBuf {
-        self.media().join(CARD)
-    }
-
-    fn mountinfo(&self) -> PathBuf {
-        self.root().join("mountinfo")
-    }
-
-    fn library(&self) -> PathBuf {
-        self.folders.destination()
-    }
-
-    fn backup(&self) -> PathBuf {
-        self.root().join("backup")
-    }
-
-    /// Adds pictures captured on 2026-10-17 to `DCIM/100_FUJI` of the card.
-    fn add_pictures(&self, names: &[&str]) {
-        for name in names {
-            self.add_to_card(&format!("DCIM/100_FUJI/{name}"), &picture(name));
-        }
-    }
-
-    fn add_to_card(&self, relative: &str, content: &[u8]) {
-        let path = self.card().join(relative);
-        fs::create_dir_all(path.parent().unwrap()).unwrap();
-        fs::write(path, content).unwrap();
-    }
-
-    /// Runs `framehive` on a terminal with the card's mount table, typing `script`.
-    fn run(&self, script: &[&str]) -> Transcript {
-        finish(self.command(), script)
-    }
-
-    fn command(&self) -> Command {
-        let mut command = self.folders.framehive_command(&[]);
-        command
-            .env("FRAMEHIVE_MOUNTINFO", self.mountinfo())
-            .env("FRAMEHIVE_MEDIA_FOLDERS", self.media())
-            .current_dir(self.root());
-        command
-    }
-}
-
-fn finish(command: Command, script: &[&str]) -> Transcript {
-    let transcript = run_on_terminal(command, script);
-    assert_eq!(transcript.status.code(), Some(0), "{}", transcript.errors);
-    transcript
-}
-
-fn text(path: &Path) -> String {
-    path.display().to_string()
-}
 
 /// spec: CLI-003.9
 #[test]
