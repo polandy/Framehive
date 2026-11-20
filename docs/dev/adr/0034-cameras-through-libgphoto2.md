@@ -178,6 +178,22 @@ its model (CLI-014). Option not taken:
   to a pulled cable, but CLI-014.1 disconnects the camera only while the dialog waits
   for an answer, when nothing is read, so it would add code that no test reaches.
 
+**Amendment (2026-11-20): a virtual camera disconnected during the import.** A camera
+disconnected during the import and connected again (CLI-014.9) must go from the list
+and fail its transfers together, and come back answering. When `VCAMERA_CONNECTED_WHILE`
+is set as well, the unplug patch renames that file to `<file>.pulled` once
+`VCAMERA_UNPLUG_WHEN` exists, and the `vusb` transfers fail only while the file is
+missing; the CLI test creates it again to connect the camera. libgphoto2 loads the
+port driver again on each open, which loses a static flag, so the `.pulled` marker
+keeps the camera from being unplugged again on the new open. The camera comes back at
+`usb:001,001`, not at another port as in the criterion; the port change stays covered
+by the unit test, as the guided import resumes by model. Options not taken:
+
+- **Keep the static flag:** the reopened camera is unplugged again at once, as the
+  first copy still exists.
+- **Let the test remove the file after the first copy:** the import could copy the
+  other files before the test sees the first, so the run would depend on timing.
+
 **Amendment (2026-11-20): several cameras stay at the unit level.** `vusb` serves one
 camera only. Listing several cameras (CLI-013.1 with two cameras), `camera:` with
 several cameras (CLI-013.6) and an ambiguous model (the second case of CLI-013.8) stay

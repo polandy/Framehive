@@ -37,5 +37,6 @@ A test that locks the folder with `flock` holds the virtual camera, which the pa
 `vusb` driver then reports as claimed (amendment of 2026-11-20).
 A test that sets `VCAMERA_UNPLUG_WHEN` to a path unplugs the virtual camera once that
 file exists; it stays listed, as a camera that stops answering (CLI-014.10) does
-(amendment of 2026-11-20).
+(amendment of 2026-11-20). With `VCAMERA_CONNECTED_WHILE` as well, it is disconnected
+instead and answers again once the test creates that file again (CLI-014.9).
 Real PTP and MTP cameras need the manual hardware check (ADR 0034).
