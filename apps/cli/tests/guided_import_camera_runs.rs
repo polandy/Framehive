@@ -268,3 +268,54 @@ fn a_camera_is_kept_open_on_no() {
     );
     assert!(!free, "{}", run.output);
 }
+
+/// spec: CLI-014.10
+#[test]
+fn a_camera_that_stops_answering_stops_the_import() {
+    let machine = Machine::without_card();
+    for name in ["DSCF0001.JPG", "DSCF0002.JPG", "DSCF0003.JPG"] {
+        machine
+            .folders
+            .add(&format!("DCIM/100_FUJI/{name}"), &picture(name));
+    }
+    let first = machine.library().join("2026/2026-10-17/DSCF0001.JPG");
+    let mut command = machine.camera_command();
+    // The patched `vusb` driver stops answering once the first copy exists, but stays listed.
+    command.env("VCAMERA_UNPLUG_WHEN", &first);
+    let mut free = false;
+
+    let run = run_on_terminal_with(command, |terminal| {
+        for line in [text(&machine.library()).as_str(), "", "", ""] {
+            terminal.type_line(line);
+        }
+        terminal.wait_for(
+            "[REMOVED] Nikon DSC D750\n\
+             Nikon DSC D750 was disconnected during the import. Connect it again to go on.\n",
+        );
+        // The dialog answers a line only once it waits again, after the import let go.
+        terminal.type_line("");
+        terminal.wait_for("Insert a memory card or connect a camera, or type q to quit.\n");
+        free = fs::File::open(machine.folders.source())
+            .unwrap()
+            .try_lock()
+            .is_ok();
+    });
+
+    assert_eq!(run.status.code(), Some(0), "{}", run.errors);
+    assert!(free, "{}", run.output);
+    assert_eq!(
+        run.output.matches("[REMOVED] Nikon DSC D750\n").count(),
+        1,
+        "{}",
+        run.output
+    );
+    assert!(first.is_file(), "{}", run.output);
+    assert!(
+        !machine
+            .library()
+            .join("2026/2026-10-17/DSCF0003.JPG")
+            .exists(),
+        "{}",
+        run.output
+    );
+}

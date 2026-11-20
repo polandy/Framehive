@@ -34,6 +34,11 @@ libgphoto2. The DCIM scan of a camera is left to the import.
 - libgphoto2 keeps every listing it has made. When a folder or file is not found, the
   adapter forgets the listings and asks once more, so files added while the camera is
   open are found and a scan does not relist every folder.
+- Listing the root `/` first asks the camera for its storages
+  (`gp_camera_get_storageinfo`), because libgphoto2's PTP driver lists the root from
+  storages it read when the camera was opened. A camera that stays listed but stopped
+  answering then fails the listing, which the guided import checks after a failed file
+  (CLI-014.10). A driver without storage information lists the root as before.
 - Readers fetch 1 MiB chunks from any offset with `gp_camera_file_read`, so reading the
   metadata of a RAW file does not transfer the whole file.
 

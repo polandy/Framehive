@@ -64,6 +64,14 @@ impl ReadOnlyFileSystem for CameraFileSystem {
     fn list_folder(&self, path: &Path) -> io::Result<Vec<FolderEntry>> {
         let folder = c_path(path)?;
         let mut session = self.session()?;
+        if path == Path::new("/") {
+            match session.ask_storages() {
+                Err(error) if !error.is_not_supported() => {
+                    return Err(io_error("list", path, error));
+                }
+                _ => {}
+            }
+        }
         let listing = session.with_fresh_listings(|session| {
             Ok((session.list_folders(&folder)?, session.list_files(&folder)?))
         });

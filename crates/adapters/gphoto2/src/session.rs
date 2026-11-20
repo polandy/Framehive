@@ -134,6 +134,14 @@ impl Session {
         Ok(usize::try_from(size).map_or(buffer.len(), |size| size.min(buffer.len())))
     }
 
+    /// Asks the camera for its storages, to tell whether it still answers: libgphoto2's
+    /// PTP driver lists the root from storages it read when the camera was opened.
+    pub(crate) fn ask_storages(&mut self) -> Result<(), GpError> {
+        // SAFETY: camera and context are valid.
+        check(unsafe { ffi::framehive_gp_ask_storages(self.camera, self.context.as_ptr()) })?;
+        Ok(())
+    }
+
     /// Runs `operation`; if it finds no folder or file, forgets what libgphoto2 has
     /// listed and runs it once more.
     ///

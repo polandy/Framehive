@@ -5,6 +5,8 @@
 // here lets the compiler take the layout of CameraAbilities, CameraFileInfo and Camera
 // from the libgphoto2 headers, instead of mirroring them in Rust (ADR 0034 §3).
 
+#include <stdlib.h>
+
 #include <gphoto2/gphoto2.h>
 
 // Makes `camera` use the driver for `model` on the port `port`, as
@@ -69,4 +71,14 @@ int framehive_gp_file_read(Camera *camera, const char *folder, const char *file,
 // driver again.
 int framehive_gp_forget_listings(Camera *camera) {
   return gp_filesystem_reset(camera->fs);
+}
+
+// Asks the camera for its storages, which drivers such as ptp2 answer from the device
+// rather than from a listing they keep.
+int framehive_gp_ask_storages(Camera *camera, GPContext *context) {
+  CameraStorageInformation *storages = NULL;
+  int count = 0;
+  int result = gp_camera_get_storageinfo(camera, &storages, &count, context);
+  free(storages);
+  return result < GP_OK ? result : GP_OK;
 }
