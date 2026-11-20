@@ -33,6 +33,7 @@ The faults exist only in a build with the cargo feature `fault-injection`, which
 | `abort-while-writing <name>` | Writes half of the first write to `<name>.part`, then aborts the process |
 | `flip-bit-after-sync <name>` | Flips the lowest bit of the first byte read back from the storage device for the target `<name>` |
 | `hang-while-reading <name>` | Blocks the first read of the source `<name>` during its copy; the read never returns |
+| `panic-while-writing <name>` | Panics when the `.part` file of the target `<name>` is created, in the import job |
 | `unplug-while-reading <name>` | Fails the first read of the source `<name>` during its copy, and from then on every call on a path in its folder, with `Input/output error (os error 5)` |
 
 Each fault happens once per run. A value that names no known fault, or no file, stops
@@ -90,7 +91,7 @@ read, so a typo never runs the import without the fault.
 - **When** the command runs with `FRAMEHIVE_FAULT=flip-bits DSCF0002.RAF`, or with a
   known fault and no file name
 - **Then** it prints
-  ``error: FRAMEHIVE_FAULT: unknown fault `flip-bits`; the faults are abort-while-writing, flip-bit-after-sync, hang-while-reading, unplug-while-reading``,
+  ``error: FRAMEHIVE_FAULT: unknown fault `flip-bits`; the faults are abort-while-writing, flip-bit-after-sync, hang-while-reading, panic-while-writing, unplug-while-reading``,
   or ``error: FRAMEHIVE_FAULT: `<fault>` needs a file name``, creates no destination, and
   exits with 2
 
