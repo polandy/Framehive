@@ -1,6 +1,7 @@
 # CLI-019 – Reasons from the operating system
 
 - Status: implemented
+- E2e-owed: 2, 3
 - Module: cli (`apps/cli`)
 - Origin: N18
 - Depends on: CLI-001

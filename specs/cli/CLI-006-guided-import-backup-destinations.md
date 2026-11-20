@@ -1,6 +1,7 @@
 # CLI-006 – Backup destinations in the guided import
 
 - Status: implemented
+- E2e-owed: 1–3, 5–8
 - Module: cli (`apps/cli`)
 - Origin: I2, I5
 - Depends on: CLI-003, CLI-005, IMPORT-007

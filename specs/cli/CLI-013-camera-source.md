@@ -1,6 +1,7 @@
 # CLI-013 – Cameras in `framehive import`
 
 - Status: implemented
+- E2e-owed: 6
 - Module: cli (`apps/cli`)
 - Origin: Q2, N18
 - Depends on: CLI-001, CLI-007, CLI-009, CLI-010, IMPORT-014

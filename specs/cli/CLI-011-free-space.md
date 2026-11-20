@@ -1,6 +1,7 @@
 # CLI-011 – Free space in `framehive import` and the guided import
 
 - Status: implemented
+- E2e-owed: 1–10
 - Module: cli (`apps/cli`)
 - Origin: I1, N18
 - Depends on: CLI-001, CLI-003, CLI-005, CLI-006, IMPORT-012

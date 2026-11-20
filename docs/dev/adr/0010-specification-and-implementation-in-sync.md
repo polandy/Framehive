@@ -118,6 +118,19 @@ criterion is an error (the field is then stale), open questions are not allowed,
 rule B applies. Only a `partial` specification may have `- Pending:`, and it must have
 it.
 
+**Amendment (2026-11-20): test levels and system tests for the command line.** A test's
+level follows from where its marker sits: `system` under `apps/<app>/tests/` (the built
+program), `integration` under a crate's `tests/` directory, `unit` anywhere else.
+`cargo xtask spec-report` shows the levels of each criterion's tests in a column. Every
+criterion of an `implemented` or `partial` `CLI-*` specification, except the pending ones,
+needs a test under `apps/cli/tests/`, because the user observes it through `framehive`
+itself. A criterion that has only lower-level tests today is listed in the header field
+`- E2e-owed: 2, 4–6`; the list is debt, and a new entry needs a reason in its pull
+request, such as hardware the binary cannot reach. A test under `apps/cli/tests/`
+on a listed criterion is an error (the field is then stale), and only a `CLI-*`
+specification may have the field. Listing the debt in each specification keeps it next to
+the criteria it concerns; a central list would drift from them.
+
 Example specification path: `specs/import/IMPORT-002-sequence-numbers.md`.
 
 ## Alternatives

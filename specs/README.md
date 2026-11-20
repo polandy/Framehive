@@ -51,7 +51,10 @@ File name: `<ID>-<short-name>.md`, e.g. `IMPORT-002-sequence-numbers.md`.
 5. One feature per file; prefer several small specifications over one large one.
 6. Tests reference the criterion they verify with `/// spec: <ID>.<n>`, written on the
    `#[test]` function itself.
-7. If the specification changes, tests and code change in the same commit, and vice
+7. Every `CLI-*` criterion has a test in `apps/cli/tests/` that runs the real binary.
+   Until it does, or where the binary cannot reach it, the criterion is listed in
+   `- E2e-owed:` (ADR 0010, amendment 2026-11-20).
+8. If the specification changes, tests and code change in the same commit, and vice
    versa.
 
 ## Template
@@ -61,6 +64,7 @@ File name: `<ID>-<short-name>.md`, e.g. `IMPORT-002-sequence-numbers.md`.
 
 - Status: draft | accepted | partial | implemented | removed
 - Pending: <only for `partial`: the criterion numbers not built yet, e.g. 1, 2, 8>
+- E2e-owed: <only for `CLI-*`: criteria still without a test in apps/cli/tests/, e.g. 2, 4–6>
 - Module: <module>
 - Origin: <requirement IDs from docs/dev/requirements/, e.g. R4, R5>
 - Depends on: <other spec IDs or "–">

@@ -60,7 +60,8 @@ or a change to files or the system, needs e2e.
   an `IMPORT-*` or `LIBRARY-*` one the pull request makes reachable from the command line)
   needs a test in `apps/cli/tests/` that runs the real binary. A marker only on a unit or
   golden test is a finding, unless the row says why the binary cannot reach it (hardware,
-  the user's real Trash).
+  the user's real Trash). For `CLI-*`, `check-specs` enforces this; a criterion added to
+  `- E2e-owed:` is a finding unless the pull request says why.
 - **Promise against assertion.** Read the criterion sentence by sentence against the test
   body; every promise is an assertion. A promise no test can assert is reworded in the spec.
 - **Both directions.** Grep for tests that still assert changed or removed behaviour and
@@ -70,7 +71,8 @@ or a change to files or the system, needs e2e.
   section 9.2 scenario (T1-T10) it touches and the test that drives it.
 - **Prove the headline test.** Revert the fix, watch that test go red, restore.
 - **Owed e2e.** A pull request with e2e still owed is not ready. If it is merged anyway,
-  list every debt in the verdict as `e2e owed: <criterion>` and add each to `TODO.md`.
+  list every debt in the verdict as `e2e owed: <criterion>` and add each to `TODO.md`
+  (for `CLI-*`, to the spec's `- E2e-owed:` instead).
 
 ## 4. CI
 

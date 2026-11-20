@@ -1,13 +1,14 @@
 # CLI-002 – Guided import dialog
 
 - Status: implemented
+- E2e-owed: 2–15
 - Module: cli (`apps/cli`)
 - Origin: Q1, A3, R9, N9, X1
 - Depends on: CLI-001, DEVICES-001, IMPORT-001, IMPORT-005, IMPORT-006
 
 ## Purpose
 
-A person who comes home with a full memory card should not need to know mount points
+Someone home with a full memory card should not need to know mount points
 or arguments. `framehive` without arguments waits for a card, shows what it will do,
 imports the card on Enter and ejects it. It remembers the answers, so the next card
 needs only Enter (ADR 0024, ADR 0025).

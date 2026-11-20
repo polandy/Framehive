@@ -1,6 +1,7 @@
 # CLI-021 – Diagnostic output
 
 - Status: implemented
+- E2e-owed: 2
 - Module: cli (`apps/cli`)
 - Origin: N18
 - Depends on: CLI-001
