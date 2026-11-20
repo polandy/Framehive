@@ -34,6 +34,7 @@ The faults exist only in a build with the cargo feature `fault-injection`, which
 | `flip-bit-after-sync <name>` | Flips the lowest bit of the first byte read back from the storage device for the target `<name>` |
 | `hang-while-reading <name>` | Blocks the first read of the source `<name>` during its copy; the read never returns |
 | `panic-while-writing <name>` | Panics when the `.part` file of the target `<name>` is created, in the import job |
+| `pull-card-after <name>` | After the target `<name>` is complete, replaces the mount table named in `FRAMEHIVE_MOUNTINFO` with an empty one and makes the guided import poll the devices at once (CLI-003.8) |
 | `unplug-while-reading <name>` | Fails the first read of the source `<name>` during its copy, and from then on every call on a path in its folder, with `Input/output error (os error 5)` |
 
 Each fault happens once per run. A value that names no known fault, or no file, stops
@@ -91,7 +92,7 @@ read, so a typo never runs the import without the fault.
 - **When** the command runs with `FRAMEHIVE_FAULT=flip-bits DSCF0002.RAF`, or with a
   known fault and no file name
 - **Then** it prints
-  ``error: FRAMEHIVE_FAULT: unknown fault `flip-bits`; the faults are abort-while-writing, flip-bit-after-sync, hang-while-reading, panic-while-writing, unplug-while-reading``,
+  ``error: FRAMEHIVE_FAULT: unknown fault `flip-bits`; the faults are abort-while-writing, flip-bit-after-sync, hang-while-reading, panic-while-writing, pull-card-after, unplug-while-reading``,
   or ``error: FRAMEHIVE_FAULT: `<fault>` needs a file name``, creates no destination, and
   exits with 2
 
@@ -124,3 +125,4 @@ read, so a typo never runs the import without the fault.
 | 2026-11-19 | Created (ADR 0048) |
 | 2026-11-19 | T5 under Out of scope points to IMPORT-022, its stall limit |
 | 2026-11-19 | T5: the fault `hang-while-reading` and CLI-025.5 (ADR 0048 §3, §4) |
+| 2026-11-20 | The fault `pull-card-after` for a card pulled during the guided import (ADR 0048 §3) |

@@ -114,7 +114,7 @@ impl<'s> ImportProgress<'s> {
     /// once after a file of a camera failed.
     fn poll_when_due(&mut self) {
         let now = self.clock.now();
-        if !self.check_now && elapsed(self.last_poll, now) < POLL_INTERVAL {
+        if !self.check_now && !poll_forced() && elapsed(self.last_poll, now) < POLL_INTERVAL {
             return;
         }
         self.last_poll = now;
@@ -164,6 +164,14 @@ impl ImportProgress<'_> {
                 .camera
                 .is_some_and(|camera| camera.list_folder(Path::new("/")).is_err())
     }
+}
+
+/// Whether the fault-injection point pulled the card (ADR 0048); never in a release build.
+fn poll_forced() -> bool {
+    #[cfg(feature = "fault-injection")]
+    return crate::fault_injection::take_forced_poll();
+    #[cfg(not(feature = "fault-injection"))]
+    false
 }
 
 /// The time from `from` to `to`, or zero if `to` is earlier.
