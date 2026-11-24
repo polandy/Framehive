@@ -1,7 +1,6 @@
 # CLI-006 – Backup destinations in the guided import
 
 - Status: implemented
-- E2e-owed: 1–3, 5–8
 - Module: cli (`apps/cli`)
 - Origin: I2, I5
 - Depends on: CLI-003, CLI-005, IMPORT-007
@@ -91,10 +90,10 @@ key `backup`, in their order (ADR 0030), whenever they change.
   the next write stores `format_version=2`
 
 ### CLI-006.8 – A backup destination that cannot be created
-- **Given** the card of CLI-006.4, and the backup destination `<file>/backup`, where
-  `<file>` is a file
+- **Given** the card of CLI-006.4, and the backup destination `<folder>/backup`, where
+  `<folder>` is a file or a folder that cannot be written to
 - **When** the person presses Enter
-- **Then** the dialog says `Could not create <file>/backup: …`, and no file is copied
+- **Then** the dialog says `Could not create <folder>/backup: …`, and no file is copied
 
 ## Out of scope
 
@@ -112,3 +111,4 @@ key `backup`, in their order (ADR 0030), whenever they change.
 | 2026-11-04 | Initial draft for backup destinations (IMPORT-007, ADR 0030); accepted by the owner |
 | 2026-11-04 | Implemented in `apps/cli/src/guided` |
 | 2026-11-07 | Add CLI-006.8: the import job creates the backup destinations when it starts (IMPORT-012) |
+| 2026-11-20 | CLI-006.8 also covers a folder that cannot be written to: below a file the binary refuses the destination earlier (IMPORT-007.11) |

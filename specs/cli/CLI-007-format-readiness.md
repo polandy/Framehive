@@ -1,7 +1,6 @@
 # CLI-007 – Format readiness in the command line
 
 - Status: implemented
-- E2e-owed: 8–10
 - Module: cli (`apps/cli`)
 - Origin: N5, T7
 - Depends on: CLI-001, CLI-003, CLI-005, CLI-006, IMPORT-008
@@ -107,12 +106,12 @@ still exits with 0.
   `Eject EOS_DIGITAL? [Y/n]: `
 
 ### CLI-007.9 – The guided import lists a file that is not saved
-- **Given** a guided import of `EOS_DIGITAL` in which `DCIM/100CANON/IMG_0002.CR2`
+- **Given** a guided import of `EOS_DIGITAL` in which `DCIM/100_FUJI/DSCF0002.JPG`
   fails at the one backup destination
 - **When** the import finishes
 - **Then** the dialog prints
   `Do not format the card: not every file is verified in 2 locations.` and
-  `  DCIM/100CANON/IMG_0002.CR2: verified in 1 of 2 locations`, and then asks
+  `  DCIM/100_FUJI/DSCF0002.JPG: verified in 1 of 2 locations`, and then asks
   `Eject EOS_DIGITAL? [Y/n]: `
 
 ### CLI-007.10 – A card pulled during the import
@@ -147,3 +146,4 @@ still exits with 0.
 | 2026-11-06 | Per-file numbers and the verdict without a number when files require different numbers of locations (IMPORT-013) |
 | 2026-11-07 | Examples name the destination with `--destination` (CLI-001, ADR 0036) |
 | 2026-11-08 | CLI-007.5 uses the too long path of CLI-001.13, which no user can open, also root |
+| 2026-11-20 | CLI-007.9 names the file of the Fuji card the binary tests use |

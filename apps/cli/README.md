@@ -41,7 +41,7 @@ framehive --version
 `-v` or `--verbose`, before or after the subcommand, writes diagnostic lines to
 standard error; twice or three times for more detail (CLI-021, ADR 0046).
 - `rustix` with `std`, `pty` and `termios`, a Linux dev-dependency (ADR 0050): the
-  pseudo-terminal of `tests/guided_import_runs.rs`.
+  pseudo-terminal of `tests/guided_import_runs.rs` and `tests/guided_import_dialog.rs`.
 `framehive --help` ends with examples, the folders and the exit codes (CLI-023).
 
 Flag conventions for every command (CLI-023):
@@ -74,7 +74,7 @@ Flag conventions for every command (CLI-023):
 | Module | Meaning |
 |---|---|
 | `arguments` | The `clap` command line and the parsed `Invocation`; `framehive library` in `library.rs` |
-| `fault_injection` | Only with the feature `fault-injection` (ADR 0048): `FaultyFileSystem`, which wraps the file system of the import and the guided import and causes the fault named in `FRAMEHIVE_FAULT` (CLI-025); without one it passes every call through. Its tests are in `tests/fault_injection.rs`, run by the CI step `fault injection` |
+| `fault_injection` | Only with the feature `fault-injection` (ADR 0048): `FaultyFileSystem`, which wraps the file system of the import and the guided import and causes the fault named in `FRAMEHIVE_FAULT` (CLI-025; `pull-card-after` also empties the mount table and forces the guided import's next poll); without one it passes every call through. Its tests are in `tests/fault_injection.rs`, run by the CI step `fault injection` |
 | `diagnostics` | The `tracing` subscriber on standard error, by `--verbose` (CLI-021, ADR 0046) |
 | `paths` | Source and destination resolution, the inside check, creating the destination |
 | `import_command` | Wires the adapters to the import job of each source (`run.rs`, tested in-crate with `MemoryFreeSpace` and `MemoryCameras`), follows the jobs on threads of their own (`sources.rs`) and maps the results to the exit code |
@@ -100,4 +100,4 @@ Flag conventions for every command (CLI-023):
 - `tracing`, and `tracing-subscriber` with only `fmt` (ADR 0046): the diagnostic
   output of `--verbose`.
 - `rustix` with `std`, `pty` and `termios`, a Linux dev-dependency (ADR 0050): the
-  pseudo-terminal of `tests/guided_import_runs.rs`.
+  pseudo-terminal of `tests/guided_import_runs.rs` and `tests/guided_import_dialog.rs`.

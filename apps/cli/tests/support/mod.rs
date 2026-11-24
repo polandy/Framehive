@@ -18,6 +18,8 @@ pub(crate) mod cameras;
 #[cfg(target_os = "linux")]
 pub(crate) mod guided_camera;
 #[cfg(target_os = "linux")]
+pub(crate) mod guided_card;
+#[cfg(target_os = "linux")]
 pub(crate) mod terminal;
 
 /// 2026-10-17 14:05:09 UTC.
@@ -231,9 +233,14 @@ pub(crate) fn import_in_root(folders: &Folders, arguments: &[&str]) -> Output {
 }
 
 pub(crate) fn photo() -> Vec<u8> {
+    photo_taken_at(CAPTURE_TIME)
+}
+
+/// A picture captured at `time`, written as `2026:10:19 09:00:00`.
+pub(crate) fn photo_taken_at(time: &str) -> Vec<u8> {
     jpeg(
         &Tiff::new(ByteOrder::LittleEndian)
-            .with_exif_text(DATE_TIME_ORIGINAL, CAPTURE_TIME)
+            .with_exif_text(DATE_TIME_ORIGINAL, time)
             .to_bytes(),
     )
 }

@@ -1,7 +1,6 @@
 # CLI-002 – Guided import dialog
 
 - Status: implemented
-- E2e-owed: 2–15
 - Module: cli (`apps/cli`)
 - Origin: Q1, A3, R9, N9, X1
 - Depends on: CLI-001, DEVICES-001, IMPORT-001, IMPORT-005, IMPORT-006

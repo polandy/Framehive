@@ -303,7 +303,7 @@ fn an_unknown_fault_is_a_usage_error() {
     assert_eq!(
         stderr(&output),
         "error: FRAMEHIVE_FAULT: unknown fault `flip-bits`; the faults are \
-         abort-while-writing, flip-bit-after-sync, hang-while-reading, unplug-while-reading\n"
+         abort-while-writing, flip-bit-after-sync, hang-while-reading, panic-while-writing, pull-card-after, unplug-while-reading\n"
     );
     assert!(!folders.destination().exists());
     assert_eq!(output.status.code(), Some(2));
